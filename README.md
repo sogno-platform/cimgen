@@ -1,4 +1,5 @@
 # README
 
-Reference-style: 
-![Overview Codebase Generator][CIMCodebaseGenerator.png]
+## Concept overview 
+
+![Overview Codebase Generator](CIMCodebaseGenerator.png)
