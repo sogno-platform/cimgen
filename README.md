@@ -2,4 +2,4 @@
 
 ## Concept overview 
 
-![Overview Codebase Generator](CIMCodebaseGenerator.png)
+![Overview Codebase Generator](CIMCodebaseGenerator.svg)
