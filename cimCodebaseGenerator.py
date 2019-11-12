@@ -5,8 +5,11 @@ import chevron
 
 def set_default(text, render):
     result = render(text)
-    if result == '':
+    if result in ['M:1', 'M:0..1', 'M:1..1', '']:
         return 'None'
+    elif result in ['M:0..n', 'M:1..n'] or 'M:' in result:
+        return '[]'
+
     result = result.split('#')[1]
     if result == 'integer':
         return '0'
@@ -17,6 +20,32 @@ def set_default(text, render):
     else:
         # everything else should be a float
         return '0.0'
+
+    # result = render(text)
+    # print(result)
+    # data_type = result.split('@')[0]
+    # print(result.split('@'))
+    # multiplicity = result.split('@')[1]
+    #
+    # if data_type == '?':
+    #     if multiplicity in ['*M:1', '*M:0..1', '*M:1..1']:
+    #         return 'None'
+    #     elif multiplicity in ['*M:0..n', '*M:1..n']:
+    #         return '[}'
+    #     else:
+    #         # unknown multiplicity
+    #         return '[]'
+    # else:
+    #     data_type = data_type.split('#')[1]
+    #     if data_type in ['integer?', 'Integer?']:
+    #         return '0'
+    #     elif data_type in ['String?', 'DataTime?', 'Date?']:
+    #         return "''"
+    #     elif data_type == 'Boolean?':
+    #         return 'False'
+    #     else:
+    #         # everything else should be float
+    #         return '0.0'
 
 
 # The definitions are often contained within a string with a name
@@ -97,7 +126,7 @@ def parse_rdf(input_dic):
         # Iterate over possible keys and set attribute for object if defined
         keys = ['cims:dataType', 'rdfs:domain', 'rdfs:label', 'rdfs:range', 'rdfs:subClassOf',
                 'cims:stereotype', 'rdf:type', 'cims:isFixed', 'cims:belongsToCategory',
-                'rdfs:comment']
+                'rdfs:comment', 'cims:multiplicity']
 
         for key in keys:
             # Is key defined?
@@ -110,7 +139,7 @@ def parse_rdf(input_dic):
                     text = extract_text(list_elem[key]).replace('–', '-').replace('“', '"')\
                         .replace('”', '"').replace('’', "'").replace('°', '').replace('\n', ' ')
                     object_dic = set_attr(object_dic, name[1], text)
-                elif name[1] in ['domain', 'subClassOf', 'belongsToCategory']:
+                elif name[1] in ['domain', 'subClassOf', 'belongsToCategory', 'multiplicity']:
                     object_dic = set_attr(object_dic, name[1], get_rid_of_hash(extract_string(list_elem[key])))
                 else:
 
@@ -262,19 +291,10 @@ def write_python_files(package_name, class_name, attributes_array, class_locatio
         class_location = "cimpy." + version + ".Base"
         super_init = False
 
-    if package == 'StateVariables':
-        super_init = True
-        sub_class_of = 'IdentifiedObject'
-        class_location = 'cimpy.' + version + '.Equipment.IdentifiedObject'
+    for i in range(len(attributes_array)):
+        if 'dataType' not in attributes_array[i].keys() and 'multiplicity' in attributes_array[i].keys():
+            attributes_array[i]['dataType'] = attributes_array[i]['multiplicity']
 
-    if 'BaseVoltage' in class_name:
-        super_init = True
-        sub_class_of = 'IdentifiedObject'
-        class_location = 'cimpy.' + version + '.' + package + '.IdentifiedObject'
-
-    if class_name == 'IdentifiedObject':
-        reference = False
-        reference_list = False
 
     if not os.path.exists(class_file):
         with open(class_file, 'w') as file:
