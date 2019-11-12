@@ -119,11 +119,9 @@ def parse_rdf(input_dic):
         if 'type' in object_dic.keys():
             if object_dic['type'] == 'http://www.w3.org/2000/01/rdf-schema#Class':
                 # Class
-                obj_dic = object_dic.pop('type', 'label')
                 classes_map = new_class(classes_map, object_dic['label'], object_dic)
             elif object_dic['type'] == "http://www.w3.org/1999/02/22-rdf-syntax-ns#Property":
                 # Property -> Attribute
-                obj_dic = object_dic.pop('type', 'label')
                 attributes.append(object_dic)
             # not for CGMES-Standard, only for CIM-Standard
             # elif object_dic['type'] == "http://iec.ch/TC57/1999/rdf-schema-extensions-19990926#ClassCategory":
@@ -335,6 +333,8 @@ def merge_classes(categories_array):
     return package_dict
 
 
+# Merges multiple class definitions into the Equipment package. The origin of all attributes defined outside
+# of the Equipment schema are stored in the referenece dict
 def merge_classes_in_equipment(package_dict):
     eq_package = package_dict['EquipmentVersion']
     reference_list = eq_package.keys()
@@ -349,14 +349,15 @@ def merge_classes_in_equipment(package_dict):
                     new_attributes = package_dict[key][elem]['attributes']
                     if len(new_attributes) > 0:
                         for attr in new_attributes:
-                            eq_package[elem]['attributes'].append(attr)
-                            if 'reference_dict' in eq_package[elem].keys():
-                                if key in eq_package[elem]['reference_dict'].keys():
-                                    eq_package[elem]['reference_dict'][key].append(attr)
+                            if attr not in eq_package[elem]['attributes']:
+                                eq_package[elem]['attributes'].append(attr)
+                                if 'reference_dict' in eq_package[elem].keys():
+                                    if key in eq_package[elem]['reference_dict'].keys():
+                                        eq_package[elem]['reference_dict'][key].append(attr)
+                                    else:
+                                        eq_package[elem]['reference_dict'][key] = [attr]
                                 else:
-                                    eq_package[elem]['reference_dict'][key] = [attr]
-                            else:
-                                eq_package[elem]['reference_dict'] = {key: [attr]}
+                                    eq_package[elem]['reference_dict'] = {key: [attr]}
                     package_dict[key].pop(elem)
 
     return package_dict
@@ -381,7 +382,10 @@ def cim_generate(directory, version):
 
     This function uses package xmltodict to parse the RDF files. The parse_rdf function sorts the classes to
     the corresponding packages. Since there can be multiple occurences of a class with different attributes in a package,
-    the merge_classes function merges these into one class containing all attributes. Finally the
+    the merge_classes function merges these into one class containing all attributes. Since multiple definitions of
+    classes occur in different cgmes packages, all classes are merged into the Equipment package. For attributes defined
+    outside the Equipment package, the reference_dict stores the origin of those. This dictionary is used for the export
+    of the cgmes python classes. For more information see the cimexport function in the cimgen package. Finally the
     process_array_of_category_maps function modifies the classes and creates the python files using the template engine
     chevron.
 
