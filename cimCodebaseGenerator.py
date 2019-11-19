@@ -3,12 +3,22 @@ import xmltodict
 import chevron
 
 
+# called by chevron, text contains the label {{dataType}}, which is evaluated by the renderer (see class template)
 def set_default(text, render):
     result = render(text)
-    if result == '':
+
+    # the field {{dataType}} either contains the multiplicity of an attribute if it is a reference or otherwise the
+    # datatype of the attribute. If no datatype is set and there is also no multiplicity entry for an attribute, the
+    # default value is set to None. The multiplicity is set for all attributes, but the datatype is only set for basic
+    # data types. If the data type entry for an attribute is missing, the attribute contains a reference and therefore
+    # the default value is either None or [] depending on the mutliplicity. See also write_python_files
+    if result in ['M:1', 'M:0..1', 'M:1..1', '']:
         return 'None'
+    elif result in ['M:0..n', 'M:1..n'] or 'M:' in result:
+        return '[]'
+
     result = result.split('#')[1]
-    if result == 'integer':
+    if result in ['integer', 'Integer']:
         return '0'
     elif result in ['String', 'DateTime', 'Date']:
         return "''"
@@ -97,7 +107,7 @@ def parse_rdf(input_dic):
         # Iterate over possible keys and set attribute for object if defined
         keys = ['cims:dataType', 'rdfs:domain', 'rdfs:label', 'rdfs:range', 'rdfs:subClassOf',
                 'cims:stereotype', 'rdf:type', 'cims:isFixed', 'cims:belongsToCategory',
-                'rdfs:comment']
+                'rdfs:comment', 'cims:multiplicity']
 
         for key in keys:
             # Is key defined?
@@ -110,7 +120,7 @@ def parse_rdf(input_dic):
                     text = extract_text(list_elem[key]).replace('–', '-').replace('“', '"')\
                         .replace('”', '"').replace('’', "'").replace('°', '').replace('\n', ' ')
                     object_dic = set_attr(object_dic, name[1], text)
-                elif name[1] in ['domain', 'subClassOf', 'belongsToCategory']:
+                elif name[1] in ['domain', 'subClassOf', 'belongsToCategory', 'multiplicity']:
                     object_dic = set_attr(object_dic, name[1], get_rid_of_hash(extract_string(list_elem[key])))
                 else:
 
@@ -119,11 +129,9 @@ def parse_rdf(input_dic):
         if 'type' in object_dic.keys():
             if object_dic['type'] == 'http://www.w3.org/2000/01/rdf-schema#Class':
                 # Class
-                obj_dic = object_dic.pop('type', 'label')
                 classes_map = new_class(classes_map, object_dic['label'], object_dic)
             elif object_dic['type'] == "http://www.w3.org/1999/02/22-rdf-syntax-ns#Property":
                 # Property -> Attribute
-                obj_dic = object_dic.pop('type', 'label')
                 attributes.append(object_dic)
             # not for CGMES-Standard, only for CIM-Standard
             # elif object_dic['type'] == "http://iec.ch/TC57/1999/rdf-schema-extensions-19990926#ClassCategory":
@@ -264,19 +272,11 @@ def write_python_files(package_name, class_name, attributes_array, class_locatio
         class_location = "cimpy." + version + ".Base"
         super_init = False
 
-    if package == 'StateVariables':
-        super_init = True
-        sub_class_of = 'IdentifiedObject'
-        class_location = 'cimpy.' + version + '.Equipment.IdentifiedObject'
-
-    if 'BaseVoltage' in class_name:
-        super_init = True
-        sub_class_of = 'IdentifiedObject'
-        class_location = 'cimpy.' + version + '.' + package + '.IdentifiedObject'
-
-    if class_name == 'IdentifiedObject':
-        reference = False
-        reference_list = False
+    # The entry dataType for an attribute is only set for basic data types. If the entry is not set here, the attribute
+    # is a reference to another class and therefore the entry dataType is generated and set to the multiplicity
+    for i in range(len(attributes_array)):
+        if 'dataType' not in attributes_array[i].keys() and 'multiplicity' in attributes_array[i].keys():
+            attributes_array[i]['dataType'] = attributes_array[i]['multiplicity']
 
     if not os.path.exists(class_file):
         with open(class_file, 'w') as file:
@@ -335,6 +335,8 @@ def merge_classes(categories_array):
     return package_dict
 
 
+# Merges multiple class definitions into the Equipment package. The origin of all attributes defined outside
+# of the Equipment schema are stored in the referenece dict
 def merge_classes_in_equipment(package_dict):
     eq_package = package_dict['EquipmentVersion']
     reference_list = eq_package.keys()
@@ -349,14 +351,15 @@ def merge_classes_in_equipment(package_dict):
                     new_attributes = package_dict[key][elem]['attributes']
                     if len(new_attributes) > 0:
                         for attr in new_attributes:
-                            eq_package[elem]['attributes'].append(attr)
-                            if 'reference_dict' in eq_package[elem].keys():
-                                if key in eq_package[elem]['reference_dict'].keys():
-                                    eq_package[elem]['reference_dict'][key].append(attr)
+                            if attr not in eq_package[elem]['attributes']:
+                                eq_package[elem]['attributes'].append(attr)
+                                if 'reference_dict' in eq_package[elem].keys():
+                                    if key in eq_package[elem]['reference_dict'].keys():
+                                        eq_package[elem]['reference_dict'][key].append(attr)
+                                    else:
+                                        eq_package[elem]['reference_dict'][key] = [attr]
                                 else:
-                                    eq_package[elem]['reference_dict'][key] = [attr]
-                            else:
-                                eq_package[elem]['reference_dict'] = {key: [attr]}
+                                    eq_package[elem]['reference_dict'] = {key: [attr]}
                     package_dict[key].pop(elem)
 
     return package_dict
@@ -381,7 +384,10 @@ def cim_generate(directory, version):
 
     This function uses package xmltodict to parse the RDF files. The parse_rdf function sorts the classes to
     the corresponding packages. Since there can be multiple occurences of a class with different attributes in a package,
-    the merge_classes function merges these into one class containing all attributes. Finally the
+    the merge_classes function merges these into one class containing all attributes. Since multiple definitions of
+    classes occur in different cgmes packages, all classes are merged into the Equipment package. For attributes defined
+    outside the Equipment package, the reference_dict stores the origin of those. This dictionary is used for the export
+    of the cgmes python classes. For more information see the cimexport function in the cimgen package. Finally the
     process_array_of_category_maps function modifies the classes and creates the python files using the template engine
     chevron.
 
