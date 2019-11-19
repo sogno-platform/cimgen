@@ -5,26 +5,27 @@ class {{class_name}}({{subClassOf}}):
 	'''
 	{{{class_comment}}}
 
-	{{#attribute}}:{{label}}: {{{comment}}} Default: {{#setDefault}}{{dataType}}{{/setDefault}}
-	{{/attribute}}
+	{{#attributes}}:{{label}}: {{{comment}}} Default: {{#setDefault}}{{dataType}}{{/setDefault}}
+	{{/attributes}}
 	'''
 
-	{{#reference}}reference_dict = { {{/reference}}{{#reference_list}}'{{origin_name}}': [{{#foreign_attributes}}'{{attr_name}}',{{/foreign_attributes}} ],
-					{{/reference_list}}{{#reference}} } {{/reference}}
+	possibleProfileList = {'class': [{{#class_origin}}'{{origin}}', {{/class_origin}}],
+						{{#attributes}}'{{label}}': [{{#attr_origin}}'{{origin}}', {{/attr_origin}}],
+						{{/attributes}} }
 
 	{{#super_init}}__doc__ += '\n Documentation of parent class {{subClassOf}}: \n' + {{subClassOf}}.__doc__ {{/super_init}}
 
-	def __init__(self, {{#attribute}}{{label}} = {{#setDefault}}{{dataType}}{{/setDefault}}, {{/attribute}} {{#super_init}}*args, **kw_args{{/super_init}}):
+	def __init__(self, {{#attributes}}{{label}} = {{#setDefault}}{{dataType}}{{/setDefault}}, {{/attributes}} {{#super_init}}*args, **kw_args{{/super_init}}):
 	{{#super_init}}
 	super().__init__(*args, **kw_args)
 	{{/super_init}}
 
-	{{#attribute}}
+	{{#attributes}}
 	self.{{label}} = {{label}}
-	{{/attribute}}
-	{{^attribute}}
+	{{/attributes}}
+	{{^attributes}}
 pass
-	{{/attribute}}
+	{{/attributes}}
 
 	def __str__(self):
 		str = 'class={{class_name}}\n'

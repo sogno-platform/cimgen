@@ -179,44 +179,37 @@ def parse_rdf(input_dic):
 
 def process_array_of_category_maps(elem_dict, version):
     no_parent_found = []
-    for package_name in elem_dict.keys():
-        # Iterate over Classes
-        for class_name in elem_dict[package_name].keys():
-            # Extract Class Attributes
-            # Make sure there is only one entry for each unique attribute
-            attributes_array = find_multiple_attributes(elem_dict[package_name][class_name]['attributes'])
-            reference_list = []
+    # Iterate over Classes
+    package_name = ""
 
-            if 'reference_dict' in elem_dict[package_name][class_name].keys():
-                reference_dict = elem_dict[package_name][class_name]['reference_dict']
-                for key, elem in reference_dict.items():
-                    attr_origin_list = []
-                    for item in elem:
-                        for attr_key in item.keys():
-                            if attr_key == 'label':
-                                attr_origin_list.append({'attr_name': item[attr_key]})
-                    reference_list.append({'origin_name': key, 'foreign_attributes': attr_origin_list})
+    for class_name in elem_dict.keys():
+        sub_class_of = None
 
-            sub_class_of = None
-            class_location = None
+        attributes_array = find_multiple_attributes(elem_dict[class_name]['attributes'])
 
-            # Check if the current class has a parent class
-            if 'subClassOf' in elem_dict[package_name][class_name].keys():
-                sub_class_of = elem_dict[package_name][class_name]['subClassOf']
-                # If class has a parent class find the package name (location) of the parent class
-                sub_package = find_parent_class_package(sub_class_of, package_name, elem_dict)
-                if sub_package is False:
-                    no_parent_found.append(elem_dict[package_name][class_name])
-                    continue
-                else:
-                    class_location = 'cimpy.' + version + "." + sub_package + "." + sub_class_of
-            if 'comment' in elem_dict[package_name][class_name].keys():
-                comment = elem_dict[package_name][class_name]['comment']
+        # ToDo: used?
+        class_location = None
+
+        # Check if the current class has a parent class
+        if 'subClassOf' in elem_dict[class_name].keys():
+            sub_class_of = elem_dict[class_name]['subClassOf']
+
+            # ToDo: all classes in one folder or subfolders for CIM structure?
+            package_name = ""
+            # If class has a parent class find the package name (location) of the parent class
+            # sub_package = find_parent_class_package(sub_class_of, package_name, elem_dict)
+            if sub_class_of not in elem_dict.keys():
+                no_parent_found.append(elem_dict[class_name])
+                continue
             else:
-                comment = ""
+                class_location = 'cimpy.' + version + "." + sub_class_of
+        if 'comment' in elem_dict[class_name].keys():
+            comment = elem_dict[class_name]['comment']
+        else:
+            comment = ""
 
-            write_python_files(package_name, class_name, attributes_array, class_location,
-                               sub_class_of, comment, reference_list, version)
+        write_python_files(package_name, class_name, attributes_array, elem_dict[class_name]['class_origin'],
+                           class_location, sub_class_of, comment, version)
     return no_parent_found
 
 
@@ -236,8 +229,8 @@ def create_base(path):
             f.write(line)
 
 
-def write_python_files(package_name, class_name, attributes_array, class_location,
-                       sub_class_of, comment, reference_list, version):
+def write_python_files(package_name, class_name, attributes_array, class_origin, class_location,
+                       sub_class_of, comment, version):
     version_path = "./" + version
     if not os.path.exists(version_path):
         os.makedirs(version_path)
@@ -248,20 +241,18 @@ def write_python_files(package_name, class_name, attributes_array, class_locatio
     # package = package_name.split('_')[1]
 
     # only for CGMES-Standard
-    package = package_name.split('Version')[0]
-    path = "./" + version + '/' + package
+    # ToDo: usage
+    # package = package_name.split('Version')[0]
+    # path = "./" + version + '/' + package
 
-    if len(reference_list) == 0:
-        reference = False
-    else:
-        reference = True
+    # ToDo: only use if classes in subfolders like CGMES or CIM structure
     # Check if package folder exists
-    if not os.path.exists(path):
-        os.makedirs(path)
-        # Creates init file in package directory
-        create_init(path)
+    # if not os.path.exists(path):
+    #     os.makedirs(path)
+    #     # Creates init file in package directory
+    #     create_init(path)
 
-    class_file = path + "/" + class_name + ".py"
+    class_file = version_path + "/" + class_name + ".py"
 
     # If class is a subclass a super().__init__() is needed
     super_init = True
@@ -282,11 +273,12 @@ def write_python_files(package_name, class_name, attributes_array, class_locatio
         with open(class_file, 'w') as file:
 
             with open('cimpy_class_template.mustache') as f:
-                output = chevron.render(f, {"class_name": class_name, "attribute": attributes_array,
+                output = chevron.render(f, {"class_name": class_name, "attributes": attributes_array,
+                                            "class_origin": class_origin,
                                             "setDefault": set_default, "subClassOf": sub_class_of,
                                             "ClassLocation": class_location, "super_init": super_init,
-                                            "class_comment": comment, "reference_list": reference_list,
-                                            'reference': reference} )
+                                            "class_comment": comment,
+                                            })
             file.write(output)
     else:
         pass
@@ -309,6 +301,22 @@ def find_parent_class_package(parent_class, package_name, elem_dict):
     return False
 
 
+# Find multiple entries for the same attribute
+def find_multiple_attributes(attributes_array):
+    merged_attributes = []
+    for elem in attributes_array:
+        found = False
+        for i in range(len(merged_attributes)):
+            if elem['label'] == merged_attributes[i]['label']:
+                found = True
+                break
+        if found is False:
+            merged_attributes.append(elem)
+    return merged_attributes
+
+
+# ToDo: track class heritage, attributes heritage
+# ToDo: change name? maybe create_package_dict
 # Merges the attributes of the same classes and creates one dictionary out of the categoriesArray
 def merge_classes(categories_array):
     package_dict = {}
@@ -335,48 +343,47 @@ def merge_classes(categories_array):
     return package_dict
 
 
+# ToDo: Delete/modify
+# ToDo: rename: create_class_dict
 # Merges multiple class definitions into the Equipment package. The origin of all attributes defined outside
 # of the Equipment schema are stored in the referenece dict
 def merge_classes_in_equipment(package_dict):
-    eq_package = package_dict['EquipmentVersion']
-    reference_list = eq_package.keys()
+    class_dict = {}
+    for package_key in package_dict.keys():
+        short_name = short_package_name[package_key]
+        for class_key in package_dict[package_key]:
+            if class_key not in class_dict.keys():
+                class_dict[class_key] = package_dict[package_key][class_key]
+                class_dict[class_key]['class_origin'] = [{'origin': short_name}]
+                for attr in class_dict[class_key]['attributes']:
+                    attr['attr_origin'] = [{'origin': short_package_name[package_key]}]
+            else:
+                for origin in class_dict[class_key]['class_origin']:
+                    multiple_origin = False
+                    if short_name == origin['origin']:
+                        multiple_origin = True
+                        break
+                if not multiple_origin:
+                    class_dict[class_key]['class_origin'].append({'origin': short_name})
 
-    for key in package_dict.keys():
-        if 'Equipment' in key:
-            continue
-        else:
-            multiple_classes = list(set(reference_list) & set(package_dict[key].keys()))
-            if len(multiple_classes) > 0:
-                for elem in multiple_classes:
-                    new_attributes = package_dict[key][elem]['attributes']
-                    if len(new_attributes) > 0:
-                        for attr in new_attributes:
-                            if attr not in eq_package[elem]['attributes']:
-                                eq_package[elem]['attributes'].append(attr)
-                                if 'reference_dict' in eq_package[elem].keys():
-                                    if key in eq_package[elem]['reference_dict'].keys():
-                                        eq_package[elem]['reference_dict'][key].append(attr)
-                                    else:
-                                        eq_package[elem]['reference_dict'][key] = [attr]
-                                else:
-                                    eq_package[elem]['reference_dict'] = {key: [attr]}
-                    package_dict[key].pop(elem)
+                for attr in package_dict[package_key][class_key]['attributes']:
+                    multiple_attr = False
+                    for attr_set in class_dict[class_key]['attributes']:
+                        if attr['label'] == attr_set['label']:
+                            multiple_attr = True
+                            for origin in attr_set['attr_origin']:
+                                multiple_attr_origin = False
+                                if origin['origin'] == short_name:
+                                    multiple_attr_origin = True
+                                    break
+                            if not multiple_attr_origin:
+                                attr_set['attr_origin'].append({'origin': short_name})
+                            break
+                    if not multiple_attr:
+                        attr['attr_origin'] = [{'origin': short_name}]
+                        class_dict[class_key]['attributes'].append(attr)
 
-    return package_dict
-
-
-# Find multiple entries for the same attribute
-def find_multiple_attributes(attributes_array):
-    merged_attributes = []
-    for elem in attributes_array:
-        found = False
-        for i in range(len(merged_attributes)):
-            if elem['label'] == merged_attributes[i]['label']:
-                found = True
-                break
-        if found is False:
-            merged_attributes.append(elem)
-    return merged_attributes
+    return class_dict
 
 
 def cim_generate(directory, version):
@@ -420,3 +427,14 @@ def cim_generate(directory, version):
         print("Class Name: ", elem['label'], " Parent Class Name: ", elem['subClassOf'])
 
     os.chdir(cwd)
+
+
+short_package_name = {
+    "DiagramLayoutVersion": 'DI',
+    "DynamicsVersion": "DY",
+    "EquipmentVersion": "EQ",
+    "GeographicalLocationVersion": "GL",
+    "StateVariablesVersion": "SV",
+    "SteadyStateHypothesisVersion": "SSH",
+    "TopologyVersion": "TP"
+}
