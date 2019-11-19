@@ -3,15 +3,22 @@ import xmltodict
 import chevron
 
 
+# called by chevron, text contains the label {{dataType}}, which is evaluated by the renderer (see class template)
 def set_default(text, render):
     result = render(text)
+
+    # the field {{dataType}} either contains the multiplicity of an attribute if it is a reference or otherwise the
+    # datatype of the attribute. If no datatype is set and there is also no multiplicity entry for an attribute, the
+    # default value is set to None. The multiplicity is set for all attributes, but the datatype is only set for basic
+    # data types. If the data type entry for an attribute is missing, the attribute contains a reference and therefore
+    # the default value is either None or [] depending on the mutliplicity. See also write_python_files
     if result in ['M:1', 'M:0..1', 'M:1..1', '']:
         return 'None'
     elif result in ['M:0..n', 'M:1..n'] or 'M:' in result:
         return '[]'
 
     result = result.split('#')[1]
-    if result == 'integer':
+    if result in ['integer', 'Integer']:
         return '0'
     elif result in ['String', 'DateTime', 'Date']:
         return "''"
@@ -20,32 +27,6 @@ def set_default(text, render):
     else:
         # everything else should be a float
         return '0.0'
-
-    # result = render(text)
-    # print(result)
-    # data_type = result.split('@')[0]
-    # print(result.split('@'))
-    # multiplicity = result.split('@')[1]
-    #
-    # if data_type == '?':
-    #     if multiplicity in ['*M:1', '*M:0..1', '*M:1..1']:
-    #         return 'None'
-    #     elif multiplicity in ['*M:0..n', '*M:1..n']:
-    #         return '[}'
-    #     else:
-    #         # unknown multiplicity
-    #         return '[]'
-    # else:
-    #     data_type = data_type.split('#')[1]
-    #     if data_type in ['integer?', 'Integer?']:
-    #         return '0'
-    #     elif data_type in ['String?', 'DataTime?', 'Date?']:
-    #         return "''"
-    #     elif data_type == 'Boolean?':
-    #         return 'False'
-    #     else:
-    #         # everything else should be float
-    #         return '0.0'
 
 
 # The definitions are often contained within a string with a name
@@ -291,10 +272,11 @@ def write_python_files(package_name, class_name, attributes_array, class_locatio
         class_location = "cimpy." + version + ".Base"
         super_init = False
 
+    # The entry dataType for an attribute is only set for basic data types. If the entry is not set here, the attribute
+    # is a reference to another class and therefore the entry dataType is generated and set to the multiplicity
     for i in range(len(attributes_array)):
         if 'dataType' not in attributes_array[i].keys() and 'multiplicity' in attributes_array[i].keys():
             attributes_array[i]['dataType'] = attributes_array[i]['multiplicity']
-
 
     if not os.path.exists(class_file):
         with open(class_file, 'w') as file:
