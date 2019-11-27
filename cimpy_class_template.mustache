@@ -9,6 +9,8 @@ class {{class_name}}({{subClassOf}}):
 	{{/attributes}}
 	'''
 
+	cgmesProfile = {{subClassOf}}.cgmesProfile
+
 	possibleProfileList = {'class': [{{#class_origin}}cgmesProfile.{{origin}}.value, {{/class_origin}}],
 						{{#attributes}}'{{label}}': [{{#attr_origin}}cgmesProfile.{{origin}}.value, {{/attr_origin}}],
 						{{/attributes}} }

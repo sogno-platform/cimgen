@@ -313,7 +313,13 @@ def _merge_classes(profiles_dict):
                     # store origin of the attributes
                     attr['attr_origin'] = [{'origin': short_package_name[package_key]}]
             else:
-                # class is already in class_dict, check if profile is already stored in class origin list
+                # some inheritance information is stored only in one of the packages. Therefore it has to be checked
+                # if the subClassOf attribute is set. See for example TopologicalNode definitions in SV and TP.
+                if 'subClassOf' not in class_dict[class_key].keys():
+                    if 'subClassOf' in profiles_dict[package_key][class_key].keys():
+                        class_dict[class_key]['subClassOf'] = profiles_dict[package_key][class_key]['subClassOf']
+
+                # check if profile is already stored in class origin list
                 for origin in class_dict[class_key]['class_origin']:
                     multiple_origin = False
                     if short_name == origin['origin']:
