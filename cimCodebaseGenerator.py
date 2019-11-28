@@ -21,7 +21,7 @@ def _set_default(text, render):
     if result in ['M:1', 'M:0..1', 'M:1..1', '']:
         return 'None'
     elif result in ['M:0..n', 'M:1..n'] or 'M:' in result:
-        return '[]'
+        return '"many"'
 
     result = result.split('#')[1]
     if result in ['integer', 'Integer']:
