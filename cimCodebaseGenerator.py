@@ -198,7 +198,8 @@ def _create_init(path):
 # creates the Base class file, all classes inherit from this class
 def _create_base(path):
     base_path = path + "/Base.py"
-    base = ['from enum import Enum\n\n', '\n', 'class Base():\n', '    """\n', '    Base Class for CIM\n', '    """\n\n',
+    base = ['from enum import Enum\n\n', '\n', 'class Base():\n', '    """\n', '    Base Class for CIM\n',
+            '    """\n\n',
             '    cgmesProfile = Enum("cgmesProfile", {"EQ": 0, "SSH": 1, "TP": 2, "SV": 3, "DY": 4, "GL": 5, "DI": 6})',
             '\n\n', '    def __init__(self, *args, **kw_args):\n', '        pass\n',
             '\n', '    def printxml(self, dict={}):\n', '        return dict\n']
@@ -239,7 +240,7 @@ def _write_files(class_name, attributes_array, class_origin, class_location,
 
             with open('cimpy_class_template.mustache') as f:
                 output = chevron.render(f, {"class_name": class_name, "attributes": attributes_array,
-                                            "class_origin": class_origin, "version": version,
+                                            "class_origin": class_origin,
                                             "setDefault": _set_default, "subClassOf": sub_class_of,
                                             "ClassLocation": class_location, "super_init": super_init,
                                             "class_comment": comment,

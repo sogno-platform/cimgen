@@ -15,7 +15,7 @@ class {{class_name}}({{subClassOf}}):
 						{{#attributes}}'{{label}}': [{{#attr_origin}}cgmesProfile.{{origin}}.value, {{/attr_origin}}],
 						{{/attributes}} }
 
-	readInProfile = {}
+	serializationProfile = {}
 
 	{{#super_init}}__doc__ += '\n Documentation of parent class {{subClassOf}}: \n' + {{subClassOf}}.__doc__ {{/super_init}}
 
