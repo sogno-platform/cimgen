@@ -6,8 +6,6 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-# ToDo: function setSerializationProfile
-
 
 # called by chevron, text contains the label {{dataType}}, which is evaluated by the renderer (see class template)
 def _set_default(text, render):
@@ -241,7 +239,7 @@ def _write_files(class_name, attributes_array, class_origin, class_location,
 
             with open('cimpy_class_template.mustache') as f:
                 output = chevron.render(f, {"class_name": class_name, "attributes": attributes_array,
-                                            "class_origin": class_origin,
+                                            "class_origin": class_origin, "version": version,
                                             "setDefault": _set_default, "subClassOf": sub_class_of,
                                             "ClassLocation": class_location, "super_init": super_init,
                                             "class_comment": comment,
