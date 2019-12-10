@@ -1,0 +1,40 @@
+#ifndef {{class_name}}_H
+#define {{class_name}}_H
+
+/*
+  forward declaration is not useful when defining class because we do not
+  know the size of it. Only useful for function parameters.
+  inline object code in .hpp does not stop object code from being defined
+  twice in successive header(-object) files.
+*/
+
+{{#attributes}}
+{{.}}
+#include "{{#withoutHash}}{{range}}{{dataType}}{{/withoutHash}}.hpp"
+{{/attributes}}
+
+/*	
+{{{class_comment}}}
+*/
+class {{class_name}}: public {{subClassOf}}
+{
+private:
+{{#attributes}}
+        {{#withoutHash}}{{range}}{{dataType}}{{/withoutHash}} *_{{label}}; 	/* {{comment}} Default: {{#setDefault}}{{dataType}}{{/setDefault}} */
+{{/attributes}}
+
+public:
+{{#if attribute}}
+	{{class_name}}()
+	{
+{{#attribute}}
+		{{label}} = {{#withoutHash}}{{range}}{{dataType}}{{/withoutHash}}();
+{{/attribute}}
+	};
+{{/if attribute}}
+
+	/* constructor initialising all attributes to null */
+	{{class_name}}();
+};
+
+#endif
