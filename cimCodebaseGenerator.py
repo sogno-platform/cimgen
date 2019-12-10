@@ -347,6 +347,8 @@ def cim_generate(directory, version, langPack):
     # merge classes from different profiles into one class and track origin of the classes and their attributes
     class_dict_with_origins = _merge_classes(profiles_dict)
 
+    template_files = json.loads(templates)
+
     # get information for writing python files and write python files
     _write_python_files(class_dict_with_origins, version, langPack)
 
