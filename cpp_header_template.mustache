@@ -1,15 +1,7 @@
 #ifndef {{class_name}}_H
 #define {{class_name}}_H
 
-/*
-  forward declaration is not useful when defining class because we do not
-  know the size of it. Only useful for function parameters.
-  inline object code in .hpp does not stop object code from being defined
-  twice in successive header(-object) files.
-*/
-
 {{#attributes}}
-{{.}}
 #include "{{#withoutHash}}{{range}}{{dataType}}{{/withoutHash}}.hpp"
 {{/attributes}}
 

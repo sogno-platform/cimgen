@@ -10,7 +10,7 @@ run echo $'import cimpy.cimCodebaseGenerator' >> /cimgen/cimpy/__init__.py
 run echo $\
 'import cimpy\n\
 path_to_rdf_files = "/cgmes_schema/cgmes_v2_4_15_schema"\n\
-cimpy.cimCodebaseGenerator.cim_generate(path_to_rdf_files, "cgmes_v2_4_15_schema", "[ { \\\"filename\\\": \\\"cpp_header_template.mustache\\\", \\\"ext\\\": \\\".hpp\\\" } ]")\n' >> /cimgen/createClasses.py
+cimpy.cimCodebaseGenerator.cim_generate(path_to_rdf_files, "cgmes_v2_4_15", "[ { \\\"filename\\\": \\\"cpp_header_template.mustache\\\", \\\"ext\\\": \\\".hpp\\\" } ]")\n' >> /cimgen/createClasses.py
 run cat /cimgen/createClasses.py
 workdir /cimgen
 cmd python3 createClasses.py cimgen_v2_4_15

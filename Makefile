@@ -9,7 +9,7 @@ build:
 	docker build -t cimgen .
 
 run:
-	docker run -v ${DIR}/cimpp:/cimgen/cimpy/cimgen_v2_4_15 -v ${DIR}/cgmes_schema/cgmes_v2_4_15_schema:/cgmes_schema/cgmes_v2_4_15_schema cimgen
+	docker run -v ${DIR}/cimpp:/cimgen/cimpy/cgmes_v2_4_15 -v ${DIR}/cgmes_schema/cgmes_v2_4_15_schema:/cgmes_schema/cgmes_v2_4_15_schema cimgen
 
 .PHONY:
 	build run
