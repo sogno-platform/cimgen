@@ -95,4 +95,3 @@ def setup(version_path):
             with open(fileDetails['path'], 'w') as f:
                 for line in fileDetails['data']:
                     f.write(line)
-
