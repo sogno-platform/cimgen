@@ -8,34 +8,6 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-
-# called by chevron, text contains the label {{dataType}}, which is evaluated by the renderer (see class template)
-def _set_default(text, render):
-    result = render(text)
-
-    # the field {{dataType}} either contains the multiplicity of an attribute if it is a reference or otherwise the
-    # datatype of the attribute. If no datatype is set and there is also no multiplicity entry for an attribute, the
-    # default value is set to None. The multiplicity is set for all attributes, but the datatype is only set for basic
-    # data types. If the data type entry for an attribute is missing, the attribute contains a reference and therefore
-    # the default value is either None or 'list' depending on the mutliplicity. The string 'list' as default value
-    # is changed to an instance of list in the cimimport function (See CIMpy). See also write_python_files.
-    if result in ['M:1', 'M:0..1', 'M:1..1', '']:
-        return 'None'
-    elif result in ['M:0..n', 'M:1..n'] or 'M:' in result:
-        return '"list"'
-
-    result = result.split('#')[1]
-    if result in ['integer', 'Integer']:
-        return '0'
-    elif result in ['String', 'DateTime', 'Date']:
-        return "''"
-    elif result == 'Boolean':
-        return 'False'
-    else:
-        # everything else should be a float
-        return '0.0'
-
-
 # The definitions are often contained within a string with a name
 # such as "$rdf:about" or "$rdf:resource", this extracts the
 # useful bit
@@ -78,10 +50,6 @@ def _new_class(profile, class_name, object_dic):
         logger.info("Class {} already exists".format(class_name))
     return profile
 
-def _without_hash(text, render):
-    result = render(text)
-    return _get_rid_of_hash(result)
-
 # Some names are encoded as #name or http://some-url#name
 # This function returns the name
 def _get_rid_of_hash(name):
@@ -92,12 +60,10 @@ def _get_rid_of_hash(name):
         return tokens[1]
     return name
 
-
 # Set an attribute for an object
 def _set_attr(object_dic, key, value):
     object_dic[key] = value
     return object_dic
-
 
 def _parse_rdf(input_dic):
     classes_map = {}
@@ -164,7 +130,7 @@ def _parse_rdf(input_dic):
 # This function extracts all information needed for the creation of the python class files like the comments or the
 # class name. After the extraction the function write_files is called to write the files with the template engine
 # chevron
-def _write_python_files(elem_dict, version, template_files):
+def _write_python_files(elem_dict, version, langPack):
 
     # Iterate over Classes
     for class_name in elem_dict.keys():
@@ -192,7 +158,7 @@ def _write_python_files(elem_dict, version, template_files):
             comment = ""
 
         _write_files(class_name, attributes_array, elem_dict[class_name]['class_origin'],
-                     class_location, sub_class_of, comment, version, template_files)
+                     class_location, sub_class_of, comment, version, langPack)
 
 
 def _create_init(path):
@@ -216,7 +182,7 @@ def _create_base(path):
 
 
 def _write_files(class_name, attributes_array, class_origin, class_location,
-                 sub_class_of, comment, version, template_files):
+                 sub_class_of, comment, version, langPack):
 
     version_path = os.path.join(os.getcwd(), version)
     if not os.path.exists(version_path):
@@ -235,18 +201,32 @@ def _write_files(class_name, attributes_array, class_origin, class_location,
         # If class is a subclass a super().__init__() is needed
         super_init = True
 
+    # The entry dataType for an attribute is only set for basic data types. If the entry is not set here, the attribute
+    # is a reference to another class and therefore the entry dataType is generated and set to the multiplicity
+    for i in range(len(attributes_array)):
+        if 'dataType' not in attributes_array[i].keys() and 'multiplicity' in attributes_array[i].keys():
+            attributes_array[i]['dataType'] = attributes_array[i]['multiplicity']
+
+    template_files = langPack.template_files
+    partials = langPack.partials
+
     for template_info in template_files:
         class_file = os.path.join(version_path, class_name + template_info["ext"])
         if not os.path.exists(class_file):
             with open(class_file, 'w') as file:
 
                 with open(template_info["filename"]) as f:
-                    output = chevron.render(f, {"class_name": class_name, "attributes": attributes_array,
-                                                "class_origin": class_origin,
-                                                "setDefault": _set_default, "subClassOf": sub_class_of,
-                                                "ClassLocation": class_location, "super_init": super_init,
-                                                "class_comment": comment, "withoutHash": _without_hash,
-                                                })
+                    args = {
+                        'data': {
+                            "class_name": class_name, "attributes": attributes_array,
+                            "class_origin": class_origin, "subClassOf": sub_class_of,
+                            "ClassLocation": class_location, "super_init": super_init,
+                            "class_comment": comment, "langPack": langPack,
+                        },
+                        'template': f,
+                        'partials_dict': partials
+                    }
+                    output = chevron.render(**args)
                 file.write(output)
         else:
             logger.info("Class file for class {} already exists.".format(class_file))
@@ -352,8 +332,7 @@ def _merge_classes(profiles_dict):
                         class_dict[class_key]['attributes'].append(attr)
     return class_dict
 
-
-def cim_generate(directory, version, templates="[ { \"filename\": \"cimpy_class_template.mustache\", \"ext\": \".py\" } ]"):
+def cim_generate(directory, version, langPack):
     """Generates cgmes python classes from cgmes ontology
 
     This function uses package xmltodict to parse the RDF files. The parse_rdf function sorts the classes to
@@ -394,10 +373,8 @@ def cim_generate(directory, version, templates="[ { \"filename\": \"cimpy_class_
     # merge classes from different profiles into one class and track origin of the classes and their attributes
     class_dict_with_origins = _merge_classes(profiles_dict)
 
-    template_files = json.loads(templates)
-
     # get information for writing python files and write python files
-    _write_python_files(class_dict_with_origins, version, template_files)
+    _write_python_files(class_dict_with_origins, version, langPack)
 
     os.chdir(cwd)
 

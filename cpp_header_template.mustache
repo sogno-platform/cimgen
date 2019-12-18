@@ -2,7 +2,7 @@
 #define {{class_name}}_H
 
 {{#attributes}}
-#include "{{#withoutHash}}{{range}}{{dataType}}{{/withoutHash}}.hpp"
+#include "{{> class}}.hpp"
 {{/attributes}}
 
 /*	
@@ -10,20 +10,20 @@
 */
 class {{class_name}}: public {{subClassOf}}
 {
-private:
+public:
 {{#attributes}}
-        {{#withoutHash}}{{range}}{{dataType}}{{/withoutHash}} *_{{label}}; 	/* {{comment}} Default: {{#setDefault}}{{dataType}}{{/setDefault}} */
+        {{> class}} *_{{label}}; 	/* {{comment}} Default: {{#setDefault}}{{dataType}}{{/setDefault}} */
 {{/attributes}}
 
 public:
-{{#if attribute}}
+{{#if attributes}}
 	{{class_name}}()
 	{
-{{#attribute}}
-		{{label}} = {{#withoutHash}}{{range}}{{dataType}}{{/withoutHash}}();
-{{/attribute}}
+{{#attributes}}
+		{{label}} = {{> class}}();
+{{/attributes}}
 	};
-{{/if attribute}}
+{{/if attributes}}
 
 	/* constructor initialising all attributes to null */
 	{{class_name}}();
