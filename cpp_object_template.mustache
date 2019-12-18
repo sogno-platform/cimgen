@@ -1,0 +1,26 @@
+
+#include "{{subClassOf}}.hpp"
+#include "{{class_name}}.hpp"
+
+{{#attributes}}
+#include "{{> class}}.hpp"
+{{/attributes}}
+
+{{class_name}}::{{class_name}}() : {{> null_init_list}}
+{
+};
+
+{{class_name}}::{{class_name}}({{#attributes}}{{> class}} *_{{label}}_, {{/attributes}} char *super_args) {{#super_init}}: {{subClassOf}} (*super_args){{/super_init}}
+{
+{{#attributes}}
+	_{{label}} = _{{label}}_;
+{{/attributes}}
+};
+
+{{#attributes}}
+void {{class_name}}_set{{label}}({{class_name}}* obj, {{> class}}* _{{label}}_){
+	obj->_{{label}} = _{{label}}_;
+}
+{{/attributes}}
+
+

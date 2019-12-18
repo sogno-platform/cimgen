@@ -1,5 +1,6 @@
 
-template_files = [ { "filename": "cpp_header_template.mustache", "ext": ".hpp" } ]
+template_files = [ { "filename": "cpp_header_template.mustache", "ext": ".hpp" },
+                   { "filename": "cpp_object_template.mustache", "ext": ".cpp" } ]
 
 partials = { 'class':          '{{#langPack.format_class}}{{range}} {{dataType}}{{/langPack.format_class}}',
              'null_init_list': '{{#attributes}} _{{label}}_({{#langPack._set_default}}{{dataType}}{{/langPack._set_default}}), {{/attributes}}'
