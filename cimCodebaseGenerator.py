@@ -15,11 +15,12 @@ def _set_default(text, render):
     # datatype of the attribute. If no datatype is set and there is also no multiplicity entry for an attribute, the
     # default value is set to None. The multiplicity is set for all attributes, but the datatype is only set for basic
     # data types. If the data type entry for an attribute is missing, the attribute contains a reference and therefore
-    # the default value is either None or [] depending on the mutliplicity. See also write_python_files
+    # the default value is either None or 'list' depending on the mutliplicity. The string 'list' as default value
+    # is changed to an instance of list in the cimimport function (See CIMpy). See also write_python_files.
     if result in ['M:1', 'M:0..1', 'M:1..1', '']:
         return 'None'
     elif result in ['M:0..n', 'M:1..n'] or 'M:' in result:
-        return '"many"'
+        return '"list"'
 
     result = result.split('#')[1]
     if result in ['integer', 'Integer']:
