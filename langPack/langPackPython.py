@@ -1,3 +1,5 @@
+import os
+
 template_files=[ { "filename": "cimpy_class_template.mustache", "ext": ".py" } ]
 partials = {}
 
@@ -26,4 +28,27 @@ def _set_default(text, render):
         # everything else should be a float
         return '0.0'
 
+def _create_init(path):
+    init_file = path + "/__init__.py"
+    with open(init_file, 'w'):
+        pass
+
+# creates the Base class file, all classes inherit from this class
+def _create_base(path):
+    base_path = path + "/Base.py"
+    base = ['from enum import Enum\n\n', '\n', 'class Base():\n', '    """\n', '    Base Class for CIM\n',
+            '    """\n\n',
+            '    cgmesProfile = Enum("cgmesProfile", {"EQ": 0, "SSH": 1, "TP": 2, "SV": 3, "DY": 4, "GL": 5, "DI": 6})',
+            '\n\n', '    def __init__(self, *args, **kw_args):\n', '        pass\n',
+            '\n', '    def printxml(self, dict={}):\n', '        return dict\n']
+
+    with open(base_path, 'w') as f:
+        for line in base:
+            f.write(line)
+
+def setup(version_path):
+    if not os.path.exists(version_path):
+        os.makedirs(version_path)
+        _create_init(version_path)
+        _create_base(version_path)
 

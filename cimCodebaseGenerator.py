@@ -160,37 +160,11 @@ def _write_python_files(elem_dict, version, langPack):
         _write_files(class_name, attributes_array, elem_dict[class_name]['class_origin'],
                      class_location, sub_class_of, comment, version, langPack)
 
-
-def _create_init(path):
-    init_file = path + "/__init__.py"
-    with open(init_file, 'w'):
-        pass
-
-
-# creates the Base class file, all classes inherit from this class
-def _create_base(path):
-    base_path = path + "/Base.py"
-    base = ['from enum import Enum\n\n', '\n', 'class Base():\n', '    """\n', '    Base Class for CIM\n',
-            '    """\n\n',
-            '    cgmesProfile = Enum("cgmesProfile", {"EQ": 0, "SSH": 1, "TP": 2, "SV": 3, "DY": 4, "GL": 5, "DI": 6})',
-            '\n\n', '    def __init__(self, *args, **kw_args):\n', '        pass\n',
-            '\n', '    def printxml(self, dict={}):\n', '        return dict\n']
-
-    with open(base_path, 'w') as f:
-        for line in base:
-            f.write(line)
-
-
 def _write_files(class_name, attributes_array, class_origin, class_location,
                  sub_class_of, comment, version, langPack):
 
     version_path = os.path.join(os.getcwd(), version)
-    if not os.path.exists(version_path):
-        os.makedirs(version_path)
-        _create_init(version_path)
-        _create_base(version_path)
-
-    class_file = os.path.join(version_path, class_name + ".py")
+    langPack.setup(version_path)
 
     if sub_class_of is None:
         # If class has no subClassOf key it is a subclass of the Base class

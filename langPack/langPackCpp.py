@@ -1,3 +1,4 @@
+import os
 
 template_files = [ { "filename": "cpp_header_template.mustache", "ext": ".hpp" },
                    { "filename": "cpp_object_template.mustache", "ext": ".cpp" } ]
@@ -49,4 +50,49 @@ def _set_default(text, render):
         # everything else should be a float
         return '0.0'
 
+def setup(version_path):
+    if not os.path.exists(version_path):
+        os.makedirs(version_path)
+
+    for fileDetails in [
+        {
+            "data": [
+                    'class Base() {\n',
+                    '    enum cgmesProfile = {"EQ": 0, "SSH": 1, "TP": 2, "SV": 3, "DY": 4, "GL": 5, "DI": 6};',
+                    '};'
+                  ],
+            "path": version_path + "/Base.hpp"
+        },
+        {
+            "data": [
+                     ''
+                  ],
+            "path": version_path + "/Task.hpp"
+        },
+        {
+            "data": [
+                     '#include "IEC61970.hpp"'
+                     ''
+                  ],
+            "path": version_path + "/Folders.hpp"
+        },
+        {
+            "data": [
+                    'class NonConformLoadSchedule() {\n',
+                    '};'
+                  ],
+            "path": version_path + "/NonConformLoadSchedule.hpp"
+        },
+        {
+            "data": [
+                    'class ConformLoadSchedule() {\n',
+                    '};'
+                  ],
+            "path": version_path + "/ConformLoadSchedule.hpp"
+        },
+    ]:
+        if not os.path.exists(fileDetails['path']):
+            with open(fileDetails['path'], 'w') as f:
+                for line in fileDetails['data']:
+                    f.write(line)
 
