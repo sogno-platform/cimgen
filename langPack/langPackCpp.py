@@ -1,5 +1,13 @@
 import os
 
+def location(version):
+     return "BaseClass.h";
+
+base = {
+    "base_class": "BaseClass",
+    "class_location": location
+}
+
 template_files = [ { "filename": "cpp_header_template.mustache", "ext": ".hpp" },
                    { "filename": "cpp_object_template.mustache", "ext": ".cpp" } ]
 
@@ -57,15 +65,28 @@ def setup(version_path):
     for fileDetails in [
         {
             "data": [
-                    'class Base() {\n',
-                    '    enum cgmesProfile = {"EQ": 0, "SSH": 1, "TP": 2, "SV": 3, "DY": 4, "GL": 5, "DI": 6};',
-                    '};'
-                  ],
-            "path": version_path + "/Base.hpp"
+                '#ifndef BASECLASS_HPP\n',
+                '#define BASECLASS_HPP\n',
+                '\n',
+                    'class BaseClass {\n',
+                    '    enum cgmesProfile {EQ = 0, SSH = 1, TP = 2, SV = 3, DY = 4, GL = 5, DI = 6};\n',
+                    '    virtual ~BaseClass();\n',
+                    '};\n'
+                '\n',
+                '#endif // BASECLASS_HPP\n',
+            ],
+            "path": version_path + "/BaseClass.h"
         },
         {
             "data": [
-                     ''
+                    '#include "BaseClass.h"\n',
+                  ],
+            "path": version_path + "/BaseClass.hpp"
+        },
+        {
+            "data": [
+                    'class Task {\n',
+                    '};'
                   ],
             "path": version_path + "/Task.hpp"
         },
@@ -78,17 +99,75 @@ def setup(version_path):
         },
         {
             "data": [
-                    'class NonConformLoadSchedule() {\n',
-                    '};'
+                '#ifndef NONCONFORMLOADSCHEDULE_HPP\n',
+                '#define NONCONFORMLOADSCHEDULE_HPP\n',
+                    'class NonConformLoadSchedule {\n',
+                    '};\n'
+                '#endif // NONCONFORMLOADSCHEDULE_HPP\n',
                   ],
             "path": version_path + "/NonConformLoadSchedule.hpp"
         },
         {
             "data": [
-                    'class ConformLoadSchedule() {\n',
-                    '};'
+                '#ifndef CONFORMLOADSCHEDULE_HPP\n',
+                '#define CONFORMLOADSCHEDULE_HPP\n',
+                    'class ConformLoadSchedule {\n',
+                    '};\n'
+                '#endif // CONFORMLOADSCHEDULE_HPP\n',
                   ],
             "path": version_path + "/ConformLoadSchedule.hpp"
+        },
+        {
+            "data": [
+                '#ifndef CIMFACTORY_HPP\n',
+                '#define CIMFACTORY_HPP\n',
+                '\n',
+                '#include <string>\n',
+                '#include <unordered_map>\n',
+                '#include "BaseClass.h"\n',
+                '\n',
+                'class CIMFactory\n',
+                '{\n',
+                'public:\n',
+	            'CIMFactory();\n',
+	            'static BaseClass* CreateNew(const std::string& name);\n',
+	            'static bool IsCIMClass(const std::string& name);\n',
+                '\n',
+                'private:\n',
+	            'static std::unordered_map<std::string, BaseClass* (*)()> factory_map;\n',
+                '};\n',
+                '\n',
+                '#endif // CIMFACTORY_HPP\n',
+            ],
+            "path": version_path + "/CIMFactory.hpp"
+        },
+        {
+            "data": [
+                '#include "CIMFactory.hpp"\n',
+                '#include "Folders.hpp"\n',
+                '\n',
+                'static std::unordered_map<std::string, BaseClass* (*)()> initialize();\n',
+                'std::unordered_map<std::string, BaseClass* (*)()> CIMFactory::factory_map = initialize();\n',
+                '\n',
+                'BaseClass* CIMFactory::CreateNew(const std::string& name)\n',
+                '{\n',
+                '    std::unordered_map<std::string, BaseClass* (*)()>::iterator it = factory_map.find(name);\n',
+                '    if(it != factory_map.end())\n',
+                '        return (*it->second)();\n',
+                '    else\n',
+                '        return nullptr;\n',
+                '}\n',
+                '\n',
+                'bool CIMFactory::IsCIMClass(const std::string& name)\n',
+                '{\n',
+                '    std::unordered_map<std::string, BaseClass* (*)()>::iterator it = factory_map.find(name);\n',
+                '    if(it == factory_map.end())\n',
+                '        return false;\n',
+                '    else\n',
+                '        return true;\n',
+                '}\n',
+            ],
+            "path": version_path + "/CIMFactory.cpp"
         },
     ]:
         if not os.path.exists(fileDetails['path']):

@@ -23,4 +23,16 @@ void {{class_name}}_set{{label}}({{class_name}}* obj, {{> class}}* _{{label}}_){
 }
 {{/attributes}}
 
+{{#attributes}}
+bool assign_{{class_name}}_{{label}}(BaseClass* BaseClass_ptr1, BaseClass* BaseClass_ptr2)
+{
+	if({{class_name}}* element = dynamic_cast<{{class_name}}*>(BaseClass_ptr1))
+	{
+		element->_{{label}} dynamic_cast<{{> class}}*>(BaseClass_ptr2);
+		if(element->_{{label}} != nullptr)
+			return true;
+	}
+	return false;
+}
 
+{{/attributes}}

@@ -3,7 +3,7 @@
 
 #include "{{subClassOf}}.hpp"
 {{#attributes}}
-#include "{{> class}}.hpp"
+class {{> class}};
 {{/attributes}}
 
 /*
@@ -13,10 +13,9 @@ class {{class_name}}: public {{subClassOf}}
 {
 public:
 {{#attributes}}
-        {{> class}} *_{{label}}; 	/* {{comment}} Default: {{#setDefault}}{{dataType}}{{/setDefault}} */
+	{{> class}} *_{{label}}; 	/* {{comment}} Default: {{#setDefault}}{{dataType}}{{/setDefault}} */
 {{/attributes}}
 
-public:
 {{#if attributes}}
 	{{class_name}}()
 	{
@@ -28,6 +27,7 @@ public:
 
 	/* constructor initialising all attributes to null */
 	{{class_name}}();
+	virtual ~{{class_name}}();
 };
 
 #endif
