@@ -1,0 +1,32 @@
+#ifndef {{class_name}}_H
+#define {{class_name}}_H
+
+{{#attributes}}
+#include "{{> class}}.hpp"
+{{/attributes}}
+
+/*	
+{{{class_comment}}}
+*/
+class {{class_name}}: public {{subClassOf}}
+{
+public:
+{{#attributes}}
+        {{> class}} *_{{label}}; 	/* {{comment}} Default: {{#setDefault}}{{dataType}}{{/setDefault}} */
+{{/attributes}}
+
+public:
+{{#if attributes}}
+	{{class_name}}()
+	{
+{{#attributes}}
+		{{label}} = {{> class}}();
+{{/attributes}}
+	};
+{{/if attributes}}
+
+	/* constructor initialising all attributes to null */
+	{{class_name}}();
+};
+
+#endif
