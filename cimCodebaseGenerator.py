@@ -168,8 +168,8 @@ def _write_files(class_name, attributes_array, class_origin, class_location,
 
     if sub_class_of is None:
         # If class has no subClassOf key it is a subclass of the Base class
-        sub_class_of = "Base"
-        class_location = "cimpy." + version + ".Base"
+        sub_class_of = langPack.base['base_class']
+        class_location = langPack.base['class_location'](version)
         super_init = False
     else:
         # If class is a subclass a super().__init__() is needed

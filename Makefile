@@ -10,7 +10,7 @@ cimpy:
 	mkdir cimpy
 
 build:
-	docker build -t cim-codebase-generator .
+	docker build -t cim-codebase-generator . -f Dockerfile.cpp
 
 build-python: cimpy
 	docker build -t cim-codebase-generator-python -f Dockerfile.python .
@@ -24,3 +24,4 @@ run:
 
 .PHONY:
 	build build-python run
+

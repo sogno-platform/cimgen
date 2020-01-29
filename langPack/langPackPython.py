@@ -1,6 +1,15 @@
 import os
 
+def location(version):
+     return "cimpy." + version + ".Base";
+
+base = {
+    "base_class": "Base",
+    "class_location": location
+}
+
 template_files=[ { "filename": "cimpy_class_template.mustache", "ext": ".py" } ]
+
 partials = {}
 
 # called by chevron, text contains the label {{dataType}}, which is evaluated by the renderer (see class template)
