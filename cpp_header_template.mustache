@@ -2,9 +2,8 @@
 #define {{class_name}}_H
 
 #include "{{subClassOf}}.hpp"
-{{#attributes}}
-class {{> class}};
-{{/attributes}}
+#include "String.hpp"
+{{#langPack._create_attribute_includes}}{{attributes}}{{/langPack._create_attribute_includes}}
 
 /*
 {{{class_comment}}}
@@ -13,21 +12,24 @@ class {{class_name}}: public {{subClassOf}}
 {
 public:
 {{#attributes}}
-	{{> class}} *_{{label}}; 	/* {{comment}} Default: {{#setDefault}}{{dataType}}{{/setDefault}} */
+	{{> class}} *_{{label}}; 	/* {{comment}} Default: {{#langPack._set_default}}{{dataType}}{{/langPack._set_default}} */
 {{/attributes}}
 
-{{#if attributes}}
-	{{class_name}}()
-	{
 {{#attributes}}
-		{{label}} = {{> class}}();
+void {{class_name}}_set{{label}}({{class_name}}* obj, {{> class}}* _{{label}}_);
 {{/attributes}}
-	};
-{{/if attributes}}
+
+enum class {{class_name}}Enum {
+{{#instances}}
+	{{label}},
+{{/instances}}
+};
 
 	/* constructor initialising all attributes to null */
 	{{class_name}}();
 	virtual ~{{class_name}}();
 };
+
+BaseClass* {{class_name}}_factory();
 
 #endif

@@ -43,11 +43,13 @@ def _extract_string(object_dic):
 
 # Add a new class into a profile
 def _new_class(profile, class_name, object_dic):
-    if not (class_name in profile):
-        profile[class_name] = object_dic or {}
-        profile[class_name]['attributes'] = []
-    else:
-        logger.info("Class {} already exists".format(class_name))
+    if class_name not in [ 'String' ]:
+        if not (class_name in profile):
+            profile[class_name] = object_dic or {}
+            profile[class_name]['attributes'] = []
+            profile[class_name]['instances'] = []
+        else:
+            logger.info("Class {} already exists".format(class_name))
     return profile
 
 # Some names are encoded as #name or http://some-url#name
@@ -69,6 +71,7 @@ def _parse_rdf(input_dic):
     classes_map = {}
     package_name = []
     attributes = []
+    instances = []
 
     # Generates list with dictionaries as elements
     descriptions = input_dic['rdf:RDF']['rdf:Description']
@@ -109,6 +112,8 @@ def _parse_rdf(input_dic):
             elif object_dic['type'] == "http://www.w3.org/1999/02/22-rdf-syntax-ns#Property":
                 # Property -> Attribute
                 attributes.append(object_dic)
+            elif object_dic["type"] != "http://iec.ch/TC57/1999/rdf-schema-extensions-19990926#ClassCategory":
+                instances.append(object_dic)
 
         # only for CGMES-Standard
         if 'stereotype' in object_dic.keys():
@@ -124,6 +129,15 @@ def _parse_rdf(input_dic):
         else:
             logger.info("Class {} for attribute {} not found.".format(clarse, attribute))
 
+    # Add instances to corresponding class
+    for instance in instances:
+        clarse = _get_rid_of_hash(instance['type'])
+        if clarse and clarse in classes_map:
+            classes_map[clarse]['instances'].append(instance)
+        else:
+            logger.info("Class {} for instance {} not found.".format(clarse, instance))
+
+
     return {package_name[0]: classes_map}
 
 
@@ -138,6 +152,7 @@ def _write_python_files(elem_dict, version, langPack):
 
         # extract attributes
         attributes_array = _find_multiple_attributes(elem_dict[class_name]['attributes'])
+        instances_array = elem_dict[class_name]['instances']
 
         class_location = None
 
@@ -157,11 +172,15 @@ def _write_python_files(elem_dict, version, langPack):
         else:
             comment = ""
 
+        for attribute in attributes_array:
+            if "comment" in attribute:
+                attribute["comment"] = attribute["comment"].replace('"', "`")
+                attribute["comment"] = attribute["comment"].replace("'", "`")
         _write_files(class_name, attributes_array, elem_dict[class_name]['class_origin'],
-                     class_location, sub_class_of, comment, version, langPack)
+            class_location, sub_class_of, comment, version, langPack, instances_array)
 
 def _write_files(class_name, attributes_array, class_origin, class_location,
-                 sub_class_of, comment, version, langPack):
+                 sub_class_of, comment, version, langPack, instances):
 
     version_path = os.path.join(os.getcwd(), version)
     langPack.setup(version_path)
@@ -188,14 +207,13 @@ def _write_files(class_name, attributes_array, class_origin, class_location,
         class_file = os.path.join(version_path, class_name + template_info["ext"])
         if not os.path.exists(class_file):
             with open(class_file, 'w') as file:
-
                 with open(template_info["filename"]) as f:
                     args = {
                         'data': {
                             "class_name": class_name, "attributes": attributes_array,
                             "class_origin": class_origin, "subClassOf": sub_class_of,
                             "ClassLocation": class_location, "super_init": super_init,
-                            "class_comment": comment, "langPack": langPack,
+                            "class_comment": comment, "langPack": langPack, "instances": instances
                         },
                         'template': f,
                         'partials_dict': partials

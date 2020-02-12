@@ -36,3 +36,8 @@ bool assign_{{class_name}}_{{label}}(BaseClass* BaseClass_ptr1, BaseClass* BaseC
 }
 
 {{/attributes}}
+
+BaseClass* {{class_name}}_factory()
+{
+      return new {{class_name}};
+}

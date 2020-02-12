@@ -1,4 +1,5 @@
 import os
+import json
 
 def location(version):
      return "BaseClass.h";
@@ -12,7 +13,7 @@ template_files = [ { "filename": "cpp_header_template.mustache", "ext": ".hpp" }
                    { "filename": "cpp_object_template.mustache", "ext": ".cpp" } ]
 
 partials = { 'class':          '{{#langPack.format_class}}{{range}} {{dataType}}{{/langPack.format_class}}',
-             'null_init_list': '{{#attributes}} _{{label}}_({{#langPack._set_default}}{{dataType}}{{/langPack._set_default}}), {{/attributes}}'
+             'null_init_list': '{{#attributes}} _{{label}}({{#langPack._set_default}}{{dataType}}{{/langPack._set_default}}), {{/attributes}}'
            }
 
 def format_class(text, render):
@@ -37,6 +38,27 @@ def _get_rid_of_hash(name):
         return tokens[1]
     return name
 
+def _create_attribute_includes(text, render):
+    unique = []
+    include_string = ""
+    in_ = render(text)
+    jsonString1 = in_.replace("'", "\"")
+    jsonString = jsonString1.replace("&quot;", "\"")
+    if jsonString != None and jsonString != "":
+        attributes = json.loads(jsonString)
+        for attribute in attributes:
+            clarse = ''
+            if "range" in attribute:
+                clarse = _get_rid_of_hash(attribute["range"])
+            elif "dataType" in attribute:
+                clarse = _get_rid_of_hash(attribute["dataType"])
+            if clarse not in unique and clarse not in [ "String", "" ]:
+                unique.append(clarse)
+    for clarse in unique:
+        include_string += '\nclass ' + clarse + ';'
+
+    return include_string
+
 def _set_default(text, render):
     result = render(text)
 
@@ -46,7 +68,7 @@ def _set_default(text, render):
     # data types. If the data type entry for an attribute is missing, the attribute contains a reference and therefore
     # the default value is either None or [] depending on the mutliplicity. See also write_python_files
     if result in ['M:1', 'M:0..1', 'M:1..1', 'M:0..n', 'M:1..n', ''] or 'M:' in result:
-        return 'null'
+        return '0'
     result = result.split('#')[1]
     if result in ['integer', 'Integer']:
         return '0'
