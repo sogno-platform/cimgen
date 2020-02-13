@@ -41,11 +41,11 @@ def _get_rid_of_hash(name):
 def _create_attribute_includes(text, render):
     unique = []
     include_string = ""
-    in_ = render(text)
-    jsonString1 = in_.replace("'", "\"")
-    jsonString = jsonString1.replace("&quot;", "\"")
-    if jsonString != None and jsonString != "":
-        attributes = json.loads(jsonString)
+    inputText = render(text)
+    jsonString = inputText.replace("'", "\"")
+    jsonStringNoHtmlEsc = jsonString.replace("&quot;", "\"")
+    if jsonStringNoHtmlEsc != None and jsonStringNoHtmlEsc != "":
+        attributes = json.loads(jsonStringNoHtmlEsc)
         for attribute in attributes:
             clarse = ''
             if "range" in attribute:
