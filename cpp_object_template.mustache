@@ -28,7 +28,7 @@ bool assign_{{class_name}}_{{label}}(BaseClass* BaseClass_ptr1, BaseClass* BaseC
 {
 	if({{class_name}}* element = dynamic_cast<{{class_name}}*>(BaseClass_ptr1))
 	{
-		element->_{{label}} dynamic_cast<{{> class}}*>(BaseClass_ptr2);
+		element->_{{label}} = dynamic_cast<{{> class}}*>(BaseClass_ptr2);
 		if(element->_{{label}} != nullptr)
 			return true;
 	}
