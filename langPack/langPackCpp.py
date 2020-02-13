@@ -52,10 +52,14 @@ def _create_attribute_includes(text, render):
                 clarse = _get_rid_of_hash(attribute["range"])
             elif "dataType" in attribute:
                 clarse = _get_rid_of_hash(attribute["dataType"])
-            if clarse not in unique and clarse not in [ "String", "" ]:
+            if clarse not in unique:
                 unique.append(clarse)
     for clarse in unique:
-        include_string += '\nclass ' + clarse + ';'
+        if clarse != "":
+            if clarse == "String":
+                include_string += '\n#include "String.hpp"'
+            else:
+                include_string += '\nclass ' + clarse + ';'
 
     return include_string
 
