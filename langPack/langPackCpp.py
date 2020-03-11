@@ -35,7 +35,6 @@ def create_construct_list(text, render):
             result += _format_class([_range, _dataType]) + ' *_' + a["label"]  + '_, '
         (_range, _dataType) =  get_dataType_and_range(attributes_json[-1])
         result += _format_class([_range, _dataType]) + ' *_' + attributes_json[-1]["label"] + '_'
-    print (result)
 
     return result
 

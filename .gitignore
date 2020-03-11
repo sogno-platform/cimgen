@@ -1,2 +1,4 @@
 *.swp
-googletest*
+googletest/*
+build/*
+cimpp/*
