@@ -8,10 +8,12 @@ std::unordered_map<std::string, BaseClass* (*)()> CIMFactory::factory_map = init
 BaseClass* CIMFactory::CreateNew(const std::string& name)
 {
     std::unordered_map<std::string, BaseClass* (*)()>::iterator it = factory_map.find(name);
-    if(it != factory_map.end())
+    if(it != factory_map.end()) {
         return (*it->second)();
-    else
+    }
+    else {
         return nullptr;
+    }
 }
 
 bool CIMFactory::IsCIMClass(const std::string& name)

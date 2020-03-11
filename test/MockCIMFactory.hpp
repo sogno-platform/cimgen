@@ -11,10 +11,14 @@
 class MockCIMFactory: public CIMFactory
 {
 public:
-	MockCIMFactory() {}
-	~MockCIMFactory() {}
-	MOCK_METHOD((BaseClass*), CreateNew, (const std::string& name), (override));
-	//MOCK_METHOD(bool, IsCIMClass, std::string& name);
+    MockCIMFactory() { }
+    ~MockCIMFactory() { }
+    BaseClass* CreateNew(const std::string& name) override {
+        return CIMFactory::CreateNew(name);
+    }
+    bool IsCIMClass(std::string& name) {
+        return CIMFactory::CreateNew(name);
+    }
 };
 
 #endif // MOCKCIMFACTORY_HPP
