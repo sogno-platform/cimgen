@@ -9,8 +9,10 @@ class CIMFactory
 {
 public:
 	CIMFactory();
-	static BaseClass* CreateNew(const std::string& name);
-	static bool IsCIMClass(const std::string& name);
+	virtual ~CIMFactory();
+	virtual BaseClass* CreateNew(const std::string& name);
+	virtual bool IsCIMClass(const std::string& name);
+	static CIMFactory* GetCIMFactory();
 
 private:
 	static std::unordered_map<std::string, BaseClass* (*)()> factory_map;

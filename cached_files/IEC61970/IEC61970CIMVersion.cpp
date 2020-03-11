@@ -5,8 +5,6 @@
 
 #include "IEC61970CIMVersion.h"
 
-using IEC61970CIMVersion;
-
 IEC61970CIMVersion::IEC61970CIMVersion(){}
 
 IEC61970CIMVersion::~IEC61970CIMVersion(){}

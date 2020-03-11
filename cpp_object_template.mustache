@@ -6,15 +6,12 @@
 #include "{{> class}}.hpp"
 {{/attributes}}
 
-{{class_name}}::{{class_name}}() : {{> null_init_list}}
+{{class_name}}::{{class_name}}()
 {
 };
 
-{{class_name}}::{{class_name}}({{#attributes}}{{> class}} *_{{label}}_, {{/attributes}} char *super_args) {{#super_init}}: {{subClassOf}} (*super_args){{/super_init}}
+{{class_name}}::~{{class_name}}()
 {
-{{#attributes}}
-	_{{label}} = _{{label}}_;
-{{/attributes}}
 };
 
 {{#attributes}}
