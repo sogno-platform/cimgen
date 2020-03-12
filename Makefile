@@ -29,7 +29,7 @@ run:
 	cd cimpp && echo "\n#endif" >> IEC61970.hpp
 	cd cimpp && echo "\nstatic std::unordered_map<std::string, BaseClass* (*)()> initialize() {" >> CIMFactory.cpp
 	cd cimpp && echo "\n    std::unordered_map<std::string, BaseClass* (*)()> map;" >> CIMFactory.cpp
-	cd cimpp && find . -iname "*.hpp" | grep -v assignments | grep -v Folders | grep -v Task | grep -v IEC61970 | grep -v ConformLoad | grep -v Factory | grep -v String | grep -v BaseClass | sed "s/\.\///" | sed "s/\.hpp//" | sed "s/\(.*\)/    map.insert(std::make_pair(\"\1\", \&&_factory));/" >> CIMFactory.cpp
+	cd cimpp && find . -iname "*.hpp" | grep -v assignments | grep -v Folders | grep -v "./Task" | grep -v IEC61970 | grep -v ConformLoad | grep -v Factory | grep -v String | grep -v BaseClass | sort | sed "s/\.\///" | sed "s/\.hpp//" | sed "s/\(.*\)/    map.insert(std::make_pair(\"\1\", \&&_factory));/" >> CIMFactory.cpp
 	cd cimpp && echo "    return map;" >> CIMFactory.cpp
 	cd cimpp && echo "};" >> CIMFactory.cpp
 

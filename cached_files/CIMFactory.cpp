@@ -18,7 +18,8 @@ BaseClass* CIMFactory::CreateNew(const std::string& name)
 
 bool CIMFactory::IsCIMClass(const std::string& name)
 {
-    std::unordered_map<std::string, BaseClass* (*)()>::iterator it = factory_map.find(name);
+    std::string search = name.substr(4,std::string::npos);
+    std::unordered_map<std::string, BaseClass* (*)()>::iterator it = factory_map.find(search);
     if(it == factory_map.end())
         return false;
     else
