@@ -1,4 +1,5 @@
 import os
+import json
 
 def location(version):
      return "BaseClass.h";
@@ -12,14 +13,51 @@ template_files = [ { "filename": "cpp_header_template.mustache", "ext": ".hpp" }
                    { "filename": "cpp_object_template.mustache", "ext": ".cpp" } ]
 
 partials = { 'class':          '{{#langPack.format_class}}{{range}} {{dataType}}{{/langPack.format_class}}',
-             'null_init_list': '{{#attributes}} _{{label}}_({{#langPack._set_default}}{{dataType}}{{/langPack._set_default}}), {{/attributes}}'
+             'create_init_list': '{{#langPack.null_init_list}}{{attributes}}{{/langPack.null_init_list}}',
+             'create_construct_list': '{{#langPack.create_construct_list}}{{attributes}}{{/langPack.create_construct_list}}',
            }
+
+def get_dataType_and_range(attribute):
+    _range = _datatype = ""
+    if "range" in attribute:
+        _range = attribute["range"]
+    if "dataType" in attribute:
+        _dataType = attribute["dataType"]
+    return (_range, _dataType)
+
+def create_construct_list(text, render):
+    attributes_txt = render(text)
+    result = ""
+    if (attributes_txt != ""):
+        attributes_json = eval(attributes_txt)
+        for a in attributes_json[:-1]:
+            (_range, _dataType) =  get_dataType_and_range(a)
+            result += _format_class([_range, _dataType]) + ' *_' + a["label"]  + '_, '
+        (_range, _dataType) =  get_dataType_and_range(attributes_json[-1])
+        result += _format_class([_range, _dataType]) + ' *_' + attributes_json[-1]["label"] + '_'
+
+    return result
+
+def null_init_list(text, render):
+    attributes_txt = render(text)
+    result = ""
+    if (attributes_txt != ""):
+        attributes_json = eval(attributes_txt)
+        for a in attributes_json[:-1]:
+            result += "_" + a["label"] + "(" + set_default(a["dataType"]) + "), "
+        result += "_" + attributes_json[-1]["label"] + "(" + set_default(attributes_json[-1]["dataType"]) + ")"
+
+    return result
 
 def format_class(text, render):
     result = render(text)
     tokens = result.split(' ')
     if len(tokens) < 2:
         return None;
+    else:
+        return _format_class(tokens)
+
+def _format_class(tokens):
     if (tokens[0]) == '':
         val = _get_rid_of_hash(tokens[1]);
         return val
@@ -37,140 +75,56 @@ def _get_rid_of_hash(name):
         return tokens[1]
     return name
 
+def _create_attribute_includes(text, render):
+    unique = []
+    include_string = ""
+    inputText = render(text)
+    jsonString = inputText.replace("'", "\"")
+    jsonStringNoHtmlEsc = jsonString.replace("&quot;", "\"")
+    if jsonStringNoHtmlEsc != None and jsonStringNoHtmlEsc != "":
+        attributes = json.loads(jsonStringNoHtmlEsc)
+        for attribute in attributes:
+            clarse = ''
+            if "range" in attribute:
+                clarse = _get_rid_of_hash(attribute["range"])
+            elif "dataType" in attribute:
+                clarse = _get_rid_of_hash(attribute["dataType"])
+            if clarse not in unique:
+                unique.append(clarse)
+    for clarse in unique:
+        if clarse != "":
+            if clarse == "String":
+                include_string += '\n#include "String.hpp"'
+            else:
+                include_string += '\nclass ' + clarse + ';'
+
+    return include_string
+
 def _set_default(text, render):
     result = render(text)
+    return set_default(result)
+
+def set_default(dataType):
 
     # the field {{dataType}} either contains the multiplicity of an attribute if it is a reference or otherwise the
     # datatype of the attribute. If no datatype is set and there is also no multiplicity entry for an attribute, the
     # default value is set to None. The multiplicity is set for all attributes, but the datatype is only set for basic
     # data types. If the data type entry for an attribute is missing, the attribute contains a reference and therefore
     # the default value is either None or [] depending on the mutliplicity. See also write_python_files
-    if result in ['M:1', 'M:0..1', 'M:1..1', 'M:0..n', 'M:1..n', ''] or 'M:' in result:
-        return 'null'
-    result = result.split('#')[1]
-    if result in ['integer', 'Integer']:
+    if dataType in ['M:1', 'M:0..1', 'M:1..1', 'M:0..n', 'M:1..n', ''] or 'M:' in dataType:
         return '0'
-    elif result in ['String', 'DateTime', 'Date']:
+    dataType = dataType.split('#')[1]
+    if dataType in ['integer', 'Integer']:
+        return '0'
+    elif dataType in ['String', 'DateTime', 'Date']:
         return "''"
-    elif result == 'Boolean':
-        return 'False'
+    elif dataType == 'Boolean':
+        return 'false'
     else:
         # everything else should be a float
-        return '0.0'
+        return '0'
 
 def setup(version_path):
     if not os.path.exists(version_path):
         os.makedirs(version_path)
 
-    for fileDetails in [
-        {
-            "data": [
-                '#ifndef BASECLASS_HPP\n',
-                '#define BASECLASS_HPP\n',
-                '\n',
-                    'class BaseClass {\n',
-                    '    enum cgmesProfile {EQ = 0, SSH = 1, TP = 2, SV = 3, DY = 4, GL = 5, DI = 6};\n',
-                    '    virtual ~BaseClass();\n',
-                    '};\n'
-                '\n',
-                '#endif // BASECLASS_HPP\n',
-            ],
-            "path": version_path + "/BaseClass.h"
-        },
-        {
-            "data": [
-                    '#include "BaseClass.h"\n',
-                  ],
-            "path": version_path + "/BaseClass.hpp"
-        },
-        {
-            "data": [
-                    'class Task {\n',
-                    '};'
-                  ],
-            "path": version_path + "/Task.hpp"
-        },
-        {
-            "data": [
-                     '#include "IEC61970.hpp"'
-                     ''
-                  ],
-            "path": version_path + "/Folders.hpp"
-        },
-        {
-            "data": [
-                '#ifndef NONCONFORMLOADSCHEDULE_HPP\n',
-                '#define NONCONFORMLOADSCHEDULE_HPP\n',
-                    'class NonConformLoadSchedule {\n',
-                    '};\n'
-                '#endif // NONCONFORMLOADSCHEDULE_HPP\n',
-                  ],
-            "path": version_path + "/NonConformLoadSchedule.hpp"
-        },
-        {
-            "data": [
-                '#ifndef CONFORMLOADSCHEDULE_HPP\n',
-                '#define CONFORMLOADSCHEDULE_HPP\n',
-                    'class ConformLoadSchedule {\n',
-                    '};\n'
-                '#endif // CONFORMLOADSCHEDULE_HPP\n',
-                  ],
-            "path": version_path + "/ConformLoadSchedule.hpp"
-        },
-        {
-            "data": [
-                '#ifndef CIMFACTORY_HPP\n',
-                '#define CIMFACTORY_HPP\n',
-                '\n',
-                '#include <string>\n',
-                '#include <unordered_map>\n',
-                '#include "BaseClass.h"\n',
-                '\n',
-                'class CIMFactory\n',
-                '{\n',
-                'public:\n',
-	            'CIMFactory();\n',
-	            'static BaseClass* CreateNew(const std::string& name);\n',
-	            'static bool IsCIMClass(const std::string& name);\n',
-                '\n',
-                'private:\n',
-	            'static std::unordered_map<std::string, BaseClass* (*)()> factory_map;\n',
-                '};\n',
-                '\n',
-                '#endif // CIMFACTORY_HPP\n',
-            ],
-            "path": version_path + "/CIMFactory.hpp"
-        },
-        {
-            "data": [
-                '#include "CIMFactory.hpp"\n',
-                '#include "Folders.hpp"\n',
-                '\n',
-                'static std::unordered_map<std::string, BaseClass* (*)()> initialize();\n',
-                'std::unordered_map<std::string, BaseClass* (*)()> CIMFactory::factory_map = initialize();\n',
-                '\n',
-                'BaseClass* CIMFactory::CreateNew(const std::string& name)\n',
-                '{\n',
-                '    std::unordered_map<std::string, BaseClass* (*)()>::iterator it = factory_map.find(name);\n',
-                '    if(it != factory_map.end())\n',
-                '        return (*it->second)();\n',
-                '    else\n',
-                '        return nullptr;\n',
-                '}\n',
-                '\n',
-                'bool CIMFactory::IsCIMClass(const std::string& name)\n',
-                '{\n',
-                '    std::unordered_map<std::string, BaseClass* (*)()>::iterator it = factory_map.find(name);\n',
-                '    if(it == factory_map.end())\n',
-                '        return false;\n',
-                '    else\n',
-                '        return true;\n',
-                '}\n',
-            ],
-            "path": version_path + "/CIMFactory.cpp"
-        },
-    ]:
-        if not os.path.exists(fileDetails['path']):
-            with open(fileDetails['path'], 'w') as f:
-                for line in fileDetails['data']:
-                    f.write(line)

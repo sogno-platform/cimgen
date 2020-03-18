@@ -6,15 +6,12 @@
 #include "{{> class}}.hpp"
 {{/attributes}}
 
-{{class_name}}::{{class_name}}() : {{> null_init_list}}
+{{class_name}}::{{class_name}}()
 {
 };
 
-{{class_name}}::{{class_name}}({{#attributes}}{{> class}} *_{{label}}_, {{/attributes}} char *super_args) {{#super_init}}: {{subClassOf}} (*super_args){{/super_init}}
+{{class_name}}::~{{class_name}}()
 {
-{{#attributes}}
-	_{{label}} = _{{label}}_;
-{{/attributes}}
 };
 
 {{#attributes}}
@@ -28,7 +25,7 @@ bool assign_{{class_name}}_{{label}}(BaseClass* BaseClass_ptr1, BaseClass* BaseC
 {
 	if({{class_name}}* element = dynamic_cast<{{class_name}}*>(BaseClass_ptr1))
 	{
-		element->_{{label}} dynamic_cast<{{> class}}*>(BaseClass_ptr2);
+		element->_{{label}} = dynamic_cast<{{> class}}*>(BaseClass_ptr2);
 		if(element->_{{label}} != nullptr)
 			return true;
 	}
@@ -36,3 +33,8 @@ bool assign_{{class_name}}_{{label}}(BaseClass* BaseClass_ptr1, BaseClass* BaseC
 }
 
 {{/attributes}}
+
+BaseClass* {{class_name}}_factory()
+{
+      return new {{class_name}};
+}
