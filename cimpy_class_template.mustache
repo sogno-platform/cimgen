@@ -1,7 +1,7 @@
-from {{ClassLocation}} import {{subClassOf}}
+from {{ClassLocation}} import {{sub_class_of}}
 
 
-class {{class_name}}({{subClassOf}}):
+class {{class_name}}({{sub_class_of}}):
 	'''
 	{{{class_comment}}}
 
@@ -9,7 +9,7 @@ class {{class_name}}({{subClassOf}}):
 	{{/attributes}}
 	'''
 
-	cgmesProfile = {{subClassOf}}.cgmesProfile
+	cgmesProfile = {{sub_class_of}}.cgmesProfile
 
 	possibleProfileList = {'class': [{{#class_origin}}cgmesProfile.{{origin}}.value, {{/class_origin}}],
 						{{#attributes}}'{{label}}': [{{#attr_origin}}cgmesProfile.{{origin}}.value, {{/attr_origin}}],
@@ -17,7 +17,7 @@ class {{class_name}}({{subClassOf}}):
 
 	serializationProfile = {}
 
-	{{#super_init}}__doc__ += '\n Documentation of parent class {{subClassOf}}: \n' + {{subClassOf}}.__doc__ {{/super_init}}
+	{{#super_init}}__doc__ += '\n Documentation of parent class {{sub_class_of}}: \n' + {{sub_class_of}}.__doc__ {{/super_init}}
 
 	def __init__(self, {{#attributes}}{{label}} = {{#setDefault}}{{dataType}}{{/setDefault}}, {{/attributes}} {{#super_init}}*args, **kw_args{{/super_init}}):
 	{{#super_init}}

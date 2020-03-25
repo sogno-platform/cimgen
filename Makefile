@@ -27,11 +27,14 @@ run:
 	cd cimpp && echo "#ifndef IEC61970_H\n#define IEC61970_H" > IEC61970.hpp
 	cd cimpp && find . -iname "*.hpp" | grep -v Folders | grep -v Task | grep -v IEC61970 | grep -v ConformLoad | sed "s/\.\///" | sed "s/\(.*\)/#include \"\1\"/" >> IEC61970.hpp
 	cd cimpp && echo "\n#endif" >> IEC61970.hpp
-	cd cimpp && echo "\nstatic std::unordered_map<std::string, BaseClass* (*)()> initialize() {" >> CIMFactory.cpp
-	cd cimpp && echo "\n    std::unordered_map<std::string, BaseClass* (*)()> map;" >> CIMFactory.cpp
-	cd cimpp && find . -iname "*.hpp" | grep -v assignments | grep -v Folders | grep -v "./Task" | grep -v IEC61970 | grep -v ConformLoad | grep -v Factory | grep -v String | grep -v BaseClass | sort | sed "s/\.\///" | sed "s/\.hpp//" | sed "s/\(.*\)/    map.insert(std::make_pair(\"\1\", \&&_factory));/" >> CIMFactory.cpp
-	cd cimpp && echo "    return map;" >> CIMFactory.cpp
-	cd cimpp && echo "};" >> CIMFactory.cpp
+	cd cimpp && echo "#ifndef CIMCLASSLIST_H" >> CIMClassList.hpp
+	cd cimpp && echo "#define CIMCLASSLIST_H" >> CIMClassList.hpp
+	cd cimpp && echo "#include <list>" >> CIMClassList.hpp
+	cd cimpp && echo "" >> CIMClassList.hpp
+	cd cimpp && echo "static std::list<BaseClassDefiner> CIMClassList = {" >> CIMClassList.hpp
+	cd cimpp && find . -iname "*.hpp" | grep -v ClassList | grep -v BaseClassDefiner | grep -v assignments | grep -v Folders | grep -v "./Task" | grep -v IEC61970 | grep -v ConformLoad | grep -v Factory | grep -v String | grep -v BaseClass | sort | sed "s/\.\///" | sed "s/\.hpp//" | sed "s/\(.*\)/    \1::define(),/" >> CIMClassList.hpp
+	cd cimpp && echo "};" >> CIMClassList.hpp
+	cd cimpp && echo "#endif // CIMCLASSLIST_H" >> CIMClassList.hpp
 
 .PHONY:
 	build-cpp build-python clean run

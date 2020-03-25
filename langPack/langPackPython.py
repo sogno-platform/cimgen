@@ -1,4 +1,5 @@
 import os
+import chevron
 
 def location(version):
      return "cimpy." + version + ".Base";
@@ -36,6 +37,24 @@ def _set_default(text, render):
     else:
         # everything else should be a float
         return '0.0'
+
+def set_float_classes(new_float_classes):
+    return
+
+def run_template(version_path, class_details):
+    for template_info in template_files:
+        class_file = os.path.join(version_path, class_details['class_name'] + template_info["ext"])
+        if not os.path.exists(class_file):
+            with open(class_file, 'w') as file:
+                with open(template_info["filename"]) as f:
+                    args = {
+                        'data': class_details,
+                        'template': f,
+                        'partials_dict': partials
+                    }
+                    output = chevron.render(**args)
+                file.write(output)
+
 
 def _create_init(path):
     init_file = path + "/__init__.py"

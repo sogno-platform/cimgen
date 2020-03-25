@@ -1,0 +1,66 @@
+#include "{{class_name}}.hpp"
+#include "../src/CIMExceptions.hpp"
+
+{{class_name}}::{{class_name}}() {}
+
+{{class_name}}::~{{class_name}}(){}
+
+{{class_name}}::{{class_name}}(long double value) : value(value), initialized(true) {}
+
+void {{class_name}}::addConstructToMap(std::unordered_map<std::string, BaseClass* (*)()>& factory_map) {} 
+
+void {{class_name}}::addPrimitiveAssignFnsToMap(std::unordered_map<std::string, assign_function>& assign_map) {}
+
+void {{class_name}}::addClassAssignFnsToMap(std::unordered_map<std::string, class_assign_function>& assign_map) {}
+
+const char {{class_name}}::debugName[] = "{{class_name}}";
+const char* {{class_name}}::debugString() {
+	return {{class_name}}::debugName;
+}
+
+
+const BaseClassDefiner {{class_name}}::define() {
+	return BaseClassDefiner({{class_name}}::addConstructToMap, {{class_name}}::addPrimitiveAssignFnsToMap, {{class_name}}::addClassAssignFnsToMap, {{class_name}}::debugName);
+}
+
+{{class_name}}& {{class_name}}::operator=(long double &rop) {
+	value = rop;
+	initialized = true;
+	return *this;
+}
+
+{{class_name}}& {{class_name}}::operator-=(const {{class_name}}& rhs) {
+    value -= rhs.value;
+    return *this;
+}
+
+{{class_name}}& {{class_name}}::operator*=(const {{class_name}}& rhs) {
+    value *= rhs.value;
+    return *this;
+}
+
+{{class_name}}& {{class_name}}::operator/=(const {{class_name}}& rhs) {
+    value /= rhs.value;
+    return *this;
+}
+
+{{class_name}}& {{class_name}}::operator+=(const {{class_name}}& rhs) {
+    value += rhs.value;
+    return *this;
+}
+
+{{class_name}}::operator long double() {
+	if(!initialized)
+	{
+		throw new ReadingUninitializedField();
+	}
+	return value;
+}
+
+std::istream& operator>>(std::istream& lop, {{class_name}}& rop) {
+	std::string tmp;
+	lop >> tmp;
+	rop.value = stold(tmp);
+	rop.initialized = true;
+	return lop;
+}

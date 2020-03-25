@@ -1,11 +1,9 @@
 import os
 import xmltodict
-import chevron
 from time import time
 import json
 
 import logging
-
 logger = logging.getLogger(__name__)
 
 # The definitions are often contained within a string with a name
@@ -146,9 +144,21 @@ def _parse_rdf(input_dic):
 # chevron
 def _write_python_files(elem_dict, version, langPack):
 
+    float_classes = {}
+    is_a_float = False
+
     # Iterate over Classes
     for class_name in elem_dict.keys():
-        sub_class_of = None
+        attributes_array = _find_multiple_attributes(elem_dict[class_name]['attributes'])
+        if is_just_a_float(attributes_array):
+            float_classes[class_name] = True
+            elem_dict[class_name]['is_a_float'] = True
+        else:
+            elem_dict[class_name]['is_a_float'] = False
+
+    langPack.set_float_classes(float_classes)
+
+    for class_name in elem_dict.keys():
 
         # extract attributes
         attributes_array = _find_multiple_attributes(elem_dict[class_name]['attributes'])
@@ -165,6 +175,8 @@ def _write_python_files(elem_dict, version, langPack):
                 continue
             else:
                 class_location = 'cimpy.' + version + "." + sub_class_of
+        else:
+            sub_class_of = None
 
         # extract comments
         if 'comment' in elem_dict[class_name].keys():
@@ -176,53 +188,53 @@ def _write_python_files(elem_dict, version, langPack):
             if "comment" in attribute:
                 attribute["comment"] = attribute["comment"].replace('"', "`")
                 attribute["comment"] = attribute["comment"].replace("'", "`")
-        _write_files(class_name, attributes_array, elem_dict[class_name]['class_origin'],
-            class_location, sub_class_of, comment, version, langPack, instances_array)
 
-def _write_files(class_name, attributes_array, class_origin, class_location,
-                 sub_class_of, comment, version, langPack, instances):
+        class_details = {
+            "attributes": attributes_array,
+            "class_comment": comment,
+            "ClassLocation": class_location,
+            "class_name": class_name,
+            "class_origin": elem_dict[class_name]['class_origin'],
+            "instances": instances_array,
+            "is_a_float": elem_dict[class_name]['is_a_float'],
+            "langPack": langPack,
+            "sub_class_of": sub_class_of,
+        }
+        _write_files(class_details, version)
 
+def _write_files(class_details, version):
     version_path = os.path.join(os.getcwd(), version)
-    langPack.setup(version_path)
+    class_details['langPack'].setup(version_path)
 
-    if sub_class_of is None:
+    if class_details['sub_class_of'] == None:
         # If class has no subClassOf key it is a subclass of the Base class
-        sub_class_of = langPack.base['base_class']
-        class_location = langPack.base['class_location'](version)
-        super_init = False
+        class_details['sub_class_of'] = class_details['langPack'].base['base_class']
+        class_details['class_location'] = class_details['langPack'].base['class_location'](version)
+        class_details['super_init'] = False
     else:
         # If class is a subclass a super().__init__() is needed
-        super_init = True
+        class_details['super_init'] = True
 
     # The entry dataType for an attribute is only set for basic data types. If the entry is not set here, the attribute
     # is a reference to another class and therefore the entry dataType is generated and set to the multiplicity
-    for i in range(len(attributes_array)):
-        if 'dataType' not in attributes_array[i].keys() and 'multiplicity' in attributes_array[i].keys():
-            attributes_array[i]['dataType'] = attributes_array[i]['multiplicity']
+    for i in range(len(class_details['attributes'])):
+        if 'dataType' not in class_details['attributes'][i].keys() and 'multiplicity' in class_details['attributes'][i].keys():
+            class_details['attributes'][i]['dataType'] = class_details['attributes'][i]['multiplicity']
 
-    template_files = langPack.template_files
-    partials = langPack.partials
+    class_details['langPack'].run_template( version_path, class_details )
 
-    for template_info in template_files:
-        class_file = os.path.join(version_path, class_name + template_info["ext"])
-        if not os.path.exists(class_file):
-            with open(class_file, 'w') as file:
-                with open(template_info["filename"]) as f:
-                    args = {
-                        'data': {
-                            "class_name": class_name, "attributes": attributes_array,
-                            "class_origin": class_origin, "subClassOf": sub_class_of,
-                            "ClassLocation": class_location, "super_init": super_init,
-                            "class_comment": comment, "langPack": langPack, "instances": instances
-                        },
-                        'template': f,
-                        'partials_dict': partials
-                    }
-                    output = chevron.render(**args)
-                file.write(output)
+def is_just_a_float(attributes):
+    candidate_array = { 'value': False, 'unit': False, 'multiplier': False }
+    for attr in attributes:
+        key = attr['label']
+        if key in candidate_array:
+            candidate_array[key] = True
         else:
-            logger.info("Class file for class {} already exists.".format(class_file))
-
+            return False
+    for key in candidate_array:
+        if candidate_array[key] == False:
+            return False
+    return True
 
 # Find multiple entries for the same attribute
 def _find_multiple_attributes(attributes_array):
