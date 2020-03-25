@@ -48,7 +48,7 @@ def attribute_type(attribute):
     class_name = _format_class([_range, _dataType])
     if attribute["multiplicity"] == 'M:0..n' or attribute["multiplicity"] == 'M:1..n':
         return "list"
-    if is_a_float_class(class_name) or class_name == "String" or class_name == "Boolean":
+    if is_a_float_class(class_name) or class_name == "String" or class_name == "Boolean" or class_name == "Integer":
         return "primitive"
     else:
         return "class"
@@ -61,12 +61,6 @@ def set_float_classes(new_float_classes):
 def is_a_float_class(name):
     if name in float_classes:
         return float_classes[name]
-
-def isCimClass(class_name):
-    if class_name == "String" or class_name == "Boolean" or is_a_float_class(class_name):
-        return False
-    else:
-        return True
 
 def insert_assign_fn(text, render):
     attribute_txt = render(text)
@@ -142,19 +136,7 @@ def create_assign(text, render):
     _class = _format_class([_range, _dataType])
     if not attribute_type(attribute_json) == "primitive":
         return ''
-    if _class == "Boolean":
-        assign = """
-bool assign_CLASS_LABEL(std::stringstream &buffer, BaseClass* BaseClass_ptr1) {
-	if(CLASS* element = dynamic_cast<CLASS*>(BaseClass_ptr1)) {
-                buffer >> element->_LABEL;
-                if(buffer.fail())
-                        return false;
-                else
-                        return true;
-        }
-        return false;
-}""".replace("CLASS", attribute_json["domain"]).replace("LABEL", attribute_json["label"])
-    elif _class == "Float" or is_a_float_class(_class):
+    if _class == "Boolean" or _class == "Integer" or _class == "Float" or is_a_float_class(_class):
         assign = """
 bool assign_CLASS_LABEL(std::stringstream &buffer, BaseClass* BaseClass_ptr1) {
 	if(CLASS* element = dynamic_cast<CLASS*>(BaseClass_ptr1)) {

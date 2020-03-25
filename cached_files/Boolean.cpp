@@ -35,18 +35,11 @@ Boolean::operator bool()
 	return value;
 }
 
-void Boolean::addConstructToMap(std::unordered_map<std::string, BaseClass* (*)()>& factory_map) {
-	//factory_map.insert(std::make_pair(std::string("cim:Boolean"), &Boolean_factory));
-}
+void Boolean::addConstructToMap(std::unordered_map<std::string, BaseClass* (*)()>& factory_map) {}
 
-void Boolean::addPrimitiveAssignFnsToMap(std::unordered_map<std::string, assign_function>& assign_map) {
-	//assign_map.insert(std::make_pair(std::string("cim:ActivePower.value"), &assign_ActivePower_value));
-}
+void Boolean::addPrimitiveAssignFnsToMap(std::unordered_map<std::string, assign_function>& assign_map) {}
 
-void Boolean::addClassAssignFnsToMap(std::unordered_map<std::string, class_assign_function>& assign_map) {
-	//assign_map.insert(std::make_pair(std::string("cim:ActivePower.unit"), &assign_ActivePower_unit));
-	//assign_map.insert(std::make_pair(std::string("cim:ActivePower.multiplier"), &assign_ActivePower_multiplier));
-}
+void Boolean::addClassAssignFnsToMap(std::unordered_map<std::string, class_assign_function>& assign_map) {}
 
 const char Boolean::debugName[] = "Boolean";
 const char* Boolean::debugString()
@@ -77,3 +70,14 @@ std::istream& operator>>(std::istream& lop, Boolean& rop)
 	}
 }
 
+
+std::ostream& operator<<(std::ostream& os, Boolean& rop)
+{
+	if (rop) {
+		os << "true";
+	}
+	else {
+		os << "false";
+	}
+	return os;
+}

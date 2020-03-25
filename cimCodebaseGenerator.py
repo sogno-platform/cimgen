@@ -223,7 +223,22 @@ def _write_files(class_details, version):
 
     class_details['langPack'].run_template( version_path, class_details )
 
+def simple_float_attribute(attr):
+    if 'dataType' in attr:
+        return attr['label'] == 'value' and attr['dataType'] == '#Float'
+    return False
+
 def is_just_a_float(attributes):
+    simple_float = False
+    for attr in attributes:
+        if simple_float_attribute(attr):
+            simple_float = True
+    for attr in attributes:
+        if not simple_float_attribute(attr):
+            simple_float = False
+    if simple_float == True:
+        return True
+
     candidate_array = { 'value': False, 'unit': False, 'multiplier': False }
     for attr in attributes:
         key = attr['label']

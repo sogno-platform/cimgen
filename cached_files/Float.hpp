@@ -1,5 +1,5 @@
-#ifndef BOOLEAN_H
-#define BOOLEAN_H
+#ifndef FLOAT_H
+#define FLOAT_H
 
 #include <string>
 #include <iostream>
@@ -8,22 +8,25 @@
 #include "BaseClass.hpp"
 
 /**
- * A type with the value space "true" and "false".
+ * A floating point number. The range is unspecified and not limited.
  */
-class Boolean
+class Float : public BaseClass
 {
+
 public:
-	Boolean();
-	virtual ~Boolean();
+	Float();
+	virtual ~Float();
+	Float(long double value);
 	static const BaseClassDefiner define();
+	Float& operator=(long double &rop);
+	Float& operator+=(const Float& rhs);
+	Float& operator-=(const Float& rhs);
+	Float& operator*=(const Float& rhs);
+	Float& operator/=(const Float& rhs);
+	friend std::istream& operator>>(std::istream& lop, Float& rop);
+	operator long double();
 
-	Boolean(bool value);
-	Boolean& operator=(bool &rop);
-	friend std::istream& operator>>(std::istream& lop, Boolean& rop);
-	friend std::ostream& operator<<(std::ostream& os, Boolean& rop);
-	operator bool();
-
-	bool value = false;
+	long double value = 0.0;
 	bool initialized = false;
 
 	static const char debugName[];
@@ -34,4 +37,4 @@ public:
 	static void addClassAssignFnsToMap(std::unordered_map<std::string, class_assign_function>&);
 };
 
-#endif
+#endif // FLOAT_H
