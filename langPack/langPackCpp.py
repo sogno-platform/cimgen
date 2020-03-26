@@ -3,13 +3,22 @@ import chevron
 import json
 
 def location(version):
-     return "BaseClass.h";
+    return "BaseClass.h";
+
+# This just makes sure we have somewhere to write the classes.
+def setup(version_path):
+    if not os.path.exists(version_path):
+        os.makedirs(version_path)
 
 base = {
     "base_class": "BaseClass",
     "class_location": location
 }
 
+# These are the files that are used to generate the header and object files.
+# There is a template set for the large number of classes that are floats. They
+# have unit, multiplier and value attributes in the schema, but only appear in
+# the file as a float string.
 template_files = [ { "filename": "cpp_header_template.mustache", "ext": ".hpp" },
                    { "filename": "cpp_object_template.mustache", "ext": ".cpp" } ]
 float_template_files = [ { "filename": "cpp_float_header_template.mustache", "ext": ".hpp" },
@@ -24,6 +33,7 @@ partials = { 'class':                   '{{#langPack.format_class}}{{range}} {{d
              'read_istream':            '{{#langPack.create_istream_op}}{{class_name}} {{label}}{{/langPack.create_istream_op}}',
            }
 
+# This is the function that runs the template.
 def run_template(version_path, class_details):
     if class_details['is_a_float'] == True:
         templates = float_template_files
@@ -43,6 +53,13 @@ def run_template(version_path, class_details):
                     output = chevron.render(**args)
                 file.write(output)
 
+# This function determines how the attribute code will be implemented.
+#  - attributes which are primitives will be read from the file and
+#    stored in the class object we are reading at the time
+#  - attributes which are classes will be stored as pointers to the
+#    actual class, which will be read from another part of the file.
+#  - attributes with multiplicity of 1..n or 0..n will be std::lists
+#    of pointers to classes read from a different part of the file
 def attribute_type(attribute):
     (_range, _dataType) =  get_dataType_and_range(attribute)
     class_name = _format_class([_range, _dataType])
@@ -53,6 +70,10 @@ def attribute_type(attribute):
     else:
         return "class"
 
+# We need to keep track of which class types are secretly float
+# primitives. We will use a different template to create the class
+# definitions, and we will read them from the file directly into
+# an attribute instead of creating a class.
 float_classes = {}
 def set_float_classes(new_float_classes):
     for new_class in new_float_classes:
@@ -62,31 +83,33 @@ def is_a_float_class(name):
     if name in float_classes:
         return float_classes[name]
 
+# These insert_ functions are used to generate the entries in the dynamic_switch
+# maps, for use in assignments.cpp and Task.cpp
+# TODO: implement this as one function, determine in template if it should be called.
+# TODO: reorganize json object so we don't have to keep doing the same processing.
 def insert_assign_fn(text, render):
     attribute_txt = render(text)
     attribute_json = eval(attribute_txt)
+    if not attribute_type(attribute_json) == "primitive":
+        return ''
     assign = ""
     label = attribute_json['label']
     (_range, _dataType) =  get_dataType_and_range(attribute_json)
     attr_class = _format_class([_range, _dataType])
     class_name = attribute_json['domain']
-    if attribute_type(attribute_json) == "primitive":
-        return 'assign_map.insert(std::make_pair(std::string("cim:' + class_name + '.' + label + '"), &assign_' + class_name + '_' + label + '));\n'
-    else:
-        return ''
+    return 'assign_map.insert(std::make_pair(std::string("cim:' + class_name + '.' + label + '"), &assign_' + class_name + '_' + label + '));\n'
 
 def insert_class_assign_fn(text, render):
     attribute_txt = render(text)
     attribute_json = eval(attribute_txt)
+    if attribute_type(attribute_json) == "primitive":
+        return ''
     assign = ""
     (_range, _dataType) =  get_dataType_and_range(attribute_json)
     label = attribute_json['label']
     attr_class = _format_class([_range, _dataType])
     class_name = attribute_json['domain']
-    if not attribute_type(attribute_json) == "primitive":
-        return 'assign_map.insert(std::make_pair(std::string("cim:' + class_name + '.' + label + '"), &assign_' + class_name + '_' + label + '));\n'
-    else:
-        return ''
+    return 'assign_map.insert(std::make_pair(std::string("cim:' + class_name + '.' + label + '"), &assign_' + class_name + '_' + label + '));\n'
 
 def get_dataType_and_range(attribute):
     _range = _dataType = ""
@@ -96,6 +119,8 @@ def get_dataType_and_range(attribute):
         _dataType = attribute["dataType"]
     return (_range, _dataType)
 
+# These create_ functions are used to generate the implementations for
+# the entries in the dynamic_switch maps in assignments.cpp and Task.cpp
 def create_class_assign(text, render):
     attribute_txt = render(text)
     attribute_json = eval(attribute_txt)
@@ -164,30 +189,7 @@ bool assign_CLASS_LABEL(std::stringstream &buffer, BaseClass* BaseClass_ptr1) {
 
     return assign
 
-def create_construct_list(text, render):
-    attributes_txt = render(text)
-    result = ""
-    if (attributes_txt != ""):
-        attributes_json = eval(attributes_txt)
-        for a in attributes_json[:-1]:
-            (_range, _dataType) =  get_dataType_and_range(a)
-            result += _format_class([_range, _dataType]) + ' *_' + a["label"]  + '_, '
-        (_range, _dataType) =  get_dataType_and_range(attributes_json[-1])
-        result += _format_class([_range, _dataType]) + ' *_' + attributes_json[-1]["label"] + '_'
-
-    return result
-
-def null_init_list(text, render):
-    attributes_txt = render(text)
-    result = ""
-    if (attributes_txt != ""):
-        attributes_json = eval(attributes_txt)
-        for a in attributes_json[:-1]:
-            result += "_" + a["label"] + "(" + set_default(a["dataType"]) + "), "
-        result += "_" + attributes_json[-1]["label"] + "(" + set_default(attributes_json[-1]["dataType"]) + ")"
-
-    return result
-
+# What class is this attribute?
 def format_class(text, render):
     result = render(text)
     tokens = result.split(' ')
@@ -274,10 +276,6 @@ def set_default(dataType):
     elif dataType == 'Boolean':
         return 'false'
     else:
-        # everything else should be a float
-        return '0'
+        return 'nullptr'
 
-def setup(version_path):
-    if not os.path.exists(version_path):
-        os.makedirs(version_path)
 

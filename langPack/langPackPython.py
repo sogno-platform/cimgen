@@ -1,6 +1,14 @@
 import os
 import chevron
 
+# This makes sure we have somewhere to write the classes, and
+# creates a couple of files the python implementation needs.
+def setup(version_path):
+    if not os.path.exists(version_path):
+        os.makedirs(version_path)
+        _create_init(version_path)
+        _create_base(version_path)
+
 def location(version):
      return "cimpy." + version + ".Base";
 
@@ -74,9 +82,4 @@ def _create_base(path):
         for line in base:
             f.write(line)
 
-def setup(version_path):
-    if not os.path.exists(version_path):
-        os.makedirs(version_path)
-        _create_init(version_path)
-        _create_base(version_path)
 

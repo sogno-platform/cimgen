@@ -1,18 +1,12 @@
 #include "Boolean.hpp"
 #include "../src/CIMExceptions.hpp"
 
-Boolean::Boolean(){
+Boolean::Boolean(){}
 
-}
-
-Boolean::~Boolean(){
-
-}
+Boolean::~Boolean(){}
 
 Boolean::Boolean(bool value)
-        : value(value), initialized(true)
-{
-}
+        : value(value), initialized(true) {}
 
 const BaseClassDefiner Boolean::define()
 {

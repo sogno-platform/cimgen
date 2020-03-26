@@ -6,7 +6,6 @@
 
 class BaseClass;
 
-//typedef bool (*primitive_assign_function)(std::stringstream&, BaseClass*);
 typedef bool (*class_assign_function)(BaseClass*, BaseClass*);
 typedef bool (*assign_function)(std::stringstream&, BaseClass*);
 
