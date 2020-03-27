@@ -1,6 +1,8 @@
 #include "Boolean.hpp"
 #include "../src/CIMExceptions.hpp"
 
+using namespace CGMES;
+
 Boolean::Boolean(){}
 
 Boolean::~Boolean(){}
@@ -41,37 +43,38 @@ const char* Boolean::debugString()
 	return Boolean::debugName;
 }
 
-std::istream& operator>>(std::istream& lop, Boolean& rop)
-{
-	std::string tmp;
-	lop >> tmp;
-	if(tmp == "true" || tmp == "True" || tmp == "TRUE")
+namespace CGMES {
+	std::istream& operator>>(std::istream& lop, Boolean& rop)
 	{
-		rop.value = true;
-		rop.initialized = true;
-		return lop;
+		std::string tmp;
+		lop >> tmp;
+		if(tmp == "true" || tmp == "True" || tmp == "TRUE")
+		{
+			rop.value = true;
+			rop.initialized = true;
+			return lop;
+		}
+		if(tmp == "false" || tmp == "False" || tmp == "FALSE")
+		{
+			rop.value = false;
+			rop.initialized = true;
+			return lop;
+		}
+		else
+		{
+			lop.setstate(std::ios::failbit);
+			return lop;
+		}
 	}
-	if(tmp == "false" || tmp == "False" || tmp == "FALSE")
+	
+	std::ostream& operator<<(std::ostream& os, Boolean& rop)
 	{
-		rop.value = false;
-		rop.initialized = true;
-		return lop;
+		if (rop) {
+			os << "true";
+		}
+		else {
+			os << "false";
+		}
+		return os;
 	}
-	else
-	{
-		lop.setstate(std::ios::failbit);
-		return lop;
-	}
-}
-
-
-std::ostream& operator<<(std::ostream& os, Boolean& rop)
-{
-	if (rop) {
-		os << "true";
-	}
-	else {
-		os << "false";
-	}
-	return os;
 }

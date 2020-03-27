@@ -4,6 +4,8 @@
 #include <algorithm>
 #include <iostream>
 
+using namespace CGMES;
+
 static std::unordered_map<std::string, BaseClass* (*)()> initialize();
 std::unordered_map<std::string, BaseClass* (*)()> CIMFactory::factory_map = initialize();
 

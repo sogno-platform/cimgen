@@ -1,6 +1,8 @@
 #include "Integer.hpp"
 #include "../src/CIMExceptions.hpp"
 
+using namespace CGMES;
+
 Integer::Integer(){}
 
 Integer::~Integer(){}
@@ -23,44 +25,41 @@ void Integer::addPrimitiveAssignFnsToMap(std::unordered_map<std::string, assign_
 
 void Integer::addClassAssignFnsToMap(std::unordered_map<std::string, class_assign_function>& assign_map) {}
 
-Integer& Integer::operator=(long int &rop)
-{
-	value = rop;
-	initialized = true;
-	return *this;
-}
-
-Integer& Integer::operator-=(const Integer& rhs){
-    value -= rhs.value;
-    return *this;
-}
-
-Integer& Integer::operator*=(const Integer& rhs){
-    value *= rhs.value;
-    return *this;
-}
-
-Integer& Integer::operator/=(const Integer& rhs){
-    value /= rhs.value;
-    return *this;
-}
-
-Integer& Integer::operator+=(const Integer& rhs){
-    value += rhs.value;
-    return *this;
-}
-
-Integer::operator long int()
-{
-	if(!initialized)
-	{
-		throw new ReadingUninitializedField();
+namespace CGMES {
+	Integer& Integer::operator=(long int &rop){
+		value = rop;
+		initialized = true;
+		return *this;
 	}
-	return value;
-}
+	
+	Integer& Integer::operator-=(const Integer& rhs){
+	    value -= rhs.value;
+	    return *this;
+	}
+	
+	Integer& Integer::operator*=(const Integer& rhs){
+	    value *= rhs.value;
+	    return *this;
+	}
+	
+	Integer& Integer::operator/=(const Integer& rhs){
+	    value /= rhs.value;
+	    return *this;
+	}
+	
+	Integer& Integer::operator+=(const Integer& rhs){
+	    value += rhs.value;
+	    return *this;
+	}
+	
+	Integer::operator long int(){
+		if(!initialized)
+		{
+			throw new ReadingUninitializedField();
+		}
+		return value;
+	}
 
-//namespace IEC61970
-//{
 	std::istream& operator>>(std::istream& lop, Integer& rop)
 	{
 		std::string tmp;
@@ -70,4 +69,4 @@ Integer::operator long int()
 		rop.initialized = true;
 		return lop;
 	}
-//}
+}

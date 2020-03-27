@@ -7,8 +7,8 @@
 
 #include "BaseClass.hpp"
 
-//namespace IEC61970
-//{
+namespace CGMES
+{
 	/**
 	* An Integer number. The range is unspecified and not limited.
 	*/
@@ -37,5 +37,5 @@
 		static void addPrimitiveAssignFnsToMap(std::unordered_map<std::string, assign_function>&);
 		static void addClassAssignFnsToMap(std::unordered_map<std::string, class_assign_function>&);
 	};
-//}
+}
 #endif // INTEGER_H

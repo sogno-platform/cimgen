@@ -1,5 +1,8 @@
 
 #include "BaseClass.hpp"
+
+using namespace CGMES;
+
 BaseClass::~BaseClass() {}
 
 void BaseClass::addConstructToMap(std::unordered_map<std::string, BaseClass* (*)()>& factory_map) {}

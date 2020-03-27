@@ -8,17 +8,19 @@
 /*
 Date as "yyyy-mm-dd", which conforms with ISO 8601. UTC time zone is specified as "yyyy-mm-ddZ". A local timezone relative UTC is specified as "yyyy-mm-dd(+/-)hh:mm".
 */
-class Date: public BaseClass
+namespace CGMES
 {
-public:
-    Date();
-    Date(String);
-    virtual ~Date();
+	class Date: public BaseClass
+	{
+	public:
+	    Date();
+	    Date(String);
+	    virtual ~Date();
+	
+	private:
+	    String value;
+	};
 
-private:
-    String value;
-};
-
-BaseClass* Date_factory();
-
+	BaseClass* Date_factory();
+}
 #endif

@@ -1,6 +1,8 @@
 #ifndef CONFORMLOADSCHEDULE_HPP
 #define CONFORMLOADSCHEDULE_HPP
 
-class ConformLoadSchedule {};
-
+namespace CGMES
+{
+	class ConformLoadSchedule {};
+}
 #endif // CONFORMLOADSCHEDULE_HPP

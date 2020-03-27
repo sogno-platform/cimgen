@@ -3,18 +3,20 @@
 
 #include <string>
 #include <unordered_map>
-#include "BaseClass.h"
+#include "BaseClass.hpp"
 
-class CIMFactory
+namespace CGMES
 {
-public:
-	CIMFactory();
-	virtual ~CIMFactory();
-	static BaseClass* CreateNew(const std::string& name);
-	static bool IsCIMClass(const std::string& name);
-
-private:
-	static std::unordered_map<std::string, BaseClass* (*)()> factory_map;
-};
-
+	class CIMFactory
+	{
+	public:
+		CIMFactory();
+		virtual ~CIMFactory();
+		static CGMES::BaseClass* CreateNew(const std::string& name);
+		static bool IsCIMClass(const std::string& name);
+	
+	private:
+		static std::unordered_map<std::string, BaseClass* (*)()> factory_map;
+	};
+}
 #endif // CIMFACTORY_HPP

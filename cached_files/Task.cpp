@@ -4,6 +4,8 @@
 #include "CIMClassList.hpp"
 #include "Task.hpp"
 
+using namespace CGMES;
+
 typedef bool (*task_function)(BaseClass*, BaseClass*);
 static std::unordered_map<std::string, bool (*)(BaseClass*, BaseClass*)> initialize();
 std::unordered_map<std::string, bool (*)(BaseClass*, BaseClass*)> Task::dynamic_switch = initialize();
@@ -18,7 +20,7 @@ Task::~Task() {}
 void Task::print()
 {
 	if(IdentifiedObject* IdObj = dynamic_cast<IdentifiedObject*>(_CIMObj))
-		std::cout << _CIMAttrName << " '" << IdObj->_name << "' = '" << _Value << "'" << std::endl;
+		std::cout << _CIMAttrName << " '" << IdObj->name << "' = '" << _Value << "'" << std::endl;
 	else
 		std::cout << _CIMAttrName << " = '" << _Value << "'" << std::endl;
 

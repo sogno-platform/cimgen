@@ -26,6 +26,7 @@ float_template_files = [ { "filename": "cpp_float_header_template.mustache", "ex
 
 partials = { 'class':                   '{{#langPack.format_class}}{{range}} {{dataType}}{{/langPack.format_class}}',
              'attribute':               '{{#langPack.attribute_decl}}{{.}}{{/langPack.attribute_decl}}',
+             'label':                   '{{#langPack.label}}{{label}}{{/langPack.label}}',
              'create_init_list':        '{{#langPack.null_init_list}}{{attributes}}{{/langPack.null_init_list}}',
              'create_construct_list':   '{{#langPack.create_construct_list}}{{attributes}}{{/langPack.create_construct_list}}',
 	     'insert_assign':           '{{#langPack.insert_assign_fn}}{{.}}{{/langPack.insert_assign_fn}}',
@@ -52,6 +53,15 @@ def run_template(version_path, class_details):
                     }
                     output = chevron.render(**args)
                 file.write(output)
+
+# This function just allows us to avoid declaring a variable called 'switch',
+# which is in the definition of the ExcBBC class.
+def label(text, render):
+    result = render(text)
+    if result == 'switch':
+        return '_switch'
+    else:
+        return result
 
 # This function determines how the attribute code will be implemented.
 #  - attributes which are primitives will be read from the file and
@@ -134,7 +144,7 @@ def create_class_assign(text, render):
 bool assign_OBJECT_CLASS_LABEL(BaseClass* BaseClass_ptr1, BaseClass* BaseClass_ptr2) {
 	if(OBJECT_CLASS* element = dynamic_cast<OBJECT_CLASS*>(BaseClass_ptr1)) {
 		if(dynamic_cast<ATTRIBUTE_CLASS*>(BaseClass_ptr2) != nullptr) {
-                        element->_LABEL.push_back(dynamic_cast<ATTRIBUTE_CLASS*>(BaseClass_ptr2));
+                        element->LABEL.push_back(dynamic_cast<ATTRIBUTE_CLASS*>(BaseClass_ptr2));
 			return true;
 		}
 	}
@@ -144,8 +154,8 @@ bool assign_OBJECT_CLASS_LABEL(BaseClass* BaseClass_ptr1, BaseClass* BaseClass_p
         assign = """
 bool assign_OBJECT_CLASS_LABEL(BaseClass* BaseClass_ptr1, BaseClass* BaseClass_ptr2) {
 	if(OBJECT_CLASS* element = dynamic_cast<OBJECT_CLASS*>(BaseClass_ptr1)) {
-                element->_LABEL = dynamic_cast<ATTRIBUTE_CLASS*>(BaseClass_ptr2);
-                if(element->_LABEL != nullptr)
+                element->LABEL = dynamic_cast<ATTRIBUTE_CLASS*>(BaseClass_ptr2);
+                if(element->LABEL != nullptr)
                         return true;
         }
         return false;
@@ -161,11 +171,15 @@ def create_assign(text, render):
     _class = _format_class([_range, _dataType])
     if not attribute_type(attribute_json) == "primitive":
         return ''
+    label_without_keyword = attribute_json["label"]
+    if label_without_keyword == 'switch':
+        label_without_keyword = '_switch'
+
     if _class == "Boolean" or _class == "Integer" or _class == "Float" or is_a_float_class(_class):
         assign = """
 bool assign_CLASS_LABEL(std::stringstream &buffer, BaseClass* BaseClass_ptr1) {
 	if(CLASS* element = dynamic_cast<CLASS*>(BaseClass_ptr1)) {
-                buffer >> element->_LABEL;
+                buffer >> element->LBL_WO_KEYWORD;
                 if(buffer.fail())
                         return false;
                 else
@@ -173,12 +187,12 @@ bool assign_CLASS_LABEL(std::stringstream &buffer, BaseClass* BaseClass_ptr1) {
         }
         else
                 return false;
-}""".replace("CLASS", attribute_json["domain"]).replace("LABEL", attribute_json["label"])
+}""".replace("CLASS", attribute_json["domain"]).replace("LABEL", attribute_json["label"]).replace("LBL_WO_KEYWORD", label_without_keyword)
     elif _class == "String":
         assign = """
 bool assign_CLASS_LABEL(std::stringstream &buffer, BaseClass* BaseClass_ptr1) {
 	if(CLASS* element = dynamic_cast<CLASS*>(BaseClass_ptr1)) {
-		element->_LABEL = buffer.str();
+		element->LABEL = buffer.str();
 		if(buffer.fail())
 			return false;
 		else
@@ -226,14 +240,14 @@ def _attribute_decl(attribute):
     (_range, _dataType) =  get_dataType_and_range(attribute)
     _class = _format_class([_range, _dataType])
     if _type == "primitive":
-        return _class
+        return "CGMES::" + _class
     if _type == "list":
-        return "std::list<" + _class + "*>"
+        return "std::list<CGMES::" + _class + "*>"
     else:
-        return _class + '*'
+        return "CGMES::" + _class + '*'
 
 def _create_attribute_includes(text, render):
-    unique = []
+    unique = {}
     include_string = ""
     inputText = render(text)
     jsonString = inputText.replace("'", "\"")
@@ -244,14 +258,31 @@ def _create_attribute_includes(text, render):
             _type = attribute_type(attribute)
             (_range, _dataType) =  get_dataType_and_range(attribute)
             class_name = _format_class([_range, _dataType])
-            if class_name not in unique:
-                unique.append({'name': class_name, 'type': _type})
+            if class_name != '' and class_name not in unique:
+                unique[class_name] = _type
     for clarse in unique:
-        if clarse['name'] != "":
-            if clarse['type'] == "class" or clarse['type'] == "list":
-                include_string += '\nclass ' + clarse['name'] + ';'
-            else:
-                include_string += '\n#include "' + clarse['name'] + '.hpp"'
+        if unique[clarse] == "primitive":
+            include_string += '\n#include "' + clarse + '.hpp"'
+
+    return include_string
+
+def _create_attribute_class_declarations(text, render):
+    unique = {}
+    include_string = ""
+    inputText = render(text)
+    jsonString = inputText.replace("'", "\"")
+    jsonStringNoHtmlEsc = jsonString.replace("&quot;", "\"")
+    if jsonStringNoHtmlEsc != None and jsonStringNoHtmlEsc != "":
+        attributes = json.loads(jsonStringNoHtmlEsc)
+        for attribute in attributes:
+            _type = attribute_type(attribute)
+            (_range, _dataType) =  get_dataType_and_range(attribute)
+            class_name = _format_class([_range, _dataType])
+            if class_name != '' and class_name not in unique:
+                unique[class_name] = _type
+    for clarse in unique:
+        if unique[clarse] == "class" or unique[clarse] == "list":
+            include_string += '\nclass ' + clarse + ';'
 
     return include_string
 

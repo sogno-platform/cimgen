@@ -6,6 +6,8 @@
 #include "{{> class}}.hpp"
 {{/attributes}}
 
+using namespace CGMES;
+
 {{class_name}}::{{class_name}}() {};
 
 {{class_name}}::~{{class_name}}() {};
@@ -18,8 +20,10 @@
 {{#langPack.create_assign}}{{.}}{{/langPack.create_assign}}
 {{/attributes}}
 
-BaseClass* {{class_name}}_factory() {
-      return new {{class_name}};
+namespace CGMES {
+	BaseClass* {{class_name}}_factory() {
+		return new {{class_name}};
+	}
 }
 
 void {{class_name}}::addConstructToMap(std::unordered_map<std::string, BaseClass* (*)()>& factory_map) {

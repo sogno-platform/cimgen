@@ -3,10 +3,9 @@
 #include "Date.hpp"
 #include "String.hpp"
 
+using namespace CGMES;
 
-Date::Date()
-{
-}
+Date::Date() {}
 
 Date::Date(String s)
 {

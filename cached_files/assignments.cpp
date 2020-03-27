@@ -8,6 +8,8 @@
 #include <iostream>
 #include "BaseClass.hpp"
 
+using namespace CGMES;
+
 static std::unordered_map<std::string, assign_function> dynamic_switch_factory();
 static std::unordered_map<std::string, assign_function> dynamic_switch = dynamic_switch_factory();
 
