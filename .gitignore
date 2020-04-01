@@ -2,3 +2,4 @@
 googletest/*
 build/*
 cimpp/*
+cimpy/*

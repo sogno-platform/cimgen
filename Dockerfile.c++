@@ -5,9 +5,9 @@ run pip3 install --upgrade pip
 run pip3 install xmltodict chevron
 
 run mkdir -p /cim-codebase-generator/langPack/
-copy langPack /cim-codebase-generator/langPack/
+copy c++/langPack /cim-codebase-generator/langPack/
 run mkdir -p /cim-codebase-generator/main/
-copy cimCodebaseGenerator.py cpp_float_header_template.mustache cpp_float_object_template.mustache cpp_header_template.mustache cpp_object_template.mustache /cim-codebase-generator/main/
+copy cimCodebaseGenerator.py c++/templates/ /cim-codebase-generator/main/
 run echo $'import main.cimCodebaseGenerator' >> /cim-codebase-generator/main/__init__.py
 run echo $\
 'import main\n\
