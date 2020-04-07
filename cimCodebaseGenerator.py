@@ -154,16 +154,70 @@ class RDFSEntry:
             return tokens[1]
         return name
 
-# Add a new class into a profile
-def _new_class(profile, class_name, object_dic):
-    if class_name not in [ 'String' ]:
-        if not (class_name in profile):
-            profile[class_name] = object_dic or {}
-            profile[class_name]['attributes'] = []
-            profile[class_name]['instances'] = []
-        else:
-            logger.info("Class {} already exists".format(class_name))
-    return profile
+class CIMComponentDefinition:
+    def __init__(self, profile, rdfsEntry):
+        self.attribute_list = []
+        self.comment = rdfsEntry.comment()
+        self.instance_list = []
+        self.origin_list = []
+        self.profile = profile
+        self.super = rdfsEntry.subClassOf()
+
+    def attributes(self):
+        return self.attribute_list
+
+    def addAttribute(self, attribute):
+        self.attribute_list.append(attribute)
+
+    def has_instances(self):
+        return len(self.instance_list) > 0
+
+    def instances(self):
+        return self.instance_list
+
+    def addInstance(self, instance):
+        self.instance_list.append(instance)
+
+    def addAttributes(self, attributes):
+        for attribute in attributes:
+            self.attribute_list.append(attribute)
+
+    def origins(self):
+        return self.origin_list
+
+    def addOrigin(self, origin):
+        self.origin_list.append(origin)
+
+    def superClass(self):
+        return self.super
+
+    def _simple_float_attribute(attr):
+        if 'dataType' in attr:
+            return attr['label'] == 'value' and attr['dataType'] == '#Float'
+        return False
+
+    def is_a_float(self):
+        simple_float = False
+        for attr in self.attribute_list:
+            if CIMComponentDefinition._simple_float_attribute(attr):
+                simple_float = True
+        for attr in self.attribute_list:
+            if not CIMComponentDefinition._simple_float_attribute(attr):
+                simple_float = False
+        if simple_float:
+            return True
+
+        candidate_array = { 'value': False, 'unit': False, 'multiplier': False }
+        for attr in self.attribute_list:
+            key = attr['label']
+            if key in candidate_array:
+                candidate_array[key] = True
+            else:
+                return False
+        for key in candidate_array:
+            if candidate_array[key] == False:
+                return False
+        return True
 
 def get_profile_name(descriptions):
     for list_elem in descriptions:
@@ -199,9 +253,13 @@ def _parse_rdf(input_dic):
         if rdfsEntry.type() != None:
             if rdfsEntry.type() == 'http://www.w3.org/2000/01/rdf-schema#Class':
                 # Class
-                classes_map = _new_class(classes_map, rdfsEntry.label(), object_dic)
+                if rdfsEntry.label() in classes_map:
+                    logger.info("Class {} already exists".format(rdfsEntry.label()))
+                if rdfsEntry.label() != "String":
+                    classes_map[rdfsEntry.label()] = CIMComponentDefinition(classes_map, rdfsEntry);
             elif rdfsEntry.type() == "http://www.w3.org/1999/02/22-rdf-syntax-ns#Property":
                 # Property -> Attribute
+                # We might not have read all the classes yet, so we just make a big list of all attributes
                 attributes.append(object_dic)
             elif rdfsEntry.type() != "http://iec.ch/TC57/1999/rdf-schema-extensions-19990926#ClassCategory":
                 instances.append(object_dic)
@@ -216,15 +274,15 @@ def _parse_rdf(input_dic):
     for attribute in attributes:
         clarse = attribute['domain']
         if clarse and classes_map[clarse]:
-            classes_map[clarse]['attributes'].append(attribute)
+            classes_map[clarse].addAttribute(attribute)
         else:
             logger.info("Class {} for attribute {} not found.".format(clarse, attribute))
 
     # Add instances to corresponding class
     for instance in instances:
-        clarse = instance['type']
+        clarse = RDFSEntry._get_rid_of_hash(instance['type'])
         if clarse and clarse in classes_map:
-            classes_map[clarse]['instances'].append(instance)
+            classes_map[clarse].addInstance(instance)
         else:
             logger.info("Class {} for instance {} not found.".format(clarse, instance))
 
@@ -238,61 +296,41 @@ def _parse_rdf(input_dic):
 def _write_python_files(elem_dict, version, langPack):
 
     float_classes = {}
-    is_a_float = False
+    enum_classes = {}
 
     # Iterate over Classes
-    for class_name in elem_dict.keys():
-        attributes_array = _find_multiple_attributes(elem_dict[class_name]['attributes'])
-        if is_just_a_float(attributes_array):
-            float_classes[class_name] = True
-            elem_dict[class_name]['is_a_float'] = True
-        else:
-            elem_dict[class_name]['is_a_float'] = False
+    for class_definition in elem_dict:
+        if elem_dict[class_definition].is_a_float():
+            float_classes[class_definition] = True
+        if elem_dict[class_definition].has_instances():
+            enum_classes[class_definition] = True
 
     langPack.set_float_classes(float_classes)
+    langPack.set_enum_classes(enum_classes)
 
     for class_name in elem_dict.keys():
 
-        # extract attributes
-        attributes_array = _find_multiple_attributes(elem_dict[class_name]['attributes'])
-        instances_array = elem_dict[class_name]['instances']
-
-        class_location = None
-
-        # Check if the current class has a parent class
-        if 'subClassOf' in elem_dict[class_name].keys():
-            sub_class_of = elem_dict[class_name]['subClassOf']
-
-            if sub_class_of not in elem_dict.keys():
-                logger.info("Parent class {} for class {} not found".format(sub_class_of, class_name))
-                continue
-            else:
-                class_location = 'cimpy.' + version + "." + sub_class_of
-        else:
-            sub_class_of = None
+        class_details = {
+            "attributes": _find_multiple_attributes(elem_dict[class_name].attributes()),
+            "ClassLocation": langPack.get_class_location(class_name, elem_dict, version),
+            "class_name": class_name,
+            "class_origin": elem_dict[class_name].origins(),
+            "instances": elem_dict[class_name].instances(),
+            "has_instances": elem_dict[class_name].has_instances(),
+            "is_a_float": elem_dict[class_name].is_a_float(),
+            "langPack": langPack,
+            "sub_class_of": elem_dict[class_name].superClass(),
+        }
 
         # extract comments
-        if 'comment' in elem_dict[class_name].keys():
-            comment = elem_dict[class_name]['comment']
-        else:
-            comment = ""
+        if elem_dict[class_name].comment:
+            class_details['class_comment'] = elem_dict[class_name].comment
 
-        for attribute in attributes_array:
+        for attribute in class_details['attributes']:
             if "comment" in attribute:
                 attribute["comment"] = attribute["comment"].replace('"', "`")
                 attribute["comment"] = attribute["comment"].replace("'", "`")
 
-        class_details = {
-            "attributes": attributes_array,
-            "class_comment": comment,
-            "ClassLocation": class_location,
-            "class_name": class_name,
-            "class_origin": elem_dict[class_name]['class_origin'],
-            "instances": instances_array,
-            "is_a_float": elem_dict[class_name]['is_a_float'],
-            "langPack": langPack,
-            "sub_class_of": sub_class_of,
-        }
         _write_files(class_details, version)
 
 def _write_files(class_details, version):
@@ -315,34 +353,6 @@ def _write_files(class_details, version):
             class_details['attributes'][i]['dataType'] = class_details['attributes'][i]['multiplicity']
 
     class_details['langPack'].run_template( version_path, class_details )
-
-def simple_float_attribute(attr):
-    if 'dataType' in attr:
-        return attr['label'] == 'value' and attr['dataType'] == '#Float'
-    return False
-
-def is_just_a_float(attributes):
-    simple_float = False
-    for attr in attributes:
-        if simple_float_attribute(attr):
-            simple_float = True
-    for attr in attributes:
-        if not simple_float_attribute(attr):
-            simple_float = False
-    if simple_float == True:
-        return True
-
-    candidate_array = { 'value': False, 'unit': False, 'multiplier': False }
-    for attr in attributes:
-        key = attr['label']
-        if key in candidate_array:
-            candidate_array[key] = True
-        else:
-            return False
-    for key in candidate_array:
-        if candidate_array[key] == False:
-            return False
-    return True
 
 # Find multiple entries for the same attribute
 def _find_multiple_attributes(attributes_array):
@@ -372,10 +382,9 @@ def _merge_profiles(profiles_array):
                 for class_key in elem_dict[profile_key]:
                     if class_key in profiles_dict[profile_key].keys():
                         # If class allready exists in packageDict add attributes to attributes array
-                        if len(elem_dict[profile_key][class_key]['attributes']) > 0:
-                            attributes_package = profiles_dict[profile_key][class_key]['attributes']
-                            attributes_array = elem_dict[profile_key][class_key]['attributes']
-                            profiles_dict[profile_key][class_key]['attributes'] = attributes_package + attributes_array
+                        if len(elem_dict[profile_key][class_key].attributes()) > 0:
+                            attributes_array = elem_dict[profile_key][class_key].attributes()
+                            profiles_dict[profile_key][class_key].addAttributes(attributes_array)
                     # If class is not in packageDict, create entry
                     else:
                         profiles_dict[profile_key][class_key] = elem_dict[profile_key][class_key]
@@ -402,34 +411,34 @@ def _merge_classes(profiles_dict):
         # iterate over classes in the current profile
         for class_key in profiles_dict[package_key]:
             # class already defined?
-            if class_key not in class_dict.keys():
+            if class_key not in class_dict:
                 # store class and class origin
                 class_dict[class_key] = profiles_dict[package_key][class_key]
-                class_dict[class_key]['class_origin'] = [{'origin': short_name}]
-                for attr in class_dict[class_key]['attributes']:
+                class_dict[class_key].addOrigin({'origin': short_name})
+                for attr in class_dict[class_key].attributes():
                     # store origin of the attributes
-                    attr['attr_origin'] = [{'origin': short_package_name[package_key]}]
+                    attr['attr_origin'] = [{'origin': short_name}]
             else:
                 # some inheritance information is stored only in one of the packages. Therefore it has to be checked
                 # if the subClassOf attribute is set. See for example TopologicalNode definitions in SV and TP.
-                if 'subClassOf' not in class_dict[class_key].keys():
-                    if 'subClassOf' in profiles_dict[package_key][class_key].keys():
-                        class_dict[class_key]['subClassOf'] = profiles_dict[package_key][class_key]['subClassOf']
+                if class_dict[class_key].superClass():
+                    if profiles_dict[package_key][class_key].superClass():
+                        class_dict[class_key].super = profiles_dict[package_key][class_key].superClass()
 
                 # check if profile is already stored in class origin list
-                for origin in class_dict[class_key]['class_origin']:
-                    multiple_origin = False
+                multiple_origin = False
+                for origin in class_dict[class_key].origins():
                     if short_name == origin['origin']:
                         # origin already stored
                         multiple_origin = True
                         break
                 if not multiple_origin:
-                    class_dict[class_key]['class_origin'].append({'origin': short_name})
+                    class_dict[class_key].addOrigin({'origin': short_name})
 
-                for attr in profiles_dict[package_key][class_key]['attributes']:
+                for attr in profiles_dict[package_key][class_key].attributes():
                     # check if attribute is already in attributes list
                     multiple_attr = False
-                    for attr_set in class_dict[class_key]['attributes']:
+                    for attr_set in class_dict[class_key].attributes():
                         if attr['label'] == attr_set['label']:
                             # attribute already in attributes list, check if origin is new
                             multiple_attr = True
@@ -445,7 +454,7 @@ def _merge_classes(profiles_dict):
                     if not multiple_attr:
                         # new attribute
                         attr['attr_origin'] = [{'origin': short_name}]
-                        class_dict[class_key]['attributes'].append(attr)
+                        class_dict[class_key].addAttribute(attr)
     return class_dict
 
 def cim_generate(directory, version, langPack):
@@ -497,3 +506,72 @@ def cim_generate(directory, version, langPack):
     logger.info('Elapsed Time: {}s\n\n'.format(time() - t0))
 
 
+class_blacklist = [ 'Folders',
+                    'Task',
+                    'IEC61970',
+                    'BaseClassDefiner',
+                    'assignments',
+                    'Folders',
+                    'ConformLoad',
+                    'Factory'
+                    'String',
+                    'BaseClass',
+                    'ConformLoadGroup',
+                    'ConformLoadSchedule',
+                    'NonConformLoad',
+                    'NonConformLoadGroup',
+                    'NonConformLoadSchedule' ]
+
+iec61970_blacklist = [ 'CIMClassList',
+                       'Folders',
+                       'Task',
+                       'IEC61970',
+                       'ConformLoadGroup',
+                       'ConformLoadSchedule',
+                       'NonConformLoad',
+                       'NonConformLoadGroup',
+                       'NonConformLoadSchedule' ]
+
+def _is_enum_class(filepath):
+    with open(filepath,encoding = 'utf-8') as f:
+        for line in f:
+            if "enum class" in line:
+                return True
+    return False
+
+def create_header_include_file(directory, header_include_filename, header, footer, before, after, blacklist):
+
+    lines = []
+
+    for filename in os.listdir(directory):
+        filepath = os.path.join(directory, filename)
+        basepath, ext = os.path.splitext(filepath)
+        basename = os.path.basename(basepath)
+        if ext == ".hpp" and not _is_enum_class(filepath) and not basename in blacklist:
+            lines.append(before + basename + after)
+    lines.sort()
+    for line in lines:
+        header.append(line)
+    for line in footer:
+        header.append(line)
+    header_include_filepath = os.path.join(directory, header_include_filename)
+    with open(header_include_filepath, "w", encoding = 'utf-8') as f:
+        f.writelines(header)
+
+def resolve_headers(version):
+    os.chdir(os.path.dirname(__file__))
+    version_path = os.path.join(os.getcwd(), version)
+    class_list_header = [   '#ifndef CIMCLASSLIST_H\n',
+                '#define CIMCLASSLIST_H\n',
+                'using namespace CGMES;\n',
+                '#include <list>\n',
+                'static std::list<BaseClassDefiner> CIMClassList = {\n' ]
+    class_list_footer = [  '};\n',
+                '#endif // CIMCLASSLIST_H\n' ]
+
+    create_header_include_file(version_path, "CIMClassList.hpp", class_list_header, class_list_footer, "    ", "::define(),\n", class_blacklist)
+
+    iec61970_header = [ "#ifndef IEC61970_H\n", "#define IEC61970_H\n" ]
+    iec61970_footer = [ '#endif' ]
+
+    create_header_include_file(version_path, "IEC61970.hpp", iec61970_header, iec61970_footer, "#include \"", ".hpp\"\n", iec61970_blacklist)

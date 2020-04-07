@@ -1,5 +1,7 @@
 import os
 import chevron
+import logging
+logger = logging.getLogger(__name__)
 
 # This makes sure we have somewhere to write the classes, and
 # creates a couple of files the python implementation needs.
@@ -18,6 +20,14 @@ base = {
 }
 
 template_files=[ { "filename": "cimpy_class_template.mustache", "ext": ".py" } ]
+
+def get_class_location(class_name, class_map, version):
+    # Check if the current class has a parent class
+    if class_map[class_name].superClass() and class_map[class_name].superClass() in class_map:
+        return 'cimpy.' + version + "." + class_map[class_name].superClass()
+    else:
+        logger.info("Parent class {} for class {} not found".format(class_map[class_name].superClass(), class_name))
+        return None
 
 partials = {}
 
@@ -45,6 +55,9 @@ def _set_default(text, render):
     else:
         # everything else should be a float
         return '0.0'
+
+def set_enum_classes(new_enum_classes):
+    return
 
 def set_float_classes(new_float_classes):
     return

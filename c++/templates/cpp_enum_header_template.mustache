@@ -1,0 +1,20 @@
+#ifndef {{class_name}}_H
+#define {{class_name}}_H
+
+namespace CGMES
+{
+	/*
+	{{{class_comment}}}
+	*/
+	enum class {{class_name}}
+	{
+{{#instances}}
+		/**
+		 * {{comment}}
+		 */
+		{{label}},
+{{/instances}}
+	};
+	std::istream& operator>>(std::istream& lop, CGMES::{{class_name}}& rop);
+}
+#endif
