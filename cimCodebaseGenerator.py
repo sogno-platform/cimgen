@@ -155,12 +155,11 @@ class RDFSEntry:
         return name
 
 class CIMComponentDefinition:
-    def __init__(self, profile, rdfsEntry):
+    def __init__(self, rdfsEntry):
         self.attribute_list = []
         self.comment = rdfsEntry.comment()
         self.instance_list = []
         self.origin_list = []
-        self.profile = profile
         self.super = rdfsEntry.subClassOf()
 
     def attributes(self):
@@ -256,7 +255,7 @@ def _parse_rdf(input_dic):
                 if rdfsEntry.label() in classes_map:
                     logger.info("Class {} already exists".format(rdfsEntry.label()))
                 if rdfsEntry.label() != "String":
-                    classes_map[rdfsEntry.label()] = CIMComponentDefinition(classes_map, rdfsEntry);
+                    classes_map[rdfsEntry.label()] = CIMComponentDefinition(rdfsEntry);
             elif rdfsEntry.type() == "http://www.w3.org/1999/02/22-rdf-syntax-ns#Property":
                 # Property -> Attribute
                 # We might not have read all the classes yet, so we just make a big list of all attributes
@@ -505,6 +504,10 @@ def cim_generate(directory, version, langPack):
 
     logger.info('Elapsed Time: {}s\n\n'.format(time() - t0))
 
+# The code below this line is used after the main cim_generate phase to generate
+# two include files. They are called CIMClassList.hpp and IEC61970.hpp, and
+# contain the list of the class files and the list of define functions that add
+# the generated functions into the function tables.
 
 class_blacklist = [ 'Folders',
                     'Task',
@@ -512,25 +515,14 @@ class_blacklist = [ 'Folders',
                     'BaseClassDefiner',
                     'assignments',
                     'Folders',
-                    'ConformLoad',
                     'Factory'
                     'String',
-                    'BaseClass',
-                    'ConformLoadGroup',
-                    'ConformLoadSchedule',
-                    'NonConformLoad',
-                    'NonConformLoadGroup',
-                    'NonConformLoadSchedule' ]
+                    'BaseClass' ]
 
 iec61970_blacklist = [ 'CIMClassList',
                        'Folders',
                        'Task',
-                       'IEC61970',
-                       'ConformLoadGroup',
-                       'ConformLoadSchedule',
-                       'NonConformLoad',
-                       'NonConformLoadGroup',
-                       'NonConformLoadSchedule' ]
+                       'IEC61970' ]
 
 def _is_enum_class(filepath):
     with open(filepath,encoding = 'utf-8') as f:
@@ -539,7 +531,7 @@ def _is_enum_class(filepath):
                 return True
     return False
 
-def create_header_include_file(directory, header_include_filename, header, footer, before, after, blacklist):
+def _create_header_include_file(directory, header_include_filename, header, footer, before, after, blacklist):
 
     lines = []
 
@@ -569,9 +561,9 @@ def resolve_headers(version):
     class_list_footer = [  '};\n',
                 '#endif // CIMCLASSLIST_H\n' ]
 
-    create_header_include_file(version_path, "CIMClassList.hpp", class_list_header, class_list_footer, "    ", "::define(),\n", class_blacklist)
+    _create_header_include_file(version_path, "CIMClassList.hpp", class_list_header, class_list_footer, "    ", "::define(),\n", class_blacklist)
 
     iec61970_header = [ "#ifndef IEC61970_H\n", "#define IEC61970_H\n" ]
     iec61970_footer = [ '#endif' ]
 
-    create_header_include_file(version_path, "IEC61970.hpp", iec61970_header, iec61970_footer, "#include \"", ".hpp\"\n", iec61970_blacklist)
+    _create_header_include_file(version_path, "IEC61970.hpp", iec61970_header, iec61970_footer, "#include \"", ".hpp\"\n", iec61970_blacklist)
