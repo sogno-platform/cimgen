@@ -1,4 +1,13 @@
 import os
+import chevron
+
+# This makes sure we have somewhere to write the classes, and
+# creates a couple of files the python implementation needs.
+def setup(version_path):
+    if not os.path.exists(version_path):
+        os.makedirs(version_path)
+        _create_init(version_path)
+        _create_base(version_path)
 
 def location(version):
      return "cimpy." + version + ".Base";
@@ -37,6 +46,24 @@ def _set_default(text, render):
         # everything else should be a float
         return '0.0'
 
+def set_float_classes(new_float_classes):
+    return
+
+def run_template(version_path, class_details):
+    for template_info in template_files:
+        class_file = os.path.join(version_path, class_details['class_name'] + template_info["ext"])
+        if not os.path.exists(class_file):
+            with open(class_file, 'w') as file:
+                with open(template_info["filename"]) as f:
+                    args = {
+                        'data': class_details,
+                        'template': f,
+                        'partials_dict': partials
+                    }
+                    output = chevron.render(**args)
+                file.write(output)
+
+
 def _create_init(path):
     init_file = path + "/__init__.py"
     with open(init_file, 'w'):
@@ -55,9 +82,4 @@ def _create_base(path):
         for line in base:
             f.write(line)
 
-def setup(version_path):
-    if not os.path.exists(version_path):
-        os.makedirs(version_path)
-        _create_init(version_path)
-        _create_base(version_path)
 

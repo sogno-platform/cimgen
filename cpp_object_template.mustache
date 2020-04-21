@@ -1,40 +1,56 @@
-
-#include "{{subClassOf}}.hpp"
+#include <sstream>
+#include "{{sub_class_of}}.hpp"
 #include "{{class_name}}.hpp"
 
 {{#attributes}}
 #include "{{> class}}.hpp"
 {{/attributes}}
 
-{{class_name}}::{{class_name}}()
-{
-};
+using namespace CGMES;
 
-{{class_name}}::~{{class_name}}()
-{
-};
+{{class_name}}::{{class_name}}() {};
+
+{{class_name}}::~{{class_name}}() {};
 
 {{#attributes}}
-void {{class_name}}_set{{label}}({{class_name}}* obj, {{> class}}* _{{label}}_){
-	obj->_{{label}} = _{{label}}_;
-}
+{{#langPack.create_class_assign}}{{.}}{{/langPack.create_class_assign}}
 {{/attributes}}
 
 {{#attributes}}
-bool assign_{{class_name}}_{{label}}(BaseClass* BaseClass_ptr1, BaseClass* BaseClass_ptr2)
-{
-	if({{class_name}}* element = dynamic_cast<{{class_name}}*>(BaseClass_ptr1))
-	{
-		element->_{{label}} = dynamic_cast<{{> class}}*>(BaseClass_ptr2);
-		if(element->_{{label}} != nullptr)
-			return true;
+{{#langPack.create_assign}}{{.}}{{/langPack.create_assign}}
+{{/attributes}}
+
+namespace CGMES {
+	BaseClass* {{class_name}}_factory() {
+		return new {{class_name}};
 	}
-	return false;
 }
 
+void {{class_name}}::addConstructToMap(std::unordered_map<std::string, BaseClass* (*)()>& factory_map) {
+	factory_map.insert(std::make_pair(std::string("cim:{{class_name}}"), &{{class_name}}_factory));
+}
+
+void {{class_name}}::addPrimitiveAssignFnsToMap(std::unordered_map<std::string, assign_function>& assign_map) {
+{{#attributes}}
+	{{> insert_assign}}
 {{/attributes}}
-
-BaseClass* {{class_name}}_factory()
-{
-      return new {{class_name}};
 }
+
+void {{class_name}}::addClassAssignFnsToMap(std::unordered_map<std::string, class_assign_function>& assign_map) {
+{{#attributes}}
+	{{> insert_class_assign}}
+{{/attributes}}
+}
+
+const char {{class_name}}::debugName[] = "{{class_name}}";
+const char* {{class_name}}::debugString()
+{
+	return {{class_name}}::debugName;
+}
+
+const BaseClassDefiner {{class_name}}::define()
+{
+	return BaseClassDefiner({{class_name}}::addConstructToMap, {{class_name}}::addPrimitiveAssignFnsToMap, {{class_name}}::addClassAssignFnsToMap, {{class_name}}::debugName);
+}
+
+
