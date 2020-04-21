@@ -23,6 +23,11 @@ template_files = [ { "filename": "cpp_header_template.mustache", "ext": ".hpp" }
                    { "filename": "cpp_object_template.mustache", "ext": ".cpp" } ]
 float_template_files = [ { "filename": "cpp_float_header_template.mustache", "ext": ".hpp" },
                          { "filename": "cpp_float_object_template.mustache", "ext": ".cpp" } ]
+enum_template_files = [ { "filename": "cpp_enum_header_template.mustache", "ext": ".hpp" },
+                         { "filename": "cpp_enum_object_template.mustache", "ext": ".cpp" } ]
+
+def get_class_location(class_name, class_map, version):
+    pass
 
 partials = { 'class':                   '{{#langPack.format_class}}{{range}} {{dataType}}{{/langPack.format_class}}',
              'attribute':               '{{#langPack.attribute_decl}}{{.}}{{/langPack.attribute_decl}}',
@@ -36,8 +41,11 @@ partials = { 'class':                   '{{#langPack.format_class}}{{range}} {{d
 
 # This is the function that runs the template.
 def run_template(version_path, class_details):
+
     if class_details['is_a_float'] == True:
         templates = float_template_files
+    elif class_details['has_instances'] == True:
+        templates = enum_template_files
     else:
         templates = template_files
 
@@ -80,7 +88,7 @@ def attribute_type(attribute):
     class_name = _format_class([_range, _dataType])
     if attribute["multiplicity"] == 'M:0..n' or attribute["multiplicity"] == 'M:1..n':
         return "list"
-    if is_a_float_class(class_name) or class_name == "String" or class_name == "Boolean" or class_name == "Integer":
+    if is_a_float_class(class_name) or class_name == "String" or class_name == "Boolean" or class_name == "Integer" or is_an_enum_class(class_name):
         return "primitive"
     else:
         return "class"
@@ -97,6 +105,15 @@ def set_float_classes(new_float_classes):
 def is_a_float_class(name):
     if name in float_classes:
         return float_classes[name]
+
+enum_classes = {}
+def set_enum_classes(new_enum_classes):
+    for new_class in new_enum_classes:
+        enum_classes[new_class] = new_enum_classes[new_class]
+
+def is_an_enum_class(name):
+    if name in enum_classes:
+        return enum_classes[name]
 
 # These insert_ functions are used to generate the entries in the dynamic_switch
 # maps, for use in assignments.cpp and Task.cpp
@@ -180,7 +197,7 @@ def create_assign(text, render):
     if label_without_keyword == 'switch':
         label_without_keyword = '_switch'
 
-    if _class == "Boolean" or _class == "Integer" or _class == "Float" or is_a_float_class(_class):
+    if _class != "String":
         assign = """
 bool assign_CLASS_LABEL(std::stringstream &buffer, BaseClass* BaseClass_ptr1) {
 	if(CLASS* element = dynamic_cast<CLASS*>(BaseClass_ptr1)) {
@@ -193,7 +210,7 @@ bool assign_CLASS_LABEL(std::stringstream &buffer, BaseClass* BaseClass_ptr1) {
         else
                 return false;
 }""".replace("CLASS", attribute_json["domain"]).replace("LABEL", attribute_json["label"]).replace("LBL_WO_KEYWORD", label_without_keyword)
-    elif _class == "String":
+    else:
         assign = """
 bool assign_CLASS_LABEL(std::stringstream &buffer, BaseClass* BaseClass_ptr1) {
 	if(CLASS* element = dynamic_cast<CLASS*>(BaseClass_ptr1)) {
@@ -314,4 +331,65 @@ def set_default(dataType):
     else:
         return 'nullptr'
 
+# The code below this line is used after the main cim_generate phase to generate
+# two include files. They are called CIMClassList.hpp and IEC61970.hpp, and
+# contain the list of the class files and the list of define functions that add
+# the generated functions into the function tables.
 
+class_blacklist = [ 'Folders',
+                    'Task',
+                    'IEC61970',
+                    'BaseClassDefiner',
+                    'assignments',
+                    'Folders',
+                    'Factory'
+                    'String',
+                    'BaseClass' ]
+
+iec61970_blacklist = [ 'CIMClassList',
+                       'Folders',
+                       'Task',
+                       'IEC61970' ]
+
+def _is_enum_class(filepath):
+    with open(filepath,encoding = 'utf-8') as f:
+        for line in f:
+            if "enum class" in line:
+                return True
+    return False
+
+def _create_header_include_file(directory, header_include_filename, header, footer, before, after, blacklist):
+
+    lines = []
+
+    for filename in os.listdir(directory):
+        filepath = os.path.join(directory, filename)
+        basepath, ext = os.path.splitext(filepath)
+        basename = os.path.basename(basepath)
+        if ext == ".hpp" and not _is_enum_class(filepath) and not basename in blacklist:
+            lines.append(before + basename + after)
+    lines.sort()
+    for line in lines:
+        header.append(line)
+    for line in footer:
+        header.append(line)
+    header_include_filepath = os.path.join(directory, header_include_filename)
+    with open(header_include_filepath, "w", encoding = 'utf-8') as f:
+        f.writelines(header)
+
+def resolve_headers(version):
+    version_path = os.path.join('/cim-codebase-generator/main', version)
+    class_list_header = [   '#ifndef CIMCLASSLIST_H\n',
+                '#define CIMCLASSLIST_H\n',
+                'using namespace CGMES;\n',
+                '#include <list>\n',
+                'static std::list<BaseClassDefiner> CIMClassList = {\n' ]
+    class_list_footer = [  'UnknownType::define() };\n',
+                '#endif // CIMCLASSLIST_H\n' ]
+
+    _create_header_include_file(version_path, "CIMClassList.hpp", class_list_header, class_list_footer, "    ", "::define(),\n", class_blacklist)
+
+    iec61970_header = [ "#ifndef IEC61970_H\n", "#define IEC61970_H\n" ]
+    iec61970_footer = [ '#include "UnknownType.hpp"\n', '#endif' ]
+
+    _create_header_include_file(version_path, "IEC61970.hpp", iec61970_header, iec61970_footer, "#include \"", ".hpp\"\n", iec61970_blacklist)
