@@ -3,7 +3,7 @@ import chevron
 import json
 
 def location(version):
-    return "BaseClass.h";
+    return "BaseClass.hpp";
 
 # This just makes sure we have somewhere to write the classes.
 def setup(version_path):
@@ -40,6 +40,11 @@ def run_template(version_path, class_details):
         templates = float_template_files
     else:
         templates = template_files
+
+    if class_details['class_name'] == "Integer" or class_details['class_name'] == "Boolean" or class_details['class_name'] == "Date":
+           # These classes are defined already
+           # We have to implement operators for them
+           return
 
     for template_info in templates:
         class_file = os.path.join(version_path, class_details['class_name'] + template_info["ext"])
