@@ -14,6 +14,6 @@ run echo $\
 from langPack import langPackCpp\n\
 path_to_rdf_files = "/cgmes_schema/cgmes_v2_4_15_schema"\n\
 main.cimCodebaseGenerator.cim_generate(path_to_rdf_files, "cgmes_v2_4_15", langPackCpp)\n\
-main.cimCodebaseGenerator.resolve_headers("cgmes_v2_4_15")\n' >> /cim-codebase-generator/createClasses.py
+langPackCpp.resolve_headers("cgmes_v2_4_15")\n' >> /cim-codebase-generator/createClasses.py
 workdir /cim-codebase-generator
 cmd python3 createClasses.py cgmes_v2_4_15
