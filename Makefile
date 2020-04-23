@@ -22,7 +22,7 @@ clean:
 	find cimpp -type f -exec rm -f {} \;
 
 run:
-	docker run -v ${DIR}/cimpp:/cim-codebase-generator/main/cgmes_v2_4_15 -v ${DIR}/cgmes_schema/cgmes_v2_4_15_schema:/cgmes_schema/cgmes_v2_4_15_schema cim-codebase-generator
+	docker run -v ${DIR}/../src:/cim-codebase-generator/main/cgmes_v2_4_15 -v ${DIR}/cgmes_schema/cgmes_v2_4_15_schema:/cgmes_schema/cgmes_v2_4_15_schema cim-codebase-generator
 
 .PHONY:
 	build-cpp build-python clean run

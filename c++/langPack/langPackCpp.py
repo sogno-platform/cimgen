@@ -336,20 +336,25 @@ def set_default(dataType):
 # contain the list of the class files and the list of define functions that add
 # the generated functions into the function tables.
 
-class_blacklist = [ 'Folders',
-                    'Task',
-                    'IEC61970',
-                    'BaseClassDefiner',
-                    'assignments',
-                    'Folders',
-                    'Factory'
-                    'String',
-                    'BaseClass' ]
+class_blacklist = [
+    'assignments',
+    'BaseClass',
+    'BaseClassDefiner',
+    'CIMClassList',
+    'CIMFactory',
+    'Factory',
+    'Folders',
+    'IEC61970',
+    'CIMNamespaces',
+    'String',
+    'Task' ]
 
-iec61970_blacklist = [ 'CIMClassList',
-                       'Folders',
-                       'Task',
-                       'IEC61970' ]
+iec61970_blacklist = [
+    'CIMClassList',
+    'CIMNamespaces',
+    'Folders',
+    'Task',
+    'IEC61970' ]
 
 def _is_enum_class(filepath):
     with open(filepath,encoding = 'utf-8') as f:
