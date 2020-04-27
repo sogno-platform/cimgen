@@ -1,1 +1,1 @@
-import cpp.langPackCpp
+import cpp.langPack

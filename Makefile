@@ -37,7 +37,7 @@ run: ${OUTPUT_DIR}
 build-cpp: OUTPUT_DIR ?= ${DIR}/cimpp
 build-cpp:
 	cp -a ../static/* ${OUTPUT_DIR}
-	python3 build.py ${OUTPUT_DIR}
+	python3 build.py ${OUTPUT_DIR} cpp
 
 .PHONY:
 	docker-cpp docker-python clean run

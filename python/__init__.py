@@ -1,1 +1,1 @@
-import python.langPackPython
+import python.langPack
