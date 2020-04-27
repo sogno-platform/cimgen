@@ -40,7 +40,7 @@ partials = { 'class':                   '{{#langPack.format_class}}{{range}} {{d
            }
 
 # This is the function that runs the template.
-def run_template(version_path, class_details):
+def run_template(outputPath, class_details):
 
     if class_details['is_a_float'] == True:
         templates = float_template_files
@@ -55,10 +55,11 @@ def run_template(version_path, class_details):
            return
 
     for template_info in templates:
-        class_file = os.path.join(version_path, class_details['class_name'] + template_info["ext"])
+        class_file = os.path.join(outputPath, class_details['class_name'] + template_info["ext"])
         if not os.path.exists(class_file):
             with open(class_file, 'w') as file:
-                with open(template_info["filename"]) as f:
+                template_path = os.path.join(os.getcwd(), 'cpp/templates', template_info["filename"])
+                with open(template_path) as f:
                     args = {
                         'data': class_details,
                         'template': f,
@@ -382,8 +383,7 @@ def _create_header_include_file(directory, header_include_filename, header, foot
     with open(header_include_filepath, "w", encoding = 'utf-8') as f:
         f.writelines(header)
 
-def resolve_headers(version):
-    version_path = os.path.join('/cim-codebase-generator/main', version)
+def resolve_headers(outputPath):
     class_list_header = [   '#ifndef CIMCLASSLIST_H\n',
                 '#define CIMCLASSLIST_H\n',
                 'using namespace CGMES;\n',
@@ -392,9 +392,9 @@ def resolve_headers(version):
     class_list_footer = [  'UnknownType::define() };\n',
                 '#endif // CIMCLASSLIST_H\n' ]
 
-    _create_header_include_file(version_path, "CIMClassList.hpp", class_list_header, class_list_footer, "    ", "::define(),\n", class_blacklist)
+    _create_header_include_file(outputPath, "CIMClassList.hpp", class_list_header, class_list_footer, "    ", "::define(),\n", class_blacklist)
 
     iec61970_header = [ "#ifndef IEC61970_H\n", "#define IEC61970_H\n" ]
     iec61970_footer = [ '#include "UnknownType.hpp"\n', '#endif' ]
 
-    _create_header_include_file(version_path, "IEC61970.hpp", iec61970_header, iec61970_footer, "#include \"", ".hpp\"\n", iec61970_blacklist)
+    _create_header_include_file(outputPath, "IEC61970.hpp", iec61970_header, iec61970_footer, "#include \"", ".hpp\"\n", iec61970_blacklist)

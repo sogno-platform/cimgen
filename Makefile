@@ -1,24 +1,27 @@
 
 DIR := $(shell pwd)
-OUTPUT_DIR ?= ${DIR}/cimpp
 
-all: build-cpp run
+all: OUTPUT_DIR ?= ${DIR}/cimpp
+all: docker-cpp run
 
 cimpy:
 	mkdir cimpy
 
-${DIR}/cimpp:
+cimpp:
 	mkdir cimpp
 
-build-cpp:
+docker-cpp: OUTPUT_DIR ?= ${DIR}/cimpp
+docker-cpp: cimpp
 	docker build -t cim-codebase-generator . -f Dockerfile.c++
 
-build-python: cimpy
+docker-python: OUTPUT_DIR ?= ${DIR}/cimpy
+docker-python: cimpy
 	docker build -t cim-codebase-generator-python -f Dockerfile.python .
-	docker run -v ${DIR}/cimpy:/cim-codebase-generator/main/cgmes_v2_4_15 \
-		-v ${DIR}/cgmes_schema/cgmes_v2_4_15_schema:/cgmes_schema/cgmes_v2_4_15_schema \
+	docker run -v ${OUTPUT_DIR}:/cim-codebase-generator/cgmes_v2_4_15 \
+		-v ${DIR}/cgmes_schema/cgmes_v2_4_15_schema:/cim-codebase-generator/cgmes_schema/cgmes_v2_4_15_schema \
 		cim-codebase-generator-python
 
+clean: OUTPUT_DIR ?= ${DIR}/cimpp
 clean:
 	find ${OUTPUT_DIR} -type f -iname "*.hpp" -exec rm -f {} \;
 	find ${OUTPUT_DIR} -type f -iname "*.h" -exec rm -f {} \;
@@ -27,7 +30,14 @@ clean:
 
 run: ${OUTPUT_DIR}
 	cp -a ../static/* ${OUTPUT_DIR}
-	docker run -v ${OUTPUT_DIR}:/cim-codebase-generator/main/cgmes_v2_4_15 -v ${DIR}/cgmes_schema/cgmes_v2_4_15_schema:/cgmes_schema/cgmes_v2_4_15_schema cim-codebase-generator
+	docker run -v ${OUTPUT_DIR}:/cim-codebase-generator/cgmes_v2_4_15 \
+		-v ${DIR}/cgmes_schema/cgmes_v2_4_15_schema:/cim-codebase-generator/cgmes_schema/cgmes_v2_4_15_schema \
+		cim-codebase-generator
+
+build-cpp: OUTPUT_DIR ?= ${DIR}/cimpp
+build-cpp:
+	cp -a ../static/* ${OUTPUT_DIR}
+	python3 build.py ${OUTPUT_DIR}
 
 .PHONY:
-	build-cpp build-python clean run
+	docker-cpp docker-python clean run

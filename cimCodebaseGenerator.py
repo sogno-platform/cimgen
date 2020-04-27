@@ -292,7 +292,7 @@ def _parse_rdf(input_dic):
 # This function extracts all information needed for the creation of the python class files like the comments or the
 # class name. After the extraction the function write_files is called to write the files with the template engine
 # chevron
-def _write_python_files(elem_dict, version, langPack):
+def _write_python_files(elem_dict, langPack, outputPath, version):
 
     float_classes = {}
     enum_classes = {}
@@ -311,7 +311,7 @@ def _write_python_files(elem_dict, version, langPack):
 
         class_details = {
             "attributes": _find_multiple_attributes(elem_dict[class_name].attributes()),
-            "ClassLocation": langPack.get_class_location(class_name, elem_dict, version),
+            "ClassLocation": langPack.get_class_location(class_name, elem_dict, outputPath),
             "class_name": class_name,
             "class_origin": elem_dict[class_name].origins(),
             "instances": elem_dict[class_name].instances(),
@@ -330,11 +330,10 @@ def _write_python_files(elem_dict, version, langPack):
                 attribute["comment"] = attribute["comment"].replace('"', "`")
                 attribute["comment"] = attribute["comment"].replace("'", "`")
 
-        _write_files(class_details, version)
+        _write_files(class_details, outputPath, version)
 
-def _write_files(class_details, version):
-    version_path = os.path.join(os.getcwd(), version)
-    class_details['langPack'].setup(version_path)
+def _write_files(class_details, outputPath, version):
+    class_details['langPack'].setup(outputPath)
 
     if class_details['sub_class_of'] == None:
         # If class has no subClassOf key it is a subclass of the Base class
@@ -351,7 +350,7 @@ def _write_files(class_details, version):
         if 'dataType' not in class_details['attributes'][i].keys() and 'multiplicity' in class_details['attributes'][i].keys():
             class_details['attributes'][i]['dataType'] = class_details['attributes'][i]['multiplicity']
 
-    class_details['langPack'].run_template( version_path, class_details )
+    class_details['langPack'].run_template( outputPath, class_details )
 
 # Find multiple entries for the same attribute
 def _find_multiple_attributes(attributes_array):
@@ -456,7 +455,7 @@ def _merge_classes(profiles_dict):
                         class_dict[class_key].addAttribute(attr)
     return class_dict
 
-def cim_generate(directory, version, langPack):
+def cim_generate(directory, outputPath, version, langPack):
     """Generates cgmes python classes from cgmes ontology
 
     This function uses package xmltodict to parse the RDF files. The parse_rdf function sorts the classes to
@@ -470,10 +469,9 @@ def cim_generate(directory, version, langPack):
     created classes are stored. This folder should not exist and is created in the class generation procedure.
 
     :param directory: path to RDF files containing cgmes ontology, e.g. directory = "./examples/cgmes_schema/cgmes_v2_4_15_schema"
-    :param version: CGMES version, e.g. version = "cgmes_v2_4_15"
+    :param outputPath: CGMES version, e.g. version = "cgmes_v2_4_15"
+    :param langPack:   python module containing language specific functions
     """
-    cwd = os.getcwd()
-    os.chdir(os.path.dirname(__file__))
     profiles_array = []
 
     t0 = time()
@@ -498,9 +496,7 @@ def cim_generate(directory, version, langPack):
     class_dict_with_origins = _merge_classes(profiles_dict)
 
     # get information for writing python files and write python files
-    _write_python_files(class_dict_with_origins, version, langPack)
-
-    os.chdir(cwd)
+    _write_python_files(class_dict_with_origins, langPack, outputPath, version)
 
     logger.info('Elapsed Time: {}s\n\n'.format(time() - t0))
 
