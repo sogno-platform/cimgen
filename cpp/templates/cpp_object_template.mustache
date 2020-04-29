@@ -6,7 +6,7 @@
 #include "{{> class}}.hpp"
 {{/attributes}}
 
-using namespace CGMES;
+using namespace CIMPP;
 
 {{class_name}}::{{class_name}}() {};
 
@@ -20,7 +20,7 @@ using namespace CGMES;
 {{#langPack.create_assign}}{{.}}{{/langPack.create_assign}}
 {{/attributes}}
 
-namespace CGMES {
+namespace CIMPP {
 	BaseClass* {{class_name}}_factory() {
 		return new {{class_name}};
 	}

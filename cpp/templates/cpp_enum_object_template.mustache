@@ -2,10 +2,10 @@
 #include <iostream>
 #include "{{class_name}}.hpp"
 
-using namespace CGMES;
+using namespace CIMPP;
 
-namespace CGMES {
-	std::istream& operator>>(std::istream& lop, CGMES::{{class_name}}& rop)
+namespace CIMPP {
+	std::istream& operator>>(std::istream& lop, CIMPP::{{class_name}}& rop)
 	{
 		std::string EnumSymbol;
 		lop >> EnumSymbol;

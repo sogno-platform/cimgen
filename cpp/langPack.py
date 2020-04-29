@@ -263,11 +263,11 @@ def _attribute_decl(attribute):
     (_range, _dataType) =  get_dataType_and_range(attribute)
     _class = _format_class([_range, _dataType])
     if _type == "primitive":
-        return "CGMES::" + _class
+        return "CIMPP::" + _class
     if _type == "list":
-        return "std::list<CGMES::" + _class + "*>"
+        return "std::list<CIMPP::" + _class + "*>"
     else:
-        return "CGMES::" + _class + '*'
+        return "CIMPP::" + _class + '*'
 
 def _create_attribute_includes(text, render):
     unique = {}
@@ -386,7 +386,7 @@ def _create_header_include_file(directory, header_include_filename, header, foot
 def resolve_headers(outputPath):
     class_list_header = [   '#ifndef CIMCLASSLIST_H\n',
                 '#define CIMCLASSLIST_H\n',
-                'using namespace CGMES;\n',
+                'using namespace CIMPP;\n',
                 '#include <list>\n',
                 'static std::list<BaseClassDefiner> CIMClassList = {\n' ]
     class_list_footer = [  'UnknownType::define() };\n',
