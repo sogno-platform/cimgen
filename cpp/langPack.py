@@ -40,7 +40,7 @@ partials = { 'class':                   '{{#langPack.format_class}}{{range}} {{d
            }
 
 # This is the function that runs the template.
-def run_template(version_path, class_details):
+def run_template(outputPath, class_details):
 
     if class_details['is_a_float'] == True:
         templates = float_template_files
@@ -55,10 +55,11 @@ def run_template(version_path, class_details):
            return
 
     for template_info in templates:
-        class_file = os.path.join(version_path, class_details['class_name'] + template_info["ext"])
+        class_file = os.path.join(outputPath, class_details['class_name'] + template_info["ext"])
         if not os.path.exists(class_file):
             with open(class_file, 'w') as file:
-                with open(template_info["filename"]) as f:
+                template_path = os.path.join(os.getcwd(), 'cpp/templates', template_info["filename"])
+                with open(template_path) as f:
                     args = {
                         'data': class_details,
                         'template': f,
@@ -262,11 +263,11 @@ def _attribute_decl(attribute):
     (_range, _dataType) =  get_dataType_and_range(attribute)
     _class = _format_class([_range, _dataType])
     if _type == "primitive":
-        return "CGMES::" + _class
+        return "CIMPP::" + _class
     if _type == "list":
-        return "std::list<CGMES::" + _class + "*>"
+        return "std::list<CIMPP::" + _class + "*>"
     else:
-        return "CGMES::" + _class + '*'
+        return "CIMPP::" + _class + '*'
 
 def _create_attribute_includes(text, render):
     unique = {}
@@ -336,20 +337,25 @@ def set_default(dataType):
 # contain the list of the class files and the list of define functions that add
 # the generated functions into the function tables.
 
-class_blacklist = [ 'Folders',
-                    'Task',
-                    'IEC61970',
-                    'BaseClassDefiner',
-                    'assignments',
-                    'Folders',
-                    'Factory'
-                    'String',
-                    'BaseClass' ]
+class_blacklist = [
+    'assignments',
+    'BaseClass',
+    'BaseClassDefiner',
+    'CIMClassList',
+    'CIMFactory',
+    'Factory',
+    'Folders',
+    'IEC61970',
+    'CIMNamespaces',
+    'String',
+    'Task' ]
 
-iec61970_blacklist = [ 'CIMClassList',
-                       'Folders',
-                       'Task',
-                       'IEC61970' ]
+iec61970_blacklist = [
+    'CIMClassList',
+    'CIMNamespaces',
+    'Folders',
+    'Task',
+    'IEC61970' ]
 
 def _is_enum_class(filepath):
     with open(filepath,encoding = 'utf-8') as f:
@@ -377,19 +383,18 @@ def _create_header_include_file(directory, header_include_filename, header, foot
     with open(header_include_filepath, "w", encoding = 'utf-8') as f:
         f.writelines(header)
 
-def resolve_headers(version):
-    version_path = os.path.join('/cim-codebase-generator/main', version)
+def resolve_headers(outputPath):
     class_list_header = [   '#ifndef CIMCLASSLIST_H\n',
                 '#define CIMCLASSLIST_H\n',
-                'using namespace CGMES;\n',
+                'using namespace CIMPP;\n',
                 '#include <list>\n',
                 'static std::list<BaseClassDefiner> CIMClassList = {\n' ]
     class_list_footer = [  'UnknownType::define() };\n',
                 '#endif // CIMCLASSLIST_H\n' ]
 
-    _create_header_include_file(version_path, "CIMClassList.hpp", class_list_header, class_list_footer, "    ", "::define(),\n", class_blacklist)
+    _create_header_include_file(outputPath, "CIMClassList.hpp", class_list_header, class_list_footer, "    ", "::define(),\n", class_blacklist)
 
     iec61970_header = [ "#ifndef IEC61970_H\n", "#define IEC61970_H\n" ]
     iec61970_footer = [ '#include "UnknownType.hpp"\n', '#endif' ]
 
-    _create_header_include_file(version_path, "IEC61970.hpp", iec61970_header, iec61970_footer, "#include \"", ".hpp\"\n", iec61970_blacklist)
+    _create_header_include_file(outputPath, "IEC61970.hpp", iec61970_header, iec61970_footer, "#include \"", ".hpp\"\n", iec61970_blacklist)

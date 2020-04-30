@@ -1,8 +1,7 @@
 #ifndef {{class_name}}_H
 #define {{class_name}}_H
 
-namespace CGMES
-{
+namespace CIMPP {
 	/*
 	{{{class_comment}}}
 	*/
@@ -15,6 +14,6 @@ namespace CGMES
 		{{label}},
 {{/instances}}
 	};
-	std::istream& operator>>(std::istream& lop, CGMES::{{class_name}}& rop);
+	std::istream& operator>>(std::istream& lop, CIMPP::{{class_name}}& rop);
 }
 #endif

@@ -3,3 +3,5 @@ googletest/*
 build/*
 cimpp/*
 cimpy/*
+*.py[cod]
+__pycache__/
