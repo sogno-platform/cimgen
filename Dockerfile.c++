@@ -7,4 +7,4 @@ run pip3 install xmltodict chevron
 copy cpp/ /cim-codebase-generator/cpp/
 copy cimCodebaseGenerator.py build.py cpp/templates/ /cim-codebase-generator/
 workdir /cim-codebase-generator
-cmd python3 build.py cgmes_v2_4_15 cpp
+cmd python3 build.py cgmes_v2_4_15 /cim-codebase-generator/cgmes_schema/cgmes_v2_4_15_schema cpp

@@ -35,6 +35,10 @@ class RDFSEntry:
             jsonObject['type'] = self.type()
         if self.subClassOf() != None:
             jsonObject['subClassOf'] = self.subClassOf()
+        if self.inverseRole() != None:
+            jsonObject['inverseRole'] = self.inverseRole()
+        if self.associationUsed() != None:
+            jsonObject['associationUsed'] = self.associationUsed()
         return jsonObject
 
     def about(self):
@@ -43,10 +47,16 @@ class RDFSEntry:
         else:
             return None
 
+    def associationUsed(self):
+        if 'cims:AssociationUsed' in self.jsonDefinition:
+            return RDFSEntry._extract_string(self.jsonDefinition['cims:AssociationUsed'])
+        else:
+            return None
+
     def comment(self):
         if 'rdfs:comment' in self.jsonDefinition:
             return RDFSEntry._extract_text(self.jsonDefinition['rdfs:comment']).replace('–', '-').replace('“', '"')\
-                        .replace('”', '"').replace('’', "'").replace('°', '').replace('\n', ' ')
+                        .replace('”', '"').replace('’', "'").replace('°', '[SYMBOL REMOVED]').replace('º', '[SYMBOL REMOVED]').replace('\n', ' ')
         else:
             return None
 
@@ -65,6 +75,12 @@ class RDFSEntry:
     def fixed(self):
         if 'cims:isFixed' in self.jsonDefinition:
             return RDFSEntry._get_literal(self.jsonDefinition['cims:isFixed'])
+        else:
+            return None
+
+    def inverseRole(self):
+        if 'cims:inverseRoleName' in self.jsonDefinition:
+            return RDFSEntry._get_rid_of_hash(RDFSEntry._extract_string(self.jsonDefinition['cims:inverseRoleName']))
         else:
             return None
 
@@ -419,7 +435,7 @@ def _merge_classes(profiles_dict):
             else:
                 # some inheritance information is stored only in one of the packages. Therefore it has to be checked
                 # if the subClassOf attribute is set. See for example TopologicalNode definitions in SV and TP.
-                if class_dict[class_key].superClass():
+                if not class_dict[class_key].superClass():
                     if profiles_dict[package_key][class_key].superClass():
                         class_dict[class_key].super = profiles_dict[package_key][class_key].superClass()
 
