@@ -173,6 +173,18 @@ bool assign_OBJECT_CLASS_LABEL(BaseClass* BaseClass_ptr1, BaseClass* BaseClass_p
 	}
 	return false;
 }""".replace("OBJECT_CLASS", attribute_json["domain"]).replace("ATTRIBUTE_CLASS", _get_rid_of_hash(attribute_json["range"])).replace("LABEL", attribute_json["label"])
+    elif "inverseRole" in attribute_json and "associationUsed" in attribute_json and attribute_json["associationUsed"] != "No":
+        inverse = attribute_json['inverseRole'].split('.')
+        assign = """
+bool assign_INVERSEC_INVERSEL(BaseClass*, BaseClass*);
+bool assign_OBJECT_CLASS_LABEL(BaseClass* BaseClass_ptr1, BaseClass* BaseClass_ptr2) {
+	if(OBJECT_CLASS* element = dynamic_cast<OBJECT_CLASS*>(BaseClass_ptr1)) {
+                element->LABEL = dynamic_cast<ATTRIBUTE_CLASS*>(BaseClass_ptr2);
+                if(element->LABEL != nullptr)
+                        return assign_INVERSEC_INVERSEL(BaseClass_ptr2, BaseClass_ptr1);
+        }
+        return false;
+}""".replace("OBJECT_CLASS", attribute_json["domain"]).replace("ATTRIBUTE_CLASS", attribute_class).replace("LABEL", attribute_json["label"]).replace("INVERSEC", inverse[0]).replace("INVERSEL", inverse[1])
     else:
         assign = """
 bool assign_OBJECT_CLASS_LABEL(BaseClass* BaseClass_ptr1, BaseClass* BaseClass_ptr2) {
@@ -343,12 +355,13 @@ class_blacklist = [
     'BaseClassDefiner',
     'CIMClassList',
     'CIMFactory',
+    'CIMNamespaces',
     'Factory',
     'Folders',
     'IEC61970',
-    'CIMNamespaces',
     'String',
-    'Task' ]
+    'Task',
+    'UnknownType' ]
 
 iec61970_blacklist = [
     'CIMClassList',
@@ -359,9 +372,12 @@ iec61970_blacklist = [
 
 def _is_enum_class(filepath):
     with open(filepath,encoding = 'utf-8') as f:
-        for line in f:
-            if "enum class" in line:
-                return True
+        try:
+            for line in f:
+                if "enum class" in line:
+                    return True
+        except UnicodeDecodeError as error:
+            print("Warning: UnicodeDecodeError parsing {0}: {1}".format(filepath, error))
     return False
 
 def _create_header_include_file(directory, header_include_filename, header, footer, before, after, blacklist):
@@ -389,10 +405,10 @@ def resolve_headers(outputPath):
                 'using namespace CIMPP;\n',
                 '#include <list>\n',
                 'static std::list<BaseClassDefiner> CIMClassList = {\n' ]
-    class_list_footer = [  'UnknownType::define() };\n',
+    class_list_footer = [  '    UnknownType::declare() };\n',
                 '#endif // CIMCLASSLIST_H\n' ]
 
-    _create_header_include_file(outputPath, "CIMClassList.hpp", class_list_header, class_list_footer, "    ", "::define(),\n", class_blacklist)
+    _create_header_include_file(outputPath, "CIMClassList.hpp", class_list_header, class_list_footer, "    ", "::declare(),\n", class_blacklist)
 
     iec61970_header = [ "#ifndef IEC61970_H\n", "#define IEC61970_H\n" ]
     iec61970_footer = [ '#include "UnknownType.hpp"\n', '#endif' ]

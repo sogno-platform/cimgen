@@ -48,7 +48,7 @@ const char* {{class_name}}::debugString()
 	return {{class_name}}::debugName;
 }
 
-const BaseClassDefiner {{class_name}}::define()
+const BaseClassDefiner {{class_name}}::declare()
 {
 	return BaseClassDefiner({{class_name}}::addConstructToMap, {{class_name}}::addPrimitiveAssignFnsToMap, {{class_name}}::addClassAssignFnsToMap, {{class_name}}::debugName);
 }
