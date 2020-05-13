@@ -1,4 +1,4 @@
-import cimCodebaseGenerator
+import CIMgen
 import os
 import argparse
 import importlib
@@ -14,7 +14,7 @@ print("build.py called with ", args)
 langPack = importlib.import_module(args.langdir + ".langPack")
 
 schema_path = os.path.join(os.getcwd(), args.schemadir)
-cimCodebaseGenerator.cim_generate(schema_path, args.outdir, "cgmes_v2_4_15", langPack)
+CIMgen.cim_generate(schema_path, args.outdir, "cgmes_v2_4_15", langPack)
 
 if args.langdir == "cpp":
     langPack.resolve_headers(args.outdir)

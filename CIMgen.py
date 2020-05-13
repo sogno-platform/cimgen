@@ -395,7 +395,7 @@ def _merge_profiles(profiles_array):
                 # Iterate over classes and check for multiple class definitions
                 for class_key in elem_dict[profile_key]:
                     if class_key in profiles_dict[profile_key].keys():
-                        # If class allready exists in packageDict add attributes to attributes array
+                        # If class already exists in packageDict add attributes to attributes array
                         if len(elem_dict[profile_key][class_key].attributes()) > 0:
                             attributes_array = elem_dict[profile_key][class_key].attributes()
                             profiles_dict[profile_key][class_key].addAttributes(attributes_array)

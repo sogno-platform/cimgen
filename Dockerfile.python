@@ -4,7 +4,7 @@ run apk add python3 git py3-pip py3-lxml file
 run pip3 install --upgrade pip
 run pip3 install xmltodict chevron
 
-copy python /cim-codebase-generator/python/
-copy cimCodebaseGenerator.py build.py python/templates /cim-codebase-generator/
-workdir /cim-codebase-generator
-cmd python3 build.py cgmes_v2_4_15 /cim-codebase-generator/cgmes_schema/cgmes_v2_4_15_schema python
+copy python /CIMgen/python/
+copy CIMgen.py build.py python/templates /CIMgen/
+workdir /CIMgen
+cmd python3 build.py cgmes_v2_4_15 /CIMgen/cgmes_schema/cgmes_v2_4_15_schema python

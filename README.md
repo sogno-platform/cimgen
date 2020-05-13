@@ -4,4 +4,4 @@ Python tool for code generation from CIM data model for several programming lang
 
 ## Concept overview 
 
-![Overview Codebase Generator](documentation/images/CIMCodebaseGenerator.svg)
+![Overview CIMgen](documentation/images/CIMgen.svg)

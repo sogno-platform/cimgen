@@ -14,15 +14,15 @@ cimpp:
 docker-cpp: SCHEMA_DIR ?= cgmes_schema/CGMES_2.4.15_27JAN2020
 docker-cpp: OUTPUT_DIR ?= ${DIR}/cimpp
 docker-cpp: cimpp
-	docker build -t cim-codebase-generator . -f Dockerfile.c++
+	docker build -t CIMgen . -f Dockerfile.c++
 
 docker-python: SCHEMA_DIR ?= cgmes_schema/CGMES_2.4.15_27JAN2020
 docker-python: OUTPUT_DIR ?= ${DIR}/cimpy
 docker-python: cimpy
-	docker build -t cim-codebase-generator-python -f Dockerfile.python .
-	docker run -v ${OUTPUT_DIR}:/cim-codebase-generator/cgmes_v2_4_15 \
-		-v ${DIR}/${SCHEMA_DIR}:/cim-codebase-generator/cgmes_schema/cgmes_v2_4_15_schema \
-		cim-codebase-generator-python
+	docker build -t CIMgen-python -f Dockerfile.python .
+	docker run -v ${OUTPUT_DIR}:/CIMgen/cgmes_v2_4_15 \
+		-v ${DIR}/${SCHEMA_DIR}:/CIMgen/cgmes_schema/cgmes_v2_4_15_schema \
+		CIMgen-python
 
 clean: OUTPUT_DIR ?= ${DIR}/cimpp
 clean:
@@ -33,9 +33,9 @@ clean:
 
 run: ${OUTPUT_DIR} ${SCHEMA_DIR}
 	cp -a ../static/* ${OUTPUT_DIR}
-	docker run -v ${OUTPUT_DIR}:/cim-codebase-generator/cgmes_v2_4_15 \
-		-v ${DIR}/${SCHEMA_DIR}:/cim-codebase-generator/cgmes_schema/cgmes_v2_4_15_schema \
-		cim-codebase-generator
+	docker run -v ${OUTPUT_DIR}:/CIMgen/cgmes_v2_4_15 \
+		-v ${DIR}/${SCHEMA_DIR}:/CIMgen/cgmes_schema/cgmes_v2_4_15_schema \
+		CIMgen
 
 build-cpp: OUTPUT_DIR ?= ${DIR}/cimpp
 build-cpp: SCHEMA_DIR ?= cgmes_schema/CGMES_2.4.15_27JAN2020
