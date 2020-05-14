@@ -9,8 +9,6 @@ parser.add_argument('schemadir', type=str, help='The schema directory')
 parser.add_argument('langdir', type=str, help='The langpack directory')
 args = parser.parse_args()
 
-print("build.py called with ", args)
-
 langPack = importlib.import_module(args.langdir + ".langPack")
 
 schema_path = os.path.join(os.getcwd(), args.schemadir)
