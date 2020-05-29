@@ -67,7 +67,8 @@ def run_template(version_path, class_details):
         class_file = os.path.join(version_path, class_details['class_name'] + template_info["ext"])
         if not os.path.exists(class_file):
             with open(class_file, 'w') as file:
-                with open(template_info["filename"]) as f:
+                template_path = os.path.join(os.getcwd(), 'python/templates', template_info["filename"])
+                with open(template_path) as f:
                     args = {
                         'data': class_details,
                         'template': f,

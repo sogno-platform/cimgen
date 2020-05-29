@@ -4,4 +4,52 @@ Python tool for code generation from CIM data model for several programming lang
 
 ## Concept overview 
 
-![Overview Codebase Generator](documentation/images/CIMCodebaseGenerator.svg)
+![Overview CIMgen](documentation/images/CIMgen.svg)
+
+## Usage example
+
+### Generating C++ files
+
+#### Generating C++ files on Linux (Ubuntu)
+
+```bash
+$ sudo apt install python
+$ pip3 install xmltodict chevron cmake
+$ cmake -P .
+```
+This will build version CGMES_2.4.15_27JAN2020 in the subfolder with the same name.
+
+If you wish to build an alternative version, you can see available options in the subfolder called cgmes_schema.
+
+They can be built using a cmake variable:
+
+```
+$ cmake -DUSE_CIM_VERSION=CGMES_2.4.15_16FEB2016 -P .
+```
+
+#### Generating C++ files in a Docker container
+```bash
+$ docker build -t cimgen -f Dockerfile .
+$ export OUTPUT_DIR=$(pwd)/CGMES_2.4.15_27JAN2020_cpp
+$ export SCHEMA_DIR=$(pwd)/cgmes_schema/CGMES_2.4.15_27JAN2020
+$ docker run -v ${OUTPUT_DIR}:/cgmes_output -v ${SCHEMA_DIR}:/cgmes_schema cimgen
+```
+### Generating Python files
+
+#### Generating Python files on Linux
+```bash
+$ sudo apt install python
+$ pip3 install xmltodict chevron
+$ export OUTPUT_DIR=$(pwd)/CGMES_2.4.15_27JAN2020_python
+$ export SCHEMA_DIR=$(pwd)/cgmes_schema/CGMES_2.4.15_27JAN2020
+$ ./build.py ${OUTPUT_DIR} ${SCHEMA_DIR} python
+OUTPUT_DIR can be set to whichever absolute path you wish to create the files in.
+If you wish to build an alternative version, you can see available options in the subfolder called cgmes_schema
+```
+#### Generating Python files in a Docker container
+```
+$ docker build -t cimgen -f Dockerfile .
+$ export OUTPUT_DIR=$(pwd)/CGMES_2.4.15_27JAN2020_python
+$ export SCHEMA_DIR=$(pwd)/cgmes_schema/CGMES_2.4.15_27JAN2020
+$ docker run -v ${OUTPUT_DIR}:/cgmes_output -v ${SCHEMA_DIR}:/cgmes_schema cimgen python
+```
