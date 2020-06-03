@@ -348,6 +348,20 @@ def _write_python_files(elem_dict, langPack, outputPath, version):
 
         _write_files(class_details, outputPath, version)
 
+def get_rid_of_hash(name):
+    tokens = name.split('#')
+    if len(tokens) == 1:
+        return tokens[0]
+    if len(tokens) > 1:
+        return tokens[1]
+    return name
+
+def format_class(_range, _dataType):
+    if _range == '':
+        return get_rid_of_hash(_dataType)
+    else:
+        return get_rid_of_hash(_range)
+
 def _write_files(class_details, outputPath, version):
     class_details['langPack'].setup(outputPath)
 
@@ -365,6 +379,15 @@ def _write_files(class_details, outputPath, version):
     for i in range(len(class_details['attributes'])):
         if 'dataType' not in class_details['attributes'][i].keys() and 'multiplicity' in class_details['attributes'][i].keys():
             class_details['attributes'][i]['dataType'] = class_details['attributes'][i]['multiplicity']
+
+    for attr in class_details['attributes']:
+        _range = ""
+        _dataType = ""
+        if 'range' in attr:
+            _range = attr['range']
+        if 'dataType' in attr:
+            _dataType = attr['dataType']
+        attr['class_name'] = format_class( _range, _dataType )
 
     class_details['langPack'].run_template( outputPath, class_details )
 

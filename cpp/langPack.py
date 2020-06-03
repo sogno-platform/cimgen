@@ -29,7 +29,7 @@ enum_template_files = [ { "filename": "cpp_enum_header_template.mustache", "ext"
 def get_class_location(class_name, class_map, version):
     pass
 
-partials = { 'class':                   '{{#langPack.format_class}}{{range}} {{dataType}}{{/langPack.format_class}}',
+partials = {
              'attribute':               '{{#langPack.attribute_decl}}{{.}}{{/langPack.attribute_decl}}',
              'label':                   '{{#langPack.label}}{{label}}{{/langPack.label}}',
              'create_init_list':        '{{#langPack.null_init_list}}{{attributes}}{{/langPack.null_init_list}}',
@@ -85,8 +85,7 @@ def label(text, render):
 #  - attributes with multiplicity of 1..n or 0..n will be std::lists
 #    of pointers to classes read from a different part of the file
 def attribute_type(attribute):
-    (_range, _dataType) =  get_dataType_and_range(attribute)
-    class_name = _format_class([_range, _dataType])
+    class_name = attribute['class_name']
     if attribute["multiplicity"] == 'M:0..n' or attribute["multiplicity"] == 'M:1..n':
         return "list"
     if is_a_float_class(class_name) or class_name == "String" or class_name == "Boolean" or class_name == "Integer" or is_an_enum_class(class_name):
@@ -125,10 +124,7 @@ def insert_assign_fn(text, render):
     attribute_json = eval(attribute_txt)
     if not attribute_type(attribute_json) == "primitive":
         return ''
-    assign = ""
     label = attribute_json['label']
-    (_range, _dataType) =  get_dataType_and_range(attribute_json)
-    attr_class = _format_class([_range, _dataType])
     class_name = attribute_json['domain']
     return 'assign_map.insert(std::make_pair(std::string("cim:' + class_name + '.' + label + '"), &assign_' + class_name + '_' + label + '));\n'
 
@@ -137,10 +133,7 @@ def insert_class_assign_fn(text, render):
     attribute_json = eval(attribute_txt)
     if attribute_type(attribute_json) == "primitive":
         return ''
-    assign = ""
-    (_range, _dataType) =  get_dataType_and_range(attribute_json)
     label = attribute_json['label']
-    attr_class = _format_class([_range, _dataType])
     class_name = attribute_json['domain']
     return 'assign_map.insert(std::make_pair(std::string("cim:' + class_name + '.' + label + '"), &assign_' + class_name + '_' + label + '));\n'
 
@@ -158,8 +151,7 @@ def create_class_assign(text, render):
     attribute_txt = render(text)
     attribute_json = eval(attribute_txt)
     assign = ""
-    (_range, _dataType) =  get_dataType_and_range(attribute_json)
-    attribute_class = _format_class([_range, _dataType])
+    attribute_class = attribute_json['class_name']
     if attribute_type(attribute_json) == "primitive":
         return ''
     if attribute_json["multiplicity"] == "M:0..n" or attribute_json["multiplicity"] == "M:1..n":
@@ -172,7 +164,7 @@ bool assign_OBJECT_CLASS_LABEL(BaseClass* BaseClass_ptr1, BaseClass* BaseClass_p
 		}
 	}
 	return false;
-}""".replace("OBJECT_CLASS", attribute_json["domain"]).replace("ATTRIBUTE_CLASS", _get_rid_of_hash(attribute_json["range"])).replace("LABEL", attribute_json["label"])
+}""".replace("OBJECT_CLASS", attribute_json["domain"]).replace("ATTRIBUTE_CLASS", attribute_class).replace("LABEL", attribute_json["label"])
     elif "inverseRole" in attribute_json and "associationUsed" in attribute_json and attribute_json["associationUsed"] != "No":
         inverse = attribute_json['inverseRole'].split('.')
         assign = """
@@ -202,8 +194,7 @@ def create_assign(text, render):
     attribute_txt = render(text)
     attribute_json = eval(attribute_txt)
     assign = ""
-    (_range, _dataType) =  get_dataType_and_range(attribute_json)
-    _class = _format_class([_range, _dataType])
+    _class = attribute_json['class_name']
     if not attribute_type(attribute_json) == "primitive":
         return ''
     label_without_keyword = attribute_json["label"]
@@ -238,23 +229,6 @@ bool assign_CLASS_LABEL(std::stringstream &buffer, BaseClass* BaseClass_ptr1) {
 
     return assign
 
-# What class is this attribute?
-def format_class(text, render):
-    result = render(text)
-    tokens = result.split(' ')
-    if len(tokens) < 2:
-        return None;
-    else:
-        return _format_class(tokens)
-
-def _format_class(tokens):
-    if (tokens[0]) == '':
-        val = _get_rid_of_hash(tokens[1])
-        return val
-    else:
-        val = _get_rid_of_hash(tokens[0])
-        return val
-
 # Some names are encoded as #name or http://some-url#name
 # This function returns the name
 def _get_rid_of_hash(name):
@@ -272,8 +246,7 @@ def attribute_decl(text, render):
 
 def _attribute_decl(attribute):
     _type = attribute_type(attribute)
-    (_range, _dataType) =  get_dataType_and_range(attribute)
-    _class = _format_class([_range, _dataType])
+    _class = attribute['class_name']
     if _type == "primitive":
         return "CIMPP::" + _class
     if _type == "list":
@@ -291,8 +264,7 @@ def _create_attribute_includes(text, render):
         attributes = json.loads(jsonStringNoHtmlEsc)
         for attribute in attributes:
             _type = attribute_type(attribute)
-            (_range, _dataType) =  get_dataType_and_range(attribute)
-            class_name = _format_class([_range, _dataType])
+            class_name = attribute['class_name']
             if class_name != '' and class_name not in unique:
                 unique[class_name] = _type
     for clarse in unique:
@@ -311,8 +283,7 @@ def _create_attribute_class_declarations(text, render):
         attributes = json.loads(jsonStringNoHtmlEsc)
         for attribute in attributes:
             _type = attribute_type(attribute)
-            (_range, _dataType) =  get_dataType_and_range(attribute)
-            class_name = _format_class([_range, _dataType])
+            class_name = attribute['class_name']
             if class_name != '' and class_name not in unique:
                 unique[class_name] = _type
     for clarse in unique:
