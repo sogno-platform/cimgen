@@ -1,0 +1,63 @@
+import templates from "../../../index.js"
+import {{sub_class_of}} from "./{{sub_class_of}}.js"
+import common from "../../../../src/common.js"
+{{#has_instances}}
+const {{class_name}}Enum = {
+{{#instances}}
+        {{label}}:{{index}},
+{{/instances}}
+}
+const possibleValues = [
+        { "value": "--"},
+{{#instances}}
+        { "value": "{{about}}", "label": "{{label}}" },
+{{/instances}}
+]
+{{/has_instances}}
+
+class {{class_name}} extends {{sub_class_of}} {
+
+    static attributeHTML(object, cimmenu, classType="{{class_name}}") {
+        let attributeEntries = {{sub_class_of}}.attributeHTML(object, cimmenu, classType);
+    {{#attributes}}
+        if ('cim:{{about}}' in object) {
+            attributeEntries['filledEntries']['cim:{{about}}'] =
+                cimmenu.getAggregateComponentMenu(
+                                                   'cim:'+classType,
+                                                   object['pintura:rdfid'],
+                                                   object['{{about}}'],
+                                                   'cim:{{attributeClass}}',
+                                                   'cim:{{about}}'
+                                                 );
+        }
+        else {
+            attributeEntries['emptyEntries']['cim:{{about}}'] =
+                cimmenu.getAggregateComponentMenu(
+                                                   'cim:'+classType,
+                                                   object['pintura:rdfid'],
+                                                   object['{{about}}'],
+                                                   'cim:{{attributeClass}}',
+                                                   'cim:{{about}}'
+                                                 );
+        }
+    {{/attributes}}
+        return attributeEntries;
+    }
+    static renderAsClass(object, cimmenu) {
+        let separateEntries = {{class_name}}.attributeHTML(object, cimmenu);
+        let filledEntries = separateEntries['filledEntries'];
+        let emptyEntries = separateEntries['emptyEntries'];
+        let attributeEntries = { ...filledEntries, ...emptyEntries };
+        return templates.handlebars_cim_class_render({ 'attributes': attributeEntries});
+    }
+    {{{renderAttribute}}}
+    static subClassList() {
+        let subClasses = [
+    {{#sub_classes}}
+        "{{.}}",
+    {{/sub_classes}}
+        ];
+        return subClasses;
+    }
+};
+export default {{class_name}}
