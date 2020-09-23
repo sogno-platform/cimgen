@@ -14,5 +14,4 @@ langPack = importlib.import_module(args.langdir + ".langPack")
 schema_path = os.path.join(os.getcwd(), args.schemadir)
 CIMgen.cim_generate(schema_path, args.outdir, "cgmes_v2_4_15", langPack)
 
-if args.langdir == "cpp":
-    langPack.resolve_headers(args.outdir)
+langPack.resolve_headers(args.outdir)

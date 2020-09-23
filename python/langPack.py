@@ -1,6 +1,8 @@
 import os
 import chevron
 import logging
+import glob
+import sys
 logger = logging.getLogger(__name__)
 
 # This makes sure we have somewhere to write the classes, and
@@ -23,11 +25,13 @@ template_files=[ { "filename": "cimpy_class_template.mustache", "ext": ".py" } ]
 
 def get_class_location(class_name, class_map, version):
     # Check if the current class has a parent class
-    if class_map[class_name].superClass() and class_map[class_name].superClass() in class_map:
-        return 'cimpy.' + version + "." + class_map[class_name].superClass()
+    if class_map[class_name].superClass():
+        if class_map[class_name].superClass() in class_map:
+            return 'cimpy.' + version + "." + class_map[class_name].superClass()
+        elif class_map[class_name].superClass() == 'Base' or class_map[class_name].superClass() == None:
+            return location(version)
     else:
-        logger.info("Parent class {} for class {} not found".format(class_map[class_name].superClass(), class_name))
-        return None
+        return location(version)
 
 partials = {}
 
@@ -46,7 +50,7 @@ def _set_default(text, render):
         return '"list"'
 
     result = result.split('#')[1]
-    if result in ['integer', 'Integer']:
+    if result in ['integer', 'Integer', 'Seconds' ]:
         return '0'
     elif result in ['String', 'DateTime', 'Date']:
         return "''"
@@ -68,6 +72,7 @@ def run_template(version_path, class_details):
         if not os.path.exists(class_file):
             with open(class_file, 'w') as file:
                 template_path = os.path.join(os.getcwd(), 'python/templates', template_info["filename"])
+                class_details['setDefault'] = _set_default
                 with open(template_path) as f:
                     args = {
                         'data': class_details,
@@ -88,7 +93,7 @@ def _create_base(path):
     base_path = path + "/Base.py"
     base = ['from enum import Enum\n\n', '\n', 'class Base():\n', '    """\n', '    Base Class for CIM\n',
             '    """\n\n',
-            '    cgmesProfile = Enum("cgmesProfile", {"EQ": 0, "SSH": 1, "TP": 2, "SV": 3, "DY": 4, "GL": 5, "DI": 6})',
+            '    cgmesProfile = Enum("cgmesProfile", {"EQ": 0, "SSH": 1, "TP": 2, "SV": 3, "DY": 4, "GL": 5, "DL": 6, "TP_BD": 7, "EQ_BD": 8})',
             '\n\n', '    def __init__(self, *args, **kw_args):\n', '        pass\n',
             '\n', '    def printxml(self, dict={}):\n', '        return dict\n']
 
@@ -97,3 +102,12 @@ def _create_base(path):
             f.write(line)
 
 
+def resolve_headers(path):
+    filenames = glob.glob(path + "/*.py")
+    include_names = []
+    for filename in filenames:
+        include_names.append(os.path.splitext(os.path.basename(filename))[0])
+    with open(path + "/__init__.py", "w") as header_file:
+        for include_name in include_names:
+            header_file.write("from " + "." + include_name + " import " + include_name + " as " + include_name + "\n")
+        header_file.close()

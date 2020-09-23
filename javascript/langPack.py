@@ -24,6 +24,8 @@ template_files = [ { "filename": "handlebars_template.mustache", "ext": ".js" } 
 
 partials = {}
 
+entsoeURIs = []
+
 def neq(one, two):
     print(one, two)
     return one != two
@@ -69,18 +71,18 @@ aggregateRenderer = {
     "renderInstance": "static renderAsAttribute(matchingComponents) {\n\
         let template = templates.handlebars_cim_instance_type;\n\
         matchingComponents.aggregates = possibleValues;\n\
-        let value = matchingComponents.value['rdf:resource']\n\
         for (let index in matchingComponents.aggregates) {\n\
-            let candidate = matchingComponents.aggregates[index].value;\n\
-            console.log('candidate: ', candidate)\n\
-            if(candidate !== undefined && common.getRidOfHash(value) == candidate) {\n\
-                matchingComponents.aggregates[index].selected = 'selected';\n\
-            }\n\
-            else {\n\
-                delete matchingComponents.aggregates[index].selected;\n\
+            if (matchingComponents.value) {\n\
+                let value = matchingComponents.value['rdf:resource']\n\
+                let candidate = matchingComponents.aggregates[index].value;\n\
+                if(candidate !== undefined && common.getRidOfHash(value) == candidate) {\n\
+                    matchingComponents.aggregates[index].selected = 'selected';\n\
+                }\n\
+                else {\n\
+                    delete matchingComponents.aggregates[index].selected;\n\
+                }\n\
             }\n\
         }\n\
-        console.log('matchingComponents.aggregates:', matchingComponents.aggregates)\n\
         return template(matchingComponents);\n\
     }",
     "renderClass": "static renderAsAttribute(matchingComponents) {\n\
@@ -116,6 +118,16 @@ def selectPrimitiveRenderFunction(primitive):
 
 # This is the function that runs the template.
 def run_template(outputPath, class_details):
+
+    nameLength = len(class_details['class_name'])
+    if class_details['class_name'][nameLength-7:] == "Version":
+        for attribute in class_details['attributes']:
+            if 'entsoeURI' in attribute['about']:
+                if attribute['isFixed'] is object:
+                    entsoeURIs.append( { "key": attribute['about'], "value": attribute['isFixed']['_'] } )
+                else:
+                    entsoeURIs.append( { "key": attribute['about'], "value": attribute['isFixed'] } )
+
     class_details['is_not_terminal'] = class_details['class_name'] != "Terminal"
     for attr in class_details['attributes']:
         if 'range' in attr:
@@ -142,17 +154,20 @@ def run_template(outputPath, class_details):
 
     for template_info in template_files:
         class_file = os.path.join(outputPath, class_details['class_name'] + template_info["ext"])
-        if not os.path.exists(class_file):
-            with open(class_file, 'w') as file:
-                template_path = os.path.join(os.getcwd(), 'javascript/templates', template_info["filename"])
-                with open(template_path) as f:
-                    args = {
-                        'data': class_details,
-                        'template': f,
-                        'partials_dict': partials
-                    }
-                    output = chevron.render(**args)
-                file.write(output)
+        write_templated_file(class_file, class_details, template_info["filename"])
+
+def write_templated_file(class_file, class_details, template_filename):
+    if not os.path.exists(class_file):
+        with open(class_file, 'w') as file:
+            template_path = os.path.join(os.getcwd(), 'javascript/templates', template_filename)
+            with open(template_path) as f:
+                args = {
+                    'data': class_details,
+                    'template': f,
+                    'partials_dict': partials
+                }
+                output = chevron.render(**args)
+            file.write(output)
 
 def is_an_unused_attribute(attr_details, debug=False):
     is_unused = "inverseRole" in attr_details and "associationUsed" in attr_details and attr_details["associationUsed"] == 'No'
@@ -176,4 +191,9 @@ def _get_rid_of_hash(name):
     if len(tokens) > 1:
         return tokens[1]
     return name
+
+def resolve_headers(outputPath):
+    class_file = os.path.join(outputPath, "BaseClass.js")
+    write_templated_file(class_file, { "URI": entsoeURIs }, "handlebars_baseclass_template.mustache")
+
 

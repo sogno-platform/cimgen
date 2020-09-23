@@ -454,7 +454,7 @@ def _merge_classes(profiles_dict):
         # get short name of the profile
         short_name = ""
         if package_key in short_package_name:
-            short_name = short_package_name[package_key]
+            short_name = short_package_name[package_key]['_']
         else:
             short_name = package_key
         # iterate over classes in the current profile

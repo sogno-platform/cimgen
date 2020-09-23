@@ -1,6 +1,6 @@
-import templates from "../../../index.js"
+import templates from "../../templates/index.js"
 import {{sub_class_of}} from "./{{sub_class_of}}.js"
-import common from "../../../../src/common.js"
+import common from "../../src/common.js"
 {{#has_instances}}
 const {{class_name}}Enum = {
 {{#instances}}
@@ -42,6 +42,34 @@ class {{class_name}} extends {{sub_class_of}} {
         }
     {{/attributes}}
         return attributeEntries;
+    }
+
+    static isMemberAttribute(attribute) {
+        let attributes = [
+            {{#attributes}}
+            "cim:{{about}}",
+            {{/attributes}}
+        ];
+        if ( attribute.substr(0,8) == "pintura:") {
+            return true;
+        }
+        if ( attributes.indexOf(attribute) >= 0 ) {
+            return true;
+        }
+        else if ( {{sub_class_of}}.isMemberAttribute(attribute) ) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
+    static read(object) {
+        Object.keys(object).forEach((attribute) => {
+            if (!{{class_name}}.isMemberAttribute(attribute)) {
+                console.error("Unexpected attribute for class {{class_name}}: ", attribute, " with value: ", object[attribute])
+            }
+        });
     }
     static renderAsClass(object, cimmenu) {
         let separateEntries = {{class_name}}.attributeHTML(object, cimmenu);
