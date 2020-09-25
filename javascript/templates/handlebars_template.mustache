@@ -1,0 +1,91 @@
+import templates from "../../templates/index.js"
+import {{sub_class_of}} from "./{{sub_class_of}}.js"
+import common from "../../src/common.js"
+{{#has_instances}}
+const {{class_name}}Enum = {
+{{#instances}}
+        {{label}}:{{index}},
+{{/instances}}
+}
+const possibleValues = [
+        { "value": "--"},
+{{#instances}}
+        { "value": "{{about}}", "label": "{{label}}" },
+{{/instances}}
+]
+{{/has_instances}}
+
+class {{class_name}} extends {{sub_class_of}} {
+
+    static attributeHTML(object, cimmenu, classType="{{class_name}}") {
+        let attributeEntries = {{sub_class_of}}.attributeHTML(object, cimmenu, classType);
+    {{#attributes}}
+        if ('cim:{{about}}' in object) {
+            attributeEntries['filledEntries']['cim:{{about}}'] =
+                cimmenu.getAggregateComponentMenu(
+                                                   'cim:'+classType,
+                                                   object['pintura:rdfid'],
+                                                   object['{{about}}'],
+                                                   'cim:{{attributeClass}}',
+                                                   'cim:{{about}}'
+                                                 );
+        }
+        else {
+            attributeEntries['emptyEntries']['cim:{{about}}'] =
+                cimmenu.getAggregateComponentMenu(
+                                                   'cim:'+classType,
+                                                   object['pintura:rdfid'],
+                                                   object['{{about}}'],
+                                                   'cim:{{attributeClass}}',
+                                                   'cim:{{about}}'
+                                                 );
+        }
+    {{/attributes}}
+        return attributeEntries;
+    }
+
+    static isMemberAttribute(attribute) {
+        let attributes = [
+            {{#attributes}}
+            "cim:{{about}}",
+            {{/attributes}}
+        ];
+        if ( attribute.substr(0,8) == "pintura:") {
+            return true;
+        }
+        if ( attributes.indexOf(attribute) >= 0 ) {
+            return true;
+        }
+        else if ( {{sub_class_of}}.isMemberAttribute(attribute) ) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
+    static read(object) {
+        Object.keys(object).forEach((attribute) => {
+            if (!{{class_name}}.isMemberAttribute(attribute)) {
+                console.error("Unexpected attribute for class {{class_name}}: ", attribute, " with value: ", object[attribute])
+            }
+        });
+    }
+    static renderAsClass(object, cimmenu) {
+        let separateEntries = {{class_name}}.attributeHTML(object, cimmenu);
+        let filledEntries = separateEntries['filledEntries'];
+        let emptyEntries = separateEntries['emptyEntries'];
+        let attributeEntries = { ...filledEntries, ...emptyEntries };
+        return templates.handlebars_cim_class_render({ 'attributes': attributeEntries});
+    }
+    {{{renderAttribute}}}
+    static subClassList() {
+        let subClasses = [
+    {{#sub_classes}}
+        "{{.}}",
+    {{/sub_classes}}
+        ];
+        return subClasses;
+    }
+};
+export default {{class_name}}

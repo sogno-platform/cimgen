@@ -177,6 +177,7 @@ class CIMComponentDefinition:
         self.instance_list = []
         self.origin_list = []
         self.super = rdfsEntry.subClassOf()
+        self.subclasses = []
 
     def attributes(self):
         return self.attribute_list
@@ -191,6 +192,7 @@ class CIMComponentDefinition:
         return self.instance_list
 
     def addInstance(self, instance):
+        instance['index'] = len(self.instance_list)
         self.instance_list.append(instance)
 
     def addAttributes(self, attributes):
@@ -205,6 +207,15 @@ class CIMComponentDefinition:
 
     def superClass(self):
         return self.super
+
+    def addSubClass(self, name):
+        self.subclasses.append(name)
+
+    def subClasses(self):
+        return self.subclasses
+
+    def setSubClasses(self, classes):
+        self.subclasses = classes
 
     def _simple_float_attribute(attr):
         if 'dataType' in attr:
@@ -335,6 +346,7 @@ def _write_python_files(elem_dict, langPack, outputPath, version):
             "is_a_float": elem_dict[class_name].is_a_float(),
             "langPack": langPack,
             "sub_class_of": elem_dict[class_name].superClass(),
+            "sub_classes": elem_dict[class_name].subClasses(),
         }
 
         # extract comments
@@ -442,7 +454,7 @@ def _merge_classes(profiles_dict):
         # get short name of the profile
         short_name = ""
         if package_key in short_package_name:
-            short_name = short_package_name[package_key]
+            short_name = short_package_name[package_key]['_']
         else:
             short_name = package_key
         # iterate over classes in the current profile
@@ -494,6 +506,19 @@ def _merge_classes(profiles_dict):
                         class_dict[class_key].addAttribute(attr)
     return class_dict
 
+def recursivelyAddSubClasses(class_dict, class_name):
+    newSubClasses = []
+    theClass = class_dict[class_name]
+    for name in theClass.subClasses():
+        newSubClasses.append(name)
+        newNewSubClasses = recursivelyAddSubClasses(class_dict, name)
+        newSubClasses = newSubClasses + newNewSubClasses
+    return newSubClasses
+
+def addSubClassesOfSubClasses(class_dict):
+    for className in class_dict:
+        class_dict[className].setSubClasses(recursivelyAddSubClasses(class_dict, className))
+
 def cim_generate(directory, outputPath, version, langPack):
     """Generates cgmes python classes from cgmes ontology
 
@@ -533,6 +558,19 @@ def cim_generate(directory, outputPath, version, langPack):
 
     # merge classes from different profiles into one class and track origin of the classes and their attributes
     class_dict_with_origins = _merge_classes(profiles_dict)
+
+    # work out the subclasses for each class by noting the reverse relationship
+    for className in class_dict_with_origins:
+        superClassName = class_dict_with_origins[className].superClass();
+        if superClassName != None:
+            if superClassName in  class_dict_with_origins:
+                superClass = class_dict_with_origins[superClassName];
+                superClass.addSubClass(className)
+            else:
+                print("No match for superClass in dict: :", superClassName)
+
+    # recursively add the subclasses of subclasses
+    addSubClassesOfSubClasses(class_dict_with_origins)
 
     # get information for writing python files and write python files
     _write_python_files(class_dict_with_origins, langPack, outputPath, version)
