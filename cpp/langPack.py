@@ -145,8 +145,29 @@ def get_dataType_and_range(attribute):
         _dataType = attribute["dataType"]
     return (_range, _dataType)
 
+def create_nullptr_assigns(text, render):
+    attributes_txt = render(text)
+    if attributes_txt.strip() == "":
+        return ""
+    else:
+        attributes_json = eval(attributes_txt)
+        nullptr_init_string = ": "
+        for attribute in attributes_json:
+            name = attribute['label']
+            if attribute_type(attribute) == "primitive":
+                continue
+            if attribute["multiplicity"] == "M:0..n" or attribute["multiplicity"] == "M:1..n":
+                continue
+            else:
+                nullptr_init_string += "LABEL(nullptr), ".replace("LABEL", attribute["label"])
+
+    if len(nullptr_init_string) > 2:
+        return nullptr_init_string[:-2]
+    else:
+        return ""
+
 # These create_ functions are used to generate the implementations for
-# the entries in the dynamic_switch maps in assignments.cpp and Task.cpp
+# the entries in the dynamic_switch maps referenced in assignments.cpp and Task.cpp
 def create_class_assign(text, render):
     attribute_txt = render(text)
     attribute_json = eval(attribute_txt)
