@@ -41,7 +41,7 @@ public class Date extends BaseClass {
 		throw new IllegalArgumentException("Date class cannot set attribute: " + attributeName);
 	}
 
-	public java.lang.String toString() {
+	public java.lang.String toString(boolean b) {
 		return value;
 	}
 }

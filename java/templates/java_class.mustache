@@ -16,7 +16,13 @@ import java.lang.IllegalArgumentException;
 */
 public class {{class_name}} extends {{sub_class_of}}
 {
-	private BaseClass[] {{class_name}}_attributes;
+	private BaseClass[] {{class_name}}_class_attributes;
+	private BaseClass[] {{class_name}}_primitive_attributes;
+	private java.lang.String rdfid;
+
+	public void setRdfid(java.lang.String id) {
+		rdfid = id;
+	}
 
 	private abstract interface PrimitiveBuilder {
 		public abstract BaseClass construct(java.lang.String value);
@@ -24,7 +30,7 @@ public class {{class_name}} extends {{sub_class_of}}
 
 	private enum {{class_name}}_primitive_builder implements PrimitiveBuilder {
 	{{#primitives}}
-		{{> label}}(){
+	{{> label}}(){
 			public BaseClass construct (java.lang.String value) {
 				return new {{class_name}}(value);
 			}
@@ -37,17 +43,34 @@ public class {{class_name}} extends {{sub_class_of}}
 		};
 	}
 
+	private enum {{class_name}}_class_attributes_enum {
+	{{#attributes}}
+	{{> label}},
+	{{/attributes}}
+		LAST_ENUM;
+	}
+
 	{{#attributes}}
 	{{#langPack.create_class_assign}}{{.}}{{/langPack.create_class_assign}}
 	{{/attributes}}
 
 	public {{class_name}}() {
-		{{class_name}}_attributes = new BaseClass[{{class_name}}_primitive_builder.values().length];
+		{{class_name}}_primitive_attributes = new BaseClass[{{class_name}}_primitive_builder.values().length];
+		{{class_name}}_class_attributes = new BaseClass[{{class_name}}_class_attributes_enum.values().length];
+	}
+
+	public void updateAttributeInArray({{class_name}}_class_attributes_enum attrEnum, BaseClass value) {
+		try {
+			{{class_name}}_class_attributes[attrEnum.ordinal()] = value;
+		}
+		catch (ArrayIndexOutOfBoundsException aoobe) {
+			System.out.println("No such attribute: " + attrEnum.name() + ": " + aoobe.getMessage());
+		}
 	}
 
 	public void updateAttributeInArray({{class_name}}_primitive_builder attrEnum, BaseClass value) {
 		try {
-			{{class_name}}_attributes[attrEnum.ordinal()] = value;
+			{{class_name}}_primitive_attributes[attrEnum.ordinal()] = value;
 		}
 		catch (ArrayIndexOutOfBoundsException aoobe) {
 			System.out.println("No such attribute: " + attrEnum.name() + ": " + aoobe.getMessage());
@@ -56,7 +79,9 @@ public class {{class_name}} extends {{sub_class_of}}
 
  	public void setAttribute(java.lang.String attrName, BaseClass value) {
 		try {
-			//{{class_name}}_ATTR_ENUM attrEnum = {{class_name}}_ATTR_BC_ENUM.valueOf(attrName);
+			{{class_name}}_class_attributes_enum attrEnum = {{class_name}}_class_attributes_enum.valueOf(attrName);
+			updateAttributeInArray(attrEnum, value);
+			System.out.println("Updated {{class_name}}, setting " + attrName);
 		}
 		catch (IllegalArgumentException iae)
 		{
@@ -69,6 +94,7 @@ public class {{class_name}} extends {{sub_class_of}}
 		try {
 			{{class_name}}_primitive_builder attrEnum = {{class_name}}_primitive_builder.valueOf(attrName);
 			updateAttributeInArray(attrEnum, attrEnum.construct(value));
+			System.out.println("Updated {{class_name}}, setting " + attrName  + " to: "  + value);
 		}
 		catch (IllegalArgumentException iae)
 		{
@@ -76,13 +102,26 @@ public class {{class_name}} extends {{sub_class_of}}
 		}
 	}
 
-	public java.lang.String toString() {
+	public java.lang.String toString(boolean topClass) {
 		java.lang.String result = "";
-		for ({{class_name}}_primitive_builder attrEnum: {{class_name}}_primitive_builder.values()) {
-			BaseClass bc = {{class_name}}_attributes[attrEnum.ordinal()];
-			if (bc != null) {
-				result += attrEnum.name() + "(" + bc.debugString() + ")" + " " + bc.toString() + System.lineSeparator();
+		java.lang.String indent = "";
+		if (topClass) {
+			for ({{class_name}}_primitive_builder attrEnum: {{class_name}}_primitive_builder.values()) {
+				BaseClass bc = {{class_name}}_primitive_attributes[attrEnum.ordinal()];
+				if (bc != null) {
+					result += "    {{class_name}}." + attrEnum.name() + "(" + bc.debugString() + ")" + " " + bc.toString(false) + System.lineSeparator();
+				}
 			}
+			for ({{class_name}}_class_attributes_enum attrEnum: {{class_name}}_class_attributes_enum.values()) {
+				BaseClass bc = {{class_name}}_class_attributes[attrEnum.ordinal()];
+				if (bc != null) {
+					result += "    {{class_name}}." + attrEnum.name() + "(" + bc.debugString() + ")" + " " + bc.toString(false) + System.lineSeparator();
+				}
+			}
+			result += super.toString(true);
+		}
+		else {
+			result += "({{class_name}}) RDFID: " + rdfid;
 		}
 		return result;
 	}

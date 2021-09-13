@@ -41,7 +41,7 @@ public class String extends BaseClass {
 		throw new IllegalArgumentException("String class cannot set attribute: " + attributeName);
 	}
 
-	public java.lang.String toString() {
+	public java.lang.String toString(boolean b) {
 		return value;
 	}
 };

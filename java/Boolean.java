@@ -47,7 +47,7 @@ public class Boolean extends BaseClass {
 		throw new IllegalArgumentException("Boolean class cannot set attribute: " + attributeName);
 	}
 
-	public java.lang.String toString() {
+	public java.lang.String toString(boolean b) {
 		return java.lang.Boolean.toString(value);
 	}
 };
