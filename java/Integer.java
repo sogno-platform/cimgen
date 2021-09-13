@@ -54,7 +54,7 @@ public class Integer extends BaseClass implements AttributeInterface {
 		throw new IllegalArgumentException("Integer class cannot set attribute: " + attributeName);
 	}
 
-	public java.lang.String toString() {
+	public java.lang.String toString(boolean b) {
 		return java.lang.Integer.toString(value);
 	}
 };
