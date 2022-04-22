@@ -1,0 +1,27 @@
+{
+	"$schema": "http://json-schema.org/schema#",
+    "$schemaVersion": "0.0.1",
+    "modelTags": "",
+	"title": "{{class_name}}",
+	"description": "{{class_comment}}",
+	"type": "object",
+	"allOf": [
+		{
+			"properties": {
+				"type": {
+					"type": "string",
+					"enum": [
+						"{{class_name}}"
+					],
+					"description": "Property, NGSI type. Has to be {{class_name}}."
+				},
+{{#attributes}}
+				"{{label}}": {
+					"description": "{{comment}}",
+					"type": "number"
+				},
+{{/attributes}}
+			}
+		}
+	]
+}
