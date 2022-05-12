@@ -1,27 +1,33 @@
 {
-	"$schema": "http://json-schema.org/schema#",
+    "$schema": "http://json-schema.org/schema#",
     "$schemaVersion": "0.0.1",
     "modelTags": "",
-	"title": "{{class_name}}",
-	"description": "{{class_comment}}",
-	"type": "object",
-	"allOf": [
-		{
-			"properties": {
-				"type": {
-					"type": "string",
-					"enum": [
-						"{{class_name}}"
-					],
-					"description": "Property, NGSI type. Has to be {{class_name}}."
-				},
+    "title": "Smart Data Models - {{class_name}}",
+    "description": "{{class_comment}}",
+    "type": "object",
+    "allOf": [
+        {
+            "$ref": "https://smart-data-models.github.io/data-models/common-schema.json#/definitions/GSMA-Commons"
+        },
+        {
+            "$ref": "https://smart-data-models.github.io/data-models/common-schema.json#/definitions/Location-Commons"
+        },
+        {
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "{{class_name}}"
+                    ],
+                    "description": "Property. NGSI type. It has to be {{class_name}}"
+                },
 {{#attributes}}
-				"{{label}}": {
-					"description": "{{comment}}",
-					"type": "number"
-				},
+                "{{label}}": {
+                    "description": "Property. Model:'https://schema.org/Number'. {{comment}} Default: {{#setDefault}}{{dataType}}{{/setDefault}}",
+                    "type": "number"
+                },
 {{/attributes}}
-			}
-		}
-	]
+            }
+        }
+    ]
 }
