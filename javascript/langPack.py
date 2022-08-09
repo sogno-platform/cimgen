@@ -6,10 +6,21 @@ import sys
 def location(version):
     return "BaseClass.hpp";
 
-# This just makes sure we have somewhere to write the classes.
-def setup(version_path):
+# This function makes sure we have somewhere to write the classes.
+# cgmes_profile_info details which uri belongs in each profile.
+# We use that to creating the header data for the profiles.
+def setup(version_path, cgmes_profile_info):
     if not os.path.exists(version_path):
         os.makedirs(version_path)
+    class_file = os.path.join(version_path, "CGMESProfile.js")
+    short_names = {};
+    for index, key in enumerate(cgmes_profile_info):
+        short_names[key] = index
+
+    cgmes_profile_string = json.dumps(cgmes_profile_info, indent=2)
+    cgmes_shortname_string = json.dumps(short_names, indent=2)
+    cgmes_object = { "profileList" : cgmes_profile_string, "shortNames": cgmes_shortname_string }
+    write_templated_file(class_file, cgmes_object, "handlebars_cgmesProfile_template.mustache")
 
 base = {
     "base_class": "BaseClass",
@@ -156,6 +167,9 @@ def run_template(outputPath, class_details):
         class_file = os.path.join(outputPath, class_details['class_name'] + template_info["ext"])
         write_templated_file(class_file, class_details, template_info["filename"])
 
+    class_file = os.path.join(outputPath, "BaseClass.js")
+    write_templated_file(class_file, { "URI": entsoeURIs}, "handlebars_baseclass_template.mustache")
+
 def write_templated_file(class_file, class_details, template_filename):
     if not os.path.exists(class_file):
         with open(class_file, 'w') as file:
@@ -193,7 +207,5 @@ def _get_rid_of_hash(name):
     return name
 
 def resolve_headers(outputPath):
-    class_file = os.path.join(outputPath, "BaseClass.js")
-    write_templated_file(class_file, { "URI": entsoeURIs }, "handlebars_baseclass_template.mustache")
-
+    pass
 
