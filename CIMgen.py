@@ -74,7 +74,7 @@ class RDFSEntry:
 
     def fixed(self):
         if 'cims:isFixed' in self.jsonDefinition:
-            return RDFSEntry._get_literal(self.jsonDefinition['cims:isFixed'])
+            return RDFSEntry._extract_text(self.jsonDefinition['cims:isFixed'])
         else:
             return None
 
@@ -260,16 +260,21 @@ def get_short_profile_name(descriptions):
             return rdfsEntry.fixed()
 
 short_package_name = {}
+package_listed_by_short_name = {}
+
+profiles = {}
 
 def _parse_rdf(input_dic):
     classes_map = {}
-    package_name = []
+    package_name = ""
     attributes = []
     instances = []
 
     # Generates list with dictionaries as elements
     descriptions = input_dic['rdf:RDF']['rdf:Description']
     short_package_name[get_profile_name(descriptions)] = get_short_profile_name(descriptions)
+    short_profile_name = get_short_profile_name(descriptions)
+    package_listed_by_short_name[short_profile_name] = []
 
     # Iterate over list elements
     for list_elem in descriptions:
@@ -280,7 +285,7 @@ def _parse_rdf(input_dic):
             if rdfsEntry.type() == 'http://www.w3.org/2000/01/rdf-schema#Class':
                 # Class
                 if rdfsEntry.label() in classes_map:
-                    logger.info("Class {} already exists".format(rdfsEntry.label()))
+                    logger.error("Class {} already exists".format(rdfsEntry.label()))
                 if rdfsEntry.label() != "String":
                     classes_map[rdfsEntry.label()] = CIMComponentDefinition(rdfsEntry);
             elif rdfsEntry.type() == "http://www.w3.org/1999/02/22-rdf-syntax-ns#Property":
@@ -294,7 +299,18 @@ def _parse_rdf(input_dic):
         if rdfsEntry.stereotype() != None:
             if rdfsEntry.stereotype() == 'Entsoe':
                 # Record the type, which will be [PackageName]Version
-                package_name.append(rdfsEntry.about())
+                if rdfsEntry.about()[-7:] == "Version":
+                    package_name = rdfsEntry.about()
+            elif rdfsEntry.stereotype() == "http://iec.ch/TC57/NonStandard/UML#attribute":
+                if rdfsEntry.label()[0:7] == "baseURI":
+                    if package_name != "":
+                        if package_name not in profiles:
+                            profiles[package_name] = [ rdfsEntry.fixed() ]
+                        else:
+                            profiles[package_name].append(rdfsEntry.fixed())
+                    else:
+                        print("package_name not ready yet!");
+                    package_listed_by_short_name[short_profile_name].append(rdfsEntry.fixed())
 
     # Add attributes to corresponding class
     for attribute in attributes:
@@ -312,8 +328,7 @@ def _parse_rdf(input_dic):
         else:
             logger.info("Class {} for instance {} not found.".format(clarse, instance))
 
-
-    return {package_name[0]: classes_map}
+    return {package_name: classes_map}
 
 
 # This function extracts all information needed for the creation of the python class files like the comments or the
@@ -375,7 +390,7 @@ def format_class(_range, _dataType):
         return get_rid_of_hash(_range)
 
 def _write_files(class_details, outputPath, version):
-    class_details['langPack'].setup(outputPath)
+    class_details['langPack'].setup(outputPath, package_listed_by_short_name)
 
     if class_details['sub_class_of'] == None:
         # If class has no subClassOf key it is a subclass of the Base class
@@ -447,19 +462,17 @@ def _merge_profiles(profiles_array):
 # The origin of the class definitions and the origin of the attributes of a class are tracked and used to generate
 # the possibleProfileList used for the serialization.
 def _merge_classes(profiles_dict):
-    class_dict = {}
+    class_dict = { }
 
     # Iterate over profiles
     for package_key in profiles_dict.keys():
         # get short name of the profile
         short_name = ""
         if package_key in short_package_name:
-            if type(short_package_name[package_key]) is dict and '_' in short_package_name[package_key]:
-                short_name = short_package_name[package_key]['_']
-            else:
-                short_name = short_package_name[package_key]
+            short_name = short_package_name[package_key]
         else:
             short_name = package_key
+
         # iterate over classes in the current profile
         for class_key in profiles_dict[package_key]:
             # class already defined?

@@ -1,6 +1,8 @@
 import templates from "../../templates/index.js"
 import {{sub_class_of}} from "./{{sub_class_of}}.js"
 import common from "../../src/common.js"
+import CGMESProfile from "./CGMESProfile.js"
+
 {{#has_instances}}
 const {{class_name}}Enum = {
 {{#instances}}
@@ -44,6 +46,10 @@ class {{class_name}} extends {{sub_class_of}} {
         return attributeEntries;
     }
 
+    static possibleProfileList = {'class': [{{#class_origin}}CGMESProfile.shortNames.{{origin}}, {{/class_origin}}],
+						{{#attributes}}'{{label}}': [{{#attr_origin}}CGMESProfile.shortNames.{{origin}}, {{/attr_origin}}],
+						{{/attributes}} }
+
     static isMemberAttribute(attribute) {
         let attributes = [
             {{#attributes}}
@@ -66,7 +72,7 @@ class {{class_name}} extends {{sub_class_of}} {
 
     static read(object) {
         Object.keys(object).forEach((attribute) => {
-            if (!{{class_name}}.isMemberAttribute(attribute)) {
+            if (!{{class_name}}.isMemberAttribute(attribute) && !(attribute == "about")) {
                 console.error("Unexpected attribute for class {{class_name}}: ", attribute, " with value: ", object[attribute])
             }
         });

@@ -6,7 +6,10 @@ def location(version):
     return "BaseClass";
 
 # This just makes sure we have somewhere to write the classes.
-def setup(version_path):
+# cgmes_profile_info details which uri belongs in each profile.
+# We don't use that here because we aren't exporting into
+# separate profiles.
+def setup(version_path, cgmes_profile_info):
     if not os.path.exists(version_path):
         os.makedirs(version_path)
 

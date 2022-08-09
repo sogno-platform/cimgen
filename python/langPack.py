@@ -7,7 +7,10 @@ logger = logging.getLogger(__name__)
 
 # This makes sure we have somewhere to write the classes, and
 # creates a couple of files the python implementation needs.
-def setup(version_path):
+# cgmes_profile_info details which uri belongs in each profile.
+# We don't use that here because we aren't creating the header
+# data for the separate profiles.
+def setup(version_path, cgmes_profile_info):
     if not os.path.exists(version_path):
         os.makedirs(version_path)
         _create_init(version_path)
