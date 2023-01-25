@@ -53,3 +53,10 @@ $ export OUTPUT_DIR=$(pwd)/CGMES_2.4.15_27JAN2020_python
 $ export SCHEMA_DIR=$(pwd)/cgmes_schema/CGMES_2.4.15_27JAN2020
 $ docker run -v ${OUTPUT_DIR}:/cgmes_output -v ${SCHEMA_DIR}:/cgmes_schema cimgen python
 ```
+
+## Publications
+
+If you are using CIMgen for your research, please cite the following paper in your publications:
+
+Dinkelbach, J., Razik, L., Mirz, M., Benigni, A., Monti, A.: Template-based generation of programming language specific code for smart grid modelling compliant with CIM and CGMES.
+J. Eng. 2023, 1–13 (2022). [https://doi.org/10.1049/tje2.12208](https://doi.org/10.1049/tje2.12208)
