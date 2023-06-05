@@ -127,7 +127,7 @@ class RDFSEntry:
         else:
             return None
 
-    def versionIRI(self):
+    def version_iri(self):
         if "owl:versionIRI" in self.jsonDefinition:
             return RDFSEntry._extract_string(self.jsonDefinition["owl:versionIRI"])
         else:
@@ -282,47 +282,62 @@ package_listed_by_short_name = {}
 
 profiles = {}
 
-def _rdfs_entry_types(rdfsEntry: dict, version):
+def _rdfs_entry_types(rdfs_entry: RDFSEntry, version)->list:
     """
     Determine the types of RDFS entry. In some case an RDFS entry can be of more than 1 type.
     """
     entry_types = []
-    if rdfsEntry.type() != None:
-        if rdfsEntry.type() == "http://www.w3.org/2000/01/rdf-schema#Class":
+    if rdfs_entry.type() != None:
+        if rdfs_entry.type() == "http://www.w3.org/2000/01/rdf-schema#Class": # NOSONAR
             entry_types.append("class")
-        elif rdfsEntry.type() == "http://www.w3.org/1999/02/22-rdf-syntax-ns#Property":
+        if rdfs_entry.type() == "http://www.w3.org/1999/02/22-rdf-syntax-ns#Property": # NOSONAR
             entry_types.append("property")
-        elif rdfsEntry.type() != "http://iec.ch/TC57/1999/rdf-schema-extensions-19990926#ClassCategory":
+        if rdfs_entry.type() != "http://iec.ch/TC57/1999/rdf-schema-extensions-19990926#ClassCategory": # NOSONAR
             entry_types.append("rest_non_class_category")
-    if version == "cgmes_v2_4_15":
-        if rdfsEntry.stereotype() != None:
-            if rdfsEntry.stereotype() == "Entsoe" and rdfsEntry.about()[-7:] == "Version":
+
+    if version == "cgmes_v2_4_15" and rdfs_entry.stereotype() != None:
+        entry_types.extend(_entry_types_version_2(rdfs_entry))
+    elif version == "cgmes_v3_0_0":
+        entry_types.extend(_entry_types_version_3(rdfs_entry))
+    else:
+        raise Exception(f"Got version '{version}', but only 'cgmes_v2_4_15' and 'cgmes_v3_0_0' are supported.")
+
+    return entry_types
+
+def _entry_types_version_2(rdfs_entry: RDFSEntry) -> list:
+    entry_types=[]
+    if rdfs_entry.stereotype() != None:
+            if rdfs_entry.stereotype() == "Entsoe" and rdfs_entry.about()[-7:] == "Version":
                 entry_types.append("profile_name_v2_4")
             if (
-                rdfsEntry.stereotype() == "http://iec.ch/TC57/NonStandard/UML#attribute"
-                and rdfsEntry.label()[0:7] == "baseURI"
+                rdfs_entry.stereotype() == "http://iec.ch/TC57/NonStandard/UML#attribute" # NOSONAR
+                and rdfs_entry.label()[0:7] == "baseURI"
             ):
                 entry_types.append("profile_iri_v2_4")
-            if rdfsEntry.label() == "shortName":
+            if rdfs_entry.label() == "shortName":
                 entry_types.append("short_profile_name_v2_4")
-    if version == "cgmes_v3_0_0":
-        if rdfsEntry.type() == "http://iec.ch/TC57/1999/rdf-schema-extensions-19990926#ClassCategory":
-            entry_types.append("profile_name_v3")
-        if rdfsEntry.about() == "Ontology":
-            entry_types.append("profile_iri_v3")
-        if rdfsEntry.keyword() is not None:
-            entry_types.append("short_profile_name_v3")
+    return entry_types
+
+def _entry_types_version_3(rdfs_entry: RDFSEntry) -> list:
+    entry_types=[]
+    if rdfs_entry.type() == "http://iec.ch/TC57/1999/rdf-schema-extensions-19990926#ClassCategory": # NOSONAR
+        entry_types.append("profile_name_v3")
+    if rdfs_entry.about() == "Ontology":
+        entry_types.append("profile_iri_v3")
+    if rdfs_entry.keyword() is not None:
+        entry_types.append("short_profile_name_v3")
+
     return entry_types
 
 
-def _add_class(classes_map, rdfsEntry):
+def _add_class(classes_map, rdfs_entry):
     """
     Add class component to classes map
     """
-    if rdfsEntry.label() in classes_map:
-        logger.error("Class {} already exists".format(rdfsEntry.label()))
-    if rdfsEntry.label() != "String":
-        classes_map[rdfsEntry.label()] = CIMComponentDefinition(rdfsEntry)
+    if rdfs_entry.label() in classes_map:
+        logger.error("Class {} already exists".format(rdfs_entry.label()))
+    if rdfs_entry.label() != "String":
+        classes_map[rdfs_entry.label()] = CIMComponentDefinition(rdfs_entry)
 
 
 def _add_profile_to_packages(profile_name, short_profile_name, profile_iri):
@@ -340,7 +355,8 @@ def _add_profile_to_packages(profile_name, short_profile_name, profile_iri):
 
 def _parse_rdf(input_dic, version):
     classes_map = {}
-    package_name = ""
+    profile_name = ""
+    profile_iri = None
     attributes = []
     instances = []
 
@@ -352,7 +368,6 @@ def _parse_rdf(input_dic, version):
     for list_elem in descriptions:
         rdfsEntry = RDFSEntry(list_elem)
         object_dic = rdfsEntry.asJson()
-
         rdfs_entry_types = _rdfs_entry_types(rdfsEntry, version)
 
         if "class" in rdfs_entry_types:
@@ -372,7 +387,7 @@ def _parse_rdf(input_dic, version):
         if "profile_iri_v2_4" in rdfs_entry_types and rdfsEntry.fixed():
             profile_iri = rdfsEntry.fixed()
         if "profile_iri_v3" in rdfs_entry_types:
-            profile_iri = rdfsEntry.versionIRI()
+            profile_iri = rdfsEntry.version_iri()
 
     short_package_name[profile_name] = short_profile_name
     package_listed_by_short_name[short_profile_name] = []
