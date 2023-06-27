@@ -12,8 +12,6 @@ args = parser.parse_args()
 
 langPack = importlib.import_module(args.langdir + ".langPack")
 schema_path = os.path.join(os.getcwd(), args.schemadir)
-cgmes_version = args.cgmes_version
-
-CIMgen.cim_generate(schema_path, args.outdir, cgmes_version, langPack)
+CIMgen.cim_generate(schema_path, args.outdir, args.cgmes_version, langPack)
 
 langPack.resolve_headers(args.outdir)
