@@ -295,7 +295,7 @@ def _rdfs_entry_types(rdfs_entry: RDFSEntry, version)->list:
         if rdfs_entry.type() != "http://iec.ch/TC57/1999/rdf-schema-extensions-19990926#ClassCategory": # NOSONAR
             entry_types.append("rest_non_class_category")
 
-    if version == "cgmes_v2_4_15" and rdfs_entry.stereotype() != None:
+    if version == "cgmes_v2_4_15":
         entry_types.extend(_entry_types_version_2(rdfs_entry))
     elif version == "cgmes_v3_0_0":
         entry_types.extend(_entry_types_version_3(rdfs_entry))
@@ -408,7 +408,7 @@ def _parse_rdf(input_dic, version):
         else:
             logger.info("Class {} for instance {} not found.".format(clarse, instance))
 
-    return {"class_name": classes_map}
+    return {short_profile_name: classes_map}
 
 
 # This function extracts all information needed for the creation of the python class files like the comments or the
