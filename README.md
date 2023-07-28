@@ -44,7 +44,8 @@ docker run -v ${OUTPUT_DIR}:/cgmes_output -v ${SCHEMA_DIR}:/cgmes_schema cimgen
 
 ```bash
 sudo apt install python
-pip3 install xmltodict chevron
+curl -sSL https://install.python-poetry.org | python3 -  # install poetry
+poetry install --no-root # install dependencies
 export OUTPUT_DIR=$(pwd)/CGMES_2.4.15_27JAN2020_python
 export SCHEMA_DIR=$(pwd)/cgmes_schema/CGMES_2.4.15_27JAN2020
 ./build.py --outdir=${OUTPUT_DIR} --schemadir=${SCHEMA_DIR} --langdir=python
