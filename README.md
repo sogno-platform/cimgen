@@ -14,8 +14,9 @@ Python tool for code generation from CIM data model for several programming lang
 
 ```bash
 sudo apt install python
-pip3 install xmltodict chevron cmake
-cmake -P .
+curl -sSL https://install.python-poetry.org | python3 -  # install poetry
+poetry install --no-root # install dependencies
+poetry run cmake -P CMakeLists.txt
 ```
 
 This will build version CGMES_2.4.15_27JAN2020 in the subfolder with the same name.
@@ -25,7 +26,7 @@ If you wish to build an alternative version, you can see available options in th
 They can be built using a cmake variable:
 
 ```bash
-cmake -DUSE_CIM_VERSION=CGMES_2.4.15_16FEB2016 -P .
+poetry run cmake -DUSE_CIM_VERSION=CGMES_2.4.15_16FEB2016 -P CMakeLists.txt
 ```
 
 #### Generating C++ files in a Docker container
@@ -42,14 +43,17 @@ docker run -v ${OUTPUT_DIR}:/cgmes_output -v ${SCHEMA_DIR}:/cgmes_schema cimgen
 #### Generating Python files on Linux
 
 ```bash
-$ sudo apt install python
-$ pip3 install xmltodict chevron
-$ export OUTPUT_DIR=$(pwd)/CGMES_2.4.15_27JAN2020_python
-$ export SCHEMA_DIR=$(pwd)/cgmes_schema/CGMES_2.4.15_27JAN2020
-$ ./build.py ${OUTPUT_DIR} ${SCHEMA_DIR} python
-OUTPUT_DIR can be set to whichever absolute path you wish to create the files in.
-If you wish to build an alternative version, you can see available options in the subfolder called cgmes_schema
+sudo apt install python
+pip3 install xmltodict chevron
+export OUTPUT_DIR=$(pwd)/CGMES_2.4.15_27JAN2020_python
+export SCHEMA_DIR=$(pwd)/cgmes_schema/CGMES_2.4.15_27JAN2020
+./build.py --outdir=${OUTPUT_DIR} --schemadir=${SCHEMA_DIR} --langdir=python
 ```
+
+`OUTPUT_DIR` can be set to whichever absolute path you wish to create the files
+in.
+If you wish to build an alternative version, you can see available options in
+the subfolder called cgmes_schema
 
 #### Generating Python files in a Docker container
 
@@ -57,7 +61,7 @@ If you wish to build an alternative version, you can see available options in th
 docker build -t cimgen -f Dockerfile .
 export OUTPUT_DIR=$(pwd)/CGMES_2.4.15_27JAN2020_python
 export SCHEMA_DIR=$(pwd)/cgmes_schema/CGMES_2.4.15_27JAN2020
-docker run -v ${OUTPUT_DIR}:/cgmes_output -v ${SCHEMA_DIR}:/cgmes_schema cimgen python
+docker run -v ${OUTPUT_DIR}:/cgmes_output -v ${SCHEMA_DIR}:/cgmes_schema cimgen --langdir=python
 ```
 
 ## Publications

@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "cimgen"
+version = "0.1.0"
+description = "Code generation from CIM data model for several programming languages"
+authors = []
+license = "Apache License 2.0"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+xmltodict = "^0.13.0"
+chevron = "^0.14.0"
+cmake = "^3.27.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
