@@ -1,5 +1,5 @@
 """
-Generated from the CGMES 3 files via cimgen: https://github.com/Alliander/uno-cimgen/
+Generated from the CGMES 3 files via cimgen: https://github.com/sogno-platform/cimgen
 """
 
 from functools import cached_property
