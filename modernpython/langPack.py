@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 # cgmes_profile_info details which uri belongs in each profile.
 # We don't use that here because we aren't creating the header
 # data for the separate profiles.
-def setup(version_path, cgmes_profile_info):
+def setup(version_path, cgmes_profile_info): # NOSONAR
     if not os.path.exists(version_path):
         os.makedirs(version_path)
         _create_init(version_path)
@@ -125,7 +125,7 @@ def _create_base(path):
 
 def resolve_headers(dest: str, version: str):
     """Add all classes in __init__.py"""
-    if match := re.search(r"(?P<num>\d+_\d+_\d+)", version):
+    if match := re.search(r"(?P<num>\d+_\d+_\d+)", version): # NOSONAR
         version_number = match.group("num").replace("_", ".")
     else:
         raise ValueError(f"Cannot parse {version} to extract a number.")

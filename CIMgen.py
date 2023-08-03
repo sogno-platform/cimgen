@@ -436,7 +436,7 @@ def _parse_rdf(input_dic, version):
         else:
             logger.info("Class {} for instance {} not found.".format(clarse, instance))
 
-    return {short_profile_name: classes_map} # UNO RETUENS PROFIENAME
+    return {short_profile_name: classes_map}
 
 
 # This function extracts all information needed for the creation of the python class files like the comments or the
@@ -532,7 +532,7 @@ def _write_files(class_details, outputPath, version):
             _dataType = attr['dataType']
         attr['class_name'] = format_class( _range, _dataType )
 
-    class_details['langPack'].run_template( outputPath, class_details ) # WHAT IS TAHT ONE? DELTED IN UNO
+    class_details['langPack'].run_template( outputPath, class_details )
 
 # Find multiple entries for the same attribute
 def _find_multiple_attributes(attributes_array):
