@@ -1,9 +1,6 @@
-import glob
 import logging
 import os
 import re
-import sys
-import textwrap
 from pathlib import Path
 
 import chevron
@@ -16,7 +13,7 @@ logger = logging.getLogger(__name__)
 # cgmes_profile_info details which uri belongs in each profile.
 # We don't use that here because we aren't creating the header
 # data for the separate profiles.
-def setup(version_path, cgmes_profile_info): # NOSONAR
+def setup(version_path, cgmes_profile_info):  # NOSONAR
     if not os.path.exists(version_path):
         os.makedirs(version_path)
         _create_init(version_path)
@@ -37,7 +34,7 @@ def get_class_location(class_name, class_map, version):
     if class_map[class_name].superClass():
         if class_map[class_name].superClass() in class_map:
             return "cimpy." + version + "." + class_map[class_name].superClass()
-        elif class_map[class_name].superClass() == "Base" or class_map[class_name].superClass() == None:
+        elif class_map[class_name].superClass() == "Base" or class_map[class_name].superClass() is None:
             return location(version)
     else:
         return location(version)
@@ -125,7 +122,7 @@ def _create_base(path):
 
 def resolve_headers(dest: str, version: str):
     """Add all classes in __init__.py"""
-    if match := re.search(r"(?P<num>\d+_\d+_\d+)", version): # NOSONAR
+    if match := re.search(r"(?P<num>\d+_\d+_\d+)", version):  # NOSONAR
         version_number = match.group("num").replace("_", ".")
     else:
         raise ValueError(f"Cannot parse {version} to extract a number.")

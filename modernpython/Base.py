@@ -131,6 +131,15 @@ class Base:
         """Returns the resource type."""
         return self.__class__.__name__
 
+    @classmethod  # From python 3.11, you cannot wrap @classmethod in @property anymore.
+    def apparent_name(cls) -> str:
+        """
+        If you create your own custom attributes by subclassing a resource,
+        but you do not want the name of your new subclass to appear, you can force the apparent name by
+        subclassing this method, keeping the @classmethod decorator.
+        """
+        return cls.__name__
+
     def cgmes_attribute_names_in_profile(self, profile: Profile | None) -> set[Field]:
         """
         Returns all fields accross the parent tree which are in the profile in parameter.
@@ -171,10 +180,11 @@ class Base:
         # .. but we check existence with the unqualified (short) name.
         seen_attrs = set()
 
+        # mro contains itself (so parent might be a misnomer) and object, removed wit the [:-1].
         for parent in reversed(self.__class__.__mro__[:-1]):
             for f in fields(parent):
                 shortname = f.name
-                qualname = f"{parent.__name__}.{shortname}"
+                qualname = f"{parent.apparent_name()}.{shortname}"
                 if f not in self.cgmes_attribute_names_in_profile(profile) or shortname in seen_attrs:
                     # Wrong profile or already found from a parent.
                     continue
