@@ -1,10 +1,15 @@
-import os
-import xmltodict
-from time import time
+import html
 import json
-
 import logging
+import os
+import textwrap
+from time import time
+
+import xmltodict
+from bs4 import BeautifulSoup
+
 logger = logging.getLogger(__name__)
+
 
 class RDFSEntry:
     def __init__(self, jsonObject):
@@ -39,6 +44,7 @@ class RDFSEntry:
             jsonObject['inverseRole'] = self.inverseRole()
         if self.associationUsed() != None:
             jsonObject['associationUsed'] = self.associationUsed()
+        jsonObject["isAssociationUsed"] = self.isAssociationUsed()
         return jsonObject
 
     def about(self):
@@ -52,6 +58,12 @@ class RDFSEntry:
             return RDFSEntry._extract_string(self.jsonDefinition['cims:AssociationUsed'])
         else:
             return None
+
+    def isAssociationUsed(self) -> bool:
+        if "cims:AssociationUsed" in self.jsonDefinition:
+            return "yes" == RDFSEntry._extract_string(self.jsonDefinition["cims:AssociationUsed"]).lower()
+        else:
+            return True
 
     def comment(self):
         if 'rdfs:comment' in self.jsonDefinition:
@@ -277,6 +289,22 @@ def get_short_profile_name(descriptions):
         if rdfsEntry.label() == 'shortName':
             return rdfsEntry.fixed()
 
+
+def wrap_and_clean(txt: str, width: int = 120, initial_indent="", subsequent_indent="    ") -> str:
+    """
+    Used for comments: make them fit within <width> character, including indentation.
+    """
+    soup = BeautifulSoup(txt, "html.parser")
+    return "\n".join(
+        textwrap.wrap(
+            soup.text,
+            width=width,
+            initial_indent=initial_indent,
+            subsequent_indent=subsequent_indent,
+        )
+    )
+
+
 short_package_name = {}
 package_listed_by_short_name = {}
 
@@ -307,15 +335,15 @@ def _rdfs_entry_types(rdfs_entry: RDFSEntry, version)->list:
 def _entry_types_version_2(rdfs_entry: RDFSEntry) -> list:
     entry_types=[]
     if rdfs_entry.stereotype() != None:
-            if rdfs_entry.stereotype() == "Entsoe" and rdfs_entry.about()[-7:] == "Version":
-                entry_types.append("profile_name_v2_4")
-            if (
-                rdfs_entry.stereotype() == "http://iec.ch/TC57/NonStandard/UML#attribute" # NOSONAR
-                and rdfs_entry.label()[0:7] == "baseURI"
-            ):
-                entry_types.append("profile_iri_v2_4")
-            if rdfs_entry.label() == "shortName":
-                entry_types.append("short_profile_name_v2_4")
+        if rdfs_entry.stereotype() == "Entsoe" and rdfs_entry.about()[-7:] == "Version":
+            entry_types.append("profile_name_v2_4")
+        if (
+            rdfs_entry.stereotype() == "http://iec.ch/TC57/NonStandard/UML#attribute" # NOSONAR
+            and rdfs_entry.label()[0:7] == "baseURI"
+        ):
+            entry_types.append("profile_iri_v2_4")
+        if rdfs_entry.label() == "shortName":
+            entry_types.append("short_profile_name_v2_4")
     return entry_types
 
 def _entry_types_version_3(rdfs_entry: RDFSEntry) -> list:
@@ -447,12 +475,20 @@ def _write_python_files(elem_dict, langPack, outputPath, version):
         # extract comments
         if elem_dict[class_name].comment:
             class_details['class_comment'] = elem_dict[class_name].comment
+            class_details['wrapped_class_comment'] = wrap_and_clean(
+                elem_dict[class_name].comment, width=116, initial_indent='', subsequent_indent=' ' * 6
+            )
 
         for attribute in class_details['attributes']:
             if "comment" in attribute:
                 attribute["comment"] = attribute["comment"].replace('"', "`")
                 attribute["comment"] = attribute["comment"].replace("'", "`")
-
+                attribute["wrapped_comment"] = wrap_and_clean(
+                    attribute["comment"],
+                    width=114 - len(attribute["label"]),
+                    initial_indent="",
+                    subsequent_indent=" " * 6,
+                )
         _write_files(class_details, outputPath, version)
 
 def get_rid_of_hash(name):
@@ -657,10 +693,10 @@ def cim_generate(directory, outputPath, version, langPack):
 
     # work out the subclasses for each class by noting the reverse relationship
     for className in class_dict_with_origins:
-        superClassName = class_dict_with_origins[className].superClass();
+        superClassName = class_dict_with_origins[className].superClass()
         if superClassName != None:
-            if superClassName in  class_dict_with_origins:
-                superClass = class_dict_with_origins[superClassName];
+            if superClassName in class_dict_with_origins:
+                superClass = class_dict_with_origins[superClassName]
                 superClass.addSubClass(className)
             else:
                 print("No match for superClass in dict: :", superClassName)
@@ -671,6 +707,9 @@ def cim_generate(directory, outputPath, version, langPack):
     # get information for writing python files and write python files
     _write_python_files(class_dict_with_origins, langPack, outputPath, version)
 
-    logger.info('Elapsed Time: {}s\n\n'.format(time() - t0))
+    if "modernpython" in langPack.__name__:
+        langPack.resolve_headers(outputPath, version)
+    else:
+        langPack.resolve_headers(outputPath)
 
-
+    logger.info("Elapsed Time: {}s\n\n".format(time() - t0))
