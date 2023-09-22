@@ -2,6 +2,9 @@
 Generated from the CGMES 3 files via cimgen: https://github.com/sogno-platform/cimgen
 """
 
+import sys
+from types import ModuleType
+
 from functools import cached_property
 from typing import Optional
 from pydantic import Field
@@ -12,7 +15,7 @@ from ..utils.profile import BaseProfile, Profile
 from {{class_location}} import {{sub_class_of}}
 
 @dataclass(config=DataclassConfig)
-class {{class_name}}({{sub_class_of}}):
+class {{class_name}}({{sub_class_of}}, ModuleType):
     """
     {{{wrapped_class_comment}}}
 
@@ -20,6 +23,9 @@ class {{class_name}}({{sub_class_of}}):
     {{label}}: {{{wrapped_comment}}}
     {{/attributes}}
     """
+    def __call__(self, *args, **kwargs):
+        # Dark magic - see last lines of the file.
+        return {{class_name}}(*args, **kwargs)
 
     {{#attributes}}
     {{^isAssociationUsed}}# *Association not used*
@@ -39,3 +45,12 @@ class {{class_name}}({{sub_class_of}}):
         where this element can be found.
         """
         return { {{#class_origin}}Profile.{{origin}}, {{/class_origin}} }
+
+# This + inheriting from ModuleType + __call__:
+# makes:
+# "import {{class_name}}"
+# work as well as
+# "from {{class_name}} import {{class_name}}".
+# You would get a typechecker "not callable" error, but this might be useful for
+# backward compatibility.
+sys.modules[__name__].__class__ = {{class_name}}

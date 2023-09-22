@@ -43,7 +43,7 @@ class Base:
 
         """
         attrs = {f.name: getattr(self, f.name) for f in fields(self)}
-        attrs["__class__"] = self.resource_name
+        attrs["__class__"] = self.apparent_name()
         return attrs
 
     @cached_property
@@ -122,7 +122,7 @@ class Base:
 
     def __str__(self) -> str:
         """Returns the string representation of this resource."""
-        return "\n".join([f"{k}={v}" for k, v in self.to_dict().items()])
+        return "\n".join([f"{k}={v}" for k, v in sorted(self.to_dict().items())])
 CgmesAttributeTypes: TypeAlias = str | int | float | Base | list | None
 
 
