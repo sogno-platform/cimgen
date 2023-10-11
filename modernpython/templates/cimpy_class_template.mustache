@@ -2,14 +2,16 @@
 Generated from the CGMES 3 files via cimgen: https://github.com/sogno-platform/cimgen
 """
 
+from __future__ import annotations
 from functools import cached_property
-from typing import Optional
-from pydantic import Field
-from pydantic.dataclasses import dataclass
-from ..utils.dataclassconfig import DataclassConfig
-from ..utils.profile import BaseProfile, Profile
-
-from {{class_location}} import {{sub_class_of}}
+from typing import Optional, List
+from pydantic import Field, field_validator
+import uuid
+from datetime import date, datetime, time
+from pydantic.dataclasses import dataclass, rebuild_dataclass
+from .Base import DataclassConfig, Profile
+from .util import cyclic_references_validator
+from .{{sub_class_of}} import {{sub_class_of}}
 
 @dataclass(config=DataclassConfig)
 class {{class_name}}({{sub_class_of}}):
@@ -24,8 +26,13 @@ class {{class_name}}({{sub_class_of}}):
     {{#attributes}}
     {{^isAssociationUsed}}# *Association not used*
     # Type {{dataType}} in CIM  # pylint: disable-next=line-too-long
-    # {{/isAssociationUsed}}{{label}} : {{#setType}}{{dataType}}{{/setType}} = Field({{#setDefault}}{{dataType}}{{/setDefault}}, in_profiles = [{{#attr_origin}}Profile.{{origin}}, {{/attr_origin}}]) {{^isAssociationUsed}}# noqa: E501{{/isAssociationUsed}}
+    # {{/isAssociationUsed}}{{#setNormalizedName}}{{label}}{{/setNormalizedName}} : {{#setType}}{{.}}{{/setType}} = Field({{#setDefault}}{{.}}{{/setDefault}}, in_profiles = [{{#attr_origin}}Profile.{{origin}}, {{/attr_origin}}], alias = "{{label}}") {{^isAssociationUsed}}# noqa: E501{{/isAssociationUsed}}
 
+    {{/attributes}}
+    {{#attributes}}
+    {{^isAssociationUsed}}# *Association not used*
+    # Type {{dataType}} in CIM  # pylint: disable-next=line-too-long
+    # {{/isAssociationUsed}}{{#setValidator}}{{.}}{{/setValidator}}{{^isAssociationUsed}}# noqa: E501{{/isAssociationUsed}}
     {{/attributes}}
     {{^attributes}}
     # No attributes defined for this class.
@@ -39,3 +46,7 @@ class {{class_name}}({{sub_class_of}}):
         where this element can be found.
         """
         return { {{#class_origin}}Profile.{{origin}}, {{/class_origin}} }
+
+{{#setImports}}{{attributes}}{{/setImports}}
+
+rebuild_dataclass({{class_name}})

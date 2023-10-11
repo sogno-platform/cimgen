@@ -208,6 +208,7 @@ class CIMComponentDefinition:
         self.origin_list = []
         self.super = rdfsEntry.subClassOf()
         self.subclasses = []
+        self.stereotype = rdfsEntry.stereotype()
 
     def attributes(self):
         return self.attribute_list
@@ -274,6 +275,12 @@ class CIMComponentDefinition:
             if candidate_array[key] == False:
                 return False
         return True
+
+    def is_a_primitive(self):
+        return self.stereotype == 'Primitive'
+
+    def is_a_cim_datatype(self):
+        return self.stereotype == 'CIMDatatype'
 
 def get_profile_name(descriptions):
     for list_elem in descriptions:
@@ -446,6 +453,8 @@ def _write_python_files(elem_dict, langPack, outputPath, version):
 
     float_classes = {}
     enum_classes = {}
+    primitive_classes = {}
+    cim_data_type_classes = {}
 
     # Iterate over Classes
     for class_definition in elem_dict:
@@ -453,9 +462,15 @@ def _write_python_files(elem_dict, langPack, outputPath, version):
             float_classes[class_definition] = True
         if elem_dict[class_definition].has_instances():
             enum_classes[class_definition] = True
+        if elem_dict[class_definition].is_a_primitive():
+            primitive_classes[class_definition] = True
+        if elem_dict[class_definition].is_a_cim_datatype():
+            cim_data_type_classes[class_definition] = True
 
     langPack.set_float_classes(float_classes)
     langPack.set_enum_classes(enum_classes)
+    langPack.set_primitive_classes(primitive_classes)
+    langPack.set_cim_data_type_classes(cim_data_type_classes)
 
     for class_name in elem_dict.keys():
 
@@ -467,6 +482,8 @@ def _write_python_files(elem_dict, langPack, outputPath, version):
             "instances": elem_dict[class_name].instances(),
             "has_instances": elem_dict[class_name].has_instances(),
             "is_a_float": elem_dict[class_name].is_a_float(),
+            "is_a_primitive": elem_dict[class_name].is_a_primitive(),
+            "is_a_cim_data_type": elem_dict[class_name].is_a_cim_datatype(),
             "langPack": langPack,
             "sub_class_of": elem_dict[class_name].superClass(),
             "sub_classes": elem_dict[class_name].subClasses(),
@@ -638,18 +655,42 @@ def _merge_classes(profiles_dict):
                         class_dict[class_key].addAttribute(attr)
     return class_dict
 
-def recursivelyAddSubClasses(class_dict, class_name):
+def recursively_add_sub_classes(class_dict, class_name):
     newSubClasses = []
     theClass = class_dict[class_name]
     for name in theClass.subClasses():
         newSubClasses.append(name)
-        newNewSubClasses = recursivelyAddSubClasses(class_dict, name)
+        newNewSubClasses = recursively_add_sub_classes(class_dict, name)
         newSubClasses = newSubClasses + newNewSubClasses
     return newSubClasses
 
-def addSubClassesOfSubClasses(class_dict):
-    for className in class_dict:
-        class_dict[className].setSubClasses(recursivelyAddSubClasses(class_dict, className))
+def add_sub_classes_of_sub_classes(class_dict):
+    for class_name in class_dict:
+        class_dict[class_name].setSubClasses(recursively_add_sub_classes(class_dict, class_name))
+
+def add_sub_classes_of_sub_classes_clean(class_dict, source):
+    temp = {}
+    for class_name in class_dict:
+        for name in class_dict[class_name].subClasses():
+            if name not in class_dict:
+                temp[name] = source[name]
+                add_sub_classes_of_sub_classes_clean(temp, source)
+    class_dict.update(temp)
+
+# Order classes based on dependency order
+
+def generate_clean_sub_classes(class_dict_with_origins, clean_class_dict):
+    for class_name in class_dict_with_origins:
+        super_class_name = class_dict_with_origins[class_name].superClass()
+        if super_class_name == None and class_dict_with_origins[class_name].has_instances():
+            clean_class_dict[class_name] = class_dict_with_origins[class_name]
+
+    for class_name in class_dict_with_origins:
+        super_class_name = class_dict_with_origins[class_name].superClass()
+        if super_class_name == None and not class_dict_with_origins[class_name].has_instances():
+            clean_class_dict[class_name] = class_dict_with_origins[class_name]
+
+    add_sub_classes_of_sub_classes_clean(clean_class_dict, class_dict_with_origins)
 
 def cim_generate(directory, outputPath, version, langPack):
     """Generates cgmes python classes from cgmes ontology
@@ -691,6 +732,8 @@ def cim_generate(directory, outputPath, version, langPack):
     # merge classes from different profiles into one class and track origin of the classes and their attributes
     class_dict_with_origins = _merge_classes(profiles_dict)
 
+    clean_class_dict = {}
+
     # work out the subclasses for each class by noting the reverse relationship
     for className in class_dict_with_origins:
         superClassName = class_dict_with_origins[className].superClass()
@@ -702,10 +745,12 @@ def cim_generate(directory, outputPath, version, langPack):
                 print("No match for superClass in dict: :", superClassName)
 
     # recursively add the subclasses of subclasses
-    addSubClassesOfSubClasses(class_dict_with_origins)
+    add_sub_classes_of_sub_classes(class_dict_with_origins)
+
+    generate_clean_sub_classes(class_dict_with_origins, clean_class_dict)
 
     # get information for writing python files and write python files
-    _write_python_files(class_dict_with_origins, langPack, outputPath, version)
+    _write_python_files(clean_class_dict, langPack, outputPath, version)
 
     if "modernpython" in langPack.__name__:
         langPack.resolve_headers(outputPath, version)

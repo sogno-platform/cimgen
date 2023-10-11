@@ -36,7 +36,7 @@ class Base:
         # Works because the module and the class have the same name.
         return getattr(mod, subclass)(**data_attrs)
 
-    def to_dict(self) -> dict[str, "CgmesAttributeTypes"]:
+    def to_dict(self, with_class: bool = True) -> dict[str, "CgmesAttributeTypes"]:
         """
         Returns the class as dict, with:
         - only public attributes
@@ -45,6 +45,8 @@ class Base:
         """
         attrs = {f.name: getattr(self, f.name) for f in fields(self)}
         attrs["__class__"] = self.apparent_name()
+        if with_class:
+            attrs["__class__"] = self.resource_name
         return attrs
 
     @cached_property
