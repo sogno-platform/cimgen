@@ -7,11 +7,13 @@ license = "Apache License 2.0"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.10"
+poetry = ">=1.5.0" # key 'priority' in source
 xmltodict = "^0.13.0"
 chevron = "^0.14.0"
 cmake = "^3.27.0"
-
+pydantic = "<2"
+beautifulsoup4 = "^4.12.2"
 
 [build-system]
 requires = ["poetry-core"]
