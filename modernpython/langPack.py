@@ -37,6 +37,8 @@ base = {"base_class": "Base", "class_location": location}
 template_files = [{"filename": "cimpy_class_template.mustache", "ext": ".py"}]
 enum_template_files = [{"filename": "pydantic_enum_template.mustache", "ext": ".py"}]
 
+required_profiles = ["EQ", "GL"] #temporary
+
 def get_class_location(class_name, class_map, version):
     return f".{class_map[class_name].superClass()}"
     # Check if the current class has a parent class
@@ -58,7 +60,7 @@ def _compute_data_type(attribute):
 
     if "range" in attribute:
         # return "'"+attribute["range"].split("#")[1]+"'"
-        return "'"+attribute["range"].split("#")[1]+"'"
+        return attribute["range"].split("#")[1]
     if "dataType" in attribute and "class_name" in attribute:
         # for whatever weird reason String is not created as class from CIMgen
         if is_primitive_class(attribute["class_name"]) or attribute["class_name"] == "String":
@@ -89,7 +91,7 @@ def _compute_data_type(attribute):
         if is_cim_data_type_class(attribute["class_name"]):
             return "float"
         # this is for example the case for 'StreetAddress.streetDetail'
-        return "'"+attribute["dataType"].split("#")[1]+"'"
+        return attribute["dataType"].split("#")[1]
 
 def _ends_with_s(attribute_name):
     return attribute_name.endswith("s")
@@ -257,6 +259,12 @@ def has_unit_attribute(attributes):
             return True
     return False
 
+def is_required_profile(class_origin):
+    for origin in class_origin:
+        if origin["origin"] in required_profiles:
+            return True
+    return False
+
 def run_template(version_path, class_details):
     if (
         # Primitives are never used in the in memory representation but only for
@@ -265,6 +273,7 @@ def run_template(version_path, class_details):
         # Datatypes based on primitives are never used in the in memory
         # representation but only for the schema
         or class_details["is_a_cim_data_type"] == True
+        or class_details["class_name"] == 'PositionPoint'
     ):
         return
     elif class_details["has_instances"] == True:
@@ -274,40 +283,68 @@ def run_template(version_path, class_details):
 
 def run_template_enum(version_path, class_details, templates):
     for template_info in templates:
-        class_file = os.path.join(version_path, class_details["class_name"] + template_info["ext"])
+        class_file = os.path.join(version_path,  "enum" + template_info["ext"])
         if not os.path.exists(class_file):
             with open(class_file, "w", encoding="utf-8") as file:
-                template_path = os.path.join(os.getcwd(), "modernpython/templates", template_info["filename"])
-                class_details["setInstances"] = _set_instances
-                with open(template_path, encoding="utf-8") as f:
-                    args = {
-                        "data": class_details,
-                        "template": f,
-                        "partials_dict": partials,
-                    }
-                    output = chevron.render(**args)
-                file.write(output)
+                header_file_path = os.path.join(
+                    os.getcwd(), "modernpython", "enum_header.py"
+                )
+                header_file = open(header_file_path, "r")
+                file.write(header_file.read())
+        with open(class_file, "a", encoding="utf-8") as file:
+            template_path = os.path.join(os.getcwd(), "modernpython/templates", template_info["filename"])
+            class_details["setInstances"] = _set_instances
+            with open(template_path, encoding="utf-8") as f:
+                args = {
+                    "data": class_details,
+                    "template": f,
+                    "partials_dict": partials,
+                }
+                output = chevron.render(**args)
+            file.write(output)
 
 def run_template_schema(version_path, class_details, templates):
     for template_info in templates:
-        class_file = os.path.join(version_path, class_details["class_name"] + template_info["ext"])
+        class_file = os.path.join(version_path, "schema" + template_info["ext"])
         if not os.path.exists(class_file):
             with open(class_file, "w", encoding="utf-8") as file:
-                template_path = os.path.join(os.getcwd(), "modernpython/templates", template_info["filename"])
-                class_details["setDefault"] = _set_default
-                class_details["setType"] = _set_type
-                class_details["setImports"] = _set_imports
-                class_details["setValidator"] = _set_validator
-                class_details["setNormalizedName"] = _set_normalized_name
-                with open(template_path, encoding="utf-8") as f:
-                    args = {
-                        "data": class_details,
-                        "template": f,
-                        "partials_dict": partials,
-                    }
-                    output = chevron.render(**args)
-                file.write(output)
+                schema_file_path = os.path.join(
+                    os.getcwd(), "modernpython", "schema_header.py"
+                )
+                schema_file = open(schema_file_path, "r")
+                file.write(schema_file.read())
+        with open(class_file, "a", encoding="utf-8") as file:
+            template_path = os.path.join(os.getcwd(), "modernpython/templates", template_info["filename"])
+            class_details["setDefault"] = _set_default
+            class_details["setType"] = _set_type
+            class_details["setImports"] = _set_imports
+            class_details["setValidator"] = _set_validator
+            class_details["setNormalizedName"] = _set_normalized_name
+            with open(template_path, encoding="utf-8") as f:
+                args = {
+                    "data": class_details,
+                    "template": f,
+                    "partials_dict": partials,
+                }
+                output = chevron.render(**args)
+            file.write(output)
 
+
+def _create_init(path):
+    init_file = path + "/__init__.py"
+
+    with open(init_file, "w", encoding="utf-8") as init:
+        #init.write("# pylint: disable=too-many-lines,missing-module-docstring\n")
+        pass
+
+# creates the Base class file, all classes inherit from this class
+def _create_base(path):
+    # TODO: Check export priority of OP en SC, see Profile class
+    base_path = path + "/Base.py"
+    with open(Path(__file__).parent / "Base.py", encoding="utf-8") as src, open(
+        base_path, "w", encoding="utf-8"
+    ) as dst:
+        dst.write(src.read())
 
 
 def _copy_files(path):

@@ -10,6 +10,100 @@ from pydantic.dataclasses import dataclass
 from .dataclassconfig import DataclassConfig
 from .profile import BaseProfile
 
+class Profile(Enum):
+    """
+    Enum containing all CGMES profiles and their export priority.
+    todo: enums are ordered, so we can have a short->long enum without explicit prio
+    """
+
+    EQ = 0
+    SSH = 1
+    TP = 2
+    SV = 3
+    DY = 4
+    OP = 5
+    SC = 6
+    GL = 7
+    # DI = 8 # Initially mentioned but does not seem used?
+    DL = 9
+    TPBD = 10
+    EQBD = 11
+
+    @cached_property
+    def long_name(self):
+        """From the short name, return the long name of the profile."""
+        return self._short_to_long()[self.name]
+
+    @classmethod
+    def from_long_name(cls, long_name):
+        """From the long name, return the short name of the profile."""
+        return cls[cls._long_to_short()[long_name]]
+
+    @classmethod
+    @cache
+    def _short_to_long(cls) -> dict[str, str]:
+        """Returns the long name from a short name"""
+        return {
+            "DL": "DiagramLayout",
+            # "DI": "DiagramLayout",
+            "DY": "Dynamics",
+            "EQ": "Equipment",
+            "EQBD": "EquipmentBoundary",  # Not too sure about that one
+            "GL": "GeographicalLocation",
+            "OP": "Operation",
+            "SC": "ShortCircuit",
+            "SV": "StateVariables",
+            "SSH": "SteadyStateHypothesis",
+            "TP": "Topology",
+            "TPBD": "TopologyBoundary",  # Not too sure about that one
+        }
+
+    @classmethod
+    @cache
+    def _long_to_short(cls) -> dict[str, str]:
+        """Returns the short name from a long name"""
+        return {_long: _short for _short, _long in cls._short_to_long().items()}
+
+
+class DataclassConfig:  # pylint: disable=too-few-public-methods
+    """
+    Used to configure pydantic dataclasses.
+
+    See doc at
+    https://docs.pydantic.dev/latest/usage/model_config/#options
+    """
+
+    # By default with pydantic extra arguments given to a dataclass are silently ignored.
+    # This matches the default behaviour by failing noisily.
+    extra = "forbid"
+    populate_by_name = True
+    defer_build = True
+    from_attributes = True
+
+class GeoDataclassConfig:  # pylint: disable=too-few-public-methods
+    """
+    Used to configure pydantic dataclasses.
+
+    See doc at
+    https://docs.pydantic.dev/latest/usage/model_config/#options
+    """
+
+    # By default with pydantic extra arguments given to a dataclass are silently ignored.
+    # This matches the default behaviour by failing noisily.
+    extra = "ignore"
+    populate_by_name = True
+    defer_build = True
+    from_attributes = True
+    arbitrary_types_allowed=True
+
+# Default namespaces used by CGMES.
+NAMESPACES = {
+    "cim": "http://iec.ch/TC57/2013/CIM-schema-cim16#",  # NOSONAR
+    "entsoe": "http://entsoe.eu/CIM/SchemaExtension/3/1#",  # NOSONAR
+    "md": "http://iec.ch/TC57/61970-552/ModelDescription/1#",  # NOSONAR
+    "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",  # NOSONAR
+}
+
 
 @dataclass(config=DataclassConfig)
 class Base:

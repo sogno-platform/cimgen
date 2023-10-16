@@ -1,17 +1,7 @@
+
 """
 Generated from the CGMES 3 files via cimgen: https://github.com/sogno-platform/cimgen
 """
-
-from __future__ import annotations
-from functools import cached_property
-from typing import Optional, List
-from pydantic import Field, field_validator
-import uuid
-from datetime import date, datetime, time
-from pydantic.dataclasses import dataclass, rebuild_dataclass
-from .Base import DataclassConfig, Profile
-from .util import cyclic_references_validator
-from .{{sub_class_of}} import {{sub_class_of}}
 
 @dataclass(config=DataclassConfig)
 class {{class_name}}({{sub_class_of}}):
@@ -37,8 +27,6 @@ class {{class_name}}({{sub_class_of}}):
     {{^attributes}}
     # No attributes defined for this class.
     {{/attributes}}
-
-
     @cached_property
     def possible_profiles(self)->set[BaseProfile]:
         """
@@ -46,7 +34,3 @@ class {{class_name}}({{sub_class_of}}):
         where this element can be found.
         """
         return { {{#class_origin}}Profile.{{origin}}, {{/class_origin}} }
-
-{{#setImports}}{{attributes}}{{/setImports}}
-
-rebuild_dataclass({{class_name}})
