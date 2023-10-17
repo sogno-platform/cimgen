@@ -14,19 +14,15 @@ class {{class_name}}({{sub_class_of}}):
     """
 
     {{#attributes}}
-    {{^isAssociationUsed}}# *Association not used*
-    # Type {{dataType}} in CIM  # pylint: disable-next=line-too-long
-    # {{/isAssociationUsed}}{{#setNormalizedName}}{{label}}{{/setNormalizedName}} : {{#setType}}{{.}}{{/setType}} = Field({{#setDefault}}{{.}}{{/setDefault}}, in_profiles = [{{#attr_origin}}Profile.{{origin}}, {{/attr_origin}}], alias = "{{label}}") {{^isAssociationUsed}}# noqa: E501{{/isAssociationUsed}}
-
+    {{#setNormalizedName}}{{label}}{{/setNormalizedName}} : {{#setType}}{{.}}{{/setType}} = Field({{#setDefault}}{{.}}{{/setDefault}}, in_profiles = [{{#attr_origin}}Profile.{{origin}}, {{/attr_origin}}], alias = "{{label}}")
     {{/attributes}}
     {{#attributes}}
-    {{^isAssociationUsed}}# *Association not used*
-    # Type {{dataType}} in CIM  # pylint: disable-next=line-too-long
-    # {{/isAssociationUsed}}{{#setValidator}}{{.}}{{/setValidator}}{{^isAssociationUsed}}# noqa: E501{{/isAssociationUsed}}
+    {{#setValidator}}{{.}}{{/setValidator}}
     {{/attributes}}
     {{^attributes}}
     # No attributes defined for this class.
     {{/attributes}}
+    
     @cached_property
     def possible_profiles(self)->set[BaseProfile]:
         """
