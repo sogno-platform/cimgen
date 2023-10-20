@@ -10,10 +10,12 @@ class BaseProfile(str, Enum):
     Enum with fields cannot be inherited or composed, just create your own CustomProfile without
     trying to extend Profile. It will work.
     """
+
     @cached_property
     def long_name(self) -> str:
         """Return the long name of the profile."""
         return self.value
+
 
 class Profile(BaseProfile):
     """

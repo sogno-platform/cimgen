@@ -4,6 +4,7 @@ from dataclasses import Field, fields
 from functools import cached_property
 from typing import Any, TypeAlias, TypedDict
 
+from pycgmes.utils.constants import NAMESPACES
 from pydantic.dataclasses import dataclass
 
 from .dataclassconfig import DataclassConfig
@@ -50,6 +51,13 @@ class Base:
     def resource_name(self) -> str:
         """Returns the resource type."""
         return self.__class__.__name__
+
+    @cached_property
+    def namespace(self) -> str:
+        """Returns the namespace. By default, the namespace is the cim namespace for all resources.
+        Custom resources can override this.
+        """
+        return NAMESPACES["cim"]
 
     @classmethod  # From python 3.11, you cannot wrap @classmethod in @property anymore.
     def apparent_name(cls) -> str:
@@ -109,12 +117,25 @@ class Base:
                     # Wrong profile or already found from a parent.
                     continue
                 else:
+                    # Namespace finding
+                    # "class namespace" means the first namespace defined in the inheritance tree.
+                    # This can go up to Base, which will give the default cim NS.
+                    if (extra := getattr(f.default, "extra", None)) is None:
+                        # The attribute does not have extra metadata. It might be a custom atttribute
+                        # without it, or a base type (int...).
+                        # Use the class namespace.
+                        namespace = self.namespace
+                    elif (attr_ns := extra.get("namespace", None)) is None:
+                        # The attribute has some extras, but not namespace.
+                        # Use the class namespace.
+                        namespace = self.namespace
+                    else:
+                        # The attribute has an explicit namesapce
+                        namespace = attr_ns
+
                     qual_attrs[qualname] = CgmesAttribute(
                         value=getattr(self, shortname),
-                        # base types (e.g. int) do not have extras
-                        namespace=extra.get("namespace", None)
-                        if (extra := getattr(f.default, "extra", None))
-                        else None,
+                        namespace=namespace,
                     )
                     seen_attrs.add(shortname)
 
@@ -123,6 +144,8 @@ class Base:
     def __str__(self) -> str:
         """Returns the string representation of this resource."""
         return "\n".join([f"{k}={v}" for k, v in sorted(self.to_dict().items())])
+
+
 CgmesAttributeTypes: TypeAlias = str | int | float | Base | list | None
 
 
