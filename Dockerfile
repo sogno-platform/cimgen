@@ -1,16 +1,14 @@
-from alpine
-run apk update
-run apk add python3 git py3-pip py3-lxml file
-run pip3 install --upgrade pip
-run pip3 install xmltodict chevron
+FROM alpine
+RUN apk update
+RUN apk add python3 git py3-pip py3-lxml file
+RUN pip3 install --upgrade pip
+RUN pip3 install xmltodict chevron
 
-copy cpp/               /CIMgen/cpp/
-copy java/              /CIMgen/java/
-copy javascript/        /CIMgen/javascript/
-copy javascript_react/  /CIMgen/javascript_react/
-copy python/            /CIMgen/python/
-copy CIMgen.py build.py /CIMgen/
-copy CIMgen.py build.py /CIMgen/
-workdir /CIMgen
-entrypoint [ "/usr/bin/python3", "build.py", "/cgmes_output", "/cgmes_schema" ]
-cmd [ "cpp" ]
+COPY cpp/               /CIMgen/cpp/
+COPY java/              /CIMgen/java/
+COPY javascript/        /CIMgen/javascript/
+COPY python/            /CIMgen/python/
+COPY CIMgen.py build.py /CIMgen/
+WORKDIR /CIMgen
+ENTRYPOINT [ "/usr/bin/python3", "build.py", "--outdir=/cgmes_output", "--schemadir=/cgmes_schema" ]
+CMD [ "--langdir=cpp" ]
