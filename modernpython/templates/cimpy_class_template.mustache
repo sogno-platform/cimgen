@@ -6,12 +6,11 @@ from functools import cached_property
 from typing import Optional
 from pydantic import Field
 from pydantic.dataclasses import dataclass
-from ..utils.dataclassconfig import DataclassConfig
 from ..utils.profile import BaseProfile, Profile
 
 from {{class_location}} import {{sub_class_of}}
 
-@dataclass(config=DataclassConfig)
+@dataclass()
 class {{class_name}}({{sub_class_of}}):
     """
     {{{wrapped_class_comment}}}

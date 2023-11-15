@@ -7,15 +7,17 @@ from typing import Any, TypeAlias, TypedDict
 from pycgmes.utils.constants import NAMESPACES
 from pydantic.dataclasses import dataclass
 
-from .dataclassconfig import DataclassConfig
+from ..utils.config import cgmes_resource_config
 from .profile import BaseProfile
 
 
-@dataclass(config=DataclassConfig)
+@dataclass
 class Base:
     """
     Base Class for pylint .
     """
+    # Will be inherited in subclasses.
+    model_config = cgmes_resource_config
 
     @cached_property
     def possible_profiles(self) -> set[BaseProfile]:
@@ -87,7 +89,7 @@ class Base:
         return {
             f
             for f in fields(self)
-            # The field is defined as a pydantic.Field, not a dataclass.field,
+            # The field is defined as a pydantic. Field, not a dataclass.field,
             # so access to metadata is a tad different. Furthermore, pyright is confused by extra.
             if (profile is None or profile in f.default.json_schema_extra["in_profiles"]) # pyright: ignore[reportGeneralTypeIssues]
             if f.name != "mRID"
