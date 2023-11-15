@@ -10,7 +10,7 @@ from ..utils.profile import BaseProfile, Profile
 
 from {{class_location}} import {{sub_class_of}}
 
-@dataclass()
+@dataclass
 class {{class_name}}({{sub_class_of}}):
     """
     {{{wrapped_class_comment}}}
@@ -22,7 +22,7 @@ class {{class_name}}({{sub_class_of}}):
 
     {{#attributes}}
     {{^isAssociationUsed}}# *Association not used*
-    # Type {{dataType}} in CIM  # pylint: disable-next=line-too-long
+    # Type {{dataType}} in CIM
     # {{/isAssociationUsed}}{{label}} : {{#setType}}{{dataType}}{{/setType}} = Field({{#setDefault}}{{dataType}}{{/setDefault}}, json_schema_extra={"in_profiles":[{{#attr_origin}}Profile.{{origin}}, {{/attr_origin}}]}) {{^isAssociationUsed}}# noqa: E501{{/isAssociationUsed}}
 
     {{/attributes}}

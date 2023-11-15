@@ -14,7 +14,7 @@ from .profile import BaseProfile
 @dataclass
 class Base:
     """
-    Base Class for pylint .
+    Base Class for resources.
     """
     # Will be inherited in subclasses.
     model_config = cgmes_resource_config
@@ -91,7 +91,10 @@ class Base:
             for f in fields(self)
             # The field is defined as a pydantic. Field, not a dataclass.field,
             # so access to metadata is a tad different. Furthermore, pyright is confused by extra.
-            if (profile is None or profile in f.default.json_schema_extra["in_profiles"]) # pyright: ignore[reportGeneralTypeIssues]
+            if (
+                profile is None
+                or (profile in f.default.json_schema_extra["in_profiles"])  # pyright: ignore[reportGeneralTypeIssues]
+            )
             if f.name != "mRID"
         }
 
