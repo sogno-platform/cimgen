@@ -88,8 +88,8 @@ class Base:
             f
             for f in fields(self)
             # The field is defined as a pydantic.Field, not a dataclass.field,
-            # so access to metadata is a tad different. Furthermore, mypy is confused by extra.
-            if (profile is None or profile in f.default.extra["in_profiles"])  # type: ignore[union-attr]
+            # so access to metadata is a tad different. Furthermore, pyright is confused by extra.
+            if (profile is None or profile in f.default.json_schema_extra["in_profiles"]) # pyright: ignore[reportGeneralTypeIssues]
             if f.name != "mRID"
         }
 
@@ -120,7 +120,7 @@ class Base:
                     # Namespace finding
                     # "class namespace" means the first namespace defined in the inheritance tree.
                     # This can go up to Base, which will give the default cim NS.
-                    if (extra := getattr(f.default, "extra", None)) is None:
+                    if (extra := getattr(f.default, "json_schema_extra", None)) is None:
                         # The attribute does not have extra metadata. It might be a custom atttribute
                         # without it, or a base type (int...).
                         # Use the class namespace.
