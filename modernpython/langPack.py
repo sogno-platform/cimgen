@@ -64,7 +64,7 @@ def _get_type_and_default(text, renderer) -> tuple[str, str]:
         return ("list", "default_factory=list")
 
     result = result.split("#")[1]
-    if result in ["integer", "Integer", "Seconds"]:
+    if result in ["integer", "Integer"]:
         return ("int", "default=0")
     elif result in ["String", "DateTime", "Date"]:
         return ("str", 'default=""')

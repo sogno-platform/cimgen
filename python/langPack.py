@@ -53,7 +53,7 @@ def _set_default(text, render):
         return '"list"'
 
     result = result.split('#')[1]
-    if result in ['integer', 'Integer', 'Seconds' ]:
+    if result in ['integer', 'Integer']:
         return '0'
     elif result in ['String', 'DateTime', 'Date']:
         return "''"
