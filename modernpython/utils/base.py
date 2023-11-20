@@ -11,13 +11,12 @@ from ..utils.config import cgmes_resource_config
 from .profile import BaseProfile
 
 
-@dataclass
+# Config will be inherited.
+@dataclass(config=cgmes_resource_config)
 class Base:
     """
     Base Class for resources.
     """
-    # Will be inherited in subclasses.
-    model_config = cgmes_resource_config
 
     @cached_property
     def possible_profiles(self) -> set[BaseProfile]:
