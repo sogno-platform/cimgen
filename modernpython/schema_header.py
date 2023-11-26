@@ -8,8 +8,10 @@ from shapely.geometry import Point
 from datetime import date, datetime, time
 from typing import Optional, Iterator, List
 from pydantic.dataclasses import dataclass
-from .Base import DataclassConfig, GeoDataclassConfig, Profile, Base
-from .util import cyclic_references_validator
+from ..utils.base import Base
+from ..utils.dataclassconfig import DataclassConfig, GeoDataclassConfig
+from ..utils.profile import Profile, BaseProfile
+from ..utils.validation import cyclic_references_validator
 from .enum import *
 
 @dataclass(config=GeoDataclassConfig)

@@ -58,41 +58,43 @@ partials = {}
 def _compute_data_type(attribute):
     if "label" in attribute and attribute["label"] == "mRID":
         return "str"
-
-    if "range" in attribute:
+    elif "range" in attribute:
         # return "'"+attribute["range"].split("#")[1]+"'"
         return attribute["range"].split("#")[1]
-    if "dataType" in attribute and "class_name" in attribute:
+    elif "dataType" in attribute and "class_name" in attribute:
         # for whatever weird reason String is not created as class from CIMgen
         if is_primitive_class(attribute["class_name"]) or attribute["class_name"] == "String":
             datatype = attribute["dataType"].split("#")[1].lower()
             if datatype == "integer":
                 return "int"
-            if datatype == "Boolean":
+            if datatype == "boolean":
                 return "bool"
-            if datatype == "String":
+            if datatype == "string":
                 return "str"
-            if datatype == "DateTime":
+            if datatype == "datetime":
                 return "datetime"
-            if datatype == "MonthDay":
+            if datatype == "monthday":
                 return "str"  # TO BE FIXED?
-            if datatype == "Date":
+            if datatype == "date":
                 return "str"  # TO BE FIXED?
-            if datatype == "Time":
+            if datatype == "time":
                 return "time"
-            if datatype == "Float":
+            if datatype == "float":
                 return "float"
-            if datatype == "String":
+            if datatype == "string":
                 return "str"
             else:
             # this actually never happens
                 return "float"
         # the assumption is that cim data type e.g. Voltage, ActivePower, always
         # maps to a float
-        if is_cim_data_type_class(attribute["class_name"]):
+        elif is_cim_data_type_class(attribute["class_name"]):
             return "float"
+        else:
         # this is for example the case for 'StreetAddress.streetDetail'
-        return attribute["dataType"].split("#")[1]
+            return attribute["dataType"].split("#")[1]
+    else:
+        raise ValueError(f"Cannot parse {attribute} to extract a data type.")
 
 def _ends_with_s(attribute_name):
     return attribute_name.endswith("s")
@@ -285,8 +287,10 @@ def run_template(version_path, class_details):
 
 def run_template_enum(version_path, class_details, templates):
     for template_info in templates:
-        class_file = os.path.join(version_path,  "enum" + template_info["ext"])
+        class_file = Path(version_path, "resources",  "enum" + template_info["ext"])
         if not os.path.exists(class_file):
+            if not (parent:=class_file.parent).exists():
+                parent.mkdir()
             with open(class_file, "w", encoding="utf-8") as file:
                 header_file_path = os.path.join(
                     os.getcwd(), "modernpython", "enum_header.py"
@@ -307,8 +311,10 @@ def run_template_enum(version_path, class_details, templates):
 
 def run_template_schema(version_path, class_details, templates):
     for template_info in templates:
-        class_file = os.path.join(version_path, "schema" + template_info["ext"])
+        class_file =Path(version_path, "resources", "schema" + template_info["ext"])
         if not os.path.exists(class_file):
+            if not (parent:=class_file.parent).exists():
+                parent.mkdir()
             with open(class_file, "w", encoding="utf-8") as file:
                 schema_file_path = os.path.join(
                     os.getcwd(), "modernpython", "schema_header.py"
@@ -330,32 +336,6 @@ def run_template_schema(version_path, class_details, templates):
                 }
                 output = chevron.render(**args)
             file.write(output)
-
-
-def _create_init(path):
-    init_file = path + "/__init__.py"
-
-    with open(init_file, "w", encoding="utf-8") as init:
-        #init.write("# pylint: disable=too-many-lines,missing-module-docstring\n")
-        pass
-
-# creates the Base class file, all classes inherit from this class
-def _create_base(path):
-    # TODO: Check export priority of OP en SC, see Profile class
-    base_path = path + "/Base.py"
-    with open(Path(__file__).parent / "Base.py", encoding="utf-8") as src, open(
-        base_path, "w", encoding="utf-8"
-    ) as dst:
-        dst.write(src.read())
-
-
-def _copy_files(path):
-    base_path = path + "/util.py"
-    with open(Path(__file__).parent / "util.py", encoding="utf-8") as src, open(
-        base_path, "w", encoding="utf-8"
-    ) as dst:
-        dst.write(src.read())
-
 
 def resolve_headers(dest: str, version: str):
     """Add all classes in __init__.py"""
