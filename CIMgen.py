@@ -682,7 +682,7 @@ def add_sub_classes_of_sub_classes_clean(class_dict, source):
 def generate_clean_sub_classes(class_dict_with_origins, clean_class_dict):
     for class_name in class_dict_with_origins:
         super_class_name = class_dict_with_origins[class_name].superClass()
-        if super_class_name == None and class_dict_with_origins[class_name].has_instances():
+        if super_class_name is None and class_dict_with_origins[class_name].has_instances():
             clean_class_dict[class_name] = class_dict_with_origins[class_name]
 
     for class_name in class_dict_with_origins:

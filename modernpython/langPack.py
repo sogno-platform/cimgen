@@ -64,8 +64,8 @@ def _compute_data_type(attribute):
     if "dataType" in attribute and "class_name" in attribute:
         # for whatever weird reason String is not created as class from CIMgen
         if is_primitive_class(attribute["class_name"]) or attribute["class_name"] == "String":
-            datatype = attribute["dataType"].split("#")[1]
-            if datatype == "Integer" or datatype == "integer":
+            datatype = attribute["dataType"].split("#")[1].lower()
+            if datatype == "integer":
                 return "int"
             if datatype == "Boolean":
                 return "bool"
@@ -118,7 +118,8 @@ def _set_normalized_name(text, render):
 def _set_instances(text, render):
     instance = None
     try:
-        instance = eval(render(text))
+        # render(text) returns a python dict. Some fileds might be quoted by '&quot;' instead of '"', making the first evel fail.
+        instance = ast.literal_eval(render(text))
     except SyntaxError as se:
         rendered = render(text)
         rendered = rendered.replace("&quot;", '"')
@@ -269,7 +270,7 @@ def run_template(version_path, class_details):
     if (
         # Primitives are never used in the in memory representation but only for
         # the schema
-        class_details["is_a_primitive"] == True
+        class_details["is_a_primitive"] is True
         # Datatypes based on primitives are never used in the in memory
         # representation but only for the schema
         or class_details["is_a_cim_data_type"] == True
