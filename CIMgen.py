@@ -4,7 +4,8 @@ import logging
 import os
 import textwrap
 from time import time
-
+from distutils.dir_util import remove_tree
+from pathlib import Path
 import xmltodict
 from bs4 import BeautifulSoup
 
@@ -709,6 +710,10 @@ def cim_generate(directory, outputPath, version, langPack):
     :param outputPath: CGMES version, e.g. version = "cgmes_v2_4_15"
     :param langPack:   python module containing language specific functions
     """
+
+    # clean directory
+    remove_tree(Path(outputPath))
+
     profiles_array = []
 
     t0 = time()

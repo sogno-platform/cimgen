@@ -14,7 +14,7 @@ class {{class_name}}({{sub_class_of}}):
     """
 
     {{#attributes}}
-    {{#setNormalizedName}}{{label}}{{/setNormalizedName}} : {{#setType}}{{.}}{{/setType}} = Field({{#setDefault}}{{.}}{{/setDefault}}, in_profiles = [{{#attr_origin}}Profile.{{origin}}, {{/attr_origin}}], alias = "{{label}}")
+    {{#setNormalizedName}}{{label}}{{/setNormalizedName}} : {{#setType}}{{.}}{{/setType}} = Field({{#setDefault}}{{.}}{{/setDefault}}, in_profiles = [{{#attr_origin}}Profile.{{origin}}, {{/attr_origin}}], {{#setCimDataType}}{{.}}{{/setCimDataType}}alias = "{{label}}")
     {{/attributes}}
     {{#attributes}}
     {{#setValidator}}{{.}}{{/setValidator}}

@@ -13,6 +13,8 @@ from ..utils.dataclassconfig import DataclassConfig, GeoDataclassConfig
 from ..utils.profile import Profile, BaseProfile
 from ..utils.validation import cyclic_references_validator
 from .enum import *
+from .primitive import *
+from .cimdatatype import *
 
 @dataclass(config=GeoDataclassConfig)
 class PositionPoint(Base):

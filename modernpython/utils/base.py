@@ -43,15 +43,9 @@ class Base:
 
         """
         attrs = {f.name: getattr(self, f.name) for f in fields(self)}
-        attrs["__class__"] = self.apparent_name()
         if with_class:
-            attrs["__class__"] = self.resource_name
+            attrs["__class__"] = self.apparent_name()
         return attrs
-
-    @cached_property
-    def resource_name(self) -> str:
-        """Returns the resource type."""
-        return self.__class__.__name__
 
     @cached_property
     def namespace(self) -> str:
@@ -71,7 +65,7 @@ class Base:
 
     def cgmes_attribute_names_in_profile(self, profile: BaseProfile | None) -> set[Field]:
         """
-        Returns all fields accross the parent tree which are in the profile in parameter.
+        Returns all fields across the parent tree which are in the profile in parameter.
 
         Mostly useful during export to find all the attributes relevant to one profile only.
 
