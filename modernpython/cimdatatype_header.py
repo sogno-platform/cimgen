@@ -1,3 +1,3 @@
 from ..utils.datatypes import CIMDatatype
 from ..utils.profile import Profile
-from .enum import *
+from .enum import UnitMultiplier, UnitSymbol
