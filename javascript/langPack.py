@@ -63,6 +63,12 @@ def is_an_enum_class(name):
     if name in enum_classes:
         return enum_classes[name]
 
+def set_primitive_classes(new_primitive_classes):
+    return
+
+def set_cim_data_type_classes(new_cim_data_type_classes):
+    return
+
 def get_class_location(class_name, class_map, version):
     pass
 

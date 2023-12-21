@@ -117,6 +117,12 @@ def is_an_enum_class(name):
     if name in enum_classes:
         return enum_classes[name]
 
+def set_primitive_classes(new_primitive_classes):
+    return
+
+def set_cim_data_type_classes(new_cim_data_type_classes):
+    return
+
 # These insert_ functions are used to generate the entries in the dynamic_switch
 # maps, for use in assignments.cpp and Task.cpp
 # TODO: implement this as one function, determine in template if it should be called.

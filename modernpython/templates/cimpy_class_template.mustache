@@ -1,15 +1,7 @@
+
 """
 Generated from the CGMES 3 files via cimgen: https://github.com/sogno-platform/cimgen
 """
-
-from functools import cached_property
-from typing import Optional
-from pydantic import Field
-from pydantic.dataclasses import dataclass
-from ..utils.dataclassconfig import DataclassConfig
-from ..utils.profile import BaseProfile, Profile
-
-from {{class_location}} import {{sub_class_of}}
 
 @dataclass(config=DataclassConfig)
 class {{class_name}}({{sub_class_of}}):
@@ -22,16 +14,15 @@ class {{class_name}}({{sub_class_of}}):
     """
 
     {{#attributes}}
-    {{^isAssociationUsed}}# *Association not used*
-    # Type {{dataType}} in CIM  # pylint: disable-next=line-too-long
-    # {{/isAssociationUsed}}{{label}} : {{#setType}}{{dataType}}{{/setType}} = Field({{#setDefault}}{{dataType}}{{/setDefault}}, in_profiles = [{{#attr_origin}}Profile.{{origin}}, {{/attr_origin}}]) {{^isAssociationUsed}}# noqa: E501{{/isAssociationUsed}}
-
+    {{#setNormalizedName}}{{label}}{{/setNormalizedName}} : {{#setType}}{{.}}{{/setType}} = Field({{#setDefault}}{{.}}{{/setDefault}}, in_profiles = [{{#attr_origin}}Profile.{{origin}}, {{/attr_origin}}], {{#setCimDataType}}{{.}}{{/setCimDataType}}alias = "{{label}}")
+    {{/attributes}}
+    {{#attributes}}
+    {{#setValidator}}{{.}}{{/setValidator}}
     {{/attributes}}
     {{^attributes}}
     # No attributes defined for this class.
     {{/attributes}}
-
-
+    
     @cached_property
     def possible_profiles(self)->set[BaseProfile]:
         """

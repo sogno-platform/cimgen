@@ -69,6 +69,12 @@ def set_enum_classes(new_enum_classes):
 def set_float_classes(new_float_classes):
     return
 
+def set_primitive_classes(new_primitive_classes):
+    return
+
+def set_cim_data_type_classes(new_cim_data_type_classes):
+    return
+
 def run_template(version_path, class_details):
     for template_info in template_files:
         class_file = os.path.join(version_path, class_details['class_name'] + template_info["ext"])
