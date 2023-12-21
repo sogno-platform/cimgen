@@ -693,7 +693,7 @@ def generate_clean_sub_classes(class_dict_with_origins, clean_class_dict):
 
     add_sub_classes_of_sub_classes_clean(clean_class_dict, class_dict_with_origins)
 
-def cim_generate(directory, outputPath, version, langPack):
+def cim_generate(directory, outputPath, version, langPack, clean_outdir):
     """Generates cgmes python classes from cgmes ontology
 
     This function uses package xmltodict to parse the RDF files. The parse_rdf function sorts the classes to
@@ -712,7 +712,8 @@ def cim_generate(directory, outputPath, version, langPack):
     """
 
     # clean directory
-    remove_tree(Path(outputPath))
+    if clean_outdir:
+        remove_tree(Path(outputPath))
 
     profiles_array = []
 
