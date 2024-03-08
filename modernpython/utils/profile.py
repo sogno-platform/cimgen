@@ -26,11 +26,11 @@ class Profile(BaseProfile):
     DL = "DiagramLayout"
     DY = "Dynamics"
     EQ = "Equipment"
-    EQBD = "EquipmentBoundary"  # Not too sure about that one
+    EQ_BD = "EquipmentBoundary"  # Not too sure about that one
     GL = "GeographicalLocation"
     OP = "Operation"
     SC = "ShortCircuit"
     SSH = "SteadyStateHypothesis"
     SV = "StateVariables"
     TP = "Topology"
-    TPBD = "TopologyBoundary"  # Not too sure about that one
+    TP_BD = "TopologyBoundary"  # Not too sure about that one
