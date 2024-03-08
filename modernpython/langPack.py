@@ -117,7 +117,6 @@ def resolve_headers(dest: str, version: str):
 
     dest = Path(dest)/"resources"
     with open(dest / "__init__.py", "a", encoding="utf-8") as header_file:
-        header_file.write("# pylint: disable=too-many-lines,missing-module-docstring\n")
         header_file.write(f"CGMES_VERSION='{version_number}'\n")
 
         # # Under this, add all imports in init. Disabled becasue loading 600 unneeded classes is slow.
