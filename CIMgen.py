@@ -16,7 +16,7 @@ class RDFSEntry:
         self.jsonDefinition = jsonObject
         return
 
-    def asJson(self):
+    def asJson(self, langPack):
         jsonObject = {}
         if self.about() != None:
             jsonObject['about'] = self.about()
@@ -44,7 +44,8 @@ class RDFSEntry:
             jsonObject['inverseRole'] = self.inverseRole()
         if self.associationUsed() != None:
             jsonObject['associationUsed'] = self.associationUsed()
-        jsonObject["isAssociationUsed"] = self.isAssociationUsed()
+        if "modernpython" in langPack.__name__:
+            jsonObject["isAssociationUsed"] = self.isAssociationUsed()
         return jsonObject
 
     def about(self):
@@ -59,6 +60,7 @@ class RDFSEntry:
         else:
             return None
 
+    # Capitalized True/False is valid in python but not in json. Do not use this function in combination with json.load()
     def isAssociationUsed(self) -> bool:
         if "cims:AssociationUsed" in self.jsonDefinition:
             return "yes" == RDFSEntry._extract_string(self.jsonDefinition["cims:AssociationUsed"]).lower()
@@ -381,7 +383,7 @@ def _add_profile_to_packages(profile_name, short_profile_name, profile_iri):
     else:
         package_listed_by_short_name[short_profile_name].append(profile_iri)
 
-def _parse_rdf(input_dic, version):
+def _parse_rdf(input_dic, version, langPack):
     classes_map = {}
     profile_name = ""
     profile_iri = None
@@ -395,7 +397,7 @@ def _parse_rdf(input_dic, version):
     # Iterate over list elements
     for list_elem in descriptions:
         rdfsEntry = RDFSEntry(list_elem)
-        object_dic = rdfsEntry.asJson()
+        object_dic = rdfsEntry.asJson(langPack)
         rdfs_entry_types = _rdfs_entry_types(rdfsEntry, version)
 
         if "class" in rdfs_entry_types:
@@ -682,7 +684,7 @@ def cim_generate(directory, outputPath, version, langPack):
 
             # parse RDF files and create a dictionary from the RDF file
             parse_result = xmltodict.parse(xmlstring, attr_prefix="$", cdata_key="_", dict_constructor=dict)
-            parsed = _parse_rdf(parse_result, version)
+            parsed = _parse_rdf(parse_result, version, langPack)
             profiles_array.append(parsed)
 
     # merge multiple profile definitions into one profile
