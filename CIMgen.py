@@ -16,7 +16,7 @@ class RDFSEntry:
         self.jsonDefinition = jsonObject
         return
 
-    def asJson(self, langPack):
+    def asJson(self, lang_pack):
         jsonObject = {}
         if self.about() != None:
             jsonObject['about'] = self.about()
@@ -44,7 +44,7 @@ class RDFSEntry:
             jsonObject['inverseRole'] = self.inverseRole()
         if self.associationUsed() != None:
             jsonObject['associationUsed'] = self.associationUsed()
-        if "modernpython" in langPack.__name__:
+        if "modernpython" in lang_pack.__name__:
             jsonObject["isAssociationUsed"] = self.isAssociationUsed()
         return jsonObject
 
@@ -383,7 +383,7 @@ def _add_profile_to_packages(profile_name, short_profile_name, profile_iri):
     else:
         package_listed_by_short_name[short_profile_name].append(profile_iri)
 
-def _parse_rdf(input_dic, version, langPack):
+def _parse_rdf(input_dic, version, lang_pack):
     classes_map = {}
     profile_name = ""
     profile_iri = None
@@ -397,7 +397,7 @@ def _parse_rdf(input_dic, version, langPack):
     # Iterate over list elements
     for list_elem in descriptions:
         rdfsEntry = RDFSEntry(list_elem)
-        object_dic = rdfsEntry.asJson(langPack)
+        object_dic = rdfsEntry.asJson(lang_pack)
         rdfs_entry_types = _rdfs_entry_types(rdfsEntry, version)
 
         if "class" in rdfs_entry_types:
@@ -444,7 +444,7 @@ def _parse_rdf(input_dic, version, langPack):
 # This function extracts all information needed for the creation of the python class files like the comments or the
 # class name. After the extraction the function write_files is called to write the files with the template engine
 # chevron
-def _write_python_files(elem_dict, langPack, outputPath, version):
+def _write_python_files(elem_dict, lang_pack, output_path, version):
 
     float_classes = {}
     enum_classes = {}
@@ -456,20 +456,20 @@ def _write_python_files(elem_dict, langPack, outputPath, version):
         if elem_dict[class_definition].has_instances():
             enum_classes[class_definition] = True
 
-    langPack.set_float_classes(float_classes)
-    langPack.set_enum_classes(enum_classes)
+    lang_pack.set_float_classes(float_classes)
+    lang_pack.set_enum_classes(enum_classes)
 
     for class_name in elem_dict.keys():
 
         class_details = {
             "attributes": _find_multiple_attributes(elem_dict[class_name].attributes()),
-            "class_location": langPack.get_class_location(class_name, elem_dict, outputPath),
+            "class_location": lang_pack.get_class_location(class_name, elem_dict, output_path),
             "class_name": class_name,
             "class_origin": elem_dict[class_name].origins(),
             "instances": elem_dict[class_name].instances(),
             "has_instances": elem_dict[class_name].has_instances(),
             "is_a_float": elem_dict[class_name].is_a_float(),
-            "langPack": langPack,
+            "langPack": lang_pack,
             "sub_class_of": elem_dict[class_name].superClass(),
             "sub_classes": elem_dict[class_name].subClasses(),
         }
@@ -491,7 +491,7 @@ def _write_python_files(elem_dict, langPack, outputPath, version):
                     initial_indent="",
                     subsequent_indent=" " * 6,
                 )
-        _write_files(class_details, outputPath, version)
+        _write_files(class_details, output_path, version)
 
 def get_rid_of_hash(name):
     tokens = name.split('#')
@@ -507,8 +507,8 @@ def format_class(_range, _dataType):
     else:
         return get_rid_of_hash(_range)
 
-def _write_files(class_details, outputPath, version):
-    class_details['langPack'].setup(outputPath, package_listed_by_short_name)
+def _write_files(class_details, output_path, version):
+    class_details['langPack'].setup(output_path, package_listed_by_short_name)
 
     if class_details['sub_class_of'] == None:
         # If class has no subClassOf key it is a subclass of the Base class
@@ -534,7 +534,7 @@ def _write_files(class_details, outputPath, version):
             _dataType = attr['dataType']
         attr['class_name'] = format_class( _range, _dataType )
 
-    class_details['langPack'].run_template( outputPath, class_details )
+    class_details['langPack'].run_template( output_path, class_details )
 
 # Find multiple entries for the same attribute
 def _find_multiple_attributes(attributes_array):
@@ -653,7 +653,7 @@ def addSubClassesOfSubClasses(class_dict):
     for className in class_dict:
         class_dict[className].setSubClasses(recursivelyAddSubClasses(class_dict, className))
 
-def cim_generate(directory, outputPath, version, langPack):
+def cim_generate(directory, output_path, version, lang_pack):
     """Generates cgmes python classes from cgmes ontology
 
     This function uses package xmltodict to parse the RDF files. The parse_rdf function sorts the classes to
@@ -667,8 +667,8 @@ def cim_generate(directory, outputPath, version, langPack):
     created classes are stored. This folder should not exist and is created in the class generation procedure.
 
     :param directory: path to RDF files containing cgmes ontology, e.g. directory = "./examples/cgmes_schema/cgmes_v2_4_15_schema"
-    :param outputPath: CGMES version, e.g. version = "cgmes_v2_4_15"
-    :param langPack:   python module containing language specific functions
+    :param output_path: CGMES version, e.g. version = "cgmes_v2_4_15"
+    :param lang_pack:   python module containing language specific functions
     """
     profiles_array = []
 
@@ -684,7 +684,7 @@ def cim_generate(directory, outputPath, version, langPack):
 
             # parse RDF files and create a dictionary from the RDF file
             parse_result = xmltodict.parse(xmlstring, attr_prefix="$", cdata_key="_", dict_constructor=dict)
-            parsed = _parse_rdf(parse_result, version, langPack)
+            parsed = _parse_rdf(parse_result, version, lang_pack)
             profiles_array.append(parsed)
 
     # merge multiple profile definitions into one profile
@@ -707,11 +707,11 @@ def cim_generate(directory, outputPath, version, langPack):
     addSubClassesOfSubClasses(class_dict_with_origins)
 
     # get information for writing python files and write python files
-    _write_python_files(class_dict_with_origins, langPack, outputPath, version)
+    _write_python_files(class_dict_with_origins, lang_pack, output_path, version)
 
-    if "modernpython" in langPack.__name__:
-        langPack.resolve_headers(outputPath, version)
+    if "modernpython" in lang_pack.__name__:
+        lang_pack.resolve_headers(output_path, version)
     else:
-        langPack.resolve_headers(outputPath)
+        lang_pack.resolve_headers(output_path)
 
     logger.info("Elapsed Time: {}s\n\n".format(time() - t0))
