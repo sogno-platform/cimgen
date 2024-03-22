@@ -1,0 +1,13 @@
+{
+	"name": "cimgen",
+	"build": {
+	    "dockerfile": "Dockerfile.dev"
+	},
+	"customizations": {
+		"vscode": {
+			"extensions": [
+                "ms-python.python"
+			]
+		}
+	}
+}

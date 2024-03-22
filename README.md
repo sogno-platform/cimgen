@@ -16,26 +16,18 @@ Python tool for code generation from CIM data model for several programming lang
 sudo apt install python
 curl -sSL https://install.python-poetry.org | python3 -  # install poetry
 poetry install --no-root # install dependencies
-poetry run cmake -P CMakeLists.txt
+poetry run python ./build.py --outdir=CGMES_2.4.15_27JAN2020_cpp --schemadir=cgmes_schema/CGMES_2.4.15_27JAN2020 --langdir=cpp
 ```
 
-This will build version CGMES_2.4.15_27JAN2020 in the subfolder with the same name.
+This will build version CGMES_2.4.15_27JAN2020 in the subfolder CGMES_2.4.15_27JAN2020_cpp.
 
 If you wish to build an alternative version, you can see available options in the subfolder called cgmes_schema.
-
-They can be built using a cmake variable:
-
-```bash
-poetry run cmake -DUSE_CIM_VERSION=CGMES_2.4.15_16FEB2016 -P CMakeLists.txt
-```
 
 #### Generating C++ files in a Docker container
 
 ```bash
 docker build -t cimgen -f Dockerfile .
-export OUTPUT_DIR=$(pwd)/CGMES_2.4.15_27JAN2020_cpp
-export SCHEMA_DIR=$(pwd)/cgmes_schema/CGMES_2.4.15_27JAN2020
-docker run -v ${OUTPUT_DIR}:/cgmes_output -v ${SCHEMA_DIR}:/cgmes_schema cimgen
+docker run -v $(pwd)/CGMES_2.4.15_27JAN2020_cpp:/cimgen/cgmes_output cimgen --schemadir=cgmes_schema/CGMES_2.4.15_27JAN2020 --langdir=cpp
 ```
 
 ### Generating Python files
@@ -46,23 +38,16 @@ docker run -v ${OUTPUT_DIR}:/cgmes_output -v ${SCHEMA_DIR}:/cgmes_schema cimgen
 sudo apt install python
 curl -sSL https://install.python-poetry.org | python3 -  # install poetry
 poetry install --no-root # install dependencies
-export OUTPUT_DIR=$(pwd)/CGMES_2.4.15_27JAN2020_python
-export SCHEMA_DIR=$(pwd)/cgmes_schema/CGMES_2.4.15_27JAN2020
-./build.py --outdir=${OUTPUT_DIR} --schemadir=${SCHEMA_DIR} --langdir=python
+poetry run python ./build.py --outdir=CGMES_2.4.15_27JAN2020_python --schemadir=cgmes_schema/CGMES_2.4.15_27JAN2020 --langdir=python
 ```
 
-`OUTPUT_DIR` can be set to whichever absolute path you wish to create the files
-in.
-If you wish to build an alternative version, you can see available options in
-the subfolder called cgmes_schema
+`outdir` can be set to whichever absolute path you wish to create the files in.
 
 #### Generating Python files in a Docker container
 
 ```bash
 docker build -t cimgen -f Dockerfile .
-export OUTPUT_DIR=$(pwd)/CGMES_2.4.15_27JAN2020_python
-export SCHEMA_DIR=$(pwd)/cgmes_schema/CGMES_2.4.15_27JAN2020
-docker run -v ${OUTPUT_DIR}:/cgmes_output -v ${SCHEMA_DIR}:/cgmes_schema cimgen --langdir=python
+docker run -v $(pwd)/CGMES_2.4.15_27JAN2020_python:/cimgen/cgmes_output cimgen --schemadir=cgmes_schema/CGMES_2.4.15_27JAN2020 --langdir=python
 ```
 
 ## Publications
