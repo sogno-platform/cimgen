@@ -1,14 +1,10 @@
-FROM alpine
+FROM alpine:3.19.1
 RUN apk update
 RUN apk add python3 git py3-pip py3-lxml file
-RUN pip3 install --upgrade pip
-RUN pip3 install xmltodict chevron
+RUN python3 -m pip install --break-system-packages xmltodict chevron pydantic beautifulsoup4
 
-COPY cpp/               /CIMgen/cpp/
-COPY java/              /CIMgen/java/
-COPY javascript/        /CIMgen/javascript/
-COPY python/            /CIMgen/python/
-COPY CIMgen.py build.py /CIMgen/
-WORKDIR /CIMgen
+WORKDIR /cimgen
+COPY . /cimgen
+
 ENTRYPOINT [ "/usr/bin/python3", "build.py", "--outdir=/cgmes_output", "--schemadir=/cgmes_schema" ]
 CMD [ "--langdir=cpp" ]
