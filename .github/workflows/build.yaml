@@ -1,0 +1,52 @@
+name: Build
+
+on:
+  pull_request:
+  push:
+    branches:
+    - main
+
+jobs:
+  build:
+    name: Generate code
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        language:
+        - java
+        - javascript
+        - python
+        - modernpython
+        - cpp
+
+        schema:
+        - CGMES_2.4.15_27JAN2020
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Generate code
+        run: |
+          python -m venv venv
+          . venv/bin/activate
+
+          pip install .
+
+          cimgen \
+            --outdir=output/${{matrix.language}} \
+            --schemadir=cgmes_schema/${{matrix.schema}} \
+            --langdir=${{matrix.language}}
+
+      - name: Create artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{matrix.schema}}-${{matrix.language}}
+          path: output/${{matrix.language}}
