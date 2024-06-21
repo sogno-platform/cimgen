@@ -9,16 +9,16 @@ import java.util.HashMap;
 public class Boolean extends BaseClass {
 
 	public Boolean(){}
-	
+
 	public Boolean(boolean v) {
 	        value = v;
 		initialized = true;
 	}
-	
+
 	public Boolean(java.lang.String s) {
 		setValue(s);
 	}
-	
+
 	public BaseClass construct() {
 		return new Boolean();
         }
@@ -29,7 +29,7 @@ public class Boolean extends BaseClass {
 	{
 		return debugName;
 	}
-	
+
 	public void setAttribute(java.lang.String attributeName, java.lang.String value) {
 		setValue(value);
 	}

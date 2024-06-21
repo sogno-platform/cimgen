@@ -9,11 +9,11 @@ import java.util.HashMap;
 public class String extends BaseClass {
 
 	public String(){}
-	
+
 	public String(java.lang.String s) {
 		setValue(s);
 	}
-	
+
 	public BaseClass construct() {
 		return new String();
         }
@@ -24,7 +24,7 @@ public class String extends BaseClass {
 	{
 		return debugName;
 	}
-	
+
 	public void setAttribute(java.lang.String attributeName, java.lang.String value) {
 		setValue(value);
 	}

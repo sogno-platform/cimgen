@@ -1,4 +1,4 @@
-package cim4j; 
+package cim4j;
 
 import java.util.Map;
 import java.lang.Double;
