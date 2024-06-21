@@ -4,7 +4,7 @@ import json
 
 
 def location(version):
-    return "BaseClass.hpp"
+    return "BaseClass"
 
 
 # This just makes sure we have somewhere to write the classes.
@@ -22,18 +22,9 @@ base = {"base_class": "BaseClass", "class_location": location}
 # There is a template set for the large number of classes that are floats. They
 # have unit, multiplier and value attributes in the schema, but only appear in
 # the file as a float string.
-template_files = [
-    {"filename": "cpp_header_template.mustache", "ext": ".hpp"},
-    {"filename": "cpp_object_template.mustache", "ext": ".cpp"},
-]
-float_template_files = [
-    {"filename": "cpp_float_header_template.mustache", "ext": ".hpp"},
-    {"filename": "cpp_float_object_template.mustache", "ext": ".cpp"},
-]
-enum_template_files = [
-    {"filename": "cpp_enum_header_template.mustache", "ext": ".hpp"},
-    {"filename": "cpp_enum_object_template.mustache", "ext": ".cpp"},
-]
+template_files = [{"filename": "java_class.mustache", "ext": ".java"}]
+float_template_files = [{"filename": "java_float.mustache", "ext": ".java"}]
+enum_template_files = [{"filename": "java_enum.mustache", "ext": ".java"}]
 
 
 def get_class_location(class_name, class_map, version):
@@ -43,18 +34,20 @@ def get_class_location(class_name, class_map, version):
 partials = {
     "attribute": "{{#langPack.attribute_decl}}{{.}}{{/langPack.attribute_decl}}",
     "label": "{{#langPack.label}}{{label}}{{/langPack.label}}",
-    "create_init_list": "{{#langPack.null_init_list}}{{attributes}}{{/langPack.null_init_list}}",
-    "create_construct_list": "{{#langPack.create_construct_list}}{{attributes}}{{/langPack.create_construct_list}}",
     "insert_assign": "{{#langPack.insert_assign_fn}}{{.}}{{/langPack.insert_assign_fn}}",
     "insert_class_assign": "{{#langPack.insert_class_assign_fn}}{{.}}{{/langPack.insert_class_assign_fn}}",
-    "read_istream": "{{#langPack.create_istream_op}}{{class_name}} {{label}}{{/langPack.create_istream_op}}",
 }
 
 
 # This is the function that runs the template.
 def run_template(outputPath, class_details):
 
+    class_details["primitives"] = []
+    for attr in class_details["attributes"]:
+        if attribute_type(attr) == "primitive":
+            class_details["primitives"].append(attr)
     if class_details["is_a_float"] == True:
+        print(class_details["class_name"] + " is a float ")
         templates = float_template_files
     elif class_details["has_instances"] == True:
         templates = enum_template_files
@@ -71,14 +64,10 @@ def run_template(outputPath, class_details):
         return
 
     for template_info in templates:
-        class_file = os.path.join(
-            outputPath, class_details["class_name"] + template_info["ext"]
-        )
+        class_file = os.path.join(outputPath, class_details["class_name"] + template_info["ext"])
         if not os.path.exists(class_file):
             with open(class_file, "w") as file:
-                template_path = os.path.join(
-                    os.getcwd(), "cpp/templates", template_info["filename"]
-                )
+                template_path = os.path.join(os.getcwd(), "java/templates", template_info["filename"])
                 with open(template_path) as f:
                     args = {
                         "data": class_details,
@@ -159,41 +148,13 @@ def is_an_enum_class(name):
 def insert_assign_fn(text, render):
     attribute_txt = render(text)
     attribute_json = eval(attribute_txt)
-    if not attribute_type(attribute_json) == "primitive":
-        return ""
+    primitive = attribute_type(attribute_json) == "primitive"
     label = attribute_json["label"]
     class_name = attribute_json["domain"]
-    return (
-        'assign_map.insert(std::make_pair(std::string("cim:'
-        + class_name
-        + "."
-        + label
-        + '"), &assign_'
-        + class_name
-        + "_"
-        + label
-        + "));\n"
-    )
-
-
-def insert_class_assign_fn(text, render):
-    attribute_txt = render(text)
-    attribute_json = eval(attribute_txt)
-    if attribute_type(attribute_json) == "primitive":
-        return ""
-    label = attribute_json["label"]
-    class_name = attribute_json["domain"]
-    return (
-        'assign_map.insert(std::make_pair(std::string("cim:'
-        + class_name
-        + "."
-        + label
-        + '"), &assign_'
-        + class_name
-        + "_"
-        + label
-        + "));\n"
-    )
+    if primitive:
+        return "OUTPUT FROM insert_assign_fn" + label + " in " + class_name + "\n"
+    else:
+        return "primitive OUTPUT FROM insert_assign_fn" + label + " in " + class_name + "\n"
 
 
 def get_dataType_and_range(attribute):
@@ -205,57 +166,26 @@ def get_dataType_and_range(attribute):
     return (_range, _dataType)
 
 
-def create_nullptr_assigns(text, render):
-    attributes_txt = render(text)
-    if attributes_txt.strip() == "":
-        return ""
-    else:
-        attributes_json = eval(attributes_txt)
-        nullptr_init_string = ": "
-        for attribute in attributes_json:
-            name = attribute["label"]
-            if attribute_type(attribute) == "primitive":
-                continue
-            if (
-                attribute["multiplicity"] == "M:0..n"
-                or attribute["multiplicity"] == "M:1..n"
-            ):
-                continue
-            else:
-                nullptr_init_string += "LABEL(nullptr), ".replace(
-                    "LABEL", attribute["label"]
-                )
-
-    if len(nullptr_init_string) > 2:
-        return nullptr_init_string[:-2]
-    else:
-        return ""
-
-
 # These create_ functions are used to generate the implementations for
 # the entries in the dynamic_switch maps referenced in assignments.cpp and Task.cpp
 def create_class_assign(text, render):
+    # TODO REMOVE:
+    return ""
     attribute_txt = render(text)
     attribute_json = eval(attribute_txt)
     assign = ""
     attribute_class = attribute_json["class_name"]
     if attribute_type(attribute_json) == "primitive":
         return ""
-    if (
-        attribute_json["multiplicity"] == "M:0..n"
-        or attribute_json["multiplicity"] == "M:1..n"
-    ):
+    if attribute_json["multiplicity"] == "M:0..n" or attribute_json["multiplicity"] == "M:1..n":
         assign = (
             """
-bool assign_OBJECT_CLASS_LABEL(BaseClass* BaseClass_ptr1, BaseClass* BaseClass_ptr2) {
-	if(OBJECT_CLASS* element = dynamic_cast<OBJECT_CLASS*>(BaseClass_ptr1)) {
-		if(dynamic_cast<ATTRIBUTE_CLASS*>(BaseClass_ptr2) != nullptr) {
-                        element->LABEL.push_back(dynamic_cast<ATTRIBUTE_CLASS*>(BaseClass_ptr2));
-			return true;
-		}
-	}
-	return false;
-}""".replace(
+        OUTPUT FROM create_class_assign case 1
+            with Label as LABEL
+            and Object Class Label as OBJECT_CLASS_LABEL
+            and Object Class as OBJECT_CLASS
+            and Attribute Class as ATTRIBUTE_CLASS
+    """.replace(
                 "OBJECT_CLASS", attribute_json["domain"]
             )
             .replace("ATTRIBUTE_CLASS", attribute_class)
@@ -269,15 +199,13 @@ bool assign_OBJECT_CLASS_LABEL(BaseClass* BaseClass_ptr1, BaseClass* BaseClass_p
         inverse = attribute_json["inverseRole"].split(".")
         assign = (
             """
-bool assign_INVERSEC_INVERSEL(BaseClass*, BaseClass*);
-bool assign_OBJECT_CLASS_LABEL(BaseClass* BaseClass_ptr1, BaseClass* BaseClass_ptr2) {
-	if(OBJECT_CLASS* element = dynamic_cast<OBJECT_CLASS*>(BaseClass_ptr1)) {
-                element->LABEL = dynamic_cast<ATTRIBUTE_CLASS*>(BaseClass_ptr2);
-                if(element->LABEL != nullptr)
-                        return assign_INVERSEC_INVERSEL(BaseClass_ptr2, BaseClass_ptr1);
-        }
-        return false;
-}""".replace(
+        OUTPUT FROM create_class_assign case 2
+            with Object Class Label as OBJECT_CLASS_LABEL
+            and Object Class as OBJECT_CLASS
+            and Attribute Class as ATTRIBUTE_CLASS
+            and Inversec as INVERSEC
+            and Inversel as INVERSEL
+	""".replace(
                 "OBJECT_CLASS", attribute_json["domain"]
             )
             .replace("ATTRIBUTE_CLASS", attribute_class)
@@ -288,20 +216,16 @@ bool assign_OBJECT_CLASS_LABEL(BaseClass* BaseClass_ptr1, BaseClass* BaseClass_p
     else:
         assign = (
             """
-bool assign_OBJECT_CLASS_LABEL(BaseClass* BaseClass_ptr1, BaseClass* BaseClass_ptr2) {
-	if(OBJECT_CLASS* element = dynamic_cast<OBJECT_CLASS*>(BaseClass_ptr1)) {
-                element->LABEL = dynamic_cast<ATTRIBUTE_CLASS*>(BaseClass_ptr2);
-                if(element->LABEL != nullptr)
-                        return true;
-        }
-        return false;
-}""".replace(
+        OUTPUT FROM create_class_assign case 3
+            with Label as LABEL
+            and Object Class as OBJECT_CLASS
+            and Attribute Class as ATTRIBUTE_CLASS
+	""".replace(
                 "OBJECT_CLASS", attribute_json["domain"]
             )
             .replace("ATTRIBUTE_CLASS", attribute_class)
             .replace("LABEL", attribute_json["label"])
         )
-
     return assign
 
 
@@ -317,36 +241,20 @@ def create_assign(text, render):
         label_without_keyword = "_switch"
 
     if _class != "String":
-        assign = (
-            """
-bool assign_CLASS_LABEL(std::stringstream &buffer, BaseClass* BaseClass_ptr1) {
-	if(CLASS* element = dynamic_cast<CLASS*>(BaseClass_ptr1)) {
-                buffer >> element->LBL_WO_KEYWORD;
-                if(buffer.fail())
-                        return false;
-                else
-                        return true;
+        assign = """
+        public BaseClass assign_LABEL(String value) {
+	    CLASS attr = new CLASS();
+            attr.setValue(value);
+            return attr;
         }
-        else
-                return false;
-}""".replace(
-                "CLASS", attribute_json["domain"]
-            )
-            .replace("LABEL", attribute_json["label"])
-            .replace("LBL_WO_KEYWORD", label_without_keyword)
+        """.replace(
+            "CLASS", _class
+        ).replace(
+            "LABEL", attribute_json["label"]
         )
     else:
         assign = """
-bool assign_CLASS_LABEL(std::stringstream &buffer, BaseClass* BaseClass_ptr1) {
-	if(CLASS* element = dynamic_cast<CLASS*>(BaseClass_ptr1)) {
-		element->LABEL = buffer.str();
-		if(buffer.fail())
-			return false;
-		else
-			return true;
-	}
-	return false;
-}""".replace(
+        """.replace(
             "CLASS", attribute_json["domain"]
         ).replace(
             "LABEL", attribute_json["label"]
@@ -376,11 +284,11 @@ def _attribute_decl(attribute):
     _type = attribute_type(attribute)
     _class = attribute["class_name"]
     if _type == "primitive":
-        return "CIMPP::" + _class
+        return _class
     if _type == "list":
-        return "std::list<CIMPP::" + _class + "*>"
+        return "List<" + _class + ">"
     else:
-        return "CIMPP::" + _class + "*"
+        return _class
 
 
 def _create_attribute_includes(text, render):
@@ -398,7 +306,8 @@ def _create_attribute_includes(text, render):
                 unique[class_name] = _type
     for clarse in unique:
         if unique[clarse] == "primitive":
-            include_string += '\n#include "' + clarse + '.hpp"'
+            if clarse != "String":
+                include_string += "\nimport cim4j." + clarse + ";"
 
     return include_string
 
@@ -418,7 +327,7 @@ def _create_attribute_class_declarations(text, render):
                 unique[class_name] = _type
     for clarse in unique:
         if unique[clarse] == "class" or unique[clarse] == "list":
-            include_string += "\nclass " + clarse + ";"
+            include_string += "\nimport cim4j." + clarse + ";"
 
     return include_string
 
@@ -435,10 +344,7 @@ def set_default(dataType):
     # default value is set to None. The multiplicity is set for all attributes, but the datatype is only set for basic
     # data types. If the data type entry for an attribute is missing, the attribute contains a reference and therefore
     # the default value is either None or [] depending on the mutliplicity. See also write_python_files
-    if (
-        dataType in ["M:1", "M:0..1", "M:1..1", "M:0..n", "M:1..n", ""]
-        or "M:" in dataType
-    ):
+    if dataType in ["M:1", "M:0..1", "M:1..1", "M:0..n", "M:1..n", ""] or "M:" in dataType:
         return "0"
     dataType = dataType.split("#")[1]
     if dataType in ["integer", "Integer"]:
@@ -458,6 +364,10 @@ def set_default(dataType):
 
 class_blacklist = [
     "assignments",
+    "AttributeInterface",
+    "BaseClassInterface",
+    "BaseClassBuilder",
+    "PrimitiveBuilder",
     "BaseClass",
     "BaseClassDefiner",
     "CIMClassList",
@@ -481,15 +391,11 @@ def _is_enum_class(filepath):
                 if "enum class" in line:
                     return True
         except UnicodeDecodeError as error:
-            print(
-                "Warning: UnicodeDecodeError parsing {0}: {1}".format(filepath, error)
-            )
+            print("Warning: UnicodeDecodeError parsing {0}: {1}".format(filepath, error))
     return False
 
 
-def _create_header_include_file(
-    directory, header_include_filename, header, footer, before, after, blacklist
-):
+def _create_header_include_file(directory, header_include_filename, header, footer, before, after, blacklist):
 
     lines = []
 
@@ -497,9 +403,10 @@ def _create_header_include_file(
         filepath = os.path.join(directory, filename)
         basepath, ext = os.path.splitext(filepath)
         basename = os.path.basename(basepath)
-        if ext == ".hpp" and not _is_enum_class(filepath) and not basename in blacklist:
-            lines.append(before + basename + after)
+        if ext == ".java" and not _is_enum_class(filepath) and not basename in blacklist:
+            lines.append(before + 'Map.entry("' + basename + '", new cim4j.' + basename + after + "),\n")
     lines.sort()
+    lines[-1] = lines[-1].replace("),", ")")
     for line in lines:
         header.append(line)
     for line in footer:
@@ -511,36 +418,31 @@ def _create_header_include_file(
 
 def resolve_headers(outputPath):
     class_list_header = [
-        "#ifndef CIMCLASSLIST_H\n",
-        "#define CIMCLASSLIST_H\n",
-        "using namespace CIMPP;\n",
-        "#include <list>\n",
-        "static std::list<BaseClassDefiner> CIMClassList = {\n",
+        "package cim4j;\n",
+        "import java.util.Map;\n",
+        "import java.util.Arrays;\n",
+        "import static java.util.Map.entry;\n",
+        "import cim4j.*;\n",
+        "public class CIMClassMap {\n",
+        "    public static boolean isCIMClass(java.lang.String key) {\n",
+        "        return classMap.containsKey(key);\n",
+        "    }\n",
+        "    public static Map<java.lang.String, BaseClass> classMap = Map.ofEntries(\n",
     ]
-    class_list_footer = [
-        "    UnknownType::declare() };\n",
-        "#endif // CIMCLASSLIST_H\n",
-    ]
+    class_list_footer = ["    );\n", "}\n"]
 
     _create_header_include_file(
         outputPath,
-        "CIMClassList.hpp",
+        "CIMClassMap.java",
         class_list_header,
         class_list_footer,
-        "    ",
-        "::declare(),\n",
+        "        ",
+        "()",
         class_blacklist,
     )
 
-    iec61970_header = ["#ifndef IEC61970_H\n", "#define IEC61970_H\n"]
-    iec61970_footer = ['#include "UnknownType.hpp"\n', "#endif"]
 
-    _create_header_include_file(
-        outputPath,
-        "IEC61970.hpp",
-        iec61970_header,
-        iec61970_footer,
-        '#include "',
-        '.hpp"\n',
-        iec61970_blacklist,
-    )
+#    iec61970_header = [ "#ifndef IEC61970_H\n", "#define IEC61970_H\n" ]
+#    iec61970_footer = [ '#include "UnknownType.hpp"\n', '#endif' ]
+
+#    _create_header_include_file(outputPath, "IEC61970.hpp", iec61970_header, iec61970_footer, "#include \"", ".hpp\"\n", iec61970_blacklist)

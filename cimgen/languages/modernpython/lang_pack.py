@@ -98,9 +98,8 @@ def run_template(version_path, class_details):
 
             with open(resource_file, "w", encoding="utf-8") as file:
 
-                template_path = os.path.join(
-                    os.getcwd(), "modernpython/templates", template_info["filename"]
-                )
+                dir = os.path.dirname(__name__)
+                template_path = os.path.join(dir, "templates", template_info["filename"])
                 class_details["setDefault"] = _set_default
                 class_details["setType"] = _set_type
                 with open(template_path, encoding="utf-8") as f:

@@ -25,9 +25,7 @@ def setup(version_path, cgmes_profile_info):
         "profileList": cgmes_profile_string,
         "shortNames": cgmes_shortname_string,
     }
-    write_templated_file(
-        class_file, cgmes_object, "handlebars_cgmesProfile_template.mustache"
-    )
+    write_templated_file(class_file, cgmes_object, "handlebars_cgmesProfile_template.mustache")
 
 
 base = {"base_class": "BaseClass", "class_location": location}
@@ -153,13 +151,9 @@ def run_template(outputPath, class_details):
         for attribute in class_details["attributes"]:
             if "entsoeURI" in attribute["about"]:
                 if attribute["isFixed"] is object:
-                    entsoeURIs.append(
-                        {"key": attribute["about"], "value": attribute["isFixed"]["_"]}
-                    )
+                    entsoeURIs.append({"key": attribute["about"], "value": attribute["isFixed"]["_"]})
                 else:
-                    entsoeURIs.append(
-                        {"key": attribute["about"], "value": attribute["isFixed"]}
-                    )
+                    entsoeURIs.append({"key": attribute["about"], "value": attribute["isFixed"]})
 
     class_details["is_not_terminal"] = class_details["class_name"] != "Terminal"
     for attr in class_details["attributes"]:
@@ -186,23 +180,17 @@ def run_template(outputPath, class_details):
     class_details["renderAttribute"] = renderAttribute
 
     for template_info in template_files:
-        class_file = os.path.join(
-            outputPath, class_details["class_name"] + template_info["ext"]
-        )
+        class_file = os.path.join(outputPath, class_details["class_name"] + template_info["ext"])
         write_templated_file(class_file, class_details, template_info["filename"])
 
     class_file = os.path.join(outputPath, "BaseClass.js")
-    write_templated_file(
-        class_file, {"URI": entsoeURIs}, "handlebars_baseclass_template.mustache"
-    )
+    write_templated_file(class_file, {"URI": entsoeURIs}, "handlebars_baseclass_template.mustache")
 
 
 def write_templated_file(class_file, class_details, template_filename):
     if not os.path.exists(class_file):
         with open(class_file, "w") as file:
-            template_path = os.path.join(
-                os.getcwd(), "javascript/templates", template_filename
-            )
+            template_path = os.path.join(os.getcwd(), "javascript/templates", template_filename)
             with open(template_path) as f:
                 args = {"data": class_details, "template": f, "partials_dict": partials}
                 output = chevron.render(**args)
@@ -211,9 +199,7 @@ def write_templated_file(class_file, class_details, template_filename):
 
 def is_an_unused_attribute(attr_details, debug=False):
     is_unused = (
-        "inverseRole" in attr_details
-        and "associationUsed" in attr_details
-        and attr_details["associationUsed"] == "No"
+        "inverseRole" in attr_details and "associationUsed" in attr_details and attr_details["associationUsed"] == "No"
     )
     if debug and is_unused:
         print(attr_details["about"], " is_unused: ", is_unused)
@@ -222,12 +208,7 @@ def is_an_unused_attribute(attr_details, debug=False):
 
 def attribute_type(class_details):
     class_name = class_details["class_name"]
-    if (
-        is_a_float_class(class_name)
-        or class_name == "String"
-        or class_name == "Boolean"
-        or class_name == "Integer"
-    ):
+    if is_a_float_class(class_name) or class_name == "String" or class_name == "Boolean" or class_name == "Integer":
         return "primitive"
     if is_an_enum_class(class_name):
         return "enum"

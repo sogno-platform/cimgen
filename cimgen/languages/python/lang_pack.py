@@ -32,10 +32,7 @@ def get_class_location(class_name, class_map, version):
     if class_map[class_name].superClass():
         if class_map[class_name].superClass() in class_map:
             return "cimpy." + version + "." + class_map[class_name].superClass()
-        elif (
-            class_map[class_name].superClass() == "Base"
-            or class_map[class_name].superClass() == None
-        ):
+        elif class_map[class_name].superClass() == "Base" or class_map[class_name].superClass() == None:
             return location(version)
     else:
         return location(version)
@@ -80,14 +77,11 @@ def set_float_classes(new_float_classes):
 
 def run_template(version_path, class_details):
     for template_info in template_files:
-        class_file = os.path.join(
-            version_path, class_details["class_name"] + template_info["ext"]
-        )
+        class_file = os.path.join(version_path, class_details["class_name"] + template_info["ext"])
         if not os.path.exists(class_file):
             with open(class_file, "w") as file:
-                template_path = os.path.join(
-                    os.getcwd(), "python/templates", template_info["filename"]
-                )
+                dir = os.path.dirname(__file__)
+                template_path = os.path.join(dir, "templates", template_info["filename"])
                 class_details["setDefault"] = _set_default
                 with open(template_path) as f:
                     args = {
@@ -136,14 +130,5 @@ def resolve_headers(path):
         include_names.append(os.path.splitext(os.path.basename(filename))[0])
     with open(path + "/__init__.py", "w") as header_file:
         for include_name in include_names:
-            header_file.write(
-                "from "
-                + "."
-                + include_name
-                + " import "
-                + include_name
-                + " as "
-                + include_name
-                + "\n"
-            )
+            header_file.write("from " + "." + include_name + " import " + include_name + " as " + include_name + "\n")
         header_file.close()
