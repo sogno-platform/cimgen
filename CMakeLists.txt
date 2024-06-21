@@ -24,4 +24,3 @@ set(SCHEMA_FOLDER "${CMAKE_CURRENT_SOURCE_DIR}/cgmes_schema/${USE_CIM_VERSION}")
 find_package (Python COMPONENTS Interpreter)
 execute_process(WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} COMMAND ${Python_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/build.py --outdir=${CGMES_OUTPUT_FOLDER} --schemadir=${SCHEMA_FOLDER} --langdir=${CIM_OUTPUT_LANG})
 unset(SCHEMA_FOLDER)
-

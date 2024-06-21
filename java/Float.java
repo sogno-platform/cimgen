@@ -58,4 +58,3 @@ public class Float extends BaseClass {
 		return Double.toString(value);
 	}
 };
-

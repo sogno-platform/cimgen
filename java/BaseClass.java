@@ -30,4 +30,3 @@ public abstract class BaseClass implements BaseClassBuilder, AttributeInterface 
 		return "";
 	}
 };
-
