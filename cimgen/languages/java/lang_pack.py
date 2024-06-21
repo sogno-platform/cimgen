@@ -48,7 +48,6 @@ def run_template(outputPath, class_details):
         if attribute_type(attr) == "primitive":
             class_details["primitives"].append(attr)
     if class_details["is_a_float"] == True:
-        print(class_details["class_name"] + " is a float ")
         templates = float_template_files
     elif class_details["has_instances"] == True:
         templates = enum_template_files

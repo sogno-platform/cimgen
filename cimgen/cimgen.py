@@ -1,6 +1,7 @@
 import logging
 import os
 import textwrap
+import warnings
 from time import time
 
 import xmltodict
@@ -311,7 +312,13 @@ def wrap_and_clean(txt: str, width: int = 120, initial_indent="", subsequent_ind
     """
     Used for comments: make them fit within <width> character, including indentation.
     """
-    soup = BeautifulSoup(txt, "html.parser")
+
+    # Ignore MarkupResemblesLocatorWarning
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+
+        soup = BeautifulSoup(txt, "html.parser")
+
     return "\n".join(
         textwrap.wrap(
             soup.text,
