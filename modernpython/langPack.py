@@ -18,11 +18,10 @@ def setup(version_path, cgmes_profile_info):  # NOSONAR
     # version_path is actually the output_path
 
     # Add all hardcoded utils and create parent dir
-    source_dir=Path(__file__).parent/"utils"
-    dest_dir=Path(version_path)/"utils"
+    source_dir = Path(__file__).parent / "utils"
+    dest_dir = Path(version_path) / "utils"
 
     copy_tree(str(source_dir), str(dest_dir))
-
 
 
 def location(version):
@@ -86,14 +85,22 @@ def set_float_classes(new_float_classes):
 def run_template(version_path, class_details):
     for template_info in template_files:
 
-        resource_file = Path(os.path.join(version_path, "resources", class_details["class_name"] + template_info["ext"]))
-        if not resource_file.exists() :
-            if not (parent:=resource_file.parent).exists():
+        resource_file = Path(
+            os.path.join(
+                version_path,
+                "resources",
+                class_details["class_name"] + template_info["ext"],
+            )
+        )
+        if not resource_file.exists():
+            if not (parent := resource_file.parent).exists():
                 parent.mkdir()
 
             with open(resource_file, "w", encoding="utf-8") as file:
 
-                template_path = os.path.join(os.getcwd(), "modernpython/templates", template_info["filename"])
+                template_path = os.path.join(
+                    os.getcwd(), "modernpython/templates", template_info["filename"]
+                )
                 class_details["setDefault"] = _set_default
                 class_details["setType"] = _set_type
                 with open(template_path, encoding="utf-8") as f:
@@ -106,7 +113,6 @@ def run_template(version_path, class_details):
                 file.write(output)
 
 
-
 def resolve_headers(dest: str, version: str):
     """Add all classes in __init__.py"""
 
@@ -115,7 +121,7 @@ def resolve_headers(dest: str, version: str):
     else:
         raise ValueError(f"Cannot parse {version} to extract a number.")
 
-    dest = Path(dest)/"resources"
+    dest = Path(dest) / "resources"
     with open(dest / "__init__.py", "a", encoding="utf-8") as header_file:
         header_file.write(f"CGMES_VERSION='{version_number}'\n")
 
