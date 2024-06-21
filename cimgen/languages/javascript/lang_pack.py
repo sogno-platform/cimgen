@@ -164,7 +164,7 @@ def run_template(outputPath, class_details):
             attr["attributeClass"] = _get_rid_of_hash(attr["dataType"])
 
     for index, attribute in enumerate(class_details["attributes"]):
-        if is_an_unused_attribute(attribute) == True:
+        if is_an_unused_attribute(attribute):
             del class_details["attributes"][index]
 
     renderAttribute = ""

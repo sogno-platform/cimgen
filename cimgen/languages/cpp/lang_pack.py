@@ -55,9 +55,9 @@ partials = {
 # This is the function that runs the template.
 def run_template(outputPath, class_details):
 
-    if class_details["is_a_float"] == True:
+    if class_details["is_a_float"]:
         templates = float_template_files
-    elif class_details["has_instances"] == True:
+    elif class_details["has_instances"]:
         templates = enum_template_files
     else:
         templates = template_files
@@ -210,7 +210,6 @@ def create_nullptr_assigns(text, render):
         attributes_json = eval(attributes_txt)
         nullptr_init_string = ": "
         for attribute in attributes_json:
-            name = attribute["label"]
             if attribute_type(attribute) == "primitive":
                 continue
             if attribute["multiplicity"] == "M:0..n" or attribute["multiplicity"] == "M:1..n":
@@ -244,7 +243,7 @@ bool assign_OBJECT_CLASS_LABEL(BaseClass* BaseClass_ptr1, BaseClass* BaseClass_p
 		}
 	}
 	return false;
-}""".replace(
+}""".replace(  # noqa: E101,W191
                 "OBJECT_CLASS", attribute_json["domain"]
             )
             .replace("ATTRIBUTE_CLASS", attribute_class)
@@ -266,7 +265,7 @@ bool assign_OBJECT_CLASS_LABEL(BaseClass* BaseClass_ptr1, BaseClass* BaseClass_p
                         return assign_INVERSEC_INVERSEL(BaseClass_ptr2, BaseClass_ptr1);
         }
         return false;
-}""".replace(
+}""".replace(  # noqa: E101,W191
                 "OBJECT_CLASS", attribute_json["domain"]
             )
             .replace("ATTRIBUTE_CLASS", attribute_class)
@@ -284,7 +283,7 @@ bool assign_OBJECT_CLASS_LABEL(BaseClass* BaseClass_ptr1, BaseClass* BaseClass_p
                         return true;
         }
         return false;
-}""".replace(
+}""".replace(  # noqa: E101,W191
                 "OBJECT_CLASS", attribute_json["domain"]
             )
             .replace("ATTRIBUTE_CLASS", attribute_class)
@@ -318,7 +317,7 @@ bool assign_CLASS_LABEL(std::stringstream &buffer, BaseClass* BaseClass_ptr1) {
         }
         else
                 return false;
-}""".replace(
+}""".replace(  # noqa: E101,W191
                 "CLASS", attribute_json["domain"]
             )
             .replace("LABEL", attribute_json["label"])
@@ -335,7 +334,7 @@ bool assign_CLASS_LABEL(std::stringstream &buffer, BaseClass* BaseClass_ptr1) {
 			return true;
 	}
 	return false;
-}""".replace(
+}""".replace(  # noqa: E101,W191
             "CLASS", attribute_json["domain"]
         ).replace(
             "LABEL", attribute_json["label"]
@@ -378,7 +377,7 @@ def _create_attribute_includes(text, render):
     inputText = render(text)
     jsonString = inputText.replace("'", '"')
     jsonStringNoHtmlEsc = jsonString.replace("&quot;", '"')
-    if jsonStringNoHtmlEsc != None and jsonStringNoHtmlEsc != "":
+    if jsonStringNoHtmlEsc is not None and jsonStringNoHtmlEsc != "":
         attributes = json.loads(jsonStringNoHtmlEsc)
         for attribute in attributes:
             _type = attribute_type(attribute)
@@ -398,7 +397,7 @@ def _create_attribute_class_declarations(text, render):
     inputText = render(text)
     jsonString = inputText.replace("'", '"')
     jsonStringNoHtmlEsc = jsonString.replace("&quot;", '"')
-    if jsonStringNoHtmlEsc != None and jsonStringNoHtmlEsc != "":
+    if jsonStringNoHtmlEsc is not None and jsonStringNoHtmlEsc != "":
         attributes = json.loads(jsonStringNoHtmlEsc)
         for attribute in attributes:
             _type = attribute_type(attribute)
@@ -479,7 +478,7 @@ def _create_header_include_file(directory, header_include_filename, header, foot
         filepath = os.path.join(directory, filename)
         basepath, ext = os.path.splitext(filepath)
         basename = os.path.basename(basepath)
-        if ext == ".hpp" and not _is_enum_class(filepath) and not basename in blacklist:
+        if ext == ".hpp" and not _is_enum_class(filepath) and basename not in blacklist:
             lines.append(before + basename + after)
     lines.sort()
     for line in lines:

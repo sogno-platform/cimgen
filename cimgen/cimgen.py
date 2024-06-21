@@ -17,31 +17,31 @@ class RDFSEntry:
 
     def asJson(self, lang_pack):
         jsonObject = {}
-        if self.about() != None:
+        if self.about() is not None:
             jsonObject["about"] = self.about()
-        if self.comment() != None:
+        if self.comment() is not None:
             jsonObject["comment"] = self.comment()
-        if self.dataType() != None:
+        if self.dataType() is not None:
             jsonObject["dataType"] = self.dataType()
-        if self.domain() != None:
+        if self.domain() is not None:
             jsonObject["domain"] = self.domain()
-        if self.fixed() != None:
+        if self.fixed() is not None:
             jsonObject["isFixed"] = self.fixed()
-        if self.label() != None:
+        if self.label() is not None:
             jsonObject["label"] = self.label()
-        if self.multiplicity() != None:
+        if self.multiplicity() is not None:
             jsonObject["multiplicity"] = self.multiplicity()
-        if self.range() != None:
+        if self.range() is not None:
             jsonObject["range"] = self.range()
-        if self.stereotype() != None:
+        if self.stereotype() is not None:
             jsonObject["stereotype"] = self.stereotype()
-        if self.type() != None:
+        if self.type() is not None:
             jsonObject["type"] = self.type()
-        if self.subClassOf() != None:
+        if self.subClassOf() is not None:
             jsonObject["subClassOf"] = self.subClassOf()
-        if self.inverseRole() != None:
+        if self.inverseRole() is not None:
             jsonObject["inverseRole"] = self.inverseRole()
-        if self.associationUsed() != None:
+        if self.associationUsed() is not None:
             jsonObject["associationUsed"] = self.associationUsed()
         if "modernpython" in lang_pack.__name__:
             jsonObject["isAssociationUsed"] = self.isAssociationUsed()
@@ -59,7 +59,8 @@ class RDFSEntry:
         else:
             return None
 
-    # Capitalized True/False is valid in python but not in json. Do not use this function in combination with json.load()
+    # Capitalized True/False is valid in python but not in json.
+    # Do not use this function in combination with json.load()
     def isAssociationUsed(self) -> bool:
         if "cims:AssociationUsed" in self.jsonDefinition:
             return "yes" == RDFSEntry._extract_string(self.jsonDefinition["cims:AssociationUsed"]).lower()
@@ -180,7 +181,7 @@ class RDFSEntry:
     def _extract_string(object_dic):
         if isinstance(object_dic, list):
             if len(object_dic) > 0:
-                if type(object_dic[0]) == "string" or isinstance(object_dic[0], str):
+                if isinstance(object_dic[0], str):
                     return object_dic[0]
                 return RDFSEntry._get_about_or_resource(object_dic[0])
         return RDFSEntry._get_about_or_resource(object_dic)
@@ -287,7 +288,7 @@ class CIMComponentDefinition:
             else:
                 return False
         for key in candidate_array:
-            if candidate_array[key] == False:
+            if not candidate_array[key]:
                 return False
         return True
 
@@ -340,7 +341,7 @@ def _rdfs_entry_types(rdfs_entry: RDFSEntry, version) -> list:
     Determine the types of RDFS entry. In some case an RDFS entry can be of more than 1 type.
     """
     entry_types = []
-    if rdfs_entry.type() != None:
+    if rdfs_entry.type() is not None:
         if rdfs_entry.type() == "http://www.w3.org/2000/01/rdf-schema#Class":  # NOSONAR
             entry_types.append("class")
         if rdfs_entry.type() == "http://www.w3.org/1999/02/22-rdf-syntax-ns#Property":  # NOSONAR
@@ -360,7 +361,7 @@ def _rdfs_entry_types(rdfs_entry: RDFSEntry, version) -> list:
 
 def _entry_types_version_2(rdfs_entry: RDFSEntry) -> list:
     entry_types = []
-    if rdfs_entry.stereotype() != None:
+    if rdfs_entry.stereotype() is not None:
         if rdfs_entry.stereotype() == "Entsoe" and rdfs_entry.about()[-7:] == "Version":
             entry_types.append("profile_name_v2_4")
         if (
@@ -541,7 +542,7 @@ def format_class(_range, _dataType):
 def _write_files(class_details, output_path, version):
     class_details["langPack"].setup(output_path, package_listed_by_short_name)
 
-    if class_details["sub_class_of"] == None:
+    if class_details["sub_class_of"] is None:
         # If class has no subClassOf key it is a subclass of the Base class
         class_details["sub_class_of"] = class_details["langPack"].base["base_class"]
         class_details["class_location"] = class_details["langPack"].base["class_location"](version)
@@ -704,7 +705,8 @@ def cim_generate(directory, output_path, version, lang_pack):
     with the template engine chevron. The attribute version of this function defines the name of the folder where the
     created classes are stored. This folder should not exist and is created in the class generation procedure.
 
-    :param directory: path to RDF files containing cgmes ontology, e.g. directory = "./examples/cgmes_schema/cgmes_v2_4_15_schema"
+    :param directory: path to RDF files containing cgmes ontology,
+                      e.g. directory = "./examples/cgmes_schema/cgmes_v2_4_15_schema"
     :param output_path: CGMES version, e.g. version = "cgmes_v2_4_15"
     :param lang_pack:   python module containing language specific functions
     """
@@ -734,7 +736,7 @@ def cim_generate(directory, output_path, version, lang_pack):
     # work out the subclasses for each class by noting the reverse relationship
     for className in class_dict_with_origins:
         superClassName = class_dict_with_origins[className].superClass()
-        if superClassName != None:
+        if superClassName is not None:
             if superClassName in class_dict_with_origins:
                 superClass = class_dict_with_origins[superClassName]
                 superClass.addSubClass(className)

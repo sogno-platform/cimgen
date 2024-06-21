@@ -47,9 +47,9 @@ def run_template(outputPath, class_details):
     for attr in class_details["attributes"]:
         if attribute_type(attr) == "primitive":
             class_details["primitives"].append(attr)
-    if class_details["is_a_float"] == True:
+    if class_details["is_a_float"]:
         templates = float_template_files
-    elif class_details["has_instances"] == True:
+    elif class_details["has_instances"]:
         templates = enum_template_files
     else:
         templates = template_files
@@ -206,7 +206,7 @@ def create_class_assign(text, render):
             and Attribute Class as ATTRIBUTE_CLASS
             and Inversec as INVERSEC
             and Inversel as INVERSEL
-	""".replace(
+	""".replace(  # noqa: E101,W191
                 "OBJECT_CLASS", attribute_json["domain"]
             )
             .replace("ATTRIBUTE_CLASS", attribute_class)
@@ -221,7 +221,7 @@ def create_class_assign(text, render):
             with Label as LABEL
             and Object Class as OBJECT_CLASS
             and Attribute Class as ATTRIBUTE_CLASS
-	""".replace(
+	""".replace(  # noqa: E101,W191
                 "OBJECT_CLASS", attribute_json["domain"]
             )
             .replace("ATTRIBUTE_CLASS", attribute_class)
@@ -248,7 +248,7 @@ def create_assign(text, render):
             attr.setValue(value);
             return attr;
         }
-        """.replace(
+        """.replace(  # noqa: E101,W191
             "CLASS", _class
         ).replace(
             "LABEL", attribute_json["label"]
@@ -298,7 +298,7 @@ def _create_attribute_includes(text, render):
     inputText = render(text)
     jsonString = inputText.replace("'", '"')
     jsonStringNoHtmlEsc = jsonString.replace("&quot;", '"')
-    if jsonStringNoHtmlEsc != None and jsonStringNoHtmlEsc != "":
+    if jsonStringNoHtmlEsc is not None and jsonStringNoHtmlEsc != "":
         attributes = json.loads(jsonStringNoHtmlEsc)
         for attribute in attributes:
             _type = attribute_type(attribute)
@@ -319,7 +319,7 @@ def _create_attribute_class_declarations(text, render):
     inputText = render(text)
     jsonString = inputText.replace("'", '"')
     jsonStringNoHtmlEsc = jsonString.replace("&quot;", '"')
-    if jsonStringNoHtmlEsc != None and jsonStringNoHtmlEsc != "":
+    if jsonStringNoHtmlEsc is not None and jsonStringNoHtmlEsc != "":
         attributes = json.loads(jsonStringNoHtmlEsc)
         for attribute in attributes:
             _type = attribute_type(attribute)
@@ -404,7 +404,7 @@ def _create_header_include_file(directory, header_include_filename, header, foot
         filepath = os.path.join(directory, filename)
         basepath, ext = os.path.splitext(filepath)
         basename = os.path.basename(basepath)
-        if ext == ".java" and not _is_enum_class(filepath) and not basename in blacklist:
+        if ext == ".java" and not _is_enum_class(filepath) and basename not in blacklist:
             lines.append(before + 'Map.entry("' + basename + '", new cim4j.' + basename + after + "),\n")
     lines.sort()
     lines[-1] = lines[-1].replace("),", ")")
@@ -441,9 +441,3 @@ def resolve_headers(outputPath):
         "()",
         class_blacklist,
     )
-
-
-#    iec61970_header = [ "#ifndef IEC61970_H\n", "#define IEC61970_H\n" ]
-#    iec61970_footer = [ '#include "UnknownType.hpp"\n', '#endif' ]
-
-#    _create_header_include_file(outputPath, "IEC61970.hpp", iec61970_header, iec61970_footer, "#include \"", ".hpp\"\n", iec61970_blacklist)

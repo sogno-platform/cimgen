@@ -33,7 +33,7 @@ def get_class_location(class_name, class_map, version):
     if class_map[class_name].superClass():
         if class_map[class_name].superClass() in class_map:
             return "cimpy." + version + "." + class_map[class_name].superClass()
-        elif class_map[class_name].superClass() == "Base" or class_map[class_name].superClass() == None:
+        elif class_map[class_name].superClass() == "Base" or class_map[class_name].superClass() is None:
             return location(version)
     else:
         return location(version)
@@ -109,7 +109,7 @@ def _create_base(path):
         '    """\n',
         "    Base Class for CIM\n",
         '    """\n\n',
-        '    cgmesProfile = Enum("cgmesProfile", {"EQ": 0, "SSH": 1, "TP": 2, "SV": 3, "DY": 4, "GL": 5, "DL": 6, "TP_BD": 7, "EQ_BD": 8})',
+        '    cgmesProfile = Enum("cgmesProfile", {"EQ": 0, "SSH": 1, "TP": 2, "SV": 3, "DY": 4, "GL": 5, "DL": 6, "TP_BD": 7, "EQ_BD": 8})',  # noqa: E501
         "\n\n",
         "    def __init__(self, *args, **kw_args):\n",
         "        pass\n",
