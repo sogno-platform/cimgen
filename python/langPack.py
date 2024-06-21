@@ -2,7 +2,6 @@ import os
 import chevron
 import logging
 import glob
-import sys
 
 logger = logging.getLogger(__name__)
 
