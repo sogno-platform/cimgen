@@ -1,0 +1,5 @@
+include cimgen/languages/cpp/templates/*.mustache
+include cimgen/languages/java/templates/*.mustache
+include cimgen/languages/javascript/templates/*.mustache
+include cimgen/languages/modernpython/templates/*.mustache
+include cimgen/languages/python/templates/*.mustache

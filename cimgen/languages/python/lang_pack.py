@@ -2,6 +2,7 @@ import os
 import chevron
 import logging
 import glob
+from importlib.resources import files
 
 logger = logging.getLogger(__name__)
 
@@ -80,10 +81,9 @@ def run_template(version_path, class_details):
         class_file = os.path.join(version_path, class_details["class_name"] + template_info["ext"])
         if not os.path.exists(class_file):
             with open(class_file, "w") as file:
-                dir = os.path.dirname(__file__)
-                template_path = os.path.join(dir, "templates", template_info["filename"])
                 class_details["setDefault"] = _set_default
-                with open(template_path) as f:
+                templates = files("cimgen.languages.python.templates")
+                with templates.joinpath(template_info["filename"]).open() as f:
                     args = {
                         "data": class_details,
                         "template": f,

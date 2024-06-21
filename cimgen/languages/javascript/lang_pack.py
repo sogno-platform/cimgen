@@ -2,6 +2,7 @@ import os
 import chevron
 import json
 import sys
+from importlib.resources import files
 
 
 def location(version):
@@ -190,8 +191,8 @@ def run_template(outputPath, class_details):
 def write_templated_file(class_file, class_details, template_filename):
     if not os.path.exists(class_file):
         with open(class_file, "w") as file:
-            template_path = os.path.join(os.getcwd(), "javascript/templates", template_filename)
-            with open(template_path) as f:
+            templates = files("cimgen.languages.javascript.templates")
+            with templates.joinpath(template_filename).open() as f:
                 args = {"data": class_details, "template": f, "partials_dict": partials}
                 output = chevron.render(**args)
             file.write(output)

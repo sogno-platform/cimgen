@@ -1,6 +1,7 @@
 import os
 import chevron
 import json
+from importlib.resources import files
 
 
 def location(version):
@@ -74,8 +75,8 @@ def run_template(outputPath, class_details):
         class_file = os.path.join(outputPath, class_details["class_name"] + template_info["ext"])
         if not os.path.exists(class_file):
             with open(class_file, "w") as file:
-                template_path = os.path.join(os.getcwd(), "cpp/templates", template_info["filename"])
-                with open(template_path) as f:
+                templates = files("cimgen.languages.cpp.templates")
+                with templates.joinpath(template_info["filename"]).open() as f:
                     args = {
                         "data": class_details,
                         "template": f,

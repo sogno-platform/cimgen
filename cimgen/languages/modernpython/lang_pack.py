@@ -3,6 +3,7 @@ import os
 import re
 from distutils.dir_util import copy_tree
 from pathlib import Path
+from importlib.resources import files
 
 import chevron
 
@@ -97,12 +98,11 @@ def run_template(version_path, class_details):
                 parent.mkdir()
 
             with open(resource_file, "w", encoding="utf-8") as file:
-
-                dir = os.path.dirname(__name__)
-                template_path = os.path.join(dir, "templates", template_info["filename"])
                 class_details["setDefault"] = _set_default
                 class_details["setType"] = _set_type
-                with open(template_path, encoding="utf-8") as f:
+
+                templates = files("cimgen.languages.modernpython.templates")
+                with templates.joinpath(template_info["filename"]).open(encoding="utf-8") as f:
                     args = {
                         "data": class_details,
                         "template": f,
