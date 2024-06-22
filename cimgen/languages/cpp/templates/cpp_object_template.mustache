@@ -1,0 +1,54 @@
+#include <sstream>
+#include "{{sub_class_of}}.hpp"
+#include "{{class_name}}.hpp"
+
+{{#attributes}}
+#include "{{class_name}}.hpp"
+{{/attributes}}
+
+using namespace CIMPP;
+
+{{class_name}}::{{class_name}}(){{#langPack.create_nullptr_assigns}} {{attributes}} {{/langPack.create_nullptr_assigns}} {};
+
+{{class_name}}::~{{class_name}}() {};
+
+{{#attributes}}
+{{#langPack.create_class_assign}}{{.}}{{/langPack.create_class_assign}}
+{{/attributes}}
+
+{{#attributes}}
+{{#langPack.create_assign}}{{.}}{{/langPack.create_assign}}
+{{/attributes}}
+
+namespace CIMPP {
+	BaseClass* {{class_name}}_factory() {
+		return new {{class_name}};
+	}
+}
+
+void {{class_name}}::addConstructToMap(std::unordered_map<std::string, BaseClass* (*)()>& factory_map) {
+	factory_map.insert(std::make_pair(std::string("cim:{{class_name}}"), &{{class_name}}_factory));
+}
+
+void {{class_name}}::addPrimitiveAssignFnsToMap(std::unordered_map<std::string, assign_function>& assign_map) {
+{{#attributes}}
+	{{> insert_assign}}
+{{/attributes}}
+}
+
+void {{class_name}}::addClassAssignFnsToMap(std::unordered_map<std::string, class_assign_function>& assign_map) {
+{{#attributes}}
+	{{> insert_class_assign}}
+{{/attributes}}
+}
+
+const char {{class_name}}::debugName[] = "{{class_name}}";
+const char* {{class_name}}::debugString()
+{
+	return {{class_name}}::debugName;
+}
+
+const BaseClassDefiner {{class_name}}::declare()
+{
+	return BaseClassDefiner({{class_name}}::addConstructToMap, {{class_name}}::addPrimitiveAssignFnsToMap, {{class_name}}::addClassAssignFnsToMap, {{class_name}}::debugName);
+}
