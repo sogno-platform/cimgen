@@ -174,8 +174,8 @@ class RDFSEntry:
             return object_dic[0]["_"]
         elif "_" in object_dic.keys():
             return object_dic["_"]
-        elif '$rdfs:Literal' in object_dic.keys():
-            return object_dic['$rdfs:Literal']
+        elif "$rdfs:Literal" in object_dic.keys():
+            return object_dic["$rdfs:Literal"]
         else:
             return ""
 
