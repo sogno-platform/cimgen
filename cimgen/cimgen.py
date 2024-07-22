@@ -174,6 +174,8 @@ class RDFSEntry:
             return object_dic[0]["_"]
         elif "_" in object_dic.keys():
             return object_dic["_"]
+        elif "$rdfs:Literal" in object_dic.keys():
+            return object_dic["$rdfs:Literal"]
         else:
             return ""
 
@@ -349,7 +351,7 @@ def _rdfs_entry_types(rdfs_entry: RDFSEntry, version) -> list:
         if rdfs_entry.type() != "http://iec.ch/TC57/1999/rdf-schema-extensions-19990926#ClassCategory":  # NOSONAR
             entry_types.append("rest_non_class_category")
 
-    if version == "cgmes_v2_4_15":
+    if version == "cgmes_v2_4_13" or version == "cgmes_v2_4_15":
         entry_types.extend(_entry_types_version_2(rdfs_entry))
     elif version == "cgmes_v3_0_0":
         entry_types.extend(_entry_types_version_3(rdfs_entry))
