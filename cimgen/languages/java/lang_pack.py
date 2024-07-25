@@ -66,10 +66,10 @@ def run_template(outputPath, class_details):
     for template_info in templates:
         class_file = os.path.join(outputPath, class_details["class_name"] + template_info["ext"])
         if not os.path.exists(class_file):
-            with open(class_file, "w") as file:
+            with open(class_file, "w", encoding="utf-8") as file:
                 class_details["setDefault"] = _set_default
                 templates = files("cimgen.languages.java.templates")
-                with templates.joinpath(template_info["filename"]).open() as f:
+                with templates.joinpath(template_info["filename"]).open(encoding="utf-8") as f:
                     args = {
                         "data": class_details,
                         "template": f,
