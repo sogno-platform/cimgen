@@ -221,6 +221,7 @@ class RDFSEntry:
 
 class CIMComponentDefinition:
     def __init__(self, rdfsEntry):
+        self.about = rdfsEntry.about()
         self.attribute_list = []
         self.comment = rdfsEntry.comment()
         self.instance_list = []
@@ -272,6 +273,8 @@ class CIMComponentDefinition:
         return False
 
     def is_a_float(self):
+        if self.about == "Float":
+            return True
         simple_float = False
         for attr in self.attribute_list:
             if CIMComponentDefinition._simple_float_attribute(attr):
@@ -283,11 +286,12 @@ class CIMComponentDefinition:
             return True
 
         candidate_array = {"value": False, "unit": False, "multiplier": False}
+        optional_attributes = ["denominatorUnit", "denominatorMultiplier"]
         for attr in self.attribute_list:
             key = attr["label"]
             if key in candidate_array:
                 candidate_array[key] = True
-            else:
+            elif key not in optional_attributes:
                 return False
         for key in candidate_array:
             if not candidate_array[key]:

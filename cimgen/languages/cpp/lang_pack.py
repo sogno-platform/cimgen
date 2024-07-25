@@ -432,6 +432,8 @@ def set_default(dataType):
         return "''"
     elif dataType == "Boolean":
         return "false"
+    elif dataType == "Float":
+        return "0.0"
     else:
         return "nullptr"
 
