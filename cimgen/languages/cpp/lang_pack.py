@@ -476,13 +476,12 @@ def _create_header_include_file(directory, header_include_filename, header, foot
 
     lines = []
 
-    for filename in os.listdir(directory):
+    for filename in sorted(os.listdir(directory)):
         filepath = os.path.join(directory, filename)
         basepath, ext = os.path.splitext(filepath)
         basename = os.path.basename(basepath)
         if ext == ".hpp" and not _is_enum_class(filepath) and basename not in blacklist:
             lines.append(before + basename + after)
-    lines.sort()
     for line in lines:
         header.append(line)
     for line in footer:

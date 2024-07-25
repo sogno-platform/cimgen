@@ -526,6 +526,7 @@ def _write_python_files(elem_dict, lang_pack, output_path, version):
                     initial_indent="",
                     subsequent_indent=" " * 6,
                 )
+        class_details["attributes"].sort(key=lambda d: d["label"])
         _write_files(class_details, output_path, version)
 
 
@@ -721,7 +722,7 @@ def cim_generate(directory, output_path, version, lang_pack):
     t0 = time()
 
     # iterate over files in the directory and check if they are RDF files
-    for file in os.listdir(directory):
+    for file in sorted(os.listdir(directory)):
         if file.endswith(".rdf"):
             logger.info('Start of parsing file "%s"', file)
 

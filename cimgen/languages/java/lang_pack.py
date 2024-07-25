@@ -400,13 +400,12 @@ def _create_header_include_file(directory, header_include_filename, header, foot
 
     lines = []
 
-    for filename in os.listdir(directory):
+    for filename in sorted(os.listdir(directory)):
         filepath = os.path.join(directory, filename)
         basepath, ext = os.path.splitext(filepath)
         basename = os.path.basename(basepath)
         if ext == ".java" and not _is_enum_class(filepath) and basename not in blacklist:
             lines.append(before + 'Map.entry("' + basename + '", new cim4j.' + basename + after + "),\n")
-    lines.sort()
     lines[-1] = lines[-1].replace("),", ")")
     for line in lines:
         header.append(line)

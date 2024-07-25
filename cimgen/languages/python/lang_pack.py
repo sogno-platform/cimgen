@@ -126,7 +126,7 @@ def _create_base(path):
 def resolve_headers(path):
     filenames = glob.glob(path + "/*.py")
     include_names = []
-    for filename in filenames:
+    for filename in sorted(filenames):
         include_names.append(os.path.splitext(os.path.basename(filename))[0])
     with open(path + "/__init__.py", "w") as header_file:
         for include_name in include_names:
