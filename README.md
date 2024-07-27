@@ -14,18 +14,19 @@ Python tool for code generation from CIM data model for several programming lang
 
 ```bash
 pip install -e .
-cimgen --outdir=output/cpp/CGMES_2.4.15_27JAN2020 --schemadir=cgmes_schema/CGMES_2.4.15_27JAN2020 --langdir=cpp
+cimgen --outdir=output/cpp/CGMES_2.4.15_27JAN2020 --schemadir=cgmes_schema/CGMES_2.4.15_27JAN2020 --langdir=cpp --cgmes_version=cgmes_v2_4_15
 ```
 
-This will build version `CGMES_2.4.15_27JAN2020` in the subfolder `CGMES_2.4.15_27JAN2020_cpp`.
+This will build version `CGMES_2.4.15_27JAN2020` in the subfolder `output/cpp/CGMES_2.4.15_27JAN2020`.
 
 If you wish to build an alternative version, you can see available options in the subfolder called `cgmes_schema`.
+For the schema `CGMES_3.0.0` you have to use the option `--cgmes_version=cgmes_v3_0_0`.
 
 #### Generating C++ files in a Docker container
 
 ```bash
 docker build --tag cimgen --file Dockerfile .
-docker run --volume "$(pwd)/output:/output" cimgen --outdir=/output/cpp/CGMES_2.4.15_27JAN2020 --schemadir=/cimgen/cgmes_schema/CGMES_2.4.15_27JAN2020 --langdir=cpp
+docker run --volume "$(pwd)/output:/output" cimgen --outdir=/output/cpp/CGMES_2.4.15_27JAN2020 --schemadir=/cimgen/cgmes_schema/CGMES_2.4.15_27JAN2020 --langdir=cpp --cgmes_version=cgmes_v2_4_15
 ```
 
 ### Generating Python files
@@ -34,7 +35,7 @@ docker run --volume "$(pwd)/output:/output" cimgen --outdir=/output/cpp/CGMES_2.
 
 ```bash
 pip install -e .
-cimgen --outdir=output/python/CGMES_2.4.15_27JAN2020 --schemadir=cgmes_schema/CGMES_2.4.15_27JAN2020 --langdir=python
+cimgen --outdir=output/python/CGMES_2.4.15_27JAN2020 --schemadir=cgmes_schema/CGMES_2.4.15_27JAN2020 --langdir=python --cgmes_version=cgmes_v2_4_15
 ```
 
 `outdir` can be set to whichever absolute path you wish to create the files in.
@@ -43,7 +44,7 @@ cimgen --outdir=output/python/CGMES_2.4.15_27JAN2020 --schemadir=cgmes_schema/CG
 
 ```bash
 docker build --tag cimgen --file Dockerfile .
-docker run --volume "$(pwd)/output:/output" cimgen --outdir=/output/python/CGMES_2.4.15_27JAN2020 --schemadir=/cimgen/cgmes_schema/CGMES_2.4.15_27JAN2020 --langdir=python
+docker run --volume "$(pwd)/output:/output" cimgen --outdir=/output/python/CGMES_2.4.15_27JAN2020 --schemadir=/cimgen/cgmes_schema/CGMES_2.4.15_27JAN2020 --langdir=python --cgmes_version=cgmes_v2_4_15
 ```
 
 ## License
