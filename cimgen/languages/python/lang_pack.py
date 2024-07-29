@@ -80,10 +80,10 @@ def run_template(version_path, class_details):
     for template_info in template_files:
         class_file = os.path.join(version_path, class_details["class_name"] + template_info["ext"])
         if not os.path.exists(class_file):
-            with open(class_file, "w") as file:
+            with open(class_file, "w", encoding="utf-8") as file:
                 class_details["setDefault"] = _set_default
                 templates = files("cimgen.languages.python.templates")
-                with templates.joinpath(template_info["filename"]).open() as f:
+                with templates.joinpath(template_info["filename"]).open(encoding="utf-8") as f:
                     args = {
                         "data": class_details,
                         "template": f,
@@ -95,7 +95,7 @@ def run_template(version_path, class_details):
 
 def _create_init(path):
     init_file = path + "/__init__.py"
-    with open(init_file, "w"):
+    with open(init_file, "w", encoding="utf-8"):
         pass
 
 
@@ -118,7 +118,7 @@ def _create_base(path):
         "        return dict\n",
     ]
 
-    with open(base_path, "w") as f:
+    with open(base_path, "w", encoding="utf-8") as f:
         for line in base:
             f.write(line)
 
@@ -126,9 +126,9 @@ def _create_base(path):
 def resolve_headers(path):
     filenames = glob.glob(path + "/*.py")
     include_names = []
-    for filename in filenames:
+    for filename in sorted(filenames):
         include_names.append(os.path.splitext(os.path.basename(filename))[0])
-    with open(path + "/__init__.py", "w") as header_file:
+    with open(path + "/__init__.py", "w", encoding="utf-8") as header_file:
         for include_name in include_names:
             header_file.write("from " + "." + include_name + " import " + include_name + " as " + include_name + "\n")
         header_file.close()

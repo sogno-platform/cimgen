@@ -66,10 +66,10 @@ def run_template(outputPath, class_details):
     for template_info in templates:
         class_file = os.path.join(outputPath, class_details["class_name"] + template_info["ext"])
         if not os.path.exists(class_file):
-            with open(class_file, "w") as file:
+            with open(class_file, "w", encoding="utf-8") as file:
                 class_details["setDefault"] = _set_default
                 templates = files("cimgen.languages.java.templates")
-                with templates.joinpath(template_info["filename"]).open() as f:
+                with templates.joinpath(template_info["filename"]).open(encoding="utf-8") as f:
                     args = {
                         "data": class_details,
                         "template": f,
@@ -400,13 +400,12 @@ def _create_header_include_file(directory, header_include_filename, header, foot
 
     lines = []
 
-    for filename in os.listdir(directory):
+    for filename in sorted(os.listdir(directory)):
         filepath = os.path.join(directory, filename)
         basepath, ext = os.path.splitext(filepath)
         basename = os.path.basename(basepath)
         if ext == ".java" and not _is_enum_class(filepath) and basename not in blacklist:
             lines.append(before + 'Map.entry("' + basename + '", new cim4j.' + basename + after + "),\n")
-    lines.sort()
     lines[-1] = lines[-1].replace("),", ")")
     for line in lines:
         header.append(line)

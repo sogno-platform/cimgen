@@ -13,11 +13,11 @@ using namespace CIMPP;
 {{class_name}}::~{{class_name}}() {};
 
 {{#attributes}}
-{{#langPack.create_class_assign}}{{.}}{{/langPack.create_class_assign}}
+{{#langPack.create_assign}}{{.}}{{/langPack.create_assign}}
 {{/attributes}}
 
 {{#attributes}}
-{{#langPack.create_assign}}{{.}}{{/langPack.create_assign}}
+{{#langPack.create_class_assign}}{{.}}{{/langPack.create_class_assign}}
 {{/attributes}}
 
 namespace CIMPP {

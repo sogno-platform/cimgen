@@ -221,6 +221,7 @@ class RDFSEntry:
 
 class CIMComponentDefinition:
     def __init__(self, rdfsEntry):
+        self.about = rdfsEntry.about()
         self.attribute_list = []
         self.comment = rdfsEntry.comment()
         self.instance_list = []
@@ -272,6 +273,8 @@ class CIMComponentDefinition:
         return False
 
     def is_a_float(self):
+        if self.about == "Float":
+            return True
         simple_float = False
         for attr in self.attribute_list:
             if CIMComponentDefinition._simple_float_attribute(attr):
@@ -283,11 +286,12 @@ class CIMComponentDefinition:
             return True
 
         candidate_array = {"value": False, "unit": False, "multiplier": False}
+        optional_attributes = ["denominatorUnit", "denominatorMultiplier"]
         for attr in self.attribute_list:
             key = attr["label"]
             if key in candidate_array:
                 candidate_array[key] = True
-            else:
+            elif key not in optional_attributes:
                 return False
         for key in candidate_array:
             if not candidate_array[key]:
@@ -522,6 +526,7 @@ def _write_python_files(elem_dict, lang_pack, output_path, version):
                     initial_indent="",
                     subsequent_indent=" " * 6,
                 )
+        class_details["attributes"].sort(key=lambda d: d["label"])
         _write_files(class_details, output_path, version)
 
 
@@ -717,7 +722,7 @@ def cim_generate(directory, output_path, version, lang_pack):
     t0 = time()
 
     # iterate over files in the directory and check if they are RDF files
-    for file in os.listdir(directory):
+    for file in sorted(os.listdir(directory)):
         if file.endswith(".rdf"):
             logger.info('Start of parsing file "%s"', file)
 
