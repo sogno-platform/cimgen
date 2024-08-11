@@ -13,7 +13,7 @@ def location(version):
 # cgmes_profile_details contains index, names and uris for each profile.
 # We don't use that here because we aren't exporting into
 # separate profiles.
-def setup(output_path, cgmes_profile_details):
+def setup(output_path: str, cgmes_profile_details: list, cim_namespace: str):
     if not os.path.exists(output_path):
         os.makedirs(output_path)
     else:

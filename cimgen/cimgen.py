@@ -339,7 +339,7 @@ def wrap_and_clean(txt: str, width: int = 120, initial_indent="", subsequent_ind
 
 short_package_name = {}
 package_listed_by_short_name = {}
-
+cim_namespace = ""
 profiles = {}
 
 
@@ -424,6 +424,10 @@ def _parse_rdf(input_dic, version, lang_pack):
     attributes = []
     instances = []
 
+    global cim_namespace
+    if not cim_namespace:
+        cim_namespace = input_dic["rdf:RDF"].get("$xmlns:cim")
+
     # Generates list with dictionaries as elements
     descriptions = input_dic["rdf:RDF"]["rdf:Description"]
 
@@ -480,7 +484,7 @@ def _parse_rdf(input_dic, version, lang_pack):
 def _write_python_files(elem_dict, lang_pack, output_path, version):
 
     # Setup called only once: make output directory, create base class, create profile class, etc.
-    lang_pack.setup(output_path, _get_profile_details(package_listed_by_short_name))
+    lang_pack.setup(output_path, _get_profile_details(package_listed_by_short_name), cim_namespace)
 
     float_classes = {}
     enum_classes = {}

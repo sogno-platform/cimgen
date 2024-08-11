@@ -12,14 +12,14 @@ logger = logging.getLogger(__name__)
 # creates a couple of files the python implementation needs.
 # cgmes_profile_details contains index, names and uris for each profile.
 # We use that to create the header data for the profiles.
-def setup(output_path, cgmes_profile_details):
+def setup(output_path: str, cgmes_profile_details: list, cim_namespace: str):
     if not os.path.exists(output_path):
         os.makedirs(output_path)
     else:
         for filename in os.listdir(output_path):
             os.remove(os.path.join(output_path, filename))
     _create_base(output_path)
-    _create_cgmes_profile(output_path, cgmes_profile_details)
+    _create_cgmes_profile(output_path, cgmes_profile_details, cim_namespace)
 
 
 def location(version):
@@ -117,10 +117,14 @@ def _create_base(path):
             f.write(line)
 
 
-def _create_cgmes_profile(output_path, profile_details):
+def _create_cgmes_profile(output_path: str, profile_details: list, cim_namespace: str):
     for template_info in profile_template_files:
         class_file = os.path.join(output_path, "CGMESProfile" + template_info["ext"])
-        _write_templated_file(class_file, {"profiles": profile_details}, template_info["filename"])
+        class_details = {
+            "profiles": profile_details,
+            "cim_namespace": cim_namespace,
+        }
+        _write_templated_file(class_file, class_details, template_info["filename"])
 
 
 class_blacklist = ["CGMESProfile"]

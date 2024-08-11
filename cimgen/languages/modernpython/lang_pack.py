@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 # cgmes_profile_details contains index, names und uris for each profile.
 # We don't use that here because we aren't creating the header
 # data for the separate profiles.
-def setup(output_path, cgmes_profile_details):  # NOSONAR
+def setup(output_path: str, cgmes_profile_details: list, cim_namespace: str):  # NOSONAR
     for file in Path(output_path).glob("**/*.py"):
         file.unlink()
 
