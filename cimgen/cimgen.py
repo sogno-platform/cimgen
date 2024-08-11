@@ -2,6 +2,7 @@ import logging
 import os
 import textwrap
 import warnings
+import re
 from time import time
 
 import xmltodict
@@ -402,24 +403,24 @@ def _add_class(classes_map, rdfs_entry):
         classes_map[rdfs_entry.label()] = CIMComponentDefinition(rdfs_entry)
 
 
-def _add_profile_to_packages(profile_name, short_profile_name, profile_iri):
+def _add_profile_to_packages(profile_name, short_profile_name, profile_uri_list):
     """
-    Add or append profile_iri
+    Add profile_uris
     """
-    if profile_name not in profiles and profile_iri:
-        profiles[profile_name] = [profile_iri]
+    if profile_name not in profiles and profile_uri_list:
+        profiles[profile_name] = profile_uri_list
     else:
-        profiles[profile_name].append(profile_iri)
-    if short_profile_name not in package_listed_by_short_name and profile_iri:
-        package_listed_by_short_name[short_profile_name] = [profile_iri]
+        profiles[profile_name].extend(profile_uri_list)
+    if short_profile_name not in package_listed_by_short_name and profile_uri_list:
+        package_listed_by_short_name[short_profile_name] = profile_uri_list
     else:
-        package_listed_by_short_name[short_profile_name].append(profile_iri)
+        package_listed_by_short_name[short_profile_name].extend(profile_uri_list)
 
 
 def _parse_rdf(input_dic, version, lang_pack):
     classes_map = {}
     profile_name = ""
-    profile_iri = None
+    profile_uri_list = []
     attributes = []
     instances = []
 
@@ -447,13 +448,13 @@ def _parse_rdf(input_dic, version, lang_pack):
         if "short_profile_name_v3" in rdfs_entry_types:
             short_profile_name = rdfsEntry.keyword()
         if "profile_iri_v2_4" in rdfs_entry_types and rdfsEntry.fixed():
-            profile_iri = rdfsEntry.fixed()
+            profile_uri_list.append(rdfsEntry.fixed())
         if "profile_iri_v3" in rdfs_entry_types:
-            profile_iri = rdfsEntry.version_iri()
+            profile_uri_list.append(rdfsEntry.version_iri())
 
     short_package_name[profile_name] = short_profile_name
     package_listed_by_short_name[short_profile_name] = []
-    _add_profile_to_packages(profile_name, short_profile_name, profile_iri)
+    _add_profile_to_packages(profile_name, short_profile_name, profile_uri_list)
     # Add attributes to corresponding class
     for attribute in attributes:
         clarse = attribute["domain"]
@@ -477,6 +478,9 @@ def _parse_rdf(input_dic, version, lang_pack):
 # class name. After the extraction the function write_files is called to write the files with the template engine
 # chevron
 def _write_python_files(elem_dict, lang_pack, output_path, version):
+
+    # Setup called only once: make output directory, create base class, create profile class, etc.
+    lang_pack.setup(output_path, _get_profile_details(package_listed_by_short_name))
 
     float_classes = {}
     enum_classes = {}
@@ -547,8 +551,6 @@ def format_class(_range, _dataType):
 
 
 def _write_files(class_details, output_path, version):
-    class_details["langPack"].setup(output_path, package_listed_by_short_name)
-
     if class_details["sub_class_of"] is None:
         # If class has no subClassOf key it is a subclass of the Base class
         class_details["sub_class_of"] = class_details["langPack"].base["base_class"]
@@ -762,3 +764,36 @@ def cim_generate(directory, output_path, version, lang_pack):
         lang_pack.resolve_headers(output_path)
 
     logger.info("Elapsed Time: {}s\n\n".format(time() - t0))
+
+
+def _get_profile_details(cgmes_profile_uris):
+    profile_details = []
+    sorted_profile_keys = sorted(cgmes_profile_uris.keys(), key=lambda x: x == "EQ" and "0" or x)
+    for index, profile in enumerate(sorted_profile_keys):
+        profile_info = {
+            "index": index,
+            "short_name": profile,
+            "long_name": _extract_profile_long_name(cgmes_profile_uris[profile]),
+            "uris": [{"uri": uri} for uri in cgmes_profile_uris[profile]],
+        }
+        profile_details.append(profile_info)
+    return profile_details
+
+
+def _extract_profile_long_name(profile_uris):
+    # Extract name from uri, e.g. "Topology" from "http://iec.ch/TC57/2013/61970-456/Topology/4"
+    # Examples of other possible uris: "http://entsoe.eu/CIM/Topology/4/1", "http://iec.ch/TC57/ns/CIM/Topology-EU/3.0"
+    # If more than one uri given, extract common part (e.g. "Equipment" from "EquipmentCore" and "EquipmentOperation")
+    long_name = ""
+    for uri in profile_uris:
+        match = re.search(r"/([^/-]*)(-[^/]*)?(/\d+)?/[\d.]+?$", uri)
+        if match:
+            name = match.group(1)
+            if long_name:
+                for idx in range(1, len(long_name)):
+                    if idx >= len(name) or long_name[idx] != name[idx]:
+                        long_name = long_name[:idx]
+                        break
+            else:
+                long_name = name
+    return long_name

@@ -1,6 +1,5 @@
 import os
 import chevron
-import json
 import sys
 from importlib.resources import files
 
@@ -9,42 +8,28 @@ def location(version):
     return "BaseClass.hpp"
 
 
+# Setup called only once: make output directory, create base class, create profile class, etc.
 # This function makes sure we have somewhere to write the classes.
-# cgmes_profile_info details which uri belongs in each profile.
-# We use that to creating the header data for the profiles.
-def setup(version_path, cgmes_profile_info):
-    if not os.path.exists(version_path):
-        os.makedirs(version_path)
-    class_file = os.path.join(version_path, "CGMESProfile.js")
-    short_names = {}
-    for index, key in enumerate(cgmes_profile_info):
-        short_names[key] = index
-
-    cgmes_profile_string = json.dumps(cgmes_profile_info, indent=2)
-    cgmes_shortname_string = json.dumps(short_names, indent=2)
-    cgmes_object = {
-        "profileList": cgmes_profile_string,
-        "shortNames": cgmes_shortname_string,
-    }
-    write_templated_file(class_file, cgmes_object, "handlebars_cgmesProfile_template.mustache")
+# cgmes_profile_details contains index, names und uris for each profile.
+# We use that to create the header data for the profiles.
+def setup(output_path, cgmes_profile_details):
+    if not os.path.exists(output_path):
+        os.makedirs(output_path)
+    else:
+        for filename in os.listdir(output_path):
+            os.remove(os.path.join(output_path, filename))
+    _create_base(output_path)
+    _create_cgmes_profile(output_path, cgmes_profile_details)
 
 
 base = {"base_class": "BaseClass", "class_location": location}
 
-# These are the files that are used to generate the header and object files.
-# There is a template set for the large number of classes that are floats. They
-# have unit, multiplier and value attributes in the schema, but only appear in
-# the file as a float string.
+# These are the files that are used to generate the javascript files.
 template_files = [{"filename": "handlebars_template.mustache", "ext": ".js"}]
+base_template_files = [{"filename": "handlebars_baseclass_template.mustache", "ext": ".js"}]
+profile_template_files = [{"filename": "handlebars_cgmesProfile_template.mustache", "ext": ".js"}]
 
 partials = {}
-
-entsoeURIs = []
-
-
-def neq(one, two):
-    print(one, two)
-    return one != two
 
 
 # We need to keep track of which class types are secretly float
@@ -145,16 +130,7 @@ def selectPrimitiveRenderFunction(primitive):
 
 
 # This is the function that runs the template.
-def run_template(outputPath, class_details):
-
-    nameLength = len(class_details["class_name"])
-    if class_details["class_name"][nameLength - 7 :] == "Version":
-        for attribute in class_details["attributes"]:
-            if "entsoeURI" in attribute["about"]:
-                if attribute["isFixed"] is object:
-                    entsoeURIs.append({"key": attribute["about"], "value": attribute["isFixed"]["_"]})
-                else:
-                    entsoeURIs.append({"key": attribute["about"], "value": attribute["isFixed"]})
+def run_template(output_path, class_details):
 
     class_details["is_not_terminal"] = class_details["class_name"] != "Terminal"
     for attr in class_details["attributes"]:
@@ -181,21 +157,34 @@ def run_template(outputPath, class_details):
     class_details["renderAttribute"] = renderAttribute
 
     for template_info in template_files:
-        class_file = os.path.join(outputPath, class_details["class_name"] + template_info["ext"])
-        write_templated_file(class_file, class_details, template_info["filename"])
-
-    class_file = os.path.join(outputPath, "BaseClass.js")
-    write_templated_file(class_file, {"URI": entsoeURIs}, "handlebars_baseclass_template.mustache")
+        class_file = os.path.join(output_path, class_details["class_name"] + template_info["ext"])
+        _write_templated_file(class_file, class_details, template_info["filename"])
 
 
-def write_templated_file(class_file, class_details, template_filename):
-    if not os.path.exists(class_file):
-        with open(class_file, "w", encoding="utf-8") as file:
-            templates = files("cimgen.languages.javascript.templates")
-            with templates.joinpath(template_filename).open(encoding="utf-8") as f:
-                args = {"data": class_details, "template": f, "partials_dict": partials}
-                output = chevron.render(**args)
-            file.write(output)
+def _write_templated_file(class_file, class_details, template_filename):
+    with open(class_file, "w", encoding="utf-8") as file:
+        templates = files("cimgen.languages.javascript.templates")
+        with templates.joinpath(template_filename).open(encoding="utf-8") as f:
+            args = {
+                "data": class_details,
+                "template": f,
+                "partials_dict": partials,
+            }
+            output = chevron.render(**args)
+        file.write(output)
+
+
+# creates the Base class file, all classes inherit from this class
+def _create_base(output_path):
+    for template_info in base_template_files:
+        class_file = os.path.join(output_path, "BaseClass" + template_info["ext"])
+        _write_templated_file(class_file, {}, template_info["filename"])
+
+
+def _create_cgmes_profile(output_path, profile_details):
+    for template_info in profile_template_files:
+        class_file = os.path.join(output_path, "CGMESProfile" + template_info["ext"])
+        _write_templated_file(class_file, {"profiles": profile_details}, template_info["filename"])
 
 
 def is_an_unused_attribute(attr_details, debug=False):
@@ -226,5 +215,5 @@ def _get_rid_of_hash(name):
     return name
 
 
-def resolve_headers(outputPath):
+def resolve_headers(output_path):
     pass

@@ -1,7 +1,19 @@
 
 class CGMESProfile {
-    static profileUrls = {{{profileList}}};
-    static shortNames  = {{{shortNames}}};
+    static profileUrls = {
+{{#profiles}}
+        "{{short_name}}": [
+{{#uris}}
+            "{{uri}}",
+{{/uris}}
+        ],
+{{/profiles}}
+    };
+    static shortNames = {
+{{#profiles}}
+        "{{short_name}}": {{index}},
+{{/profiles}}
+    };
 }
 
 export default CGMESProfile
