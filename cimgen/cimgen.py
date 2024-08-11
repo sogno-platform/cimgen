@@ -373,7 +373,7 @@ def _entry_types_version_2(rdfs_entry: RDFSEntry) -> list:
             entry_types.append("profile_name_v2_4")
         if (
             rdfs_entry.stereotype() == "http://iec.ch/TC57/NonStandard/UML#attribute"  # NOSONAR
-            and rdfs_entry.label()[0:7] == "baseURI"
+            and rdfs_entry.label().startswith("entsoeURI")
         ):
             entry_types.append("profile_iri_v2_4")
         if rdfs_entry.label() == "shortName":
