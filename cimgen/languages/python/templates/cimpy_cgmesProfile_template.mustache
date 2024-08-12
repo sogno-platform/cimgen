@@ -33,6 +33,9 @@ class Profile(Enum):
     def long_name(self):
         return long_profile_name[self.name]
 
+    def uris(self):
+        return profile_uris[self.name]
+
     @classmethod
     def from_long_name(cls, long_name):
         return cls[short_profile_name[long_name]]
