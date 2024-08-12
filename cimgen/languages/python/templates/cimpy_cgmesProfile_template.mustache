@@ -12,11 +12,11 @@ long_profile_name = {
     "{{short_name}}": "{{long_name}}",
 {{/profiles}}
 }
-profile_uris = {
+profile_uris = {  # Those are strings, not real addresses, hence the NOSONAR.
 {{#profiles}}
     "{{short_name}}": [
 {{#uris}}
-        "{{uri}}",
+        "{{uri}}",  # NOSONAR
 {{/uris}}
     ],
 {{/profiles}}
@@ -38,4 +38,4 @@ class Profile(Enum):
         return cls[short_profile_name[long_name]]
 
 
-cim_namespace = "{{cim_namespace}}"
+cim_namespace = "{{cim_namespace}}"  # NOSONAR
