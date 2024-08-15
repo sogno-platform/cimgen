@@ -499,6 +499,8 @@ def _write_python_files(elem_dict, lang_pack, output_path, version):
     lang_pack.set_float_classes(float_classes)
     lang_pack.set_enum_classes(enum_classes)
 
+    recommended_class_profiles = _get_recommended_class_profiles(elem_dict)
+
     for class_name in elem_dict.keys():
 
         class_details = {
@@ -512,6 +514,7 @@ def _write_python_files(elem_dict, lang_pack, output_path, version):
             "langPack": lang_pack,
             "sub_class_of": elem_dict[class_name].superClass(),
             "sub_classes": elem_dict[class_name].subClasses(),
+            "recommended_class_profile": recommended_class_profiles[class_name],
         }
 
         # extract comments
@@ -772,7 +775,7 @@ def cim_generate(directory, output_path, version, lang_pack):
 
 def _get_profile_details(cgmes_profile_uris):
     profile_details = []
-    sorted_profile_keys = sorted(cgmes_profile_uris.keys(), key=lambda x: x == "EQ" and "0" or x)
+    sorted_profile_keys = _get_sorted_profile_keys(cgmes_profile_uris.keys())
     for index, profile in enumerate(sorted_profile_keys):
         profile_info = {
             "index": index,
@@ -801,3 +804,61 @@ def _extract_profile_long_name(profile_uris):
             else:
                 long_name = name
     return long_name
+
+
+def _get_sorted_profile_keys(profile_key_list):
+    """Sort profiles alphabetically, but "EQ" to the first place.
+
+    Profiles should be always used in the same order when they are written into the enum class Profile.
+    The same order should be used if one of several possible profiles is to be selected.
+
+    :param profile_key_list: List of short profile names.
+    :return:                 Sorted list of short profile names.
+    """
+    return sorted(profile_key_list, key=lambda x: x == "EQ" and "0" or x)
+
+
+def _get_recommended_class_profiles(elem_dict):
+    """Get the recommended profiles for all classes.
+
+    This function searches for the recommended profile of each class.
+    If the class contains attributes for different profiles not all data of the object could be written into one file.
+    To write the data to as few as possible files the class profile should be that with most of the attributes.
+    But some classes contain a lot of rarely used special attributes, i.e. attributes for a special profile
+    (e.g. TopologyNode has many attributes for TopologyBoundary, but the class profile should be Topology).
+    That's why attributes that only belong to one profile are skipped in the search algorithm.
+
+    :param elem_dict: Information about all classes.
+                      Used are here possible class profiles (elem_dict[class_name].origins()),
+                      possible attribute profiles (elem_dict[class_name].attributes()[*]["attr_origin"])
+                      and the superclass of each class (elem_dict[class_name].superClass()).
+    :return:          Mapping of class to profile.
+    """
+    recommended_class_profiles = {}
+    for class_name in elem_dict.keys():
+        class_origin = elem_dict[class_name].origins()
+        class_profiles = [origin["origin"] for origin in class_origin]
+        if len(class_profiles) == 1:
+            recommended_class_profiles[class_name] = class_profiles[0]
+            continue
+
+        # Count profiles of all attributes of this class and its superclasses
+        profile_count_map = {}
+        name = class_name
+        while name:
+            for attribute in _find_multiple_attributes(elem_dict[name].attributes()):
+                profiles = [origin["origin"] for origin in attribute["attr_origin"]]
+                ambiguous_profile = len(profiles) > 1
+                for profile in profiles:
+                    if ambiguous_profile and profile in class_profiles:
+                        profile_count_map.setdefault(profile, []).append(attribute["label"])
+            name = elem_dict[name].superClass()
+
+        # Set the profile with most attributes as recommended profile for this class
+        if profile_count_map:
+            max_count = max(len(v) for v in profile_count_map.values())
+            filtered_profiles = [k for k, v in profile_count_map.items() if len(v) == max_count]
+            recommended_class_profiles[class_name] = _get_sorted_profile_keys(filtered_profiles)[0]
+        else:
+            recommended_class_profiles[class_name] = _get_sorted_profile_keys(class_profiles)[0]
+    return recommended_class_profiles

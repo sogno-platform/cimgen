@@ -20,6 +20,8 @@ class {{class_name}}({{sub_class_of}}):
 
     serializationProfile = {}
 
+    recommendedClassProfile = Profile.{{recommended_class_profile}}.value
+
 {{#super_init}}
     __doc__ += "\nDocumentation of parent class {{sub_class_of}}:\n" + {{sub_class_of}}.__doc__
 {{/super_init}}
