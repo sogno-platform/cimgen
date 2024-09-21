@@ -505,7 +505,7 @@ def _write_python_files(elem_dict, lang_pack, output_path, version):
 
         class_details = {
             "attributes": _find_multiple_attributes(elem_dict[class_name].attributes()),
-            "class_location": lang_pack.get_class_location(class_name, elem_dict, output_path),
+            "class_location": lang_pack.get_class_location(class_name, elem_dict, version),
             "class_name": class_name,
             "class_origin": elem_dict[class_name].origins(),
             "instances": elem_dict[class_name].instances(),
@@ -765,10 +765,7 @@ def cim_generate(directory, output_path, version, lang_pack):
     # get information for writing python files and write python files
     _write_python_files(class_dict_with_origins, lang_pack, output_path, version)
 
-    if "modernpython" in lang_pack.__name__:
-        lang_pack.resolve_headers(output_path, version)
-    else:
-        lang_pack.resolve_headers(output_path)
+    lang_pack.resolve_headers(output_path, version)
 
     logger.info("Elapsed Time: {}s\n\n".format(time() - t0))
 

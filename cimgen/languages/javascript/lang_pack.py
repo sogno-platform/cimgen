@@ -219,5 +219,5 @@ def _get_rid_of_hash(name):
     return name
 
 
-def resolve_headers(output_path):
+def resolve_headers(path: str, version: str):  # NOSONAR
     pass

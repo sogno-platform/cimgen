@@ -13,10 +13,9 @@ logger = logging.getLogger(__name__)
 # Setup called only once: make output directory, create base class, create profile class, etc.
 # This makes sure we have somewhere to write the classes, and
 # creates a couple of files the python implementation needs.
-# cgmes_profile_details contains index, names und uris for each profile.
-# We don't use that here because we aren't creating the header
-# data for the separate profiles.
-def setup(output_path: str, cgmes_profile_details: list, cim_namespace: str):  # NOSONAR
+# cgmes_profile_details contains index, names and uris for each profile.
+# We use that to create the header data for the profiles.
+def setup(output_path: str, cgmes_profile_details: list, cim_namespace: str):
     for file in Path(output_path).glob("**/*.py"):
         file.unlink()
 
@@ -25,6 +24,8 @@ def setup(output_path: str, cgmes_profile_details: list, cim_namespace: str):  #
     dest_dir = Path(output_path) / "utils"
 
     copy_tree(str(source_dir), str(dest_dir))
+    _create_constants(output_path, cim_namespace)
+    _create_cgmes_profile(output_path, cgmes_profile_details)
 
 
 def location(version):
@@ -35,6 +36,8 @@ base = {"base_class": "Base", "class_location": location}
 
 # These are the files that are used to generate the python files.
 template_files = [{"filename": "cimpy_class_template.mustache", "ext": ".py"}]
+constants_template_files = [{"filename": "cimpy_constants_template.mustache", "ext": ".py"}]
+profile_template_files = [{"filename": "cimpy_cgmesProfile_template.mustache", "ext": ".py"}]
 
 
 def get_class_location(class_name, class_map, version):
@@ -88,7 +91,6 @@ def set_float_classes(new_float_classes):
 
 def run_template(output_path, class_details):
     for template_info in template_files:
-
         resource_file = Path(
             os.path.join(
                 output_path,
@@ -99,23 +101,39 @@ def run_template(output_path, class_details):
         if not resource_file.exists():
             if not (parent := resource_file.parent).exists():
                 parent.mkdir()
-
-            with open(resource_file, "w", encoding="utf-8") as file:
-                class_details["setDefault"] = _set_default
-                class_details["setType"] = _set_type
-
-                templates = files("cimgen.languages.modernpython.templates")
-                with templates.joinpath(template_info["filename"]).open(encoding="utf-8") as f:
-                    args = {
-                        "data": class_details,
-                        "template": f,
-                        "partials_dict": partials,
-                    }
-                    output = chevron.render(**args)
-                file.write(output)
+        class_details["setDefault"] = _set_default
+        class_details["setType"] = _set_type
+        _write_templated_file(resource_file, class_details, template_info["filename"])
 
 
-def resolve_headers(dest: str, version: str):
+def _write_templated_file(class_file, class_details, template_filename):
+    with open(class_file, "w", encoding="utf-8") as file:
+        templates = files("cimgen.languages.modernpython.templates")
+        with templates.joinpath(template_filename).open(encoding="utf-8") as f:
+            args = {
+                "data": class_details,
+                "template": f,
+                "partials_dict": partials,
+            }
+            output = chevron.render(**args)
+        file.write(output)
+
+
+def _create_constants(output_path: str, cim_namespace: str):
+    for template_info in constants_template_files:
+        class_file = os.path.join(output_path, "utils", "constants" + template_info["ext"])
+        class_details = {"cim_namespace": cim_namespace}
+        _write_templated_file(class_file, class_details, template_info["filename"])
+
+
+def _create_cgmes_profile(output_path: str, profile_details: list):
+    for template_info in profile_template_files:
+        class_file = os.path.join(output_path, "utils", "profile" + template_info["ext"])
+        class_details = {"profiles": profile_details}
+        _write_templated_file(class_file, class_details, template_info["filename"])
+
+
+def resolve_headers(path: str, version: str):
     """Add all classes in __init__.py"""
 
     if match := re.search(r"(?P<num>\d+_\d+_\d+)", version):  # NOSONAR
@@ -123,9 +141,13 @@ def resolve_headers(dest: str, version: str):
     else:
         raise ValueError(f"Cannot parse {version} to extract a number.")
 
-    dest = Path(dest) / "resources"
+    src = Path(__file__).parent / "templates"
+    dest = Path(path) / "resources"
+    with open(src / "__init__.py", "r", encoding="utf-8") as template_file:
+        template_text = template_file.read()
     with open(dest / "__init__.py", "a", encoding="utf-8") as header_file:
-        header_file.write(f"CGMES_VERSION='{version_number}'\n")
+        header_file.write(template_text)
+        header_file.write(f'\nCGMES_VERSION = "{version_number}"\n')
 
         # # Under this, add all imports in init. Disabled becasue loading 600 unneeded classes is slow.
         # _all = ["CGMES_VERSION"]

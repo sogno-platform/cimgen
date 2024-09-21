@@ -4,8 +4,9 @@ from dataclasses import Field, fields
 from functools import cached_property
 from typing import Any, TypeAlias, TypedDict
 
-from pycgmes.utils.constants import NAMESPACES
 from pydantic.dataclasses import dataclass
+
+from pycgmes.utils.constants import NAMESPACES
 
 from ..utils.config import cgmes_resource_config
 from .profile import BaseProfile
@@ -108,7 +109,7 @@ class Base:
         with thus the parent class included in the attribute name.
         """
         # What will be returned, has the qualname as key...
-        qual_attrs: dict[str, "CgmesAttribute"] = {}
+        qual_attrs: dict[str, CgmesAttribute] = {}
         # ... but we check existence with the unqualified (short) name.
         seen_attrs = set()
 
@@ -160,6 +161,6 @@ class CgmesAttribute(TypedDict):
 
     # Actual value
     value: CgmesAttributeTypes
-    # The default will be None. Only custom attributes might have something different, given as metadata.
+    # Custom attributes might have something different, given as metadata.
     # See readme for more information.
-    namespace: str | None
+    namespace: str

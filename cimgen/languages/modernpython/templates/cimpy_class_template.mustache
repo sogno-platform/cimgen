@@ -1,14 +1,16 @@
 """
-Generated from the CGMES 3 files via cimgen: https://github.com/sogno-platform/cimgen
+Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cimgen
 """
 
 from functools import cached_property
 from typing import Optional
+
 from pydantic import Field
 from pydantic.dataclasses import dataclass
-from ..utils.profile import BaseProfile, Profile
 
+from ..utils.profile import BaseProfile, Profile
 from {{class_location}} import {{sub_class_of}}
+
 
 @dataclass
 class {{class_name}}({{sub_class_of}}):
@@ -21,20 +23,37 @@ class {{class_name}}({{sub_class_of}}):
     """
 
     {{#attributes}}
-    {{^isAssociationUsed}}# *Association not used*
+    {{#isAssociationUsed}}
+    {{label}}: {{#setType}}{{dataType}}{{/setType}} = Field(
+        {{#setDefault}}{{dataType}}{{/setDefault}},
+        json_schema_extra={
+            "in_profiles": [
+                {{#attr_origin}}
+                Profile.{{origin}},
+                {{/attr_origin}}
+            ]
+        },
+    )
+    {{/isAssociationUsed}}
+    {{^isAssociationUsed}}
+    # *Association not used*
     # Type {{dataType}} in CIM
-    # {{/isAssociationUsed}}{{label}} : {{#setType}}{{dataType}}{{/setType}} = Field({{#setDefault}}{{dataType}}{{/setDefault}}, json_schema_extra={"in_profiles":[{{#attr_origin}}Profile.{{origin}}, {{/attr_origin}}]}) {{^isAssociationUsed}}# noqa: E501{{/isAssociationUsed}}
+    # {{label}}: {{#setType}}{{dataType}}{{/setType}} = Field({{#setDefault}}{{dataType}}{{/setDefault}}, json_schema_extra={"in_profiles": [{{#attr_origin}}Profile.{{origin}}, {{/attr_origin}}]}) # noqa: E501
+    {{/isAssociationUsed}}
 
     {{/attributes}}
     {{^attributes}}
     # No attributes defined for this class.
+
     {{/attributes}}
-
-
     @cached_property
-    def possible_profiles(self)->set[BaseProfile]:
+    def possible_profiles(self) -> set[BaseProfile]:
         """
         A resource can be used by multiple profiles. This is the set of profiles
         where this element can be found.
         """
-        return { {{#class_origin}}Profile.{{origin}}, {{/class_origin}} }
+        return {
+            {{#class_origin}}
+            Profile.{{origin}},
+            {{/class_origin}}
+        }

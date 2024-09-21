@@ -351,7 +351,7 @@ def set_default(dataType):
     # datatype of the attribute. If no datatype is set and there is also no multiplicity entry for an attribute, the
     # default value is set to None. The multiplicity is set for all attributes, but the datatype is only set for basic
     # data types. If the data type entry for an attribute is missing, the attribute contains a reference and therefore
-    # the default value is either None or [] depending on the mutliplicity. See also write_python_files
+    # the default value is either None or [] depending on the multiplicity. See also write_python_files
     if dataType in ["M:1", "M:0..1", "M:1..1", "M:0..n", "M:1..n", ""] or "M:" in dataType:
         return "0"
     dataType = dataType.split("#")[1]
@@ -423,7 +423,7 @@ def _create_header_include_file(directory, header_include_filename, header, foot
         f.writelines(header)
 
 
-def resolve_headers(output_path):
+def resolve_headers(path: str, version: str):  # NOSONAR
     class_list_header = [
         "package cim4j;\n",
         "import java.util.Map;\n",
@@ -439,7 +439,7 @@ def resolve_headers(output_path):
     class_list_footer = ["    );\n", "}\n"]
 
     _create_header_include_file(
-        output_path,
+        path,
         "CIMClassMap.java",
         class_list_header,
         class_list_footer,
