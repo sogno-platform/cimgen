@@ -51,9 +51,9 @@ def run_template(output_path, class_details):
     for attr in class_details["attributes"]:
         if attribute_type(attr) == "primitive":
             class_details["primitives"].append(attr)
-    if class_details["is_a_float"]:
+    if class_details["is_a_float_class"]:
         templates = float_template_files
-    elif class_details["has_instances"]:
+    elif class_details["is_an_enum_class"]:
         templates = enum_template_files
     else:
         templates = template_files

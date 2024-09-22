@@ -3,25 +3,25 @@ import {{sub_class_of}} from "./{{sub_class_of}}.js"
 import common from "../../src/common.js"
 import CGMESProfile from "./CGMESProfile.js"
 
-{{#has_instances}}
+{{#is_an_enum_class}}
 const {{class_name}}Enum = {
-{{#instances}}
+        {{#enum_instances}}
         {{label}}:{{index}},
-{{/instances}}
+        {{/enum_instances}}
 }
 const possibleValues = [
         { "value": "--"},
-{{#instances}}
+        {{#enum_instances}}
         { "value": "{{about}}", "label": "{{label}}" },
-{{/instances}}
+        {{/enum_instances}}
 ]
-{{/has_instances}}
+{{/is_an_enum_class}}
 
 class {{class_name}} extends {{sub_class_of}} {
 
     static attributeHTML(object, cimmenu, classType="{{class_name}}") {
         let attributeEntries = {{sub_class_of}}.attributeHTML(object, cimmenu, classType);
-    {{#attributes}}
+        {{#attributes}}
         if ('cim:{{about}}' in object) {
             attributeEntries['filledEntries']['cim:{{about}}'] =
                 cimmenu.getAggregateComponentMenu(
@@ -42,7 +42,7 @@ class {{class_name}} extends {{sub_class_of}} {
                                                    'cim:{{about}}'
                                                  );
         }
-    {{/attributes}}
+        {{/attributes}}
         return attributeEntries;
     }
 
@@ -87,9 +87,9 @@ class {{class_name}} extends {{sub_class_of}} {
     {{{renderAttribute}}}
     static subClassList() {
         let subClasses = [
-    {{#sub_classes}}
+        {{#sub_classes}}
         "{{.}}",
-    {{/sub_classes}}
+        {{/sub_classes}}
         ];
         return subClasses;
     }

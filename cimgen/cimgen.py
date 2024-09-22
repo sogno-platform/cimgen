@@ -225,7 +225,7 @@ class CIMComponentDefinition:
         self.about = rdfsEntry.about()
         self.attribute_list = []
         self.comment = rdfsEntry.comment()
-        self.instance_list = []
+        self.enum_instance_list = []
         self.origin_list = []
         self.super = rdfsEntry.subClassOf()
         self.subclasses = []
@@ -236,15 +236,15 @@ class CIMComponentDefinition:
     def addAttribute(self, attribute):
         self.attribute_list.append(attribute)
 
-    def has_instances(self):
-        return len(self.instance_list) > 0
+    def is_an_enum_class(self):
+        return len(self.enum_instance_list) > 0
 
-    def instances(self):
-        return self.instance_list
+    def enum_instances(self):
+        return self.enum_instance_list
 
-    def addInstance(self, instance):
-        instance["index"] = len(self.instance_list)
-        self.instance_list.append(instance)
+    def addEnumInstance(self, instance):
+        instance["index"] = len(self.enum_instance_list)
+        self.enum_instance_list.append(instance)
 
     def addAttributes(self, attributes):
         for attribute in attributes:
@@ -273,7 +273,7 @@ class CIMComponentDefinition:
             return attr["label"] == "value" and attr["dataType"] == "#Float"
         return False
 
-    def is_a_float(self):
+    def is_a_float_class(self):
         if self.about == "Float":
             return True
         simple_float = False
@@ -422,7 +422,7 @@ def _parse_rdf(input_dic, version, lang_pack):
     profile_name = ""
     profile_uri_list = []
     attributes = []
-    instances = []
+    enum_instances = []
 
     global cim_namespace
     if not cim_namespace:
@@ -442,7 +442,7 @@ def _parse_rdf(input_dic, version, lang_pack):
         if "property" in rdfs_entry_types:
             attributes.append(object_dic)
         if "rest_non_class_category" in rdfs_entry_types:
-            instances.append(object_dic)
+            enum_instances.append(object_dic)
         if "profile_name_v2_4" in rdfs_entry_types:
             profile_name = rdfsEntry.about()
         if "profile_name_v3" in rdfs_entry_types:
@@ -467,13 +467,13 @@ def _parse_rdf(input_dic, version, lang_pack):
         else:
             logger.info("Class {} for attribute {} not found.".format(clarse, attribute))
 
-    # Add instances to corresponding class
-    for instance in instances:
+    # Add enum instances to corresponding class
+    for instance in enum_instances:
         clarse = RDFSEntry._get_rid_of_hash(instance["type"])
         if clarse and clarse in classes_map:
-            classes_map[clarse].addInstance(instance)
+            classes_map[clarse].addEnumInstance(instance)
         else:
-            logger.info("Class {} for instance {} not found.".format(clarse, instance))
+            logger.info("Class {} for enum instance {} not found.".format(clarse, instance))
 
     return {short_profile_name: classes_map}
 
@@ -491,9 +491,9 @@ def _write_python_files(elem_dict, lang_pack, output_path, version):
 
     # Iterate over Classes
     for class_definition in elem_dict:
-        if elem_dict[class_definition].is_a_float():
+        if elem_dict[class_definition].is_a_float_class():
             float_classes[class_definition] = True
-        if elem_dict[class_definition].has_instances():
+        if elem_dict[class_definition].is_an_enum_class():
             enum_classes[class_definition] = True
 
     lang_pack.set_float_classes(float_classes)
@@ -508,9 +508,9 @@ def _write_python_files(elem_dict, lang_pack, output_path, version):
             "class_location": lang_pack.get_class_location(class_name, elem_dict, version),
             "class_name": class_name,
             "class_origin": elem_dict[class_name].origins(),
-            "instances": elem_dict[class_name].instances(),
-            "has_instances": elem_dict[class_name].has_instances(),
-            "is_a_float": elem_dict[class_name].is_a_float(),
+            "enum_instances": elem_dict[class_name].enum_instances(),
+            "is_an_enum_class": elem_dict[class_name].is_an_enum_class(),
+            "is_a_float_class": elem_dict[class_name].is_a_float_class(),
             "langPack": lang_pack,
             "sub_class_of": elem_dict[class_name].superClass(),
             "sub_classes": elem_dict[class_name].subClasses(),
