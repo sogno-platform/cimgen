@@ -112,7 +112,7 @@ def label(text, render):
 #  - attributes with multiplicity of 1..n or 0..n will be std::lists
 #    of pointers to classes read from a different part of the file
 def attribute_type(attribute):
-    class_name = attribute["class_name"]
+    class_name = attribute["attribute_class"]
     if attribute["multiplicity"] == "M:0..n" or attribute["multiplicity"] == "M:1..n":
         return "list"
     if (
@@ -237,7 +237,7 @@ def create_class_assign(text, render):
     attribute_txt = render(text)
     attribute_json = eval(attribute_txt)
     assign = ""
-    attribute_class = attribute_json["class_name"]
+    attribute_class = attribute_json["attribute_class"]
     if attribute_type(attribute_json) == "primitive":
         return ""
     if attribute_json["multiplicity"] == "M:0..n" or attribute_json["multiplicity"] == "M:1..n":
@@ -301,7 +301,7 @@ def create_assign(text, render):
     attribute_txt = render(text)
     attribute_json = eval(attribute_txt)
     assign = ""
-    _class = attribute_json["class_name"]
+    _class = attribute_json["attribute_class"]
     if not attribute_type(attribute_json) == "primitive":
         return ""
     label_without_keyword = attribute_json["label"]
@@ -366,7 +366,7 @@ def attribute_decl(text, render):
 
 def _attribute_decl(attribute):
     _type = attribute_type(attribute)
-    _class = attribute["class_name"]
+    _class = attribute["attribute_class"]
     if _type == "primitive":
         return "CIMPP::" + _class
     if _type == "list":
@@ -385,7 +385,7 @@ def _create_attribute_includes(text, render):
         attributes = json.loads(jsonStringNoHtmlEsc)
         for attribute in attributes:
             _type = attribute_type(attribute)
-            class_name = attribute["class_name"]
+            class_name = attribute["attribute_class"]
             if class_name != "" and class_name not in unique:
                 unique[class_name] = _type
     for clarse in unique:
@@ -405,7 +405,7 @@ def _create_attribute_class_declarations(text, render):
         attributes = json.loads(jsonStringNoHtmlEsc)
         for attribute in attributes:
             _type = attribute_type(attribute)
-            class_name = attribute["class_name"]
+            class_name = attribute["attribute_class"]
             if class_name != "" and class_name not in unique:
                 unique[class_name] = _type
     for clarse in unique:

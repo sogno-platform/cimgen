@@ -525,7 +525,7 @@ def _write_python_files(elem_dict, lang_pack, output_path, version):
             attribute["is_enum_attribute"] = _get_bool_string(attribute_type == "enum")
             attribute["is_list_attribute"] = _get_bool_string(attribute_type == "list")
             attribute["is_primitive_attribute"] = _get_bool_string(attribute_type == "primitive")
-            attribute["class_name"] = attribute_class
+            attribute["attribute_class"] = attribute_class
 
         class_details["attributes"].sort(key=lambda d: d["label"])
         _write_files(class_details, output_path, version)

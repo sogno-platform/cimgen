@@ -132,13 +132,6 @@ def selectPrimitiveRenderFunction(primitive):
 # This is the function that runs the template.
 def run_template(output_path, class_details):
 
-    class_details["is_not_terminal"] = class_details["class_name"] != "Terminal"
-    for attr in class_details["attributes"]:
-        if "range" in attr:
-            attr["attributeClass"] = _get_rid_of_hash(attr["range"])
-        elif "dataType" in attr:
-            attr["attributeClass"] = _get_rid_of_hash(attr["dataType"])
-
     for index, attribute in enumerate(class_details["attributes"]):
         if not attribute["is_used"]:
             del class_details["attributes"][index]
@@ -198,16 +191,6 @@ def attribute_type(class_details):
     if is_an_enum_class(class_name):
         return "enum"
     return "class"
-
-
-# This function returns the name
-def _get_rid_of_hash(name):
-    tokens = name.split("#")
-    if len(tokens) == 1:
-        return tokens[0]
-    if len(tokens) > 1:
-        return tokens[1]
-    return name
 
 
 def resolve_headers(path: str, version: str):  # NOSONAR
