@@ -50,7 +50,7 @@ class RDFSEntry:
 
     def about(self):
         if "$rdf:about" in self.jsonDefinition:
-            return RDFSEntry._get_rid_of_hash(RDFSEntry._get_about_or_resource(self.jsonDefinition["$rdf:about"]))
+            return _get_rid_of_hash(RDFSEntry._get_about_or_resource(self.jsonDefinition["$rdf:about"]))
         else:
             return None
 
@@ -91,7 +91,7 @@ class RDFSEntry:
 
     def domain(self):
         if "rdfs:domain" in self.jsonDefinition:
-            return RDFSEntry._get_rid_of_hash(RDFSEntry._extract_string(self.jsonDefinition["rdfs:domain"]))
+            return _get_rid_of_hash(RDFSEntry._extract_string(self.jsonDefinition["rdfs:domain"]))
         else:
             return None
 
@@ -115,7 +115,7 @@ class RDFSEntry:
 
     def inverseRole(self):
         if "cims:inverseRoleName" in self.jsonDefinition:
-            return RDFSEntry._get_rid_of_hash(RDFSEntry._extract_string(self.jsonDefinition["cims:inverseRoleName"]))
+            return _get_rid_of_hash(RDFSEntry._extract_string(self.jsonDefinition["cims:inverseRoleName"]))
         else:
             return None
 
@@ -135,7 +135,7 @@ class RDFSEntry:
 
     def multiplicity(self):
         if "cims:multiplicity" in self.jsonDefinition:
-            return RDFSEntry._get_rid_of_hash(RDFSEntry._extract_string(self.jsonDefinition["cims:multiplicity"]))
+            return _get_rid_of_hash(RDFSEntry._extract_string(self.jsonDefinition["cims:multiplicity"]))
         else:
             return None
 
@@ -165,7 +165,7 @@ class RDFSEntry:
 
     def subClassOf(self):
         if "rdfs:subClassOf" in self.jsonDefinition:
-            return RDFSEntry._get_rid_of_hash(RDFSEntry._extract_string(self.jsonDefinition["rdfs:subClassOf"]))
+            return _get_rid_of_hash(RDFSEntry._extract_string(self.jsonDefinition["rdfs:subClassOf"]))
         else:
             return None
 
@@ -208,16 +208,6 @@ class RDFSEntry:
         elif "$rdfs:Literal" in object_dic:
             return object_dic["$rdfs:Literal"]
         return object_dic
-
-    # Some names are encoded as #name or http://some-url#name
-    # This function returns the name
-    def _get_rid_of_hash(name):
-        tokens = name.split("#")
-        if len(tokens) == 1:
-            return tokens[0]
-        if len(tokens) > 1:
-            return tokens[1]
-        return name
 
 
 class CIMComponentDefinition:
@@ -469,7 +459,7 @@ def _parse_rdf(input_dic, version, lang_pack):
 
     # Add enum instances to corresponding class
     for instance in enum_instances:
-        clarse = RDFSEntry._get_rid_of_hash(instance["type"])
+        clarse = _get_rid_of_hash(instance["type"])
         if clarse and clarse in classes_map:
             classes_map[clarse].addEnumInstance(instance)
         else:
@@ -537,24 +527,28 @@ def _write_python_files(elem_dict, lang_pack, output_path, version):
                     initial_indent="",
                     subsequent_indent=" " * 6,
                 )
+            attribute_class = _get_attribute_class(attribute)
+            is_an_enum_class = attribute_class in elem_dict and elem_dict[attribute_class].is_an_enum_class()
+            attribute_type = _get_attribute_type(attribute, is_an_enum_class)
+            attribute["is_class_attribute"] = _get_bool_string(attribute_type == "class")
+            attribute["is_enum_attribute"] = _get_bool_string(attribute_type == "enum")
+            attribute["is_list_attribute"] = _get_bool_string(attribute_type == "list")
+            attribute["is_primitive_attribute"] = _get_bool_string(attribute_type == "primitive")
+            attribute["class_name"] = attribute_class
+
         class_details["attributes"].sort(key=lambda d: d["label"])
         _write_files(class_details, output_path, version)
 
 
-def get_rid_of_hash(name):
+# Some names are encoded as #name or http://some-url#name
+# This function returns the name
+def _get_rid_of_hash(name):
     tokens = name.split("#")
     if len(tokens) == 1:
         return tokens[0]
     if len(tokens) > 1:
         return tokens[1]
     return name
-
-
-def format_class(_range, _dataType):
-    if _range == "":
-        return get_rid_of_hash(_dataType)
-    else:
-        return get_rid_of_hash(_range)
 
 
 def _write_files(class_details, output_path, version):
@@ -575,15 +569,6 @@ def _write_files(class_details, output_path, version):
             and "multiplicity" in class_details["attributes"][i].keys()
         ):
             class_details["attributes"][i]["dataType"] = class_details["attributes"][i]["multiplicity"]
-
-    for attr in class_details["attributes"]:
-        _range = ""
-        _dataType = ""
-        if "range" in attr:
-            _range = attr["range"]
-        if "dataType" in attr:
-            _dataType = attr["dataType"]
-        attr["class_name"] = format_class(_range, _dataType)
 
     class_details["langPack"].run_template(output_path, class_details)
 
@@ -859,3 +844,55 @@ def _get_recommended_class_profiles(elem_dict):
         else:
             recommended_class_profiles[class_name] = _get_sorted_profile_keys(class_profiles)[0]
     return recommended_class_profiles
+
+
+def _get_attribute_class(attribute: dict) -> str:
+    """Get the class name of an attribute.
+
+    :param attribute: Dictionary with information about an attribute of a class.
+    :return:          Class name of the attribute.
+    """
+    name = attribute.get("range") or attribute.get("dataType")
+    return _get_rid_of_hash(name)
+
+
+def _get_attribute_type(attribute: dict, is_an_enum_class: bool) -> str:
+    """Get the type of an attribute: "class", "enum", "list", or "primitive".
+
+    :param attribute:        Dictionary with information about an attribute of a class.
+    :param is_an_enum_class: Is this attribute an enumation?
+    :return:                 Type of the attribute.
+    """
+    so_far_not_primitive = _get_attribute_class(attribute) in (
+        "Date",
+        "DateTime",
+        "MonthDay",
+        "Status",
+        "StreetAddress",
+        "StreetDetail",
+        "TownDetail",
+    )
+    attribute_type = "class"
+    if "dataType" in attribute and not so_far_not_primitive:
+        attribute_type = "primitive"
+    elif is_an_enum_class:
+        attribute_type = "enum"
+    elif attribute.get("multiplicity") in ("M:0..n", "M:1..n"):
+        attribute_type = "list"
+    return attribute_type
+
+
+def _get_bool_string(bool_value: bool) -> str:
+    """Convert boolean value into a string which is usable in both Python and Json.
+
+    Valid boolean values in Python are capitalized True/False.
+    But these values are not valid in Json.
+    Strings with value "true" and "" are recognized as True/False in both languages.
+
+    :param bool_value: Valid boolean value.
+    :return:           String "true" for True and "" for False.
+    """
+    if bool_value:
+        return "true"
+    else:
+        return ""
