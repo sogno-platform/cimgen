@@ -25,6 +25,21 @@ class BaseProfile(str, Enum):
         """Return the list of uris of the profile."""
         raise NotImplementedError("Method has to be implemented in subclass.")
 
+    def __lt__(self, other):
+        if not isinstance(other, self.__class__):
+            return str(self.__class__) < str(other.__class__)
+        order = list(self.__class__)
+        return order.index(self) < order.index(other)
+
+    def __gt__(self, other):
+        return other < self
+
+    def __le__(self, other):
+        return self == other or self < other
+
+    def __ge__(self, other):
+        return self == other or self > other
+
 
 class Profile(BaseProfile):
     """
