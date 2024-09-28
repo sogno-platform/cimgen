@@ -23,7 +23,6 @@ class {{class_name}}({{sub_class_of}}):
     """
 
     {{#attributes}}
-    {{#is_used}}
     {{label}}: {{#setType}}{{dataType}}{{/setType}} = Field(
         {{#setDefault}}{{dataType}}{{/setDefault}},
         json_schema_extra={
@@ -31,15 +30,14 @@ class {{class_name}}({{sub_class_of}}):
                 {{#attr_origin}}
                 Profile.{{origin}},
                 {{/attr_origin}}
-            ]
+            ],
+            "is_used": {{#is_used}}True{{/is_used}}{{^is_used}}False{{/is_used}},
+            "is_class_attribute": {{#is_class_attribute}}True{{/is_class_attribute}}{{^is_class_attribute}}False{{/is_class_attribute}},
+            "is_enum_attribute": {{#is_enum_attribute}}True{{/is_enum_attribute}}{{^is_enum_attribute}}False{{/is_enum_attribute}},
+            "is_list_attribute": {{#is_list_attribute}}True{{/is_list_attribute}}{{^is_list_attribute}}False{{/is_list_attribute}},
+            "is_primitive_attribute": {{#is_primitive_attribute}}True{{/is_primitive_attribute}}{{^is_primitive_attribute}}False{{/is_primitive_attribute}},
         },
     )
-    {{/is_used}}
-    {{^is_used}}
-    # *Association not used*
-    # Type {{dataType}} in CIM
-    # {{label}}: {{#setType}}{{dataType}}{{/setType}} = Field({{#setDefault}}{{dataType}}{{/setDefault}}, json_schema_extra={"in_profiles": [{{#attr_origin}}Profile.{{origin}}, {{/attr_origin}}]}) # noqa: E501
-    {{/is_used}}
 
     {{/attributes}}
     {{^attributes}}
