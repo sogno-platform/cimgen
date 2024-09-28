@@ -4,13 +4,13 @@ import sys
 from importlib.resources import files
 
 
-def location(version):
-    return "BaseClass.hpp"
+def location(version):  # NOSONAR
+    return ""
 
 
 # Setup called only once: make output directory, create base class, create profile class, etc.
 # This function makes sure we have somewhere to write the classes.
-# cgmes_profile_details contains index, names und uris for each profile.
+# cgmes_profile_details contains index, names and uris for each profile.
 # We use that to create the header data for the profiles.
 def setup(output_path: str, cgmes_profile_details: list, cim_namespace: str):
     if not os.path.exists(output_path):
@@ -32,38 +32,8 @@ profile_template_files = [{"filename": "handlebars_cgmesProfile_template.mustach
 partials = {}
 
 
-# We need to keep track of which class types are secretly float
-# primitives. We will use a different template to create the class
-# definitions, and we will read them from the file directly into
-# an attribute instead of creating a class.
-float_classes = {}
-
-
-def set_float_classes(new_float_classes):
-    for new_class in new_float_classes:
-        float_classes[new_class] = new_float_classes[new_class]
-
-
-def is_a_float_class(name):
-    if name in float_classes:
-        return float_classes[name]
-
-
-enum_classes = {}
-
-
-def set_enum_classes(new_enum_classes):
-    for new_class in new_enum_classes:
-        enum_classes[new_class] = new_enum_classes[new_class]
-
-
-def is_an_enum_class(name):
-    if name in enum_classes:
-        return enum_classes[name]
-
-
-def get_class_location(class_name, class_map, version):
-    pass
+def get_class_location(class_name, class_map, version):  # NOSONAR
+    return ""
 
 
 aggregateRenderer = {
@@ -103,27 +73,28 @@ aggregateRenderer = {
 }
 
 
-def selectPrimitiveRenderFunction(primitive):
+def selectPrimitiveRenderFunction(class_details):
+    class_name = class_details["class_name"]
     render = ""
-    if is_a_float_class(primitive):
+    if class_details["is_a_float_class"]:
         render = aggregateRenderer["renderFloat"]
-    elif primitive == "String":
+    elif class_name == "String":
         render = aggregateRenderer["renderString"]
-    elif primitive == "Boolean":
+    elif class_name == "Boolean":
         render = aggregateRenderer["renderBoolean"]
-    elif primitive == "Date":
+    elif class_name == "Date":
         # TODO: Implementation Required!
         render = aggregateRenderer["renderString"]
-    elif primitive == "DateTime":
+    elif class_name == "DateTime":
         # TODO: Implementation Required!
         render = aggregateRenderer["renderString"]
-    elif primitive == "Decimal":
+    elif class_name == "Decimal":
         # TODO: Implementation Required!
         render = aggregateRenderer["renderString"]
-    elif primitive == "Integer":
+    elif class_name == "Integer":
         # TODO: Implementation Required!
         render = aggregateRenderer["renderString"]
-    elif primitive == "MonthDay":
+    elif class_name == "MonthDay":
         # TODO: Implementation Required!
         render = aggregateRenderer["renderString"]
     return render
@@ -137,11 +108,11 @@ def run_template(output_path, class_details):
             del class_details["attributes"][index]
 
     renderAttribute = ""
-    attrType = attribute_type(class_details)
-    if attrType == "enum":
+    class_type = _get_class_type(class_details)
+    if class_type == "enum":
         renderAttribute = aggregateRenderer["renderInstance"]
-    elif attrType == "primitive":
-        renderAttribute = selectPrimitiveRenderFunction(class_details["class_name"])
+    elif class_type == "primitive":
+        renderAttribute = selectPrimitiveRenderFunction(class_details)
     else:
         renderAttribute = aggregateRenderer["renderClass"]
     if renderAttribute == "":
@@ -184,11 +155,11 @@ def _create_cgmes_profile(output_path: str, profile_details: list, cim_namespace
         _write_templated_file(class_file, class_details, template_info["filename"])
 
 
-def attribute_type(class_details):
+def _get_class_type(class_details):
     class_name = class_details["class_name"]
-    if is_a_float_class(class_name) or class_name == "String" or class_name == "Boolean" or class_name == "Integer":
+    if class_details["is_a_float_class"] or class_name in ("String", "Boolean", "Integer"):
         return "primitive"
-    if is_an_enum_class(class_name):
+    if class_details["is_an_enum_class"]:
         return "enum"
     return "class"
 

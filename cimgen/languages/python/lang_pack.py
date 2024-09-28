@@ -73,14 +73,6 @@ def _set_default(text, render):
         return "0.0"
 
 
-def set_enum_classes(new_enum_classes):
-    return
-
-
-def set_float_classes(new_float_classes):
-    return
-
-
 def run_template(output_path, class_details):
     for template_info in template_files:
         class_file = os.path.join(output_path, class_details["class_name"] + template_info["ext"])

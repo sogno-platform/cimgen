@@ -4,8 +4,8 @@ import json
 from importlib.resources import files
 
 
-def location(version):
-    return "BaseClass.hpp"
+def location(version):  # NOSONAR
+    return ""
 
 
 # Setup called only once: make output directory, create base class, create profile class, etc.
@@ -13,7 +13,7 @@ def location(version):
 # cgmes_profile_details contains index, names and uris for each profile.
 # We don't use that here because we aren't exporting into
 # separate profiles.
-def setup(output_path: str, cgmes_profile_details: list, cim_namespace: str):
+def setup(output_path: str, cgmes_profile_details: list, cim_namespace: str):  # NOSONAR
     if not os.path.exists(output_path):
         os.makedirs(output_path)
     else:
@@ -41,18 +41,15 @@ enum_template_files = [
 ]
 
 
-def get_class_location(class_name, class_map, version):
-    pass
+def get_class_location(class_name, class_map, version):  # NOSONAR
+    return ""
 
 
 partials = {
     "attribute": "{{#langPack.attribute_decl}}{{.}}{{/langPack.attribute_decl}}",
     "label": "{{#langPack.label}}{{label}}{{/langPack.label}}",
-    "create_init_list": "{{#langPack.null_init_list}}{{attributes}}{{/langPack.null_init_list}}",
-    "create_construct_list": "{{#langPack.create_construct_list}}{{attributes}}{{/langPack.create_construct_list}}",
     "insert_assign": "{{#langPack.insert_assign_fn}}{{.}}{{/langPack.insert_assign_fn}}",
     "insert_class_assign": "{{#langPack.insert_class_assign_fn}}{{.}}{{/langPack.insert_class_assign_fn}}",
-    "read_istream": "{{#langPack.create_istream_op}}{{class_name}} {{label}}{{/langPack.create_istream_op}}",
 }
 
 
@@ -104,59 +101,6 @@ def label(text, render):
         return result
 
 
-# This function determines how the attribute code will be implemented.
-#  - attributes which are primitives will be read from the file and
-#    stored in the class object we are reading at the time
-#  - attributes which are classes will be stored as pointers to the
-#    actual class, which will be read from another part of the file.
-#  - attributes with multiplicity of 1..n or 0..n will be std::lists
-#    of pointers to classes read from a different part of the file
-def attribute_type(attribute):
-    class_name = attribute["attribute_class"]
-    if attribute["multiplicity"] == "M:0..n" or attribute["multiplicity"] == "M:1..n":
-        return "list"
-    if (
-        is_a_float_class(class_name)
-        or class_name == "String"
-        or class_name == "Boolean"
-        or class_name == "Integer"
-        or is_an_enum_class(class_name)
-    ):
-        return "primitive"
-    else:
-        return "class"
-
-
-# We need to keep track of which class types are secretly float
-# primitives. We will use a different template to create the class
-# definitions, and we will read them from the file directly into
-# an attribute instead of creating a class.
-float_classes = {}
-
-
-def set_float_classes(new_float_classes):
-    for new_class in new_float_classes:
-        float_classes[new_class] = new_float_classes[new_class]
-
-
-def is_a_float_class(name):
-    if name in float_classes:
-        return float_classes[name]
-
-
-enum_classes = {}
-
-
-def set_enum_classes(new_enum_classes):
-    for new_class in new_enum_classes:
-        enum_classes[new_class] = new_enum_classes[new_class]
-
-
-def is_an_enum_class(name):
-    if name in enum_classes:
-        return enum_classes[name]
-
-
 # These insert_ functions are used to generate the entries in the dynamic_switch
 # maps, for use in assignments.cpp and Task.cpp
 # TODO: implement this as one function, determine in template if it should be called.
@@ -164,7 +108,7 @@ def is_an_enum_class(name):
 def insert_assign_fn(text, render):
     attribute_txt = render(text)
     attribute_json = eval(attribute_txt)
-    if not attribute_type(attribute_json) == "primitive":
+    if not (attribute_json["is_primitive_attribute"] or attribute_json["is_enum_attribute"]):
         return ""
     label = attribute_json["label"]
     class_name = attribute_json["domain"]
@@ -184,7 +128,7 @@ def insert_assign_fn(text, render):
 def insert_class_assign_fn(text, render):
     attribute_txt = render(text)
     attribute_json = eval(attribute_txt)
-    if attribute_type(attribute_json) == "primitive":
+    if attribute_json["is_primitive_attribute"] or attribute_json["is_enum_attribute"]:
         return ""
     label = attribute_json["label"]
     class_name = attribute_json["domain"]
@@ -201,15 +145,6 @@ def insert_class_assign_fn(text, render):
     )
 
 
-def get_dataType_and_range(attribute):
-    _range = _dataType = ""
-    if "range" in attribute:
-        _range = attribute["range"]
-    if "dataType" in attribute:
-        _dataType = attribute["dataType"]
-    return (_range, _dataType)
-
-
 def create_nullptr_assigns(text, render):
     attributes_txt = render(text)
     if attributes_txt.strip() == "":
@@ -218,11 +153,7 @@ def create_nullptr_assigns(text, render):
         attributes_json = eval(attributes_txt)
         nullptr_init_string = ": "
         for attribute in attributes_json:
-            if attribute_type(attribute) == "primitive":
-                continue
-            if attribute["multiplicity"] == "M:0..n" or attribute["multiplicity"] == "M:1..n":
-                continue
-            else:
+            if attribute["is_class_attribute"]:
                 nullptr_init_string += "LABEL(nullptr), ".replace("LABEL", attribute["label"])
 
     if len(nullptr_init_string) > 2:
@@ -238,9 +169,9 @@ def create_class_assign(text, render):
     attribute_json = eval(attribute_txt)
     assign = ""
     attribute_class = attribute_json["attribute_class"]
-    if attribute_type(attribute_json) == "primitive":
+    if attribute_json["is_primitive_attribute"] or attribute_json["is_enum_attribute"]:
         return ""
-    if attribute_json["multiplicity"] == "M:0..n" or attribute_json["multiplicity"] == "M:1..n":
+    if attribute_json["is_list_attribute"]:
         assign = (
             """
 bool assign_OBJECT_CLASS_LABEL(BaseClass* BaseClass_ptr1, BaseClass* BaseClass_ptr2) {
@@ -302,7 +233,7 @@ def create_assign(text, render):
     attribute_json = eval(attribute_txt)
     assign = ""
     _class = attribute_json["attribute_class"]
-    if not attribute_type(attribute_json) == "primitive":
+    if not (attribute_json["is_primitive_attribute"] or attribute_json["is_enum_attribute"]):
         return ""
     label_without_keyword = attribute_json["label"]
     if label_without_keyword == "switch":
@@ -347,17 +278,6 @@ bool assign_CLASS_LABEL(std::stringstream &buffer, BaseClass* BaseClass_ptr1) {
     return assign
 
 
-# Some names are encoded as #name or http://some-url#name
-# This function returns the name
-def _get_rid_of_hash(name):
-    tokens = name.split("#")
-    if len(tokens) == 1:
-        return tokens[0]
-    if len(tokens) > 1:
-        return tokens[1]
-    return name
-
-
 def attribute_decl(text, render):
     attribute_txt = render(text)
     attribute_json = eval(attribute_txt)
@@ -365,11 +285,10 @@ def attribute_decl(text, render):
 
 
 def _attribute_decl(attribute):
-    _type = attribute_type(attribute)
     _class = attribute["attribute_class"]
-    if _type == "primitive":
+    if attribute["is_primitive_attribute"] or attribute["is_enum_attribute"]:
         return "CIMPP::" + _class
-    if _type == "list":
+    if attribute["is_list_attribute"]:
         return "std::list<CIMPP::" + _class + "*>"
     else:
         return "CIMPP::" + _class + "*"
@@ -384,14 +303,10 @@ def _create_attribute_includes(text, render):
     if jsonStringNoHtmlEsc is not None and jsonStringNoHtmlEsc != "":
         attributes = json.loads(jsonStringNoHtmlEsc)
         for attribute in attributes:
-            _type = attribute_type(attribute)
-            class_name = attribute["attribute_class"]
-            if class_name != "" and class_name not in unique:
-                unique[class_name] = _type
+            if attribute["is_primitive_attribute"] or attribute["is_enum_attribute"]:
+                unique[attribute["attribute_class"]] = True
     for clarse in unique:
-        if unique[clarse] == "primitive":
-            include_string += '\n#include "' + clarse + '.hpp"'
-
+        include_string += '\n#include "' + clarse + '.hpp"'
     return include_string
 
 
@@ -404,14 +319,10 @@ def _create_attribute_class_declarations(text, render):
     if jsonStringNoHtmlEsc is not None and jsonStringNoHtmlEsc != "":
         attributes = json.loads(jsonStringNoHtmlEsc)
         for attribute in attributes:
-            _type = attribute_type(attribute)
-            class_name = attribute["attribute_class"]
-            if class_name != "" and class_name not in unique:
-                unique[class_name] = _type
+            if attribute["is_class_attribute"] or attribute["is_list_attribute"]:
+                unique[attribute["attribute_class"]] = True
     for clarse in unique:
-        if unique[clarse] == "class" or unique[clarse] == "list":
-            include_string += "\nclass " + clarse + ";"
-
+        include_string += "\nclass " + clarse + ";"
     return include_string
 
 

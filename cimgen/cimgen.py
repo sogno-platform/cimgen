@@ -467,19 +467,6 @@ def _write_python_files(elem_dict, lang_pack, output_path, version):
     # Setup called only once: make output directory, create base class, create profile class, etc.
     lang_pack.setup(output_path, _get_profile_details(package_listed_by_short_name), cim_namespace)
 
-    float_classes = {}
-    enum_classes = {}
-
-    # Iterate over Classes
-    for class_definition in elem_dict:
-        if elem_dict[class_definition].is_a_float_class():
-            float_classes[class_definition] = True
-        if elem_dict[class_definition].is_an_enum_class():
-            enum_classes[class_definition] = True
-
-    lang_pack.set_float_classes(float_classes)
-    lang_pack.set_enum_classes(enum_classes)
-
     recommended_class_profiles = _get_recommended_class_profiles(elem_dict)
 
     for class_name in elem_dict.keys():

@@ -28,7 +28,7 @@ def setup(output_path: str, cgmes_profile_details: list, cim_namespace: str):
     _create_cgmes_profile(output_path, cgmes_profile_details)
 
 
-def location(version):
+def location(version):  # NOSONAR
     return "..utils.base"
 
 
@@ -40,7 +40,7 @@ constants_template_files = [{"filename": "cimpy_constants_template.mustache", "e
 profile_template_files = [{"filename": "cimpy_cgmesProfile_template.mustache", "ext": ".py"}]
 
 
-def get_class_location(class_name, class_map, version):
+def get_class_location(class_name, class_map, version):  # NOSONAR
     return f".{class_map[class_name].superClass()}"
 
 
@@ -79,14 +79,6 @@ def _get_type_and_default(text, renderer) -> tuple[str, str]:
     else:
         # everything else should be a float
         return ("float", "default=0.0")
-
-
-def set_enum_classes(new_enum_classes):
-    return
-
-
-def set_float_classes(new_float_classes):
-    return
 
 
 def run_template(output_path, class_details):
