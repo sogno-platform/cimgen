@@ -42,10 +42,7 @@ class RDFSEntry:
             jsonObject["subClassOf"] = self.subClassOf()
         if self.inverseRole() is not None:
             jsonObject["inverseRole"] = self.inverseRole()
-        if self.associationUsed() is not None:
-            jsonObject["associationUsed"] = self.associationUsed()
-        if "modernpython" in lang_pack.__name__:
-            jsonObject["isAssociationUsed"] = self.isAssociationUsed()
+        jsonObject["is_used"] = _get_bool_string(self.is_used())
         return jsonObject
 
     def about(self):
@@ -54,15 +51,9 @@ class RDFSEntry:
         else:
             return None
 
-    def associationUsed(self):
-        if "cims:AssociationUsed" in self.jsonDefinition:
-            return RDFSEntry._extract_string(self.jsonDefinition["cims:AssociationUsed"])
-        else:
-            return None
-
     # Capitalized True/False is valid in python but not in json.
     # Do not use this function in combination with json.load()
-    def isAssociationUsed(self) -> bool:
+    def is_used(self) -> bool:
         if "cims:AssociationUsed" in self.jsonDefinition:
             return "yes" == RDFSEntry._extract_string(self.jsonDefinition["cims:AssociationUsed"]).lower()
         else:

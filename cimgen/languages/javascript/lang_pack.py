@@ -140,7 +140,7 @@ def run_template(output_path, class_details):
             attr["attributeClass"] = _get_rid_of_hash(attr["dataType"])
 
     for index, attribute in enumerate(class_details["attributes"]):
-        if is_an_unused_attribute(attribute):
+        if not attribute["is_used"]:
             del class_details["attributes"][index]
 
     renderAttribute = ""
@@ -189,15 +189,6 @@ def _create_cgmes_profile(output_path: str, profile_details: list, cim_namespace
             "cim_namespace": cim_namespace,
         }
         _write_templated_file(class_file, class_details, template_info["filename"])
-
-
-def is_an_unused_attribute(attr_details, debug=False):
-    is_unused = (
-        "inverseRole" in attr_details and "associationUsed" in attr_details and attr_details["associationUsed"] == "No"
-    )
-    if debug and is_unused:
-        print(attr_details["about"], " is_unused: ", is_unused)
-    return is_unused
 
 
 def attribute_type(class_details):

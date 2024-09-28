@@ -23,7 +23,7 @@ class {{class_name}}({{sub_class_of}}):
     """
 
     {{#attributes}}
-    {{#isAssociationUsed}}
+    {{#is_used}}
     {{label}}: {{#setType}}{{dataType}}{{/setType}} = Field(
         {{#setDefault}}{{dataType}}{{/setDefault}},
         json_schema_extra={
@@ -34,12 +34,12 @@ class {{class_name}}({{sub_class_of}}):
             ]
         },
     )
-    {{/isAssociationUsed}}
-    {{^isAssociationUsed}}
+    {{/is_used}}
+    {{^is_used}}
     # *Association not used*
     # Type {{dataType}} in CIM
     # {{label}}: {{#setType}}{{dataType}}{{/setType}} = Field({{#setDefault}}{{dataType}}{{/setDefault}}, json_schema_extra={"in_profiles": [{{#attr_origin}}Profile.{{origin}}, {{/attr_origin}}]}) # noqa: E501
-    {{/isAssociationUsed}}
+    {{/is_used}}
 
     {{/attributes}}
     {{^attributes}}

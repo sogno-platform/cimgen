@@ -257,11 +257,7 @@ bool assign_OBJECT_CLASS_LABEL(BaseClass* BaseClass_ptr1, BaseClass* BaseClass_p
             .replace("ATTRIBUTE_CLASS", attribute_class)
             .replace("LABEL", attribute_json["label"])
         )
-    elif (
-        "inverseRole" in attribute_json
-        and "associationUsed" in attribute_json
-        and attribute_json["associationUsed"] != "No"
-    ):
+    elif "inverseRole" in attribute_json and attribute_json["is_used"]:
         inverse = attribute_json["inverseRole"].split(".")
         assign = (
             """

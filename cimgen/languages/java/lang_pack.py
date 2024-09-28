@@ -199,11 +199,7 @@ def create_class_assign(text, render):
             .replace("ATTRIBUTE_CLASS", attribute_class)
             .replace("LABEL", attribute_json["label"])
         )
-    elif (
-        "inverseRole" in attribute_json
-        and "associationUsed" in attribute_json
-        and attribute_json["associationUsed"] != "No"
-    ):
+    elif "inverseRole" in attribute_json and attribute_json["is_used"]:
         inverse = attribute_json["inverseRole"].split(".")
         assign = (
             """
