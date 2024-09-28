@@ -96,6 +96,7 @@ class Base:
                 or (profile in f.default.json_schema_extra["in_profiles"])  # pyright: ignore[reportGeneralTypeIssues]
             )
             if f.name != "mRID"
+            if f.default.json_schema_extra["is_used"]
         }
 
     def cgmes_attributes_in_profile(self, profile: BaseProfile | None) -> dict[str, "CgmesAttribute"]:
