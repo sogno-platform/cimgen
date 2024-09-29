@@ -10,17 +10,19 @@ import chevron
 logger = logging.getLogger(__name__)
 
 
+# Setup called only once: make output directory, create base class, create profile class, etc.
 # This makes sure we have somewhere to write the classes, and
 # creates a couple of files the python implementation needs.
-# cgmes_profile_info details which uri belongs in each profile.
+# cgmes_profile_details contains index, names und uris for each profile.
 # We don't use that here because we aren't creating the header
 # data for the separate profiles.
-def setup(version_path, cgmes_profile_info):  # NOSONAR
-    # version_path is actually the output_path
+def setup(output_path: str, cgmes_profile_details: list, cim_namespace: str):  # NOSONAR
+    for file in Path(output_path).glob("**/*.py"):
+        file.unlink()
 
     # Add all hardcoded utils and create parent dir
     source_dir = Path(__file__).parent / "utils"
-    dest_dir = Path(version_path) / "utils"
+    dest_dir = Path(output_path) / "utils"
 
     copy_tree(str(source_dir), str(dest_dir))
 
@@ -31,6 +33,7 @@ def location(version):
 
 base = {"base_class": "Base", "class_location": location}
 
+# These are the files that are used to generate the python files.
 template_files = [{"filename": "cimpy_class_template.mustache", "ext": ".py"}]
 
 
@@ -83,12 +86,12 @@ def set_float_classes(new_float_classes):
     return
 
 
-def run_template(version_path, class_details):
+def run_template(output_path, class_details):
     for template_info in template_files:
 
         resource_file = Path(
             os.path.join(
-                version_path,
+                output_path,
                 "resources",
                 class_details["class_name"] + template_info["ext"],
             )

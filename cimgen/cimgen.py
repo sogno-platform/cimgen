@@ -2,6 +2,7 @@ import logging
 import os
 import textwrap
 import warnings
+import re
 from time import time
 
 import xmltodict
@@ -338,7 +339,7 @@ def wrap_and_clean(txt: str, width: int = 120, initial_indent="", subsequent_ind
 
 short_package_name = {}
 package_listed_by_short_name = {}
-
+cim_namespace = ""
 profiles = {}
 
 
@@ -372,7 +373,7 @@ def _entry_types_version_2(rdfs_entry: RDFSEntry) -> list:
             entry_types.append("profile_name_v2_4")
         if (
             rdfs_entry.stereotype() == "http://iec.ch/TC57/NonStandard/UML#attribute"  # NOSONAR
-            and rdfs_entry.label()[0:7] == "baseURI"
+            and rdfs_entry.label().startswith("entsoeURI")
         ):
             entry_types.append("profile_iri_v2_4")
         if rdfs_entry.label() == "shortName":
@@ -402,26 +403,30 @@ def _add_class(classes_map, rdfs_entry):
         classes_map[rdfs_entry.label()] = CIMComponentDefinition(rdfs_entry)
 
 
-def _add_profile_to_packages(profile_name, short_profile_name, profile_iri):
+def _add_profile_to_packages(profile_name, short_profile_name, profile_uri_list):
     """
-    Add or append profile_iri
+    Add profile_uris
     """
-    if profile_name not in profiles and profile_iri:
-        profiles[profile_name] = [profile_iri]
+    if profile_name not in profiles and profile_uri_list:
+        profiles[profile_name] = profile_uri_list
     else:
-        profiles[profile_name].append(profile_iri)
-    if short_profile_name not in package_listed_by_short_name and profile_iri:
-        package_listed_by_short_name[short_profile_name] = [profile_iri]
+        profiles[profile_name].extend(profile_uri_list)
+    if short_profile_name not in package_listed_by_short_name and profile_uri_list:
+        package_listed_by_short_name[short_profile_name] = profile_uri_list
     else:
-        package_listed_by_short_name[short_profile_name].append(profile_iri)
+        package_listed_by_short_name[short_profile_name].extend(profile_uri_list)
 
 
 def _parse_rdf(input_dic, version, lang_pack):
     classes_map = {}
     profile_name = ""
-    profile_iri = None
+    profile_uri_list = []
     attributes = []
     instances = []
+
+    global cim_namespace
+    if not cim_namespace:
+        cim_namespace = input_dic["rdf:RDF"].get("$xmlns:cim")
 
     # Generates list with dictionaries as elements
     descriptions = input_dic["rdf:RDF"]["rdf:Description"]
@@ -447,13 +452,13 @@ def _parse_rdf(input_dic, version, lang_pack):
         if "short_profile_name_v3" in rdfs_entry_types:
             short_profile_name = rdfsEntry.keyword()
         if "profile_iri_v2_4" in rdfs_entry_types and rdfsEntry.fixed():
-            profile_iri = rdfsEntry.fixed()
+            profile_uri_list.append(rdfsEntry.fixed())
         if "profile_iri_v3" in rdfs_entry_types:
-            profile_iri = rdfsEntry.version_iri()
+            profile_uri_list.append(rdfsEntry.version_iri())
 
     short_package_name[profile_name] = short_profile_name
     package_listed_by_short_name[short_profile_name] = []
-    _add_profile_to_packages(profile_name, short_profile_name, profile_iri)
+    _add_profile_to_packages(profile_name, short_profile_name, profile_uri_list)
     # Add attributes to corresponding class
     for attribute in attributes:
         clarse = attribute["domain"]
@@ -478,6 +483,9 @@ def _parse_rdf(input_dic, version, lang_pack):
 # chevron
 def _write_python_files(elem_dict, lang_pack, output_path, version):
 
+    # Setup called only once: make output directory, create base class, create profile class, etc.
+    lang_pack.setup(output_path, _get_profile_details(package_listed_by_short_name), cim_namespace)
+
     float_classes = {}
     enum_classes = {}
 
@@ -490,6 +498,8 @@ def _write_python_files(elem_dict, lang_pack, output_path, version):
 
     lang_pack.set_float_classes(float_classes)
     lang_pack.set_enum_classes(enum_classes)
+
+    recommended_class_profiles = _get_recommended_class_profiles(elem_dict)
 
     for class_name in elem_dict.keys():
 
@@ -504,6 +514,7 @@ def _write_python_files(elem_dict, lang_pack, output_path, version):
             "langPack": lang_pack,
             "sub_class_of": elem_dict[class_name].superClass(),
             "sub_classes": elem_dict[class_name].subClasses(),
+            "recommended_class_profile": recommended_class_profiles[class_name],
         }
 
         # extract comments
@@ -547,8 +558,6 @@ def format_class(_range, _dataType):
 
 
 def _write_files(class_details, output_path, version):
-    class_details["langPack"].setup(output_path, package_listed_by_short_name)
-
     if class_details["sub_class_of"] is None:
         # If class has no subClassOf key it is a subclass of the Base class
         class_details["sub_class_of"] = class_details["langPack"].base["base_class"]
@@ -762,3 +771,94 @@ def cim_generate(directory, output_path, version, lang_pack):
         lang_pack.resolve_headers(output_path)
 
     logger.info("Elapsed Time: {}s\n\n".format(time() - t0))
+
+
+def _get_profile_details(cgmes_profile_uris):
+    profile_details = []
+    sorted_profile_keys = _get_sorted_profile_keys(cgmes_profile_uris.keys())
+    for index, profile in enumerate(sorted_profile_keys):
+        profile_info = {
+            "index": index,
+            "short_name": profile,
+            "long_name": _extract_profile_long_name(cgmes_profile_uris[profile]),
+            "uris": [{"uri": uri} for uri in cgmes_profile_uris[profile]],
+        }
+        profile_details.append(profile_info)
+    return profile_details
+
+
+def _extract_profile_long_name(profile_uris):
+    # Extract name from uri, e.g. "Topology" from "http://iec.ch/TC57/2013/61970-456/Topology/4"
+    # Examples of other possible uris: "http://entsoe.eu/CIM/Topology/4/1", "http://iec.ch/TC57/ns/CIM/Topology-EU/3.0"
+    # If more than one uri given, extract common part (e.g. "Equipment" from "EquipmentCore" and "EquipmentOperation")
+    long_name = ""
+    for uri in profile_uris:
+        match = re.search(r"/([^/-]*)(-[^/]*)?(/\d+)?/[\d.]+?$", uri)
+        if match:
+            name = match.group(1)
+            if long_name:
+                for idx in range(1, len(long_name)):
+                    if idx >= len(name) or long_name[idx] != name[idx]:
+                        long_name = long_name[:idx]
+                        break
+            else:
+                long_name = name
+    return long_name
+
+
+def _get_sorted_profile_keys(profile_key_list):
+    """Sort profiles alphabetically, but "EQ" to the first place.
+
+    Profiles should be always used in the same order when they are written into the enum class Profile.
+    The same order should be used if one of several possible profiles is to be selected.
+
+    :param profile_key_list: List of short profile names.
+    :return:                 Sorted list of short profile names.
+    """
+    return sorted(profile_key_list, key=lambda x: x == "EQ" and "0" or x)
+
+
+def _get_recommended_class_profiles(elem_dict):
+    """Get the recommended profiles for all classes.
+
+    This function searches for the recommended profile of each class.
+    If the class contains attributes for different profiles not all data of the object could be written into one file.
+    To write the data to as few as possible files the class profile should be that with most of the attributes.
+    But some classes contain a lot of rarely used special attributes, i.e. attributes for a special profile
+    (e.g. TopologyNode has many attributes for TopologyBoundary, but the class profile should be Topology).
+    That's why attributes that only belong to one profile are skipped in the search algorithm.
+
+    :param elem_dict: Information about all classes.
+                      Used are here possible class profiles (elem_dict[class_name].origins()),
+                      possible attribute profiles (elem_dict[class_name].attributes()[*]["attr_origin"])
+                      and the superclass of each class (elem_dict[class_name].superClass()).
+    :return:          Mapping of class to profile.
+    """
+    recommended_class_profiles = {}
+    for class_name in elem_dict.keys():
+        class_origin = elem_dict[class_name].origins()
+        class_profiles = [origin["origin"] for origin in class_origin]
+        if len(class_profiles) == 1:
+            recommended_class_profiles[class_name] = class_profiles[0]
+            continue
+
+        # Count profiles of all attributes of this class and its superclasses
+        profile_count_map = {}
+        name = class_name
+        while name:
+            for attribute in _find_multiple_attributes(elem_dict[name].attributes()):
+                profiles = [origin["origin"] for origin in attribute["attr_origin"]]
+                ambiguous_profile = len(profiles) > 1
+                for profile in profiles:
+                    if ambiguous_profile and profile in class_profiles:
+                        profile_count_map.setdefault(profile, []).append(attribute["label"])
+            name = elem_dict[name].superClass()
+
+        # Set the profile with most attributes as recommended profile for this class
+        if profile_count_map:
+            max_count = max(len(v) for v in profile_count_map.values())
+            filtered_profiles = [k for k, v in profile_count_map.items() if len(v) == max_count]
+            recommended_class_profiles[class_name] = _get_sorted_profile_keys(filtered_profiles)[0]
+        else:
+            recommended_class_profiles[class_name] = _get_sorted_profile_keys(class_profiles)[0]
+    return recommended_class_profiles

@@ -1,39 +1,46 @@
 from .{{sub_class_of}} import {{sub_class_of}}
+from .CGMESProfile import Profile
 
 
 class {{class_name}}({{sub_class_of}}):
-	'''
-	{{{class_comment}}}
+    """
+    {{{class_comment}}}
 
-	{{#attributes}}:{{label}}: {{{comment}}} Default: {{#setDefault}}{{dataType}}{{/setDefault}}
-	{{/attributes}}
-	'''
+{{#attributes}}
+    :{{label}}: {{{comment}}} Default: {{#setDefault}}{{dataType}}{{/setDefault}}
+{{/attributes}}
+    """
 
-	cgmesProfile = {{sub_class_of}}.cgmesProfile
+    possibleProfileList = {
+        "class": [{{#class_origin}}Profile.{{origin}}.value, {{/class_origin}}],
+{{#attributes}}
+        "{{label}}": [{{#attr_origin}}Profile.{{origin}}.value, {{/attr_origin}}],
+{{/attributes}}
+    }
 
-	possibleProfileList = {'class': [{{#class_origin}}cgmesProfile.{{origin}}.value, {{/class_origin}}],
-						{{#attributes}}'{{label}}': [{{#attr_origin}}cgmesProfile.{{origin}}.value, {{/attr_origin}}],
-						{{/attributes}} }
+    serializationProfile = {}
 
-	serializationProfile = {}
+    recommendedClassProfile = Profile.{{recommended_class_profile}}.value
 
-	{{#super_init}}__doc__ += '\n Documentation of parent class {{sub_class_of}}: \n' + {{sub_class_of}}.__doc__ {{/super_init}}
+{{#super_init}}
+    __doc__ += "\nDocumentation of parent class {{sub_class_of}}:\n" + {{sub_class_of}}.__doc__
+{{/super_init}}
 
-	def __init__(self, {{#attributes}}{{label}} = {{#setDefault}}{{dataType}}{{/setDefault}}, {{/attributes}} {{#super_init}}*args, **kw_args{{/super_init}}):
-	{{#super_init}}
-	super().__init__(*args, **kw_args)
-	{{/super_init}}
+    def __init__(self{{#attributes}}, {{label}} = {{#setDefault}}{{dataType}}{{/setDefault}}{{/attributes}}{{#super_init}}, *args, **kw_args{{/super_init}}):
+{{#super_init}}
+        super().__init__(*args, **kw_args)
+{{/super_init}}
 
-	{{#attributes}}
-	self.{{label}} = {{label}}
-	{{/attributes}}
-	{{^attributes}}
-pass
-	{{/attributes}}
+{{#attributes}}
+        self.{{label}} = {{label}}
+{{/attributes}}
+{{^attributes}}
+        pass
+{{/attributes}}
 
-	def __str__(self):
-		str = 'class={{class_name}}\n'
-		attributes = self.__dict__
-		for key in attributes.keys():
-			str = str + key + '={}\n'.format(attributes[key])
-		return str
+    def __str__(self):
+        str = "class={{class_name}}\n"
+        attributes = self.__dict__
+        for key in attributes.keys():
+            str = str + key + "={}\n".format(attributes[key])
+        return str

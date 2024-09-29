@@ -1,7 +1,21 @@
 
 class CGMESProfile {
-    static profileUrls = {{{profileList}}};
-    static shortNames  = {{{shortNames}}};
+    static profileUrls = {  // Those are strings, not real addresses, hence the NOSONAR.
+{{#profiles}}
+        "{{short_name}}": [
+{{#uris}}
+            "{{uri}}",  // NOSONAR
+{{/uris}}
+        ],
+{{/profiles}}
+    };
+    static shortNames = {
+{{#profiles}}
+        "{{short_name}}": {{index}},
+{{/profiles}}
+    };
 }
 
 export default CGMESProfile
+
+export const CIM_NAMESPACE = "{{cim_namespace}}"  // NOSONAR

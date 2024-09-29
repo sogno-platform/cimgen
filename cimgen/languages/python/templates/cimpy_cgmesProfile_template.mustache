@@ -1,0 +1,44 @@
+from enum import Enum
+
+
+# Mapping between the profiles and their short names
+short_profile_name = {
+{{#profiles}}
+    "{{long_name}}": "{{short_name}}",
+{{/profiles}}
+}
+long_profile_name = {
+{{#profiles}}
+    "{{short_name}}": "{{long_name}}",
+{{/profiles}}
+}
+profile_uris = {  # Those are strings, not real addresses, hence the NOSONAR.
+{{#profiles}}
+    "{{short_name}}": [
+{{#uris}}
+        "{{uri}}",  # NOSONAR
+{{/uris}}
+    ],
+{{/profiles}}
+}
+
+
+class Profile(Enum):
+    """Enum containing all CGMES profiles and their export priority."""
+
+{{#profiles}}
+    {{short_name}} = {{index}}
+{{/profiles}}
+
+    def long_name(self):
+        return long_profile_name[self.name]
+
+    def uris(self):
+        return profile_uris[self.name]
+
+    @classmethod
+    def from_long_name(cls, long_name):
+        return cls[short_profile_name[long_name]]
+
+
+cim_namespace = "{{cim_namespace}}"  # NOSONAR

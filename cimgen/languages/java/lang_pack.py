@@ -8,18 +8,22 @@ def location(version):
     return "BaseClass"
 
 
+# Setup called only once: make output directory, create base class, create profile class, etc.
 # This just makes sure we have somewhere to write the classes.
-# cgmes_profile_info details which uri belongs in each profile.
+# cgmes_profile_details contains index, names und uris for each profile.
 # We don't use that here because we aren't exporting into
 # separate profiles.
-def setup(version_path, cgmes_profile_info):
-    if not os.path.exists(version_path):
-        os.makedirs(version_path)
+def setup(output_path: str, cgmes_profile_details: list, cim_namespace: str):
+    if not os.path.exists(output_path):
+        os.makedirs(output_path)
+    else:
+        for filename in os.listdir(output_path):
+            os.remove(os.path.join(output_path, filename))
 
 
 base = {"base_class": "BaseClass", "class_location": location}
 
-# These are the files that are used to generate the header and object files.
+# These are the files that are used to generate the java files.
 # There is a template set for the large number of classes that are floats. They
 # have unit, multiplier and value attributes in the schema, but only appear in
 # the file as a float string.
@@ -41,7 +45,7 @@ partials = {
 
 
 # This is the function that runs the template.
-def run_template(outputPath, class_details):
+def run_template(output_path, class_details):
 
     class_details["primitives"] = []
     for attr in class_details["attributes"]:
@@ -64,19 +68,22 @@ def run_template(outputPath, class_details):
         return
 
     for template_info in templates:
-        class_file = os.path.join(outputPath, class_details["class_name"] + template_info["ext"])
-        if not os.path.exists(class_file):
-            with open(class_file, "w", encoding="utf-8") as file:
-                class_details["setDefault"] = _set_default
-                templates = files("cimgen.languages.java.templates")
-                with templates.joinpath(template_info["filename"]).open(encoding="utf-8") as f:
-                    args = {
-                        "data": class_details,
-                        "template": f,
-                        "partials_dict": partials,
-                    }
-                    output = chevron.render(**args)
-                file.write(output)
+        class_file = os.path.join(output_path, class_details["class_name"] + template_info["ext"])
+        _write_templated_file(class_file, class_details, template_info["filename"])
+
+
+def _write_templated_file(class_file, class_details, template_filename):
+    with open(class_file, "w", encoding="utf-8") as file:
+        class_details["setDefault"] = _set_default
+        templates = files("cimgen.languages.java.templates")
+        with templates.joinpath(template_filename).open(encoding="utf-8") as f:
+            args = {
+                "data": class_details,
+                "template": f,
+                "partials_dict": partials,
+            }
+            output = chevron.render(**args)
+        file.write(output)
 
 
 # This function just allows us to avoid declaring a variable called 'switch',
@@ -416,7 +423,7 @@ def _create_header_include_file(directory, header_include_filename, header, foot
         f.writelines(header)
 
 
-def resolve_headers(outputPath):
+def resolve_headers(output_path):
     class_list_header = [
         "package cim4j;\n",
         "import java.util.Map;\n",
@@ -432,7 +439,7 @@ def resolve_headers(outputPath):
     class_list_footer = ["    );\n", "}\n"]
 
     _create_header_include_file(
-        outputPath,
+        output_path,
         "CIMClassMap.java",
         class_list_header,
         class_list_footer,

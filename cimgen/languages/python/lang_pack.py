@@ -7,16 +7,19 @@ from importlib.resources import files
 logger = logging.getLogger(__name__)
 
 
+# Setup called only once: make output directory, create base class, create profile class, etc.
 # This makes sure we have somewhere to write the classes, and
 # creates a couple of files the python implementation needs.
-# cgmes_profile_info details which uri belongs in each profile.
-# We don't use that here because we aren't creating the header
-# data for the separate profiles.
-def setup(version_path, cgmes_profile_info):
-    if not os.path.exists(version_path):
-        os.makedirs(version_path)
-        _create_init(version_path)
-        _create_base(version_path)
+# cgmes_profile_details contains index, names and uris for each profile.
+# We use that to create the header data for the profiles.
+def setup(output_path: str, cgmes_profile_details: list, cim_namespace: str):
+    if not os.path.exists(output_path):
+        os.makedirs(output_path)
+    else:
+        for filename in os.listdir(output_path):
+            os.remove(os.path.join(output_path, filename))
+    _create_base(output_path)
+    _create_cgmes_profile(output_path, cgmes_profile_details, cim_namespace)
 
 
 def location(version):
@@ -25,7 +28,9 @@ def location(version):
 
 base = {"base_class": "Base", "class_location": location}
 
+# These are the files that are used to generate the python files.
 template_files = [{"filename": "cimpy_class_template.mustache", "ext": ".py"}]
+profile_template_files = [{"filename": "cimpy_cgmesProfile_template.mustache", "ext": ".py"}]
 
 
 def get_class_location(class_name, class_map, version):
@@ -76,51 +81,53 @@ def set_float_classes(new_float_classes):
     return
 
 
-def run_template(version_path, class_details):
+def run_template(output_path, class_details):
     for template_info in template_files:
-        class_file = os.path.join(version_path, class_details["class_name"] + template_info["ext"])
-        if not os.path.exists(class_file):
-            with open(class_file, "w", encoding="utf-8") as file:
-                class_details["setDefault"] = _set_default
-                templates = files("cimgen.languages.python.templates")
-                with templates.joinpath(template_info["filename"]).open(encoding="utf-8") as f:
-                    args = {
-                        "data": class_details,
-                        "template": f,
-                        "partials_dict": partials,
-                    }
-                    output = chevron.render(**args)
-                file.write(output)
+        class_file = os.path.join(output_path, class_details["class_name"] + template_info["ext"])
+        _write_templated_file(class_file, class_details, template_info["filename"])
 
 
-def _create_init(path):
-    init_file = path + "/__init__.py"
-    with open(init_file, "w", encoding="utf-8"):
-        pass
+def _write_templated_file(class_file, class_details, template_filename):
+    with open(class_file, "w", encoding="utf-8") as file:
+        class_details["setDefault"] = _set_default
+        templates = files("cimgen.languages.python.templates")
+        with templates.joinpath(template_filename).open(encoding="utf-8") as f:
+            args = {
+                "data": class_details,
+                "template": f,
+                "partials_dict": partials,
+            }
+            output = chevron.render(**args)
+        file.write(output)
 
 
 # creates the Base class file, all classes inherit from this class
 def _create_base(path):
     base_path = path + "/Base.py"
     base = [
-        "from enum import Enum\n\n",
-        "\n",
-        "class Base():\n",
+        "class Base:\n",
         '    """\n',
         "    Base Class for CIM\n",
         '    """\n\n',
-        '    cgmesProfile = Enum("cgmesProfile", {"EQ": 0, "SSH": 1, "TP": 2, "SV": 3, "DY": 4, "GL": 5, "DL": 6, "TP_BD": 7, "EQ_BD": 8})',  # noqa: E501
-        "\n\n",
-        "    def __init__(self, *args, **kw_args):\n",
-        "        pass\n",
-        "\n",
         "    def printxml(self, dict={}):\n",
         "        return dict\n",
     ]
-
     with open(base_path, "w", encoding="utf-8") as f:
         for line in base:
             f.write(line)
+
+
+def _create_cgmes_profile(output_path: str, profile_details: list, cim_namespace: str):
+    for template_info in profile_template_files:
+        class_file = os.path.join(output_path, "CGMESProfile" + template_info["ext"])
+        class_details = {
+            "profiles": profile_details,
+            "cim_namespace": cim_namespace,
+        }
+        _write_templated_file(class_file, class_details, template_info["filename"])
+
+
+class_blacklist = ["CGMESProfile"]
 
 
 def resolve_headers(path):
@@ -130,5 +137,8 @@ def resolve_headers(path):
         include_names.append(os.path.splitext(os.path.basename(filename))[0])
     with open(path + "/__init__.py", "w", encoding="utf-8") as header_file:
         for include_name in include_names:
-            header_file.write("from " + "." + include_name + " import " + include_name + " as " + include_name + "\n")
+            if include_name not in class_blacklist:
+                header_file.write(
+                    "from " + "." + include_name + " import " + include_name + " as " + include_name + "\n"
+                )
         header_file.close()
