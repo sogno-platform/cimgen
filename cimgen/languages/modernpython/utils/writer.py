@@ -135,36 +135,14 @@ class Writer:
     def get_class_profile(obj: Base) -> BaseProfile:
         """Get the main profile of this CIM object.
 
-        This function searches for the main profile of the CIM type of an object.
-        If the type contains attributes for different profiles not all data of the object could be written into one
-        file. To write the data to as few as possible files the main profile should be that with most of the
-        attributes. But some types contain a lot of rarely used special attributes, i.e. attributes for a special
-        profile (e.g. TopologyNode has many attributes for TopologyBoundary, but the main profile should be Topology).
-        That's why attributes that only belong to one profile are skipped in the search algorithm.
-
         :param obj:  CIM object to get the CIM type from.
         :return:     Main profile.
         """
-        class_profiles = list(obj.possible_profiles)
-        if len(class_profiles) == 1:
-            return class_profiles[0]
-        profile_attributes_map: dict[BaseProfile, list(str)] = {}
-        for attr, profiles in obj.possible_attribute_profiles.items():
-            ambiguous_profile = len(profiles) > 1
-            for profile in profiles:
-                if ambiguous_profile and profile in class_profiles:
-                    profile_attributes_map.setdefault(profile, []).append(attr)
-        count_profile_list: list(tuple[int, BaseProfile]) = []
-        for profile, attributes in profile_attributes_map.items():
-            count_profile_list.append((-len(attributes), profile))
-        return sorted(count_profile_list)[0][1]
+        return obj.recommended_profile
 
     @staticmethod
     def get_class_profile_map(obj_list: list[Base]) -> dict[str, BaseProfile]:
         """Get the main profiles for a list of CIM objects.
-
-        This function searches for the main profile of each CIM type in the object list
-        (see getClassProfile for details).
 
         The result could be used as parameter for the functions: write and generate.
         But it is also possible to optimize the mapping manually for some CIM types before calling these functions.
@@ -172,12 +150,7 @@ class Writer:
         :param obj_list:  List of CIM objects.
         :return:          Mapping of CIM type to profile.
         """
-        profile_map: dict[str, BaseProfile] = {}
-        for obj in obj_list:
-            typ = obj.apparent_name()
-            if typ not in profile_map:
-                profile_map[typ] = Writer.get_class_profile(obj)
-        return profile_map
+        return {obj.apparent_name(): Writer.get_class_profile(obj) for obj in obj_list}
 
     @staticmethod
     def get_attribute_profile(obj: Base, attr: str, class_profile: BaseProfile) -> BaseProfile | None:

@@ -810,6 +810,7 @@ def _get_recommended_class_profiles(elem_dict):
                 profiles = [origin["origin"] for origin in attribute["attr_origin"]]
                 ambiguous_profile = len(profiles) > 1
                 for profile in profiles:
+                    # Use condition attribute["is_used"]? For CGMES 2.4.13/2.4.15/3.0.0 the results wouldn't change!
                     if ambiguous_profile and profile in class_profiles:
                         profile_count_map.setdefault(profile, []).append(attribute["label"])
             name = elem_dict[name].superClass()
