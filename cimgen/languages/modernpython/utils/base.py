@@ -28,6 +28,14 @@ class Base:
         raise NotImplementedError("Method not implemented because not relevant in Base.")
 
     @cached_property
+    def recommended_profile(self) -> BaseProfile:
+        """
+        This is the profile with most of the attributes.
+        It should be used to write the data to as few as possible files.
+        """
+        raise NotImplementedError("Method not implemented because not relevant in Base.")
+
+    @cached_property
     def possible_attribute_profiles(self) -> dict[str, list[BaseProfile]]:
         """
         Mapping of attribute to the list of possible profiles.
