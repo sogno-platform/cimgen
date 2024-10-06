@@ -97,7 +97,7 @@ def label(text, render):
 
 # These create_ functions are used to generate the implementations for
 # the entries in the dynamic_switch maps referenced in assignments.cpp and Task.cpp
-def create_class_assign(text, render):
+def create_class_assign(text, render):  # NOSONAR
     # TODO REMOVE:
     return ""
 

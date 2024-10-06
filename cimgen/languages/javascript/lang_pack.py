@@ -73,7 +73,7 @@ aggregateRenderer = {
 }
 
 
-def selectPrimitiveRenderFunction(class_details):
+def select_primitive_render_function(class_details):
     class_name = class_details["class_name"]
     render = ""
     if class_details["is_a_float_class"]:
@@ -112,7 +112,7 @@ def run_template(output_path, class_details):
     if class_type == "enum":
         renderAttribute = aggregateRenderer["renderInstance"]
     elif class_type == "primitive":
-        renderAttribute = selectPrimitiveRenderFunction(class_details)
+        renderAttribute = select_primitive_render_function(class_details)
     else:
         renderAttribute = aggregateRenderer["renderClass"]
     if renderAttribute == "":

@@ -79,7 +79,7 @@ class Writer:
                 )
         return output
 
-    def sort_attributes_to_profile(self, profile: BaseProfile, class_profile_map: dict[str, BaseProfile]):
+    def sort_attributes_to_profile(self, profile: BaseProfile, class_profile_map: dict[str, BaseProfile]):  # NOSONAR
         """Sort CIM objects and their attributes depending on whether the profile is the main profile of the class.
 
         This function sorts a list of objects to two lists: main and about.

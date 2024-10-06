@@ -16,7 +16,7 @@ class RDFSEntry:
         self.jsonDefinition = jsonObject
         return
 
-    def asJson(self, lang_pack):
+    def asJson(self):
         jsonObject = {}
         if self.about() is not None:
             jsonObject["about"] = self.about()
@@ -223,7 +223,7 @@ class CIMComponentDefinition:
     def enum_instances(self):
         return self.enum_instance_list
 
-    def addEnumInstance(self, instance):
+    def add_enum_instance(self, instance):
         instance["index"] = len(self.enum_instance_list)
         self.enum_instance_list.append(instance)
 
@@ -398,7 +398,7 @@ def _add_profile_to_packages(profile_name, short_profile_name, profile_uri_list)
         package_listed_by_short_name[short_profile_name].extend(profile_uri_list)
 
 
-def _parse_rdf(input_dic, version, lang_pack):
+def _parse_rdf(input_dic, version):
     classes_map = {}
     profile_name = ""
     profile_uri_list = []
@@ -415,7 +415,7 @@ def _parse_rdf(input_dic, version, lang_pack):
     # Iterate over list elements
     for list_elem in descriptions:
         rdfsEntry = RDFSEntry(list_elem)
-        object_dic = rdfsEntry.asJson(lang_pack)
+        object_dic = rdfsEntry.asJson()
         rdfs_entry_types = _rdfs_entry_types(rdfsEntry, version)
 
         if "class" in rdfs_entry_types:
@@ -452,7 +452,7 @@ def _parse_rdf(input_dic, version, lang_pack):
     for instance in enum_instances:
         clarse = _get_rid_of_hash(instance["type"])
         if clarse and clarse in classes_map:
-            classes_map[clarse].addEnumInstance(instance)
+            classes_map[clarse].add_enum_instance(instance)
         else:
             logger.info("Class {} for enum instance {} not found.".format(clarse, instance))
 
@@ -703,7 +703,7 @@ def cim_generate(directory, output_path, version, lang_pack):
 
             # parse RDF files and create a dictionary from the RDF file
             parse_result = xmltodict.parse(xmlstring, attr_prefix="$", cdata_key="_", dict_constructor=dict)
-            parsed = _parse_rdf(parse_result, version, lang_pack)
+            parsed = _parse_rdf(parse_result, version)
             profiles_array.append(parsed)
 
     # merge multiple profile definitions into one profile
