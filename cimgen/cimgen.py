@@ -398,7 +398,7 @@ def _add_profile_to_packages(profile_name, short_profile_name, profile_uri_list)
         package_listed_by_short_name[short_profile_name].extend(profile_uri_list)
 
 
-def _parse_rdf(input_dic, version):
+def _parse_rdf(input_dic, version):  # NOSONAR
     classes_map = {}
     profile_name = ""
     profile_uri_list = []
