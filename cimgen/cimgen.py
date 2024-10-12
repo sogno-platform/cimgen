@@ -8,6 +8,7 @@ from time import time
 import xmltodict
 from bs4 import BeautifulSoup
 
+logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(__name__)
 
 
@@ -249,6 +250,7 @@ class CIMComponentDefinition:
     def setSubClasses(self, classes):
         self.subclasses = classes
 
+    @staticmethod
     def _simple_float_attribute(attr):
         if "dataType" in attr:
             return attr["label"] == "value" and attr["dataType"] == "#Float"
@@ -856,7 +858,7 @@ def _get_attribute_type(attribute: dict, is_an_enum_class: bool) -> str:
         attribute_type = "primitive"
     elif is_an_enum_class:
         attribute_type = "enum"
-    elif attribute.get("multiplicity") in ("M:0..n", "M:1..n"):
+    elif attribute.get("multiplicity") in ("M:0..n", "M:1..n", "M:2..n"):
         attribute_type = "list"
     return attribute_type
 
