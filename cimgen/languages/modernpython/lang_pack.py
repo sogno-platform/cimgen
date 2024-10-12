@@ -82,6 +82,8 @@ def _get_type_and_default(text, renderer) -> tuple[str, str]:
 
 
 def run_template(output_path, class_details):
+    if class_details["class_name"] == "String":
+        return
     for template_info in template_files:
         resource_file = Path(
             os.path.join(

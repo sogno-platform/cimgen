@@ -102,6 +102,8 @@ def select_primitive_render_function(class_details):
 
 # This is the function that runs the template.
 def run_template(output_path, class_details):
+    if class_details["class_name"] == "String":
+        return
 
     for index, attribute in enumerate(class_details["attributes"]):
         if not attribute["is_used"]:

@@ -74,6 +74,8 @@ def _set_default(text, render):
 
 
 def run_template(output_path, class_details):
+    if class_details["class_name"] == "String":
+        return
     for template_info in template_files:
         class_file = os.path.join(output_path, class_details["class_name"] + template_info["ext"])
         _write_templated_file(class_file, class_details, template_info["filename"])

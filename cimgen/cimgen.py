@@ -211,6 +211,7 @@ class CIMComponentDefinition:
         self.origin_list = []
         self.super = rdfsEntry.subClassOf()
         self.subclasses = []
+        self.stereotype = rdfsEntry.stereotype()
 
     def attributes(self):
         return self.attribute_list
@@ -281,6 +282,9 @@ class CIMComponentDefinition:
             if not candidate_array[key]:
                 return False
         return True
+
+    def is_a_primitive_class(self):
+        return self.stereotype == "Primitive"
 
 
 def get_profile_name(descriptions):
@@ -382,8 +386,7 @@ def _add_class(classes_map, rdfs_entry):
     """
     if rdfs_entry.label() in classes_map:
         logger.error("Class {} already exists".format(rdfs_entry.label()))
-    if rdfs_entry.label() != "String":
-        classes_map[rdfs_entry.label()] = CIMComponentDefinition(rdfs_entry)
+    classes_map[rdfs_entry.label()] = CIMComponentDefinition(rdfs_entry)
 
 
 def _add_profile_to_packages(profile_name, short_profile_name, profile_uri_list):
@@ -481,6 +484,7 @@ def _write_python_files(elem_dict, lang_pack, output_path, version):
             "enum_instances": elem_dict[class_name].enum_instances(),
             "is_an_enum_class": elem_dict[class_name].is_an_enum_class(),
             "is_a_float_class": elem_dict[class_name].is_a_float_class(),
+            "is_a_primitive_class": elem_dict[class_name].is_a_primitive_class(),
             "langPack": lang_pack,
             "sub_class_of": elem_dict[class_name].superClass(),
             "sub_classes": elem_dict[class_name].subClasses(),
@@ -514,6 +518,7 @@ def _write_python_files(elem_dict, lang_pack, output_path, version):
             attribute["is_enum_attribute"] = _get_bool_string(attribute_type == "enum")
             attribute["is_list_attribute"] = _get_bool_string(attribute_type == "list")
             attribute["is_primitive_attribute"] = _get_bool_string(attribute_type == "primitive")
+            attribute["is_primitive_float_attribute"] = _get_bool_string(elem_dict[attribute_class].is_a_float_class())
             attribute["attribute_class"] = attribute_class
 
         class_details["attributes"].sort(key=lambda d: d["label"])
