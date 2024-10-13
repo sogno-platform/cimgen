@@ -258,7 +258,7 @@ class CIMComponentDefinition:
         return False
 
     def is_a_float_class(self):
-        if self.about == "Float":
+        if self.about in ("Float", "Decimal"):
             return True
         simple_float = False
         for attr in self.attribute_list:
