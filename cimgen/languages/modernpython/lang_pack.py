@@ -75,7 +75,7 @@ def _get_type_and_default(text, render) -> tuple[str, str]:
 
 
 def run_template(output_path, class_details):
-    if class_details["class_name"] == "String":
+    if class_details["is_a_primitive_class"] or class_details["is_a_float_class"]:
         return
     for template_info in template_files:
         resource_file = Path(
