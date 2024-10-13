@@ -216,7 +216,7 @@ class CIMComponentDefinition:
     def attributes(self):
         return self.attribute_list
 
-    def addAttribute(self, attribute):
+    def add_attribute(self, attribute):
         self.attribute_list.append(attribute)
 
     def is_an_enum_class(self):
@@ -228,10 +228,6 @@ class CIMComponentDefinition:
     def add_enum_instance(self, instance):
         instance["index"] = len(self.enum_instance_list)
         self.enum_instance_list.append(instance)
-
-    def addAttributes(self, attributes):
-        for attribute in attributes:
-            self.attribute_list.append(attribute)
 
     def origins(self):
         return self.origin_list
@@ -308,7 +304,6 @@ def wrap_and_clean(txt: str, width: int = 120, initial_indent="", subsequent_ind
     )
 
 
-short_package_name = {}
 long_profile_names = {}
 package_listed_by_short_name = {}
 cim_namespace = ""
@@ -426,14 +421,13 @@ def _parse_rdf(input_dic, version):  # NOSONAR
         if "profile_iri_v3" in rdfs_entry_types:
             profile_uri_list.append(rdfsEntry.version_iri())
 
-    short_package_name[profile_name] = short_profile_name
     _add_profile_to_packages(profile_name, short_profile_name, profile_uri_list)
 
     # Add attributes to corresponding class
     for attribute in attributes:
         clarse = attribute["domain"]
         if clarse and classes_map[clarse]:
-            classes_map[clarse].addAttribute(attribute)
+            classes_map[clarse].add_attribute(attribute)
         else:
             logger.info("Class {} for attribute {} not found.".format(clarse, attribute))
 
@@ -461,7 +455,7 @@ def _write_python_files(elem_dict, lang_pack, output_path, version):
     for class_name in elem_dict.keys():
 
         class_details = {
-            "attributes": _find_multiple_attributes(elem_dict[class_name].attributes()),
+            "attributes": elem_dict[class_name].attributes(),
             "class_location": lang_pack.get_class_location(class_name, elem_dict, version),
             "class_name": class_name,
             "class_origin": elem_dict[class_name].origins(),
@@ -541,20 +535,6 @@ def _write_files(class_details, output_path, version):
     class_details["langPack"].run_template(output_path, class_details)
 
 
-# Find multiple entries for the same attribute
-def _find_multiple_attributes(attributes_array):
-    merged_attributes = []
-    for elem in attributes_array:
-        found = False
-        for i in range(len(merged_attributes)):
-            if elem["label"] == merged_attributes[i]["label"]:
-                found = True
-                break
-        if found is False:
-            merged_attributes.append(elem)
-    return merged_attributes
-
-
 # If multiple CGMES schema files for one profile are read, e.g. Equipment Core and Equipment Core Short Circuit
 # this function merges these into one profile, e.g. Equipment, after this function only one dictionary entry for each
 # profile exists. The profiles_array contains one entry for each CGMES schema file which was read.
@@ -563,21 +543,21 @@ def _merge_profiles(profiles_array):
     # Iterate through array elements
     for elem_dict in profiles_array:
         # Iterate over profile names
-        for profile_key in elem_dict.keys():
-            if profile_key in profiles_dict.keys():
-                # Iterate over classes and check for multiple class definitions
-                for class_key in elem_dict[profile_key]:
-                    if class_key in profiles_dict[profile_key].keys():
-                        # If class already exists in packageDict add attributes to attributes array
-                        if len(elem_dict[profile_key][class_key].attributes()) > 0:
-                            attributes_array = elem_dict[profile_key][class_key].attributes()
-                            profiles_dict[profile_key][class_key].addAttributes(attributes_array)
-                    # If class is not in packageDict, create entry
-                    else:
-                        profiles_dict[profile_key][class_key] = elem_dict[profile_key][class_key]
-            # If package name not in packageDict create entry
-            else:
-                profiles_dict[profile_key] = elem_dict[profile_key]
+        for profile_key, new_class_dict in elem_dict.items():
+            class_dict = profiles_dict.setdefault(profile_key, {})
+            # Iterate over classes and check for multiple class definitions
+            for class_key, new_class_infos in new_class_dict.items():
+                if class_key in class_dict:
+                    class_infos = class_dict[class_key]
+                    for new_attr in new_class_infos.attributes():
+                        # Iterate over attributes and check for multiple attribute definitions
+                        for attr in class_infos.attributes():
+                            if new_attr["label"] == attr["label"]:
+                                break
+                        else:
+                            class_infos.add_attribute(new_attr)
+                else:
+                    class_dict[class_key] = new_class_infos
     return profiles_dict
 
 
@@ -586,63 +566,37 @@ def _merge_profiles(profiles_array):
 # the possibleProfileList used for the serialization.
 def _merge_classes(profiles_dict):
     class_dict = {}
-
     # Iterate over profiles
-    for package_key in profiles_dict.keys():
-        # get short name of the profile
-        short_name = ""
-        if package_key in short_package_name:
-            short_name = short_package_name[package_key]
-        else:
-            short_name = package_key
-
+    for profile_key, new_class_dict in profiles_dict.items():
+        origin = {"origin": profile_key}
         # iterate over classes in the current profile
-        for class_key in profiles_dict[package_key]:
-            # class already defined?
-            if class_key not in class_dict:
-                # store class and class origin
-                class_dict[class_key] = profiles_dict[package_key][class_key]
-                class_dict[class_key].addOrigin({"origin": short_name})
-                for attr in class_dict[class_key].attributes():
-                    # store origin of the attributes
-                    attr["attr_origin"] = [{"origin": short_name}]
-            else:
+        for class_key, new_class_infos in new_class_dict.items():
+            if class_key in class_dict:
+                class_infos = class_dict[class_key]
                 # some inheritance information is stored only in one of the packages. Therefore it has to be checked
                 # if the subClassOf attribute is set. See for example TopologicalNode definitions in SV and TP.
-                if not class_dict[class_key].superClass():
-                    if profiles_dict[package_key][class_key].superClass():
-                        class_dict[class_key].super = profiles_dict[package_key][class_key].superClass()
-
-                # check if profile is already stored in class origin list
-                multiple_origin = False
-                for origin in class_dict[class_key].origins():
-                    if short_name == origin["origin"]:
-                        # origin already stored
-                        multiple_origin = True
-                        break
-                if not multiple_origin:
-                    class_dict[class_key].addOrigin({"origin": short_name})
-
-                for attr in profiles_dict[package_key][class_key].attributes():
-                    # check if attribute is already in attributes list
-                    multiple_attr = False
-                    for attr_set in class_dict[class_key].attributes():
-                        if attr["label"] == attr_set["label"]:
+                if not class_infos.superClass():
+                    class_infos.super = new_class_infos.superClass()
+                if origin not in class_infos.origins():
+                    class_infos.addOrigin(origin)
+                for new_attr in new_class_infos.attributes():
+                    for attr in class_infos.attributes():
+                        if attr["label"] == new_attr["label"]:
                             # attribute already in attributes list, check if origin is new
-                            multiple_attr = True
-                            for origin in attr_set["attr_origin"]:
-                                multiple_attr_origin = False
-                                if origin["origin"] == short_name:
-                                    multiple_attr_origin = True
-                                    break
-                            if not multiple_attr_origin:
-                                # new origin
-                                attr_set["attr_origin"].append({"origin": short_name})
+                            origin_list = attr["attr_origin"]
+                            if origin not in origin_list:
+                                origin_list.append(origin)
                             break
-                    if not multiple_attr:
+                    else:
                         # new attribute
-                        attr["attr_origin"] = [{"origin": short_name}]
-                        class_dict[class_key].addAttribute(attr)
+                        new_attr["attr_origin"] = [origin]
+                        class_infos.add_attribute(new_attr)
+            else:
+                # store new class and origin
+                new_class_infos.addOrigin(origin)
+                for attr in new_class_infos.attributes():
+                    attr["attr_origin"] = [origin]
+                class_dict[class_key] = new_class_infos
     return class_dict
 
 
@@ -710,7 +664,7 @@ def cim_generate(directory, output_path, version, lang_pack):
                 superClass = class_dict_with_origins[superClassName]
                 superClass.addSubClass(className)
             else:
-                print("No match for superClass in dict: :", superClassName)
+                logger.error("No match for superClass in dict: %s", superClassName)
 
     # recursively add the subclasses of subclasses
     addSubClassesOfSubClasses(class_dict_with_origins)
@@ -777,7 +731,7 @@ def _get_recommended_class_profiles(elem_dict):
         profile_count_map = {}
         name = class_name
         while name:
-            for attribute in _find_multiple_attributes(elem_dict[name].attributes()):
+            for attribute in elem_dict[name].attributes():
                 profiles = [origin["origin"] for origin in attribute["attr_origin"]]
                 ambiguous_profile = len(profiles) > 1
                 for profile in profiles:
