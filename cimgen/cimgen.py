@@ -287,22 +287,6 @@ class CIMComponentDefinition:
         return self.stereotype == "Primitive"
 
 
-def get_profile_name(descriptions):
-    for list_elem in descriptions:
-        # only for CGMES-Standard
-        rdfsEntry = RDFSEntry(list_elem)
-        if rdfsEntry.stereotype() == "Entsoe":
-            return rdfsEntry.about()
-
-
-def get_short_profile_name(descriptions):
-    for list_elem in descriptions:
-        # only for CGMES-Standard
-        rdfsEntry = RDFSEntry(list_elem)
-        if rdfsEntry.label() == "shortName":
-            return rdfsEntry.fixed()
-
-
 def wrap_and_clean(txt: str, width: int = 120, initial_indent="", subsequent_indent="    ") -> str:
     """
     Used for comments: make them fit within <width> character, including indentation.
@@ -325,9 +309,9 @@ def wrap_and_clean(txt: str, width: int = 120, initial_indent="", subsequent_ind
 
 
 short_package_name = {}
+long_profile_names = {}
 package_listed_by_short_name = {}
 cim_namespace = ""
-profiles = {}
 
 
 def _rdfs_entry_types(rdfs_entry: RDFSEntry, version) -> list:
@@ -389,23 +373,21 @@ def _add_class(classes_map, rdfs_entry):
     classes_map[rdfs_entry.label()] = CIMComponentDefinition(rdfs_entry)
 
 
-def _add_profile_to_packages(profile_name, short_profile_name, profile_uri_list):
+def _add_profile_to_packages(profile_name: str, short_profile_name: str, profile_uri_list: list[str]) -> None:
     """
-    Add profile_uris
+    Add profile_uris and set long profile_name.
     """
-    if profile_name not in profiles and profile_uri_list:
-        profiles[profile_name] = profile_uri_list
-    else:
-        profiles[profile_name].extend(profile_uri_list)
-    if short_profile_name not in package_listed_by_short_name and profile_uri_list:
-        package_listed_by_short_name[short_profile_name] = profile_uri_list
-    else:
-        package_listed_by_short_name[short_profile_name].extend(profile_uri_list)
+    uri_list = package_listed_by_short_name.setdefault(short_profile_name, [])
+    for uri in profile_uri_list:
+        if uri not in uri_list:
+            uri_list.append(uri)
+    long_profile_names[short_profile_name] = profile_name.removesuffix("Version").removesuffix("Profile")
 
 
 def _parse_rdf(input_dic, version):  # NOSONAR
     classes_map = {}
     profile_name = ""
+    short_profile_name = ""
     profile_uri_list = []
     attributes = []
     enum_instances = []
@@ -429,22 +411,24 @@ def _parse_rdf(input_dic, version):  # NOSONAR
             attributes.append(object_dic)
         if "rest_non_class_category" in rdfs_entry_types:
             enum_instances.append(object_dic)
-        if "profile_name_v2_4" in rdfs_entry_types:
-            profile_name = rdfsEntry.about()
-        if "profile_name_v3" in rdfs_entry_types:
-            profile_name = rdfsEntry.label()
-        if "short_profile_name_v2_4" in rdfs_entry_types and rdfsEntry.fixed():
-            short_profile_name = rdfsEntry.fixed()
-        if "short_profile_name_v3" in rdfs_entry_types:
-            short_profile_name = rdfsEntry.keyword()
+        if not profile_name:
+            if "profile_name_v2_4" in rdfs_entry_types:
+                profile_name = rdfsEntry.about()
+            if "profile_name_v3" in rdfs_entry_types:
+                profile_name = rdfsEntry.label()
+        if not short_profile_name:
+            if "short_profile_name_v2_4" in rdfs_entry_types and rdfsEntry.fixed():
+                short_profile_name = rdfsEntry.fixed()
+            if "short_profile_name_v3" in rdfs_entry_types:
+                short_profile_name = rdfsEntry.keyword()
         if "profile_iri_v2_4" in rdfs_entry_types and rdfsEntry.fixed():
             profile_uri_list.append(rdfsEntry.fixed())
         if "profile_iri_v3" in rdfs_entry_types:
             profile_uri_list.append(rdfsEntry.version_iri())
 
     short_package_name[profile_name] = short_profile_name
-    package_listed_by_short_name[short_profile_name] = []
     _add_profile_to_packages(profile_name, short_profile_name, profile_uri_list)
+
     # Add attributes to corresponding class
     for attribute in attributes:
         clarse = attribute["domain"]
@@ -746,30 +730,11 @@ def _get_profile_details(cgmes_profile_uris):
         profile_info = {
             "index": index,
             "short_name": profile,
-            "long_name": _extract_profile_long_name(cgmes_profile_uris[profile]),
+            "long_name": long_profile_names[profile],
             "uris": [{"uri": uri} for uri in cgmes_profile_uris[profile]],
         }
         profile_details.append(profile_info)
     return profile_details
-
-
-def _extract_profile_long_name(profile_uris):
-    # Extract name from uri, e.g. "Topology" from "http://iec.ch/TC57/2013/61970-456/Topology/4"
-    # Examples of other possible uris: "http://entsoe.eu/CIM/Topology/4/1", "http://iec.ch/TC57/ns/CIM/Topology-EU/3.0"
-    # If more than one uri given, extract common part (e.g. "Equipment" from "EquipmentCore" and "EquipmentOperation")
-    long_name = ""
-    for uri in profile_uris:
-        match = re.search(r"/([^/-]*)(-[^/]*)?(/\d+)?/[\d.]+?$", uri)
-        if match:
-            name = match.group(1)
-            if long_name:
-                for idx in range(1, len(long_name)):
-                    if idx >= len(name) or long_name[idx] != name[idx]:
-                        long_name = long_name[:idx]
-                        break
-            else:
-                long_name = name
-    return long_name
 
 
 def _get_sorted_profile_keys(profile_key_list):
