@@ -512,8 +512,7 @@ def _write_python_files(elem_dict, lang_pack, output_path, version):
                     subsequent_indent=" " * 6,
                 )
             attribute_class = _get_attribute_class(attribute)
-            is_an_enum_class = attribute_class in elem_dict and elem_dict[attribute_class].is_an_enum_class()
-            attribute_type = _get_attribute_type(attribute, is_an_enum_class)
+            attribute_type = _get_attribute_type(attribute, elem_dict[attribute_class])
             attribute["is_class_attribute"] = _get_bool_string(attribute_type == "class")
             attribute["is_enum_attribute"] = _get_bool_string(attribute_type == "enum")
             attribute["is_list_attribute"] = _get_bool_string(attribute_type == "list")
@@ -842,26 +841,17 @@ def _get_attribute_class(attribute: dict) -> str:
     return _get_rid_of_hash(name)
 
 
-def _get_attribute_type(attribute: dict, is_an_enum_class: bool) -> str:
+def _get_attribute_type(attribute: dict, class_infos: CIMComponentDefinition) -> str:
     """Get the type of an attribute: "class", "enum", "list", or "primitive".
 
     :param attribute:        Dictionary with information about an attribute of a class.
-    :param is_an_enum_class: Is this attribute an enumation?
+    :param class_infos:      Information about the attribute class.
     :return:                 Type of the attribute.
     """
-    so_far_not_primitive = _get_attribute_class(attribute) in (
-        "Date",
-        "DateTime",
-        "MonthDay",
-        "Status",
-        "StreetAddress",
-        "StreetDetail",
-        "TownDetail",
-    )
     attribute_type = "class"
-    if "dataType" in attribute and not so_far_not_primitive:
+    if class_infos.is_a_primitive_class() or class_infos.is_a_float_class():
         attribute_type = "primitive"
-    elif is_an_enum_class:
+    elif class_infos.is_an_enum_class():
         attribute_type = "enum"
     elif attribute.get("multiplicity") in ("M:0..n", "M:1..n", "M:2..n"):
         attribute_type = "list"
