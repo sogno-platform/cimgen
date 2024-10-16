@@ -7,3 +7,5 @@ output/
 *.py[cod]
 __pycache__/
 .vscode/*
+*/.DS_Store
+.DS_Store
