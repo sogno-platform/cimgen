@@ -23,6 +23,7 @@ jobs:
 
         schema:
         - CGMES_2.4.15_27JAN2020
+        - CGMES_3.0.0
 
     steps:
       - name: Checkout repo
@@ -40,10 +41,15 @@ jobs:
 
           pip install .
 
+          # Extract version (2.4.15 => 2_4_15), ignore the date part
+          SCHEMA_VERSION=$(echo "${{matrix.schema}}" | cut -d'_' -f2 | cut -d'.' -f1-3 | tr '.' '_')
+
+          # Run cimgen with the valid version
           cimgen \
-            --outdir=output/${{matrix.language}} \
+            --outdir=output/${{matrix.language}}/${{matrix.schema}} \
             --schemadir=cgmes_schema/${{matrix.schema}} \
-            --langdir=${{matrix.language}}
+            --langdir=${{matrix.language}} \
+            --cgmes_version=cgmes_v${SCHEMA_VERSION}
 
       - name: Create artifact
         uses: actions/upload-artifact@v4
