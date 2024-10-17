@@ -300,9 +300,11 @@ class CIMComponentDefinition:
                 return False
         return True
     
+    def is_a_primitive(self):
+        return self.stereotype == 'Primitive'
+    
     def is_a_cim_datatype(self):
         return self.stereotype == 'CIMDatatype'
-
 
 def get_profile_name(descriptions):
     for list_elem in descriptions:
@@ -492,6 +494,7 @@ def _write_python_files(elem_dict, lang_pack, output_path, version):
 
     float_classes = {}
     enum_classes = {}
+    primitive_classes = {}
     cim_data_type_classes = {}
 
     # Iterate over Classes
@@ -500,11 +503,14 @@ def _write_python_files(elem_dict, lang_pack, output_path, version):
             float_classes[class_definition] = True
         if elem_dict[class_definition].has_instances():
             enum_classes[class_definition] = True
+        if elem_dict[class_definition].is_a_primitive():
+            primitive_classes[class_definition] = True
         if elem_dict[class_definition].is_a_cim_datatype():
             cim_data_type_classes[class_definition] = True
 
     lang_pack.set_float_classes(float_classes)
     lang_pack.set_enum_classes(enum_classes)
+    lang_pack.set_primitive_classes(primitive_classes)
     lang_pack.set_cim_data_type_classes(cim_data_type_classes)
 
     recommended_class_profiles = _get_recommended_class_profiles(elem_dict)
@@ -519,6 +525,7 @@ def _write_python_files(elem_dict, lang_pack, output_path, version):
             "instances": elem_dict[class_name].instances(),
             "has_instances": elem_dict[class_name].has_instances(),
             "is_a_float": elem_dict[class_name].is_a_float(),
+            "is_a_primitive": elem_dict[class_name].is_a_primitive(),
             "is_a_cim_data_type": elem_dict[class_name].is_a_cim_datatype(),
             "langPack": lang_pack,
             "sub_class_of": elem_dict[class_name].superClass(),

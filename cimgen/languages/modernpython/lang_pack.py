@@ -46,7 +46,30 @@ def get_class_location(class_name, class_map, version):
 
 partials = {}
 
-
+def _primitive_to_data_type(datatype):
+    if datatype.lower() == "integer":
+        return "int"
+    if datatype.lower() == "boolean":
+        return "bool"
+    if datatype.lower() == "string":
+        return "str"
+    if datatype.lower() == "datetime":
+        return "datetime"
+    if datatype.lower() == "monthday":
+        return "str"  # TO BE FIXED? I could not find a datatype in python that holds only month and day.
+    if datatype.lower() == "date":
+        return "date"
+    # as of today no CIM model is using only time.
+    if datatype.lower() == "time":
+        return "time"
+    if datatype.lower() == "float":
+        return "float"
+    if datatype.lower() == "string":
+        return "str"
+    else:
+    # this actually never happens
+        return "float"
+    
 # called by chevron, text contains the label {{dataType}}, which is evaluated by the renderer (see class template)
 def _set_default(text, render):
     return _get_type_and_default(text, render)[1]
@@ -106,6 +129,16 @@ def set_enum_classes(new_enum_classes):
 def set_float_classes(new_float_classes):
     return
 
+primitive_classes = {}
+
+def set_primitive_classes(new_primitive_classes):
+    for new_class in new_primitive_classes:
+        primitive_classes[new_class] = new_primitive_classes[new_class]
+
+def is_primitive_class(name):
+    if name in primitive_classes:
+        return primitive_classes[name]
+    
 cim_data_type_classes = {}
 
 def set_cim_data_type_classes(new_cim_data_type_classes):
@@ -120,15 +153,15 @@ def run_template(output_path, class_details):
     # if class_details["class_name"] == 'PositionPoint':
     #     #this class is created manually to support types conversions
     #     return
-    # elif class_details["is_a_primitive"] is True:
-    #     # Primitives are never used in the in memory representation but only for
-    #     # the schema
-    #     run_template_primitive(output_path, class_details, primitive_template_files)
+    if class_details["is_a_primitive"] is True:
+        # Primitives are never used in the in memory representation but only for
+        # the schema
+        run_template_primitive(output_path, class_details, primitive_template_files)
     # elif class_details["is_a_cim_data_type"] is True:
     #     # Datatypes based on primitives are never used in the in memory
     #     # representation but only for the schema
     #     run_template_cimdatatype(output_path, class_details, cimdatatype_template_files)
-    if class_details["has_instances"] is True:
+    elif class_details["has_instances"] is True:
         run_template_enum(output_path, class_details, enum_template_files)
     else:
         run_template_schema(output_path, class_details, template_files)
@@ -182,6 +215,32 @@ def run_template_enum(output_path, class_details, template_files):
             #     file.write(header_file.read())
         with open(resource_file, "a", encoding="utf-8") as file:
             class_details["setInstances"] = _set_instances
+
+            templates = files("cimgen.languages.modernpython.templates")
+            with templates.joinpath(template_info["filename"]).open(encoding="utf-8") as f:
+                args = {
+                    "data": class_details,
+                    "template": f,
+                    "partials_dict": partials,
+                }
+                output = chevron.render(**args)
+            file.write(output)
+
+def run_template_primitive(version_path, class_details, template_files):
+    for template_info in template_files:
+        resource_file =Path(version_path, "resources", "primitive",
+                class_details["class_name"] + template_info["ext"])
+        if not os.path.exists(resource_file):
+            if not (parent:=resource_file.parent).exists():
+                parent.mkdir()
+            # with open(resource_file, "w", encoding="utf-8") as file:
+            #     schema_file_path = os.path.join(
+            #         os.getcwd(), "modernpython", "primitive_header.py"
+            #     )
+            #     schema_file = open(schema_file_path, "r")
+            #     file.write(schema_file.read())
+        with open(resource_file, "a", encoding="utf-8") as file:
+            class_details["data_type"] = _primitive_to_data_type(class_details["class_name"])
 
             templates = files("cimgen.languages.modernpython.templates")
             with templates.joinpath(template_info["filename"]).open(encoding="utf-8") as f:
