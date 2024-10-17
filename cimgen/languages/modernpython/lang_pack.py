@@ -4,6 +4,7 @@ import re
 from distutils.dir_util import copy_tree
 from pathlib import Path
 from importlib.resources import files
+import ast
 
 import chevron
 
@@ -35,7 +36,9 @@ base = {"base_class": "Base", "class_location": location}
 
 # These are the files that are used to generate the python files.
 template_files = [{"filename": "cimpy_class_template.mustache", "ext": ".py"}]
-
+enum_template_files = [{"filename": "enum_class_template.mustache", "ext": ".py"}]
+primitive_template_files = [{"filename": "primitive_template.mustache", "ext": ".py"}]
+cimdatatype_template_files = [{"filename": "cimdatatype_template.mustache", "ext": ".py"}]
 
 def get_class_location(class_name, class_map, version):
     return f".{class_map[class_name].superClass()}"
@@ -52,7 +55,25 @@ def _set_default(text, render):
 def _set_type(text, render):
     return _get_type_and_default(text, render)[0]
 
-
+# called by chevron, text contains the label {{dataType}}, which is evaluated by the renderer (see class template)
+def _set_instances(text, render):
+    instance = None
+    try:
+        # render(text) returns a python dict. Some fileds might be quoted by '&quot;' instead of '"', making the first evel fail.
+        instance = ast.literal_eval(render(text))
+    except SyntaxError as se:
+        rendered = render(text)
+        rendered = rendered.replace("&quot;", '"')
+        instance = eval(rendered)
+        logger.warning("Exception in evaluating %s : %s . Handled replacing quotes", rendered, se.msg)
+    if "label" in instance:
+        value = instance["label"] + ' = "' + instance["label"] + '"'
+        if "comment" in instance:
+            value += " #" + instance["comment"]
+        return value
+    else:
+        return ""
+    
 def _get_type_and_default(text, renderer) -> tuple[str, str]:
     result = renderer(text)
     # the field {{dataType}} either contains the multiplicity of an attribute if it is a reference or otherwise the
@@ -85,8 +106,34 @@ def set_enum_classes(new_enum_classes):
 def set_float_classes(new_float_classes):
     return
 
+cim_data_type_classes = {}
+
+def set_cim_data_type_classes(new_cim_data_type_classes):
+    for new_class in new_cim_data_type_classes:
+        cim_data_type_classes[new_class] = new_cim_data_type_classes[new_class]
+
+def is_cim_data_type_class(name):
+    if name in cim_data_type_classes:
+        return cim_data_type_classes[name]
 
 def run_template(output_path, class_details):
+    # if class_details["class_name"] == 'PositionPoint':
+    #     #this class is created manually to support types conversions
+    #     return
+    # elif class_details["is_a_primitive"] is True:
+    #     # Primitives are never used in the in memory representation but only for
+    #     # the schema
+    #     run_template_primitive(output_path, class_details, primitive_template_files)
+    # elif class_details["is_a_cim_data_type"] is True:
+    #     # Datatypes based on primitives are never used in the in memory
+    #     # representation but only for the schema
+    #     run_template_cimdatatype(output_path, class_details, cimdatatype_template_files)
+    if class_details["has_instances"] is True:
+        run_template_enum(output_path, class_details, enum_template_files)
+    else:
+        run_template_schema(output_path, class_details, template_files)
+
+def run_template_schema(output_path, class_details, template_files):
     for template_info in template_files:
 
         resource_file = Path(
@@ -114,6 +161,37 @@ def run_template(output_path, class_details):
                     output = chevron.render(**args)
                 file.write(output)
 
+def run_template_enum(output_path, class_details, template_files):
+    for template_info in template_files:
+        #class_file = Path(version_path, "resources",  "enum" + template_info["ext"])
+        resource_file = Path(
+            os.path.join(
+                output_path,
+                "resources","enum",
+                class_details["class_name"] + template_info["ext"],
+            )
+        )
+        if not os.path.exists(resource_file):
+            if not (parent:=resource_file.parent).exists():
+                parent.mkdir()
+            # with open(class_file, "w", encoding="utf-8") as file:
+            #     header_file_path = os.path.join(
+            #         os.getcwd(), "modernpython", "enum_header.py"
+            #     )
+            #     header_file = open(header_file_path, "r")
+            #     file.write(header_file.read())
+        with open(resource_file, "a", encoding="utf-8") as file:
+            class_details["setInstances"] = _set_instances
+
+            templates = files("cimgen.languages.modernpython.templates")
+            with templates.joinpath(template_info["filename"]).open(encoding="utf-8") as f:
+                args = {
+                    "data": class_details,
+                    "template": f,
+                    "partials_dict": partials,
+                }
+                output = chevron.render(**args)
+            file.write(output)
 
 def resolve_headers(dest: str, version: str):
     """Add all classes in __init__.py"""
