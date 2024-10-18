@@ -69,7 +69,20 @@ def _primitive_to_data_type(datatype):
     else:
     # this actually never happens
         return "float"
-    
+
+def _compute_cim_data_type(attributes) -> tuple[str, str, str]:
+    python_type = 'None'
+    unit = 'UnitSymbol.none'
+    multiplier = 'UnitMultiplier.none'
+    for attribute in attributes:
+        if 'about' in attribute and attribute['about'] and "value" in attribute['about'] and 'class_name' in attribute:
+            python_type = _primitive_to_data_type(attribute['class_name'])
+        if 'about' in attribute and attribute['about'] and "multiplier" in attribute['about'] and 'isFixed' in attribute:
+            multiplier = "UnitMultiplier."+attribute['isFixed']
+        if 'about' in attribute and attribute['about'] and "unit" in attribute['about'] and 'isFixed' in attribute:
+            unit = "UnitSymbol."+attribute['isFixed']
+    return (python_type, unit, multiplier)
+
 # called by chevron, text contains the label {{dataType}}, which is evaluated by the renderer (see class template)
 def _set_default(text, render):
     return _get_type_and_default(text, render)[1]
@@ -157,10 +170,10 @@ def run_template(output_path, class_details):
         # Primitives are never used in the in memory representation but only for
         # the schema
         run_template_primitive(output_path, class_details, primitive_template_files)
-    # elif class_details["is_a_cim_data_type"] is True:
-    #     # Datatypes based on primitives are never used in the in memory
-    #     # representation but only for the schema
-    #     run_template_cimdatatype(output_path, class_details, cimdatatype_template_files)
+    elif class_details["is_a_cim_data_type"] is True:
+        # Datatypes based on primitives are never used in the in memory
+        # representation but only for the schema
+        run_template_cimdatatype(output_path, class_details, cimdatatype_template_files)
     elif class_details["has_instances"] is True:
         run_template_enum(output_path, class_details, enum_template_files)
     else:
@@ -200,7 +213,7 @@ def run_template_enum(output_path, class_details, template_files):
         resource_file = Path(
             os.path.join(
                 output_path,
-                "resources","enum",
+                "resources",
                 class_details["class_name"] + template_info["ext"],
             )
         )
@@ -228,7 +241,7 @@ def run_template_enum(output_path, class_details, template_files):
 
 def run_template_primitive(version_path, class_details, template_files):
     for template_info in template_files:
-        resource_file =Path(version_path, "resources", "primitive",
+        resource_file =Path(version_path, "resources",
                 class_details["class_name"] + template_info["ext"])
         if not os.path.exists(resource_file):
             if not (parent:=resource_file.parent).exists():
@@ -241,6 +254,34 @@ def run_template_primitive(version_path, class_details, template_files):
             #     file.write(schema_file.read())
         with open(resource_file, "a", encoding="utf-8") as file:
             class_details["data_type"] = _primitive_to_data_type(class_details["class_name"])
+
+            templates = files("cimgen.languages.modernpython.templates")
+            with templates.joinpath(template_info["filename"]).open(encoding="utf-8") as f:
+                args = {
+                    "data": class_details,
+                    "template": f,
+                    "partials_dict": partials,
+                }
+                output = chevron.render(**args)
+            file.write(output)
+
+def run_template_cimdatatype(version_path, class_details, template_files):
+    for template_info in template_files:
+        class_file =Path(version_path, "resources",
+                class_details["class_name"] + template_info["ext"])
+        if not os.path.exists(class_file):
+            if not (parent:=class_file.parent).exists():
+                parent.mkdir()
+            # with open(class_file, "w", encoding="utf-8") as file:
+            #     schema_file_path = os.path.join(
+            #         os.getcwd(), "modernpython", "cimdatatype_header.py"
+            #     )
+            #     schema_file = open(schema_file_path, "r")
+            #     file.write(schema_file.read())
+        with open(class_file, "a", encoding="utf-8") as file:
+            class_details["data_type"] = _compute_cim_data_type(class_details["attributes"])[0]
+            class_details["unit"] = _compute_cim_data_type(class_details["attributes"])[1]
+            class_details["multiplier"] = _compute_cim_data_type(class_details["attributes"])[2]
 
             templates = files("cimgen.languages.modernpython.templates")
             with templates.joinpath(template_info["filename"]).open(encoding="utf-8") as f:
