@@ -23,7 +23,7 @@ namespace CIMPP {
 		{{/attributes}}
 
 		static const char debugName[];
-		virtual const char* debugString();
+		const char* debugString() const override;
 
 		/* constructor initialising all attributes to null */
 		{{class_name}}();

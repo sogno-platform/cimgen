@@ -16,7 +16,8 @@ void {{class_name}}::addPrimitiveAssignFnsToMap(std::unordered_map<std::string, 
 void {{class_name}}::addClassAssignFnsToMap(std::unordered_map<std::string, class_assign_function>& assign_map) {}
 
 const char {{class_name}}::debugName[] = "{{class_name}}";
-const char* {{class_name}}::debugString() {
+const char* {{class_name}}::debugString() const
+{
 	return {{class_name}}::debugName;
 }
 
