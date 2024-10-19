@@ -5,15 +5,19 @@ Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cim
 */
 
 namespace CIMPP {
+{{#class_comment}}
 	/*
 	{{{class_comment}}}
 	*/
+{{/class_comment}}
 	enum class {{class_name}}
 	{
 {{#enum_instances}}
+{{#comment}}
 		/**
 		 * {{comment}}
 		 */
+{{/comment}}
 		{{label}},
 {{/enum_instances}}
 	};
