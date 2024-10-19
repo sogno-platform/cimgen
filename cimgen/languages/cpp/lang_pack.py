@@ -419,6 +419,10 @@ def resolve_headers(path: str, version: str):  # NOSONAR
     class_list_header = [
         "#ifndef CIMCLASSLIST_H\n",
         "#define CIMCLASSLIST_H\n",
+        "/*\n",
+        "Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cimgen\n",
+        "*/\n",
+        "\n",
         "using namespace CIMPP;\n",
         "#include <list>\n",
         "static std::list<BaseClassDefiner> CIMClassList = {\n",
@@ -438,8 +442,18 @@ def resolve_headers(path: str, version: str):  # NOSONAR
         class_blacklist,
     )
 
-    iec61970_header = ["#ifndef IEC61970_H\n", "#define IEC61970_H\n"]
-    iec61970_footer = ['#include "UnknownType.hpp"\n', "#endif"]
+    iec61970_header = [
+        "#ifndef IEC61970_H\n",
+        "#define IEC61970_H\n",
+        "/*\n",
+        "Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cimgen\n",
+        "*/\n",
+        "\n",
+    ]
+    iec61970_footer = [
+        '#include "UnknownType.hpp"\n',
+        "#endif",
+    ]
 
     _create_header_include_file(
         path,
