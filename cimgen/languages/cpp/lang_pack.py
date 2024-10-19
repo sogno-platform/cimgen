@@ -39,6 +39,10 @@ enum_template_files = [
     {"filename": "cpp_enum_header_template.mustache", "ext": ".hpp"},
     {"filename": "cpp_enum_object_template.mustache", "ext": ".cpp"},
 ]
+string_template_files = [
+    {"filename": "cpp_string_header_template.mustache", "ext": ".hpp"},
+    {"filename": "cpp_string_object_template.mustache", "ext": ".cpp"},
+]
 
 
 def get_class_location(class_name, class_map, version):  # NOSONAR
@@ -60,10 +64,12 @@ def run_template(output_path, class_details):
         templates = float_template_files
     elif class_details["is_an_enum_class"]:
         templates = enum_template_files
+    elif class_details["is_a_primitive_class"]:
+        templates = string_template_files
     else:
         templates = template_files
 
-    if class_details["class_name"] in ("String", "Integer", "Boolean", "Date"):
+    if class_details["class_name"] in ("Integer", "Boolean"):
         # These classes are defined already
         # We have to implement operators for them
         return
@@ -372,7 +378,6 @@ class_blacklist = [
     "Factory",
     "Folders",
     "IEC61970",
-    "String",
     "Task",
     "UnknownType",
 ]

@@ -1,0 +1,62 @@
+/*
+Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cimgen
+*/
+#include "{{class_name}}.hpp"
+
+#include "CIMExceptions.hpp"
+
+using namespace CIMPP;
+
+{{class_name}}::{{class_name}}() {}
+{{class_name}}::{{class_name}}(std::string value) : value(value), initialized(true) {}
+{{class_name}}::~{{class_name}}() {}
+
+{{class_name}}& {{class_name}}::operator=(std::string &rop)
+{
+	value = rop;
+	initialized = true;
+	return *this;
+}
+
+{{class_name}}::operator std::string()
+{
+	if (!initialized)
+	{
+		throw new ReadingUninitializedField();
+	}
+	return value;
+}
+
+const char {{class_name}}::debugName[] = "{{class_name}}";
+const char* {{class_name}}::debugString() const
+{
+	return {{class_name}}::debugName;
+}
+
+void {{class_name}}::addConstructToMap(std::unordered_map<std::string, BaseClass* (*)()>& factory_map) {}
+void {{class_name}}::addPrimitiveAssignFnsToMap(std::unordered_map<std::string, assign_function>& assign_map) {}
+void {{class_name}}::addClassAssignFnsToMap(std::unordered_map<std::string, class_assign_function>& assign_map) {}
+
+const BaseClassDefiner {{class_name}}::declare()
+{
+	return BaseClassDefiner({{class_name}}::addConstructToMap, {{class_name}}::addPrimitiveAssignFnsToMap, {{class_name}}::addClassAssignFnsToMap, {{class_name}}::debugName);
+}
+
+namespace CIMPP
+{
+	std::istream& operator>>(std::istream& lop, {{class_name}}& rop)
+	{
+		lop >> rop.value;
+		rop.initialized = true;
+		return lop;
+	}
+
+	std::ostream& operator<<(std::ostream& os, const {{class_name}}& obj)
+	{
+		if (obj.initialized)
+		{
+			os << obj.value;
+		}
+		return os;
+	}
+}
