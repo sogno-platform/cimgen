@@ -241,7 +241,11 @@ def create_assign(text, render):
     if label_without_keyword == "switch":
         label_without_keyword = "_switch"
 
-    if _class != "String":
+    if (
+        attribute_json["is_enum_attribute"]
+        or attribute_json["is_datatype_attribute"]
+        or _class in ("Float", "Decimal", "Integer", "Boolean")
+    ):
         assign = (
             """
 bool assign_CLASS_LABEL(std::stringstream &buffer, BaseClass* BaseClass_ptr1) {
@@ -260,7 +264,7 @@ bool assign_CLASS_LABEL(std::stringstream &buffer, BaseClass* BaseClass_ptr1) {
             .replace("LABEL", attribute_json["label"])
             .replace("LBL_WO_KEYWORD", label_without_keyword)
         )
-    else:
+    else:  # is_primitive_string_attribute
         assign = """
 bool assign_CLASS_LABEL(std::stringstream &buffer, BaseClass* BaseClass_ptr1) {
 	if(CLASS* element = dynamic_cast<CLASS*>(BaseClass_ptr1)) {
