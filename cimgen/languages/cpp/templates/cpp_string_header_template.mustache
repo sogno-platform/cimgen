@@ -1,0 +1,38 @@
+#ifndef {{class_name}}_H
+#define {{class_name}}_H
+/*
+Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cimgen
+*/
+
+#include <string>
+#include <istream>
+
+#include "BaseClass.hpp"
+
+namespace CIMPP
+{
+	class {{class_name}} : public BaseClass
+	{
+	public:
+		{{class_name}}();
+		{{class_name}}(std::string value);
+		~{{class_name}}() override;
+		{{class_name}}& operator=(std::string &rop);
+		operator std::string();
+
+		std::string value;
+		bool initialized = false;
+
+		static const char debugName[];
+		const char* debugString() const override;
+
+		static void addConstructToMap(std::unordered_map<std::string, BaseClass* (*)()>& factory_map);
+		static void addPrimitiveAssignFnsToMap(std::unordered_map<std::string, assign_function>&);
+		static void addClassAssignFnsToMap(std::unordered_map<std::string, class_assign_function>&);
+		static const BaseClassDefiner declare();
+
+		friend std::istream& operator>>(std::istream& lop, {{class_name}}& rop);
+		friend std::ostream& operator<<(std::ostream& os, const {{class_name}}& obj);
+	};
+}
+#endif
