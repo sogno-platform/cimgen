@@ -174,8 +174,36 @@ def create_class_assign(text, render):
     if _attribute_is_primitive_or_datatype_or_enum(attribute_json):
         return ""
     if attribute_json["is_list_attribute"]:
-        assign = (
-            """
+        if "inverseRole" in attribute_json:
+            inverse = attribute_json["inverseRole"].split(".")
+            assign = (
+                """
+bool assign_INVERSEC_INVERSEL(BaseClass*, BaseClass*);
+bool assign_OBJECT_CLASS_LABEL(BaseClass* BaseClass_ptr1, BaseClass* BaseClass_ptr2)
+{
+	OBJECT_CLASS* element = dynamic_cast<OBJECT_CLASS*>(BaseClass_ptr1);
+	ATTRIBUTE_CLASS* element2 = dynamic_cast<ATTRIBUTE_CLASS*>(BaseClass_ptr2);
+	if (element != nullptr && element2 != nullptr)
+	{
+		if (std::find(element->LABEL.begin(), element->LABEL.end(), element2) == element->LABEL.end())
+		{
+			element->LABEL.push_back(element2);
+			return assign_INVERSEC_INVERSEL(BaseClass_ptr2, BaseClass_ptr1);
+		}
+		return true;
+	}
+	return false;
+}""".replace(  # noqa: E101,W191
+                    "OBJECT_CLASS", attribute_json["domain"]
+                )
+                .replace("ATTRIBUTE_CLASS", attribute_class)
+                .replace("LABEL", attribute_json["label"])
+                .replace("INVERSEC", inverse[0])
+                .replace("INVERSEL", inverse[1])
+            )
+        else:
+            assign = (
+                """
 bool assign_OBJECT_CLASS_LABEL(BaseClass* BaseClass_ptr1, BaseClass* BaseClass_ptr2) {
 	if(OBJECT_CLASS* element = dynamic_cast<OBJECT_CLASS*>(BaseClass_ptr1)) {
 		if(dynamic_cast<ATTRIBUTE_CLASS*>(BaseClass_ptr2) != nullptr) {
@@ -185,23 +213,29 @@ bool assign_OBJECT_CLASS_LABEL(BaseClass* BaseClass_ptr1, BaseClass* BaseClass_p
 	}
 	return false;
 }""".replace(  # noqa: E101,W191
-                "OBJECT_CLASS", attribute_json["domain"]
+                    "OBJECT_CLASS", attribute_json["domain"]
+                )
+                .replace("ATTRIBUTE_CLASS", attribute_class)
+                .replace("LABEL", attribute_json["label"])
             )
-            .replace("ATTRIBUTE_CLASS", attribute_class)
-            .replace("LABEL", attribute_json["label"])
-        )
-    elif "inverseRole" in attribute_json and attribute_json["is_used"]:
+    elif "inverseRole" in attribute_json:
         inverse = attribute_json["inverseRole"].split(".")
         assign = (
             """
 bool assign_INVERSEC_INVERSEL(BaseClass*, BaseClass*);
 bool assign_OBJECT_CLASS_LABEL(BaseClass* BaseClass_ptr1, BaseClass* BaseClass_ptr2) {
-	if(OBJECT_CLASS* element = dynamic_cast<OBJECT_CLASS*>(BaseClass_ptr1)) {
-                element->LABEL = dynamic_cast<ATTRIBUTE_CLASS*>(BaseClass_ptr2);
-                if(element->LABEL != nullptr)
-                        return assign_INVERSEC_INVERSEL(BaseClass_ptr2, BaseClass_ptr1);
-        }
-        return false;
+	OBJECT_CLASS* element = dynamic_cast<OBJECT_CLASS*>(BaseClass_ptr1);
+	ATTRIBUTE_CLASS* element2 = dynamic_cast<ATTRIBUTE_CLASS*>(BaseClass_ptr2);
+	if (element != nullptr && element2 != nullptr)
+	{
+		if (element->LABEL != element2)
+		{
+			element->LABEL = element2;
+			return assign_INVERSEC_INVERSEL(BaseClass_ptr2, BaseClass_ptr1);
+		}
+		return true;
+	}
+	return false;
 }""".replace(  # noqa: E101,W191
                 "OBJECT_CLASS", attribute_json["domain"]
             )
