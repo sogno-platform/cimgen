@@ -83,6 +83,16 @@ def _compute_cim_data_type(attributes) -> tuple[str, str, str]:
             unit = "UnitSymbol."+attribute['isFixed']
     return (python_type, unit, multiplier)
 
+def _set_cim_data_type(text, render) -> str:
+    attribute = eval(render(text))
+    if is_primitive_class(attribute["class_name"]):
+        return "data_type = " + attribute["class_name"] + ","
+    elif is_primitive_class(attribute["class_name"]) or attribute["class_name"] == "String":
+        return "data_type = String,"
+    elif is_cim_data_type_class(attribute["class_name"]):
+        return "data_type = " + attribute["class_name"] + ","
+    return ""
+
 # called by chevron, text contains the label {{dataType}}, which is evaluated by the renderer (see class template)
 def _set_default(text, render):
     return _get_type_and_default(text, render)[1]
@@ -110,6 +120,18 @@ def _set_instances(text, render):
     else:
         return ""
     
+def _set_imports(attributes):
+
+    classes = set()
+    for attribute in attributes:
+        if is_primitive_class(attribute["class_name"]) or is_cim_data_type_class(attribute["class_name"]):
+            classes.add(attribute["dataType"].split("#")[1])
+
+    result = ""
+    for val in classes:
+        result += "from ." + val + " import " + val + "\n"
+    return result
+
 def _get_type_and_default(text, renderer) -> tuple[str, str]:
     result = renderer(text)
     # the field {{dataType}} either contains the multiplicity of an attribute if it is a reference or otherwise the
@@ -196,6 +218,8 @@ def run_template_schema(output_path, class_details, template_files):
             with open(resource_file, "w", encoding="utf-8") as file:
                 class_details["setDefault"] = _set_default
                 class_details["setType"] = _set_type
+                class_details["setCimDataType"] = _set_cim_data_type
+                class_details["setImports"] = _set_imports(class_details["attributes"])
 
                 templates = files("cimgen.languages.modernpython.templates")
                 with templates.joinpath(template_info["filename"]).open(encoding="utf-8") as f:
@@ -220,12 +244,7 @@ def run_template_enum(output_path, class_details, template_files):
         if not os.path.exists(resource_file):
             if not (parent:=resource_file.parent).exists():
                 parent.mkdir()
-            # with open(class_file, "w", encoding="utf-8") as file:
-            #     header_file_path = os.path.join(
-            #         os.getcwd(), "modernpython", "enum_header.py"
-            #     )
-            #     header_file = open(header_file_path, "r")
-            #     file.write(header_file.read())
+
         with open(resource_file, "a", encoding="utf-8") as file:
             class_details["setInstances"] = _set_instances
 
@@ -246,12 +265,7 @@ def run_template_primitive(version_path, class_details, template_files):
         if not os.path.exists(resource_file):
             if not (parent:=resource_file.parent).exists():
                 parent.mkdir()
-            # with open(resource_file, "w", encoding="utf-8") as file:
-            #     schema_file_path = os.path.join(
-            #         os.getcwd(), "modernpython", "primitive_header.py"
-            #     )
-            #     schema_file = open(schema_file_path, "r")
-            #     file.write(schema_file.read())
+
         with open(resource_file, "a", encoding="utf-8") as file:
             class_details["data_type"] = _primitive_to_data_type(class_details["class_name"])
 
@@ -272,12 +286,7 @@ def run_template_cimdatatype(version_path, class_details, template_files):
         if not os.path.exists(class_file):
             if not (parent:=class_file.parent).exists():
                 parent.mkdir()
-            # with open(class_file, "w", encoding="utf-8") as file:
-            #     schema_file_path = os.path.join(
-            #         os.getcwd(), "modernpython", "cimdatatype_header.py"
-            #     )
-            #     schema_file = open(schema_file_path, "r")
-            #     file.write(schema_file.read())
+
         with open(class_file, "a", encoding="utf-8") as file:
             class_details["data_type"] = _compute_cim_data_type(class_details["attributes"])[0]
             class_details["unit"] = _compute_cim_data_type(class_details["attributes"])[1]
