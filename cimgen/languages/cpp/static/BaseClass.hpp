@@ -12,9 +12,13 @@
 
 class BaseClass
 {
+	std::string rdfid;
 public:
 	enum cgmesProfile {EQ = 0, SSH = 1, TP = 2, SV = 3, DY = 4, GL = 5, DI = 6};
 	virtual ~BaseClass();
+
+	void setRdfid(const std::string& id) { rdfid = id; }
+	std::string getRdfid() const { return rdfid; }
 
 	static const char debugName[];
 	virtual const char* debugString() const;
