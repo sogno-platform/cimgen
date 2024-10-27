@@ -13,6 +13,10 @@
 #include "BaseClassDefiner.hpp"
 #include "CGMESProfile.hpp"
 
+class BaseClass;
+typedef bool (*class_get_function)(const BaseClass*, std::list<const BaseClass*>&);
+typedef bool (*get_function)(const BaseClass*, std::stringstream&);
+
 class BaseClass
 {
 	std::string rdfid;
@@ -31,6 +35,9 @@ public:
 	static void addConstructToMap(std::unordered_map<std::string, BaseClass* (*)()>& factory_map);
 	static void addPrimitiveAssignFnsToMap(std::unordered_map<std::string, assign_function>& assign_map);
 	static void addClassAssignFnsToMap(std::unordered_map<std::string, class_assign_function>& assign_map);
+	virtual void addPrimitiveGetFnsToMap(std::map<std::string, get_function>& get_map) const;
+	virtual void addClassGetFnsToMap(std::map<std::string, class_get_function>& get_map) const;
+	virtual void addEnumGetFnsToMap(std::map<std::string, get_function>& get_map) const;
 	static const CIMPP::BaseClassDefiner declare();
 };
 #endif // BASECLASS_HPP
