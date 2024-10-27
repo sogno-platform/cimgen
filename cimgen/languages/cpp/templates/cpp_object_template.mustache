@@ -15,6 +15,35 @@ using namespace CIMPP;
 {{class_name}}::{{class_name}}(){{#langPack.create_nullptr_assigns}} {{attributes}} {{/langPack.create_nullptr_assigns}} {};
 {{class_name}}::~{{class_name}}() {};
 
+static const std::list<CGMESProfile> PossibleProfilesForClass =
+{
+{{#class_origin}}
+	CGMESProfile::{{origin}},
+{{/class_origin}}
+};
+
+static const std::map<std::string, std::list<CGMESProfile>> PossibleProfilesForAttributes =
+{
+{{#attributes}}
+	{ "cim:{{about}}", { {{#attr_origin}}CGMESProfile::{{origin}}, {{/attr_origin}}} },
+{{/attributes}}
+};
+
+std::list<CGMESProfile>
+{{class_name}}::getPossibleProfilesForClass() const
+{
+	return PossibleProfilesForClass;
+}
+
+std::map<std::string, std::list<CGMESProfile>>
+{{class_name}}::getPossibleProfilesForAttributes() const
+{
+	auto map = PossibleProfilesForAttributes;
+	auto&& parent_map = {{sub_class_of}}::getPossibleProfilesForAttributes();
+	map.insert(parent_map.begin(), parent_map.end());
+	return map;
+}
+
 {{#attributes}}
 {{#langPack.create_assign}}{{.}}{{/langPack.create_assign}}
 {{/attributes}}
