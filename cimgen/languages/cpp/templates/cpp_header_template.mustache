@@ -5,11 +5,13 @@ Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cim
 */
 
 #include <list>
+#include <map>
 #include <string>
 #include <unordered_map>
 
 #include "{{sub_class_of}}.hpp"
 #include "BaseClassDefiner.hpp"
+#include "CGMESProfile.hpp"
 {{#langPack._create_attribute_includes}}{{attributes}}{{/langPack._create_attribute_includes}}
 namespace CIMPP
 {
@@ -32,6 +34,9 @@ namespace CIMPP
 
 		static const char debugName[];
 		const char* debugString() const override;
+
+		std::list<CGMESProfile> getPossibleProfilesForClass() const override;
+		std::map<std::string, std::list<CGMESProfile>> getPossibleProfilesForAttributes() const override;
 
 		static void addConstructToMap(std::unordered_map<std::string, BaseClass* (*)()>& factory_map);
 		static void addPrimitiveAssignFnsToMap(std::unordered_map<std::string, assign_function>& assign_map);
