@@ -171,17 +171,7 @@ def insert_get_fn(text, render):
         return ""
     label = attribute_json["label"]
     class_name = attribute_json["domain"]
-    return (
-        '	get_map.emplace("cim:'
-        + class_name
-        + "."
-        + label
-        + '", &get_'
-        + class_name
-        + "_"
-        + label
-        + ");\n"
-    )
+    return '	get_map.emplace("cim:' + class_name + "." + label + '", &get_' + class_name + "_" + label + ");\n"
 
 
 def insert_class_get_fn(text, render):
@@ -193,17 +183,7 @@ def insert_class_get_fn(text, render):
         return ""
     label = attribute_json["label"]
     class_name = attribute_json["domain"]
-    return (
-        '	get_map.emplace("cim:'
-        + class_name
-        + "."
-        + label
-        + '", &get_'
-        + class_name
-        + "_"
-        + label
-        + ");\n"
-    )
+    return '	get_map.emplace("cim:' + class_name + "." + label + '", &get_' + class_name + "_" + label + ");\n"
 
 
 def insert_enum_get_fn(text, render):
@@ -213,17 +193,7 @@ def insert_enum_get_fn(text, render):
         return ""
     label = attribute_json["label"]
     class_name = attribute_json["domain"]
-    return (
-        '	get_map.emplace("cim:'
-        + class_name
-        + "."
-        + label
-        + '", &get_'
-        + class_name
-        + "_"
-        + label
-        + ");\n"
-    )
+    return '	get_map.emplace("cim:' + class_name + "." + label + '", &get_' + class_name + "_" + label + ");\n"
 
 
 def create_nullptr_assigns(text, render):
