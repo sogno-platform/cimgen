@@ -4,23 +4,45 @@
 Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cimgen
 */
 
-namespace CIMPP {
+#include <istream>
+#include <ostream>
+
+namespace CIMPP
+{
 {{#class_comment}}
 	/*
 	{{{class_comment}}}
 	*/
 {{/class_comment}}
-	enum class {{class_name}}
+	class {{class_name}}
 	{
+	public:
+		enum {{class_name}}_ENUM
+		{
 {{#enum_instances}}
 {{#comment}}
-		/**
-		 * {{comment}}
-		 */
+			/**
+			 * {{comment}}
+			 */
 {{/comment}}
-		{{label}},
+			{{label}},
 {{/enum_instances}}
+		};
+
+		{{class_name}}() : value(), initialized(false) {}
+		{{class_name}}({{class_name}}_ENUM value) : value(value), initialized(true) {}
+
+		{{class_name}}& operator=({{class_name}}_ENUM rop);
+		operator {{class_name}}_ENUM() const;
+
+		{{class_name}}_ENUM value;
+		bool initialized;
+
+		static const char debugName[];
+		const char* debugString() const;
+
+		friend std::istream& operator>>(std::istream& lop, {{class_name}}& rop);
+		friend std::ostream& operator<<(std::ostream& os, const {{class_name}}& obj);
 	};
-	std::istream& operator>>(std::istream& lop, CIMPP::{{class_name}}& rop);
 }
 #endif
