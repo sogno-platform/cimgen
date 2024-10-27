@@ -3,9 +3,8 @@ Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cim
 */
 #include "{{class_name}}.hpp"
 
+#include <algorithm>
 #include <sstream>
-
-#include "{{sub_class_of}}.hpp"
 
 {{#attributes}}
 #include "{{attribute_class}}.hpp"
@@ -14,7 +13,6 @@ Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cim
 using namespace CIMPP;
 
 {{class_name}}::{{class_name}}(){{#langPack.create_nullptr_assigns}} {{attributes}} {{/langPack.create_nullptr_assigns}} {};
-
 {{class_name}}::~{{class_name}}() {};
 
 {{#attributes}}
@@ -25,35 +23,40 @@ using namespace CIMPP;
 {{#langPack.create_class_assign}}{{.}}{{/langPack.create_class_assign}}
 {{/attributes}}
 
-namespace CIMPP {
-	BaseClass* {{class_name}}_factory() {
-		return new {{class_name}};
-	}
-}
-
-void {{class_name}}::addConstructToMap(std::unordered_map<std::string, BaseClass* (*)()>& factory_map) {
-	factory_map.insert(std::make_pair(std::string("cim:{{class_name}}"), &{{class_name}}_factory));
-}
-
-void {{class_name}}::addPrimitiveAssignFnsToMap(std::unordered_map<std::string, assign_function>& assign_map) {
-{{#attributes}}
-	{{> insert_assign}}
-{{/attributes}}
-}
-
-void {{class_name}}::addClassAssignFnsToMap(std::unordered_map<std::string, class_assign_function>& assign_map) {
-{{#attributes}}
-	{{> insert_class_assign}}
-{{/attributes}}
-}
-
 const char {{class_name}}::debugName[] = "{{class_name}}";
 const char* {{class_name}}::debugString() const
 {
 	return {{class_name}}::debugName;
 }
 
+void {{class_name}}::addConstructToMap(std::unordered_map<std::string, BaseClass* (*)()>& factory_map)
+{
+	factory_map.insert(std::make_pair(std::string("cim:{{class_name}}"), &{{class_name}}_factory));
+}
+
+void {{class_name}}::addPrimitiveAssignFnsToMap(std::unordered_map<std::string, assign_function>& assign_map)
+{
+{{#attributes}}
+{{> insert_assign}}
+{{/attributes}}
+}
+
+void {{class_name}}::addClassAssignFnsToMap(std::unordered_map<std::string, class_assign_function>& assign_map)
+{
+{{#attributes}}
+{{> insert_class_assign}}
+{{/attributes}}
+}
+
 const BaseClassDefiner {{class_name}}::declare()
 {
 	return BaseClassDefiner({{class_name}}::addConstructToMap, {{class_name}}::addPrimitiveAssignFnsToMap, {{class_name}}::addClassAssignFnsToMap, {{class_name}}::debugName);
+}
+
+namespace CIMPP
+{
+	BaseClass* {{class_name}}_factory()
+	{
+		return new {{class_name}};
+	}
 }

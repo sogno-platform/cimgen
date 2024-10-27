@@ -4,25 +4,28 @@
 Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cimgen
 */
 
-#include "{{sub_class_of}}.hpp"
 #include <list>
-#include "Boolean.hpp"
-#include "Float.hpp"
+#include <string>
+#include <unordered_map>
 
+#include "{{sub_class_of}}.hpp"
+#include "BaseClassDefiner.hpp"
 {{#langPack._create_attribute_includes}}{{attributes}}{{/langPack._create_attribute_includes}}
-
-namespace CIMPP {
-
+namespace CIMPP
+{
 {{#langPack._create_attribute_class_declarations}}{{attributes}}{{/langPack._create_attribute_class_declarations}}
 {{#class_comment}}
 	/*
 	{{{class_comment}}}
 	*/
 {{/class_comment}}
-	class {{class_name}}: public {{sub_class_of}}
+	class {{class_name}} : public {{sub_class_of}}
 	{
-
 	public:
+		/* constructor initialising all attributes to null */
+		{{class_name}}();
+		~{{class_name}}() override;
+
 {{#attributes}}
 		{{> attribute}} {{> label}};  /* {{comment}} Default: {{#langPack._set_default}}{{dataType}}{{/langPack._set_default}} */
 {{/attributes}}
@@ -30,15 +33,10 @@ namespace CIMPP {
 		static const char debugName[];
 		const char* debugString() const override;
 
-		/* constructor initialising all attributes to null */
-		{{class_name}}();
-		virtual ~{{class_name}}();
-
 		static void addConstructToMap(std::unordered_map<std::string, BaseClass* (*)()>& factory_map);
-		static void addPrimitiveAssignFnsToMap(std::unordered_map<std::string, assign_function>&);
-		static void addClassAssignFnsToMap(std::unordered_map<std::string, class_assign_function>&);
+		static void addPrimitiveAssignFnsToMap(std::unordered_map<std::string, assign_function>& assign_map);
+		static void addClassAssignFnsToMap(std::unordered_map<std::string, class_assign_function>& assign_map);
 		static const BaseClassDefiner declare();
-
 	};
 
 	BaseClass* {{class_name}}_factory();
