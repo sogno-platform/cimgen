@@ -4,6 +4,9 @@ using namespace CIMPP;
 
 BaseClass::~BaseClass() {}
 
+std::list<CGMESProfile> BaseClass::getPossibleProfilesForClass() const { return {}; }
+std::map<std::string, std::list<CGMESProfile>> BaseClass::getPossibleProfilesForAttributes() const { return {}; }
+
 const char BaseClass::debugName[] = "BaseClass";
 const char* BaseClass::debugString() const
 {

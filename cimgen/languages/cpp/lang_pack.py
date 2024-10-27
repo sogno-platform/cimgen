@@ -11,14 +11,14 @@ def location(version):  # NOSONAR
 # Setup called only once: make output directory, create base class, create profile class, etc.
 # This just makes sure we have somewhere to write the classes.
 # cgmes_profile_details contains index, names and uris for each profile.
-# We don't use that here because we aren't exporting into
-# separate profiles.
+# We use that to create the header data for the profiles.
 def setup(output_path: str, cgmes_profile_details: list, cim_namespace: str):  # NOSONAR
     if not os.path.exists(output_path):
         os.makedirs(output_path)
     else:
         for filename in os.listdir(output_path):
             os.remove(os.path.join(output_path, filename))
+    _create_cgmes_profile(output_path, cgmes_profile_details, cim_namespace)
 
 
 base = {"base_class": "BaseClass", "class_location": location}
@@ -42,6 +42,10 @@ enum_template_files = [
 string_template_files = [
     {"filename": "cpp_string_header_template.mustache", "ext": ".hpp"},
     {"filename": "cpp_string_object_template.mustache", "ext": ".cpp"},
+]
+profile_template_files = [
+    {"filename": "cpp_cgmesProfile_header_template.mustache", "ext": ".hpp"},
+    {"filename": "cpp_cgmesProfile_object_template.mustache", "ext": ".cpp"},
 ]
 
 
@@ -90,6 +94,16 @@ def _write_templated_file(class_file, class_details, template_filename):
             }
             output = chevron.render(**args)
         file.write(output)
+
+
+def _create_cgmes_profile(output_path: str, profile_details: list, cim_namespace: str):
+    for template_info in profile_template_files:
+        class_file = os.path.join(output_path, "CGMESProfile" + template_info["ext"])
+        class_details = {
+            "profiles": profile_details,
+            "cim_namespace": cim_namespace,
+        }
+        _write_templated_file(class_file, class_details, template_info["filename"])
 
 
 # This function just allows us to avoid declaring a variable called 'switch',
@@ -421,6 +435,7 @@ class_blacklist = [
     "assignments",
     "BaseClass",
     "BaseClassDefiner",
+    "CGMESProfile",
     "CIMClassList",
     "CIMFactory",
     "CIMNamespaces",

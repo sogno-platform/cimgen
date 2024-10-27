@@ -5,16 +5,18 @@
 #define CGMES_BUILD
 #endif
 
+#include <list>
+#include <map>
 #include <string>
 #include <unordered_map>
 
 #include "BaseClassDefiner.hpp"
+#include "CGMESProfile.hpp"
 
 class BaseClass
 {
 	std::string rdfid;
 public:
-	enum cgmesProfile {EQ = 0, SSH = 1, TP = 2, SV = 3, DY = 4, GL = 5, DI = 6};
 	virtual ~BaseClass();
 
 	void setRdfid(const std::string& id) { rdfid = id; }
@@ -22,6 +24,9 @@ public:
 
 	static const char debugName[];
 	virtual const char* debugString() const;
+
+	virtual std::list<CGMESProfile> getPossibleProfilesForClass() const;
+	virtual std::map<std::string, std::list<CGMESProfile>> getPossibleProfilesForAttributes() const;
 
 	static void addConstructToMap(std::unordered_map<std::string, BaseClass* (*)()>& factory_map);
 	static void addPrimitiveAssignFnsToMap(std::unordered_map<std::string, assign_function>& assign_map);
