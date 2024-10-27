@@ -3,21 +3,27 @@ Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cim
 */
 #include "{{class_name}}.hpp"
 
+#include <string>
+
 #include "../src/CIMExceptions.hpp"
 
 using namespace CIMPP;
 
-{{class_name}}::{{class_name}}() {}
+{{class_name}}& {{class_name}}::operator=(long double rop)
+{
+	value = rop;
+	initialized = true;
+	return *this;
+}
 
-{{class_name}}::~{{class_name}}(){}
-
-{{class_name}}::{{class_name}}(long double value) : value(value), initialized(true) {}
-
-void {{class_name}}::addConstructToMap(std::unordered_map<std::string, BaseClass* (*)()>& factory_map) {}
-
-void {{class_name}}::addPrimitiveAssignFnsToMap(std::unordered_map<std::string, assign_function>& assign_map) {}
-
-void {{class_name}}::addClassAssignFnsToMap(std::unordered_map<std::string, class_assign_function>& assign_map) {}
+{{class_name}}::operator long double() const
+{
+	if (!initialized)
+	{
+		throw new ReadingUninitializedField();
+	}
+	return value;
+}
 
 const char {{class_name}}::debugName[] = "{{class_name}}";
 const char* {{class_name}}::debugString() const
@@ -25,51 +31,47 @@ const char* {{class_name}}::debugString() const
 	return {{class_name}}::debugName;
 }
 
-
-const BaseClassDefiner {{class_name}}::declare() {
-	return BaseClassDefiner({{class_name}}::addConstructToMap, {{class_name}}::addPrimitiveAssignFnsToMap, {{class_name}}::addClassAssignFnsToMap, {{class_name}}::debugName);
+{{class_name}}& {{class_name}}::operator+=(const {{class_name}}& rhs)
+{
+	value += rhs.value;
+	return *this;
 }
 
-namespace CIMPP {
-	{{class_name}}& {{class_name}}::operator=(long double &rop) {
-		value = rop;
-		initialized = true;
-		return *this;
-	}
+{{class_name}}& {{class_name}}::operator-=(const {{class_name}}& rhs)
+{
+	value -= rhs.value;
+	return *this;
+}
 
-	{{class_name}}& {{class_name}}::operator-=(const {{class_name}}& rhs) {
-	    value -= rhs.value;
-	    return *this;
-	}
+{{class_name}}& {{class_name}}::operator*=(const {{class_name}}& rhs)
+{
+	value *= rhs.value;
+	return *this;
+}
 
-	{{class_name}}& {{class_name}}::operator*=(const {{class_name}}& rhs) {
-	    value *= rhs.value;
-	    return *this;
-	}
+{{class_name}}& {{class_name}}::operator/=(const {{class_name}}& rhs)
+{
+	value /= rhs.value;
+	return *this;
+}
 
-	{{class_name}}& {{class_name}}::operator/=(const {{class_name}}& rhs) {
-	    value /= rhs.value;
-	    return *this;
-	}
-
-	{{class_name}}& {{class_name}}::operator+=(const {{class_name}}& rhs) {
-	    value += rhs.value;
-	    return *this;
-	}
-
-	{{class_name}}::operator long double() {
-		if(!initialized)
-		{
-			throw new ReadingUninitializedField();
-		}
-		return value;
-	}
-
-	std::istream& operator>>(std::istream& lop, {{class_name}}& rop) {
+namespace CIMPP
+{
+	std::istream& operator>>(std::istream& lop, {{class_name}}& rop)
+	{
 		std::string tmp;
 		lop >> tmp;
 		rop.value = stold(tmp);
 		rop.initialized = true;
 		return lop;
+	}
+
+	std::ostream& operator<<(std::ostream& os, const {{class_name}}& obj)
+	{
+		if (obj.initialized)
+		{
+			os << obj.value;
+		}
+		return os;
 	}
 }

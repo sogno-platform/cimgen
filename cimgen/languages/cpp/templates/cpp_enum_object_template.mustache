@@ -3,14 +3,41 @@ Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cim
 */
 #include "{{class_name}}.hpp"
 
-#include <sstream>
-#include <iostream>
+#include <ios>
+#include <string>
+
+#include "../src/CIMExceptions.hpp"
 
 using namespace CIMPP;
 
-namespace CIMPP {
-	std::istream& operator>>(std::istream& lop, CIMPP::{{class_name}}& rop)
+{{class_name}}& {{class_name}}::operator=({{class_name}}_ENUM rop)
+{
+	value = rop;
+	initialized = true;
+	return *this;
+}
+
+{{class_name}}::operator {{class_name}}_ENUM() const
+{
+	if (!initialized)
 	{
+		throw new ReadingUninitializedField();
+	}
+	return value;
+}
+
+const char {{class_name}}::debugName[] = "{{class_name}}";
+const char* {{class_name}}::debugString() const
+{
+	return {{class_name}}::debugName;
+}
+
+namespace CIMPP
+{
+	std::istream& operator>>(std::istream& lop, {{class_name}}& rop)
+	{
+		rop.initialized = false;
+
 		std::string EnumSymbol;
 		lop >> EnumSymbol;
 
@@ -33,5 +60,26 @@ namespace CIMPP {
 
 		lop.setstate(std::ios::failbit);
 		return lop;
+	}
+
+	std::ostream& operator<<(std::ostream& os, const {{class_name}}& obj)
+	{
+		if (obj.initialized)
+		{
+			std::string EnumSymbol;
+
+{{#enum_instances}}
+			if (obj.value == {{class_name}}::{{label}})
+			{
+				EnumSymbol = "{{label}}";
+			}
+{{/enum_instances}}
+
+			if (!EnumSymbol.empty())
+			{
+				os << "{{class_name}}." << EnumSymbol;
+			}
+		}
+		return os;
 	}
 }

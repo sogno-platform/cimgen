@@ -6,8 +6,7 @@ Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cim
 
 #include <string>
 #include <istream>
-
-#include "BaseClass.hpp"
+#include <ostream>
 
 namespace CIMPP
 {
@@ -16,25 +15,20 @@ namespace CIMPP
 	{{{class_comment}}}
 	*/
 {{/class_comment}}
-	class {{class_name}} : public BaseClass
+	class {{class_name}}
 	{
 	public:
-		{{class_name}}();
-		{{class_name}}(std::string value);
-		~{{class_name}}() override;
-		{{class_name}}& operator=(std::string &rop);
-		operator std::string();
+		{{class_name}}() : initialized(false) {}
+		{{class_name}}(const std::string& value) : value(value), initialized(true) {}
+
+		{{class_name}}& operator=(const std::string &rop);
+		operator std::string() const;
 
 		std::string value;
-		bool initialized = false;
+		bool initialized;
 
 		static const char debugName[];
-		const char* debugString() const override;
-
-		static void addConstructToMap(std::unordered_map<std::string, BaseClass* (*)()>& factory_map);
-		static void addPrimitiveAssignFnsToMap(std::unordered_map<std::string, assign_function>&);
-		static void addClassAssignFnsToMap(std::unordered_map<std::string, class_assign_function>&);
-		static const BaseClassDefiner declare();
+		const char* debugString() const;
 
 		friend std::istream& operator>>(std::istream& lop, {{class_name}}& rop);
 		friend std::ostream& operator<<(std::ostream& os, const {{class_name}}& obj);
