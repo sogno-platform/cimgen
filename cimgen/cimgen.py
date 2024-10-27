@@ -2,7 +2,6 @@ import logging
 import os
 import textwrap
 import warnings
-import re
 from time import time
 
 import xmltodict
