@@ -87,8 +87,6 @@ def _set_cim_data_type(text, render) -> str:
     attribute = eval(render(text))
     if is_primitive_class(attribute["class_name"]):
         return "data_type = " + attribute["class_name"] + ","
-    elif is_primitive_class(attribute["class_name"]) or attribute["class_name"] == "String":
-        return "data_type = String,"
     elif is_cim_data_type_class(attribute["class_name"]):
         return "data_type = " + attribute["class_name"] + ","
     return ""

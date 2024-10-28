@@ -6,9 +6,8 @@ from pydantic.dataclasses import dataclass
 
 from .dataclassconfig import DataclassConfig
 from .profile import BaseProfile
-from resources.UnitMultiplier import UnitMultiplier
-from resources.UnitSymbol import UnitSymbol
-
+from ..resources.UnitMultiplier import UnitMultiplier
+from ..resources.UnitSymbol import UnitSymbol
 @dataclass(config=DataclassConfig)
 class Primitive:
 
