@@ -1,14 +1,16 @@
 """
-Generated from the CGMES 3 files via cimgen: https://github.com/sogno-platform/cimgen
+Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cimgen
 """
 
 from functools import cached_property
 from typing import Optional
+
 from pydantic import Field
 from pydantic.dataclasses import dataclass
-from ..utils.profile import BaseProfile, Profile
 
+from ..utils.profile import BaseProfile, Profile
 from {{class_location}} import {{sub_class_of}}
+
 
 @dataclass
 class {{class_name}}({{sub_class_of}}):
@@ -21,20 +23,43 @@ class {{class_name}}({{sub_class_of}}):
     """
 
     {{#attributes}}
-    {{^isAssociationUsed}}# *Association not used*
-    # Type {{dataType}} in CIM
-    # {{/isAssociationUsed}}{{label}} : {{#setType}}{{dataType}}{{/setType}} = Field({{#setDefault}}{{dataType}}{{/setDefault}}, json_schema_extra={"in_profiles":[{{#attr_origin}}Profile.{{origin}}, {{/attr_origin}}]}) {{^isAssociationUsed}}# noqa: E501{{/isAssociationUsed}}
+    {{label}}: {{#setType}}{{dataType}}{{/setType}} = Field(
+        {{#setDefault}}{{dataType}}{{/setDefault}},
+        json_schema_extra={
+            "in_profiles": [
+                {{#attr_origin}}
+                Profile.{{origin}},
+                {{/attr_origin}}
+            ],
+            "is_used": {{#is_used}}True{{/is_used}}{{^is_used}}False{{/is_used}},
+            "is_class_attribute": {{#is_class_attribute}}True{{/is_class_attribute}}{{^is_class_attribute}}False{{/is_class_attribute}},
+            "is_enum_attribute": {{#is_enum_attribute}}True{{/is_enum_attribute}}{{^is_enum_attribute}}False{{/is_enum_attribute}},
+            "is_list_attribute": {{#is_list_attribute}}True{{/is_list_attribute}}{{^is_list_attribute}}False{{/is_list_attribute}},
+            "is_primitive_attribute": {{#is_primitive_attribute}}True{{/is_primitive_attribute}}{{^is_primitive_attribute}}False{{/is_primitive_attribute}},
+        },
+    )
 
     {{/attributes}}
     {{^attributes}}
     # No attributes defined for this class.
+
     {{/attributes}}
-
-
     @cached_property
-    def possible_profiles(self)->set[BaseProfile]:
+    def possible_profiles(self) -> set[BaseProfile]:
         """
         A resource can be used by multiple profiles. This is the set of profiles
         where this element can be found.
         """
-        return { {{#class_origin}}Profile.{{origin}}, {{/class_origin}} }
+        return {
+            {{#class_origin}}
+            Profile.{{origin}},
+            {{/class_origin}}
+        }
+
+    @cached_property
+    def recommended_profile(self) -> BaseProfile:
+        """
+        This is the profile with most of the attributes.
+        It should be used to write the data to as few as possible files.
+        """
+        return Profile.{{recommended_class_profile}}
