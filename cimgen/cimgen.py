@@ -299,12 +299,13 @@ class CIMComponentDefinition:
             if not candidate_array[key]:
                 return False
         return True
-    
+
     def is_a_primitive(self):
-        return self.stereotype == 'Primitive'
-    
+        return self.stereotype == "Primitive"
+
     def is_a_cim_datatype(self):
-        return self.stereotype == 'CIMDatatype'
+        return self.stereotype == "CIMDatatype"
+
 
 def get_profile_name(descriptions):
     for list_elem in descriptions:

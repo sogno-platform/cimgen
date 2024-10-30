@@ -8,6 +8,8 @@ from .dataclassconfig import DataclassConfig
 from .profile import BaseProfile
 from ..resources.UnitMultiplier import UnitMultiplier
 from ..resources.UnitSymbol import UnitSymbol
+
+
 @dataclass(config=DataclassConfig)
 class Primitive:
 
@@ -15,6 +17,7 @@ class Primitive:
     type: object = Field(frozen=True)
     namespace: str = Field(frozen=True, default=NAMESPACES["cim"])
     profiles: List[BaseProfile] = Field(frozen=True)
+
 
 @dataclass(config=DataclassConfig)
 class CIMDatatype(Primitive):

@@ -13,6 +13,7 @@ class DataclassConfig:  # pylint: disable=too-few-public-methods
     defer_build = True
     from_attributes = True
 
+
 class GeoDataclassConfig:  # pylint: disable=too-few-public-methods
     """
     Used to configure pydantic dataclasses.
@@ -27,4 +28,4 @@ class GeoDataclassConfig:  # pylint: disable=too-few-public-methods
     populate_by_name = True
     defer_build = True
     from_attributes = True
-    arbitrary_types_allowed=True
+    arbitrary_types_allowed = True
