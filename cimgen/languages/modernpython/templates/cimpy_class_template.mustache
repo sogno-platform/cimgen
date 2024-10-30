@@ -24,13 +24,12 @@ class {{class_name}}({{sub_class_of}}):
     {{#attributes}}
     {{^isAssociationUsed}}# *Association not used*
     # Type {{dataType}} in CIM
-    # {{/isAssociationUsed}}{{label}} : {{#setType}}{{dataType}}{{/setType}} = Field({{#setDefault}}{{dataType}}{{/setDefault}}, {{#setCimDataType}}{{.}}{{/setCimDataType}} json_schema_extra={"in_profiles":[{{#attr_origin}}Profile.{{origin}}, {{/attr_origin}}]}) {{^isAssociationUsed}}# noqa: E501{{/isAssociationUsed}}
+    # {{/isAssociationUsed}}{{label}} : {{#setType}}{{dataType}}{{/setType}} = Field({{#setDefault}}{{dataType}}{{/setDefault}}, json_schema_extra={"in_profiles":[{{#attr_origin}}Profile.{{origin}},{{/attr_origin}}],{{#setCimDataType}}{{.}}{{/setCimDataType}}}){{^isAssociationUsed}}  # noqa: E501{{/isAssociationUsed}}
 
     {{/attributes}}
     {{^attributes}}
     # No attributes defined for this class.
     {{/attributes}}
-
 
     @cached_property
     def possible_profiles(self)->set[BaseProfile]:
