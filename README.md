@@ -19,14 +19,33 @@ cimgen --outdir=output/cpp/CGMES_2.4.15_27JAN2020 --schemadir=cgmes_schema/CGMES
 
 This will build version `CGMES_2.4.15_27JAN2020` in the subfolder `output/cpp/CGMES_2.4.15_27JAN2020`.
 
-If you wish to build an alternative version, you can see available options in the subfolder called `cgmes_schema`.
-For the schema `CGMES_3.0.0` you have to use the option `--cgmes_version=cgmes_v3_0_0`.
+> [!NOTE]
+> If you wish to build an alternative version, you can see available options in the subfolder called `cgmes_schema`.
+> For the schema `CGMES_3.0.0` you have to use the option
+> `--cgmes_version=cgmes_v3_0_0`. `outdir` can be set to whichever absolute path you wish to create the files in.
+
+Alternatively, you can leverage `Makefile`:
+
+```bash
+pip install -e .
+#unset BUILD_IN_DOCKER # if you previously set to use docker
+#export SCHEMA=CGMES_3.0.0 # to use CGMES 3.0.0
+make cpp
+```
 
 #### Generating C++ files in a Docker container
 
 ```bash
 docker build --tag cimgen --file Dockerfile .
 docker run --volume "$(pwd)/output:/output" cimgen --outdir=/output/cpp/CGMES_2.4.15_27JAN2020 --schemadir=/cimgen/cgmes_schema/CGMES_2.4.15_27JAN2020 --langdir=cpp --cgmes_version=cgmes_v2_4_15
+```
+
+alternatively, you can leverage `Makefile`:
+
+```bash
+export BUILD_IN_DOCKER=true
+#export SCHEMA=CGMES_3.0.0 to use CGMES 3.0.0
+make cpp
 ```
 
 ### Generating Python files
@@ -38,13 +57,63 @@ pip install -e .
 cimgen --outdir=output/python/CGMES_2.4.15_27JAN2020 --schemadir=cgmes_schema/CGMES_2.4.15_27JAN2020 --langdir=python --cgmes_version=cgmes_v2_4_15
 ```
 
-`outdir` can be set to whichever absolute path you wish to create the files in.
+alternatively, you can leverage `Makefile`:
+
+```bash
+pip install -e .
+#unset BUILD_IN_DOCKER # if you previously set to use docker
+#export SCHEMA=CGMES_3.0.0 # to use CGMES 3.0.0
+make python
+```
 
 #### Generating Python files in a Docker container
 
 ```bash
 docker build --tag cimgen --file Dockerfile .
 docker run --volume "$(pwd)/output:/output" cimgen --outdir=/output/python/CGMES_2.4.15_27JAN2020 --schemadir=/cimgen/cgmes_schema/CGMES_2.4.15_27JAN2020 --langdir=python --cgmes_version=cgmes_v2_4_15
+```
+
+alternatively, you can leverage `Makefile`:
+
+```bash
+export BUILD_IN_DOCKER=true
+#export SCHEMA=CGMES_3.0.0 to use CGMES 3.0.0
+make python
+```
+
+### Generating Modern Python (i.e. PyDantic based dataclasses) files
+
+#### Generating Modern Python files on Linux
+
+```bash
+pip install -e .
+cimgen --outdir=output/modernpython/CGMES_2.4.15_27JAN2020 --schemadir=cgmes_schema/CGMES_2.4.15_27JAN2020 --langdir=modernpython --cgmes_version=cgmes_v2_4_15
+```
+
+`outdir` can be set to whichever absolute path you wish to create the files in.
+
+alternatively, you can leverage `Makefile`:
+
+```bash
+pip install -e .
+#unset BUILD_IN_DOCKER # if you previously set to use docker
+#export SCHEMA=CGMES_3.0.0 # to use CGMES 3.0.0
+make modernpython
+```
+
+#### Generating Modern Python files in a Docker container
+
+```bash
+docker build --tag cimgen --file Dockerfile .
+docker run --volume "$(pwd)/output:/output" cimgen --outdir=/output/modernpython/CGMES_2.4.15_27JAN2020 --schemadir=/cimgen/cgmes_schema/CGMES_2.4.15_27JAN2020 --langdir=modernpython --cgmes_version=cgmes_v2_4_15
+```
+
+alternatively, you can leverage `Makefile`:
+
+```bash
+export BUILD_IN_DOCKER=true
+#export SCHEMA=CGMES_3.0.0 to use CGMES 3.0.0
+make modernpython
 ```
 
 ## License
