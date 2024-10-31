@@ -57,11 +57,7 @@ def run_template(output_path, class_details):
     else:
         templates = template_files
 
-    if (
-        class_details["class_name"] == "Integer"
-        or class_details["class_name"] == "Boolean"
-        or class_details["class_name"] == "Date"
-    ):
+    if class_details["class_name"] in ("String", "Integer", "Boolean", "Date"):
         # These classes are defined already
         # We have to implement operators for them
         return

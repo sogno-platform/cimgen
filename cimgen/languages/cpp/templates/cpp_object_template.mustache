@@ -1,6 +1,12 @@
-#include <sstream>
-#include "{{sub_class_of}}.hpp"
+/*
+Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cimgen
+*/
 #include "{{class_name}}.hpp"
+
+#include <algorithm>
+#include <ios>
+#include <iterator>
+#include <sstream>
 
 {{#attributes}}
 #include "{{attribute_class}}.hpp"
@@ -9,8 +15,36 @@
 using namespace CIMPP;
 
 {{class_name}}::{{class_name}}(){{#langPack.create_nullptr_assigns}} {{attributes}} {{/langPack.create_nullptr_assigns}} {};
-
 {{class_name}}::~{{class_name}}() {};
+
+static const std::list<CGMESProfile> PossibleProfilesForClass =
+{
+{{#class_origin}}
+	CGMESProfile::{{origin}},
+{{/class_origin}}
+};
+
+static const std::map<std::string, std::list<CGMESProfile>> PossibleProfilesForAttributes =
+{
+{{#attributes}}
+	{ "cim:{{about}}", { {{#attr_origin}}CGMESProfile::{{origin}}, {{/attr_origin}}} },
+{{/attributes}}
+};
+
+std::list<CGMESProfile>
+{{class_name}}::getPossibleProfilesForClass() const
+{
+	return PossibleProfilesForClass;
+}
+
+std::map<std::string, std::list<CGMESProfile>>
+{{class_name}}::getPossibleProfilesForAttributes() const
+{
+	auto map = PossibleProfilesForAttributes;
+	auto&& parent_map = {{sub_class_of}}::getPossibleProfilesForAttributes();
+	map.insert(parent_map.begin(), parent_map.end());
+	return map;
+}
 
 {{#attributes}}
 {{#langPack.create_assign}}{{.}}{{/langPack.create_assign}}
@@ -20,35 +54,76 @@ using namespace CIMPP;
 {{#langPack.create_class_assign}}{{.}}{{/langPack.create_class_assign}}
 {{/attributes}}
 
-namespace CIMPP {
-	BaseClass* {{class_name}}_factory() {
-		return new {{class_name}};
-	}
+{{#attributes}}
+{{#langPack.create_get}}{{.}}{{/langPack.create_get}}
+{{/attributes}}
+
+{{#attributes}}
+{{#langPack.create_class_get}}{{.}}{{/langPack.create_class_get}}
+{{/attributes}}
+
+{{#attributes}}
+{{#langPack.create_enum_get}}{{.}}{{/langPack.create_enum_get}}
+{{/attributes}}
+
+const char {{class_name}}::debugName[] = "{{class_name}}";
+const char* {{class_name}}::debugString() const
+{
+	return {{class_name}}::debugName;
 }
 
-void {{class_name}}::addConstructToMap(std::unordered_map<std::string, BaseClass* (*)()>& factory_map) {
+void {{class_name}}::addConstructToMap(std::unordered_map<std::string, BaseClass* (*)()>& factory_map)
+{
 	factory_map.insert(std::make_pair(std::string("cim:{{class_name}}"), &{{class_name}}_factory));
 }
 
-void {{class_name}}::addPrimitiveAssignFnsToMap(std::unordered_map<std::string, assign_function>& assign_map) {
-{{#attributes}}
-	{{> insert_assign}}
-{{/attributes}}
-}
-
-void {{class_name}}::addClassAssignFnsToMap(std::unordered_map<std::string, class_assign_function>& assign_map) {
-{{#attributes}}
-	{{> insert_class_assign}}
-{{/attributes}}
-}
-
-const char {{class_name}}::debugName[] = "{{class_name}}";
-const char* {{class_name}}::debugString()
+void {{class_name}}::addPrimitiveAssignFnsToMap(std::unordered_map<std::string, assign_function>& assign_map)
 {
-	return {{class_name}}::debugName;
+{{#attributes}}
+{{> insert_assign}}
+{{/attributes}}
+}
+
+void {{class_name}}::addClassAssignFnsToMap(std::unordered_map<std::string, class_assign_function>& assign_map)
+{
+{{#attributes}}
+{{> insert_class_assign}}
+{{/attributes}}
+}
+
+void {{class_name}}::addPrimitiveGetFnsToMap(std::map<std::string, get_function>& get_map) const
+{
+	{{sub_class_of}}::addPrimitiveGetFnsToMap(get_map);
+{{#attributes}}
+{{> insert_get}}
+{{/attributes}}
+}
+
+void {{class_name}}::addClassGetFnsToMap(std::map<std::string, class_get_function>& get_map) const
+{
+	{{sub_class_of}}::addClassGetFnsToMap(get_map);
+{{#attributes}}
+{{> insert_class_get}}
+{{/attributes}}
+}
+
+void {{class_name}}::addEnumGetFnsToMap(std::map<std::string, get_function>& get_map) const
+{
+	{{sub_class_of}}::addEnumGetFnsToMap(get_map);
+{{#attributes}}
+{{> insert_enum_get}}
+{{/attributes}}
 }
 
 const BaseClassDefiner {{class_name}}::declare()
 {
 	return BaseClassDefiner({{class_name}}::addConstructToMap, {{class_name}}::addPrimitiveAssignFnsToMap, {{class_name}}::addClassAssignFnsToMap, {{class_name}}::debugName);
+}
+
+namespace CIMPP
+{
+	BaseClass* {{class_name}}_factory()
+	{
+		return new {{class_name}};
+	}
 }

@@ -11,14 +11,14 @@ def location(version):  # NOSONAR
 # Setup called only once: make output directory, create base class, create profile class, etc.
 # This just makes sure we have somewhere to write the classes.
 # cgmes_profile_details contains index, names and uris for each profile.
-# We don't use that here because we aren't exporting into
-# separate profiles.
+# We use that to create the header data for the profiles.
 def setup(output_path: str, cgmes_profile_details: list, cim_namespace: str):  # NOSONAR
     if not os.path.exists(output_path):
         os.makedirs(output_path)
     else:
         for filename in os.listdir(output_path):
             os.remove(os.path.join(output_path, filename))
+    _create_cgmes_profile(output_path, cgmes_profile_details, cim_namespace)
 
 
 base = {"base_class": "BaseClass", "class_location": location}
@@ -39,6 +39,14 @@ enum_template_files = [
     {"filename": "cpp_enum_header_template.mustache", "ext": ".hpp"},
     {"filename": "cpp_enum_object_template.mustache", "ext": ".cpp"},
 ]
+string_template_files = [
+    {"filename": "cpp_string_header_template.mustache", "ext": ".hpp"},
+    {"filename": "cpp_string_object_template.mustache", "ext": ".cpp"},
+]
+profile_template_files = [
+    {"filename": "cpp_cgmesProfile_header_template.mustache", "ext": ".hpp"},
+    {"filename": "cpp_cgmesProfile_object_template.mustache", "ext": ".cpp"},
+]
 
 
 def get_class_location(class_name, class_map, version):  # NOSONAR
@@ -50,6 +58,9 @@ partials = {
     "label": "{{#langPack.label}}{{label}}{{/langPack.label}}",
     "insert_assign": "{{#langPack.insert_assign_fn}}{{.}}{{/langPack.insert_assign_fn}}",
     "insert_class_assign": "{{#langPack.insert_class_assign_fn}}{{.}}{{/langPack.insert_class_assign_fn}}",
+    "insert_get": "{{#langPack.insert_get_fn}}{{.}}{{/langPack.insert_get_fn}}",
+    "insert_class_get": "{{#langPack.insert_class_get_fn}}{{.}}{{/langPack.insert_class_get_fn}}",
+    "insert_enum_get": "{{#langPack.insert_enum_get_fn}}{{.}}{{/langPack.insert_enum_get_fn}}",
 }
 
 
@@ -60,14 +71,12 @@ def run_template(output_path, class_details):
         templates = float_template_files
     elif class_details["is_an_enum_class"]:
         templates = enum_template_files
+    elif class_details["is_a_primitive_class"]:
+        templates = string_template_files
     else:
         templates = template_files
 
-    if (
-        class_details["class_name"] == "Integer"
-        or class_details["class_name"] == "Boolean"
-        or class_details["class_name"] == "Date"
-    ):
+    if class_details["class_name"] in ("Integer", "Boolean"):
         # These classes are defined already
         # We have to implement operators for them
         return
@@ -89,6 +98,16 @@ def _write_templated_file(class_file, class_details, template_filename):
             }
             output = chevron.render(**args)
         file.write(output)
+
+
+def _create_cgmes_profile(output_path: str, profile_details: list, cim_namespace: str):
+    for template_info in profile_template_files:
+        class_file = os.path.join(output_path, "CGMESProfile" + template_info["ext"])
+        class_details = {
+            "profiles": profile_details,
+            "cim_namespace": cim_namespace,
+        }
+        _write_templated_file(class_file, class_details, template_info["filename"])
 
 
 # This function just allows us to avoid declaring a variable called 'switch',
@@ -113,7 +132,7 @@ def insert_assign_fn(text, render):
     label = attribute_json["label"]
     class_name = attribute_json["domain"]
     return (
-        'assign_map.insert(std::make_pair(std::string("cim:'
+        '	assign_map.insert(std::make_pair(std::string("cim:'
         + class_name
         + "."
         + label
@@ -133,7 +152,7 @@ def insert_class_assign_fn(text, render):
     label = attribute_json["label"]
     class_name = attribute_json["domain"]
     return (
-        'assign_map.insert(std::make_pair(std::string("cim:'
+        '	assign_map.insert(std::make_pair(std::string("cim:'
         + class_name
         + "."
         + label
@@ -145,19 +164,51 @@ def insert_class_assign_fn(text, render):
     )
 
 
+def insert_get_fn(text, render):
+    attribute_txt = render(text)
+    attribute_json = eval(attribute_txt)
+    if not attribute_json["is_primitive_attribute"]:
+        return ""
+    label = attribute_json["label"]
+    class_name = attribute_json["domain"]
+    return '	get_map.emplace("cim:' + class_name + "." + label + '", &get_' + class_name + "_" + label + ");\n"
+
+
+def insert_class_get_fn(text, render):
+    attribute_txt = render(text)
+    attribute_json = eval(attribute_txt)
+    if attribute_json["is_primitive_attribute"] or attribute_json["is_enum_attribute"]:
+        return ""
+    if not attribute_json["is_used"]:
+        return ""
+    label = attribute_json["label"]
+    class_name = attribute_json["domain"]
+    return '	get_map.emplace("cim:' + class_name + "." + label + '", &get_' + class_name + "_" + label + ");\n"
+
+
+def insert_enum_get_fn(text, render):
+    attribute_txt = render(text)
+    attribute_json = eval(attribute_txt)
+    if not attribute_json["is_enum_attribute"]:
+        return ""
+    label = attribute_json["label"]
+    class_name = attribute_json["domain"]
+    return '	get_map.emplace("cim:' + class_name + "." + label + '", &get_' + class_name + "_" + label + ");\n"
+
+
 def create_nullptr_assigns(text, render):
     attributes_txt = render(text)
     if attributes_txt.strip() == "":
         return ""
     else:
         attributes_json = eval(attributes_txt)
-        nullptr_init_string = ": "
+        nullptr_init_string = ""
         for attribute in attributes_json:
             if attribute["is_class_attribute"]:
                 nullptr_init_string += "LABEL(nullptr), ".replace("LABEL", attribute["label"])
 
     if len(nullptr_init_string) > 2:
-        return nullptr_init_string[:-2]
+        return " : " + nullptr_init_string[:-2]
     else:
         return ""
 
@@ -172,34 +223,72 @@ def create_class_assign(text, render):
     if attribute_json["is_primitive_attribute"] or attribute_json["is_enum_attribute"]:
         return ""
     if attribute_json["is_list_attribute"]:
-        assign = (
-            """
-bool assign_OBJECT_CLASS_LABEL(BaseClass* BaseClass_ptr1, BaseClass* BaseClass_ptr2) {
-	if(OBJECT_CLASS* element = dynamic_cast<OBJECT_CLASS*>(BaseClass_ptr1)) {
-		if(dynamic_cast<ATTRIBUTE_CLASS*>(BaseClass_ptr2) != nullptr) {
-                        element->LABEL.push_back(dynamic_cast<ATTRIBUTE_CLASS*>(BaseClass_ptr2));
+        if "inverseRole" in attribute_json:
+            inverse = attribute_json["inverseRole"].split(".")
+            assign = (
+                """
+bool assign_INVERSEC_INVERSEL(BaseClass*, BaseClass*);
+bool assign_OBJECT_CLASS_LABEL(BaseClass* BaseClass_ptr1, BaseClass* BaseClass_ptr2)
+{
+	OBJECT_CLASS* element = dynamic_cast<OBJECT_CLASS*>(BaseClass_ptr1);
+	ATTRIBUTE_CLASS* element2 = dynamic_cast<ATTRIBUTE_CLASS*>(BaseClass_ptr2);
+	if (element != nullptr && element2 != nullptr)
+	{
+		if (std::find(element->LABEL.begin(), element->LABEL.end(), element2) == element->LABEL.end())
+		{
+			element->LABEL.push_back(element2);
+			return assign_INVERSEC_INVERSEL(BaseClass_ptr2, BaseClass_ptr1);
+		}
+		return true;
+	}
+	return false;
+}""".replace(  # noqa: E101,W191
+                    "OBJECT_CLASS", attribute_json["domain"]
+                )
+                .replace("ATTRIBUTE_CLASS", attribute_class)
+                .replace("LABEL", attribute_json["label"])
+                .replace("INVERSEC", inverse[0])
+                .replace("INVERSEL", inverse[1])
+            )
+        else:
+            assign = (
+                """
+bool assign_OBJECT_CLASS_LABEL(BaseClass* BaseClass_ptr1, BaseClass* BaseClass_ptr2)
+{
+	if (OBJECT_CLASS* element = dynamic_cast<OBJECT_CLASS*>(BaseClass_ptr1))
+	{
+		if (dynamic_cast<ATTRIBUTE_CLASS*>(BaseClass_ptr2) != nullptr)
+		{
+			element->LABEL.push_back(dynamic_cast<ATTRIBUTE_CLASS*>(BaseClass_ptr2));
 			return true;
 		}
 	}
 	return false;
 }""".replace(  # noqa: E101,W191
-                "OBJECT_CLASS", attribute_json["domain"]
+                    "OBJECT_CLASS", attribute_json["domain"]
+                )
+                .replace("ATTRIBUTE_CLASS", attribute_class)
+                .replace("LABEL", attribute_json["label"])
             )
-            .replace("ATTRIBUTE_CLASS", attribute_class)
-            .replace("LABEL", attribute_json["label"])
-        )
-    elif "inverseRole" in attribute_json and attribute_json["is_used"]:
+    elif "inverseRole" in attribute_json:
         inverse = attribute_json["inverseRole"].split(".")
         assign = (
             """
 bool assign_INVERSEC_INVERSEL(BaseClass*, BaseClass*);
-bool assign_OBJECT_CLASS_LABEL(BaseClass* BaseClass_ptr1, BaseClass* BaseClass_ptr2) {
-	if(OBJECT_CLASS* element = dynamic_cast<OBJECT_CLASS*>(BaseClass_ptr1)) {
-                element->LABEL = dynamic_cast<ATTRIBUTE_CLASS*>(BaseClass_ptr2);
-                if(element->LABEL != nullptr)
-                        return assign_INVERSEC_INVERSEL(BaseClass_ptr2, BaseClass_ptr1);
-        }
-        return false;
+bool assign_OBJECT_CLASS_LABEL(BaseClass* BaseClass_ptr1, BaseClass* BaseClass_ptr2)
+{
+	OBJECT_CLASS* element = dynamic_cast<OBJECT_CLASS*>(BaseClass_ptr1);
+	ATTRIBUTE_CLASS* element2 = dynamic_cast<ATTRIBUTE_CLASS*>(BaseClass_ptr2);
+	if (element != nullptr && element2 != nullptr)
+	{
+		if (element->LABEL != element2)
+		{
+			element->LABEL = element2;
+			return assign_INVERSEC_INVERSEL(BaseClass_ptr2, BaseClass_ptr1);
+		}
+		return true;
+	}
+	return false;
 }""".replace(  # noqa: E101,W191
                 "OBJECT_CLASS", attribute_json["domain"]
             )
@@ -211,13 +300,17 @@ bool assign_OBJECT_CLASS_LABEL(BaseClass* BaseClass_ptr1, BaseClass* BaseClass_p
     else:
         assign = (
             """
-bool assign_OBJECT_CLASS_LABEL(BaseClass* BaseClass_ptr1, BaseClass* BaseClass_ptr2) {
-	if(OBJECT_CLASS* element = dynamic_cast<OBJECT_CLASS*>(BaseClass_ptr1)) {
-                element->LABEL = dynamic_cast<ATTRIBUTE_CLASS*>(BaseClass_ptr2);
-                if(element->LABEL != nullptr)
-                        return true;
-        }
-        return false;
+bool assign_OBJECT_CLASS_LABEL(BaseClass* BaseClass_ptr1, BaseClass* BaseClass_ptr2)
+{
+	if(OBJECT_CLASS* element = dynamic_cast<OBJECT_CLASS*>(BaseClass_ptr1))
+	{
+		element->LABEL = dynamic_cast<ATTRIBUTE_CLASS*>(BaseClass_ptr2);
+		if (element->LABEL != nullptr)
+		{
+			return true;
+		}
+	}
+	return false;
 }""".replace(  # noqa: E101,W191
                 "OBJECT_CLASS", attribute_json["domain"]
             )
@@ -239,31 +332,38 @@ def create_assign(text, render):
     if label_without_keyword == "switch":
         label_without_keyword = "_switch"
 
-    if _class != "String":
+    if (
+        attribute_json["is_enum_attribute"]
+        or attribute_json["is_primitive_float_attribute"]
+        or _class in ("Integer", "Boolean")
+    ):
         assign = (
             """
-bool assign_CLASS_LABEL(std::stringstream &buffer, BaseClass* BaseClass_ptr1) {
-	if(CLASS* element = dynamic_cast<CLASS*>(BaseClass_ptr1)) {
-                buffer >> element->LBL_WO_KEYWORD;
-                if(buffer.fail())
-                        return false;
-                else
-                        return true;
-        }
-        else
-                return false;
+bool assign_CLASS_LABEL(std::stringstream &buffer, BaseClass* BaseClass_ptr1)
+{
+	if (CLASS* element = dynamic_cast<CLASS*>(BaseClass_ptr1))
+	{
+		buffer >> element->LBL_WO_KEYWORD;
+		if (buffer.fail())
+			return false;
+		else
+			return true;
+	}
+	return false;
 }""".replace(  # noqa: E101,W191
                 "CLASS", attribute_json["domain"]
             )
             .replace("LABEL", attribute_json["label"])
             .replace("LBL_WO_KEYWORD", label_without_keyword)
         )
-    else:
+    else:  # is_primitive_string_attribute
         assign = """
-bool assign_CLASS_LABEL(std::stringstream &buffer, BaseClass* BaseClass_ptr1) {
-	if(CLASS* element = dynamic_cast<CLASS*>(BaseClass_ptr1)) {
+bool assign_CLASS_LABEL(std::stringstream &buffer, BaseClass* BaseClass_ptr1)
+{
+	if (CLASS* element = dynamic_cast<CLASS*>(BaseClass_ptr1))
+	{
 		element->LABEL = buffer.str();
-		if(buffer.fail())
+		if (buffer.fail())
 			return false;
 		else
 			return true;
@@ -276,6 +376,112 @@ bool assign_CLASS_LABEL(std::stringstream &buffer, BaseClass* BaseClass_ptr1) {
         )
 
     return assign
+
+
+def create_class_get(text, render):
+    attribute_txt = render(text)
+    attribute_json = eval(attribute_txt)
+    if attribute_json["is_primitive_attribute"] or attribute_json["is_enum_attribute"]:
+        return ""
+    if not attribute_json["is_used"]:
+        return ""
+    if attribute_json["is_list_attribute"]:
+        get = """
+bool get_OBJECT_CLASS_LABEL(const BaseClass* BaseClass_ptr1, std::list<const BaseClass*>& BaseClass_list)
+{
+	if (const OBJECT_CLASS* element = dynamic_cast<const OBJECT_CLASS*>(BaseClass_ptr1))
+	{
+		std::copy(element->LABEL.begin(), element->LABEL.end(), std::back_inserter(BaseClass_list));
+		return !BaseClass_list.empty();
+	}
+	return false;
+}""".replace(  # noqa: E101,W191
+            "OBJECT_CLASS", attribute_json["domain"]
+        ).replace(
+            "LABEL", attribute_json["label"]
+        )
+    else:
+        get = """
+bool get_OBJECT_CLASS_LABEL(const BaseClass* BaseClass_ptr1, std::list<const BaseClass*>& BaseClass_list)
+{
+	if (const OBJECT_CLASS* element = dynamic_cast<const OBJECT_CLASS*>(BaseClass_ptr1))
+	{
+		if (element->LABEL != 0)
+		{
+			BaseClass_list.push_back(element->LABEL);
+			return true;
+		}
+	}
+	return false;
+}""".replace(  # noqa: E101,W191
+            "OBJECT_CLASS", attribute_json["domain"]
+        ).replace(
+            "LABEL", attribute_json["label"]
+        )
+
+    return get
+
+
+def create_get(text, render):
+    attribute_txt = render(text)
+    attribute_json = eval(attribute_txt)
+    get = ""
+    if not attribute_json["is_primitive_attribute"]:
+        return ""
+    label_without_keyword = attribute_json["label"]
+    if label_without_keyword == "switch":
+        label_without_keyword = "_switch"
+
+    get = (
+        """
+bool get_CLASS_LABEL(const BaseClass* BaseClass_ptr1, std::stringstream& buffer)
+{
+	if (const CLASS* element = dynamic_cast<const CLASS*>(BaseClass_ptr1))
+	{
+		buffer << element->LBL_WO_KEYWORD;
+		if (!buffer.str().empty())
+		{
+			return true;
+		}
+	}
+	buffer.setstate(std::ios::failbit);
+	return false;
+}""".replace(  # noqa: E101,W191
+            "CLASS", attribute_json["domain"]
+        )
+        .replace("LABEL", attribute_json["label"])
+        .replace("LBL_WO_KEYWORD", label_without_keyword)
+    )
+
+    return get
+
+
+def create_enum_get(text, render):
+    attribute_txt = render(text)
+    attribute_json = eval(attribute_txt)
+    if not attribute_json["is_enum_attribute"]:
+        return ""
+
+    get = """
+bool get_CLASS_LABEL(const BaseClass* BaseClass_ptr1, std::stringstream& buffer)
+{
+	if (const CLASS* element = dynamic_cast<const CLASS*>(BaseClass_ptr1))
+	{
+		buffer << element->LABEL;
+		if (!buffer.str().empty())
+		{
+			return true;
+		}
+	}
+	buffer.setstate(std::ios::failbit);
+	return false;
+}""".replace(  # noqa: E101,W191
+        "CLASS", attribute_json["domain"]
+    ).replace(
+        "LABEL", attribute_json["label"]
+    )
+
+    return get
 
 
 def attribute_decl(text, render):
@@ -305,8 +511,8 @@ def _create_attribute_includes(text, render):
         for attribute in attributes:
             if attribute["is_primitive_attribute"] or attribute["is_enum_attribute"]:
                 unique[attribute["attribute_class"]] = True
-    for clarse in unique:
-        include_string += '\n#include "' + clarse + '.hpp"'
+    for clarse in sorted(unique):
+        include_string += '#include "' + clarse + '.hpp"\n'
     return include_string
 
 
@@ -321,8 +527,8 @@ def _create_attribute_class_declarations(text, render):
         for attribute in attributes:
             if attribute["is_class_attribute"] or attribute["is_list_attribute"]:
                 unique[attribute["attribute_class"]] = True
-    for clarse in unique:
-        include_string += "\nclass " + clarse + ";"
+    for clarse in sorted(unique):
+        include_string += "	class " + clarse + ";\n"
     return include_string
 
 
@@ -362,13 +568,13 @@ class_blacklist = [
     "assignments",
     "BaseClass",
     "BaseClassDefiner",
+    "CGMESProfile",
     "CIMClassList",
     "CIMFactory",
     "CIMNamespaces",
     "Factory",
     "Folders",
     "IEC61970",
-    "String",
     "Task",
     "UnknownType",
 ]
@@ -376,15 +582,15 @@ class_blacklist = [
 iec61970_blacklist = ["CIMClassList", "CIMNamespaces", "Folders", "Task", "IEC61970"]
 
 
-def _is_enum_class(filepath):
+def _is_primitive_or_enum_class(filepath):
     with open(filepath, encoding="utf-8") as f:
         try:
             for line in f:
-                if "enum class" in line:
-                    return True
+                if "static const BaseClassDefiner declare();" in line:
+                    return False
         except UnicodeDecodeError as error:
             print("Warning: UnicodeDecodeError parsing {0}: {1}".format(filepath, error))
-    return False
+    return True
 
 
 def _create_header_include_file(directory, header_include_filename, header, footer, before, after, blacklist):
@@ -395,7 +601,7 @@ def _create_header_include_file(directory, header_include_filename, header, foot
         filepath = os.path.join(directory, filename)
         basepath, ext = os.path.splitext(filepath)
         basename = os.path.basename(basepath)
-        if ext == ".hpp" and not _is_enum_class(filepath) and basename not in blacklist:
+        if ext == ".hpp" and not _is_primitive_or_enum_class(filepath) and basename not in blacklist:
             lines.append(before + basename + after)
     for line in lines:
         header.append(line)
@@ -410,12 +616,18 @@ def resolve_headers(path: str, version: str):  # NOSONAR
     class_list_header = [
         "#ifndef CIMCLASSLIST_H\n",
         "#define CIMCLASSLIST_H\n",
-        "using namespace CIMPP;\n",
+        "/*\n",
+        "Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cimgen\n",
+        "*/\n",
         "#include <list>\n",
-        "static std::list<BaseClassDefiner> CIMClassList = {\n",
+        '#include "IEC61970.hpp"\n',
+        "using namespace CIMPP;\n",
+        "static std::list<BaseClassDefiner> CIMClassList =\n",
+        "{\n",
     ]
     class_list_footer = [
-        "    UnknownType::declare() };\n",
+        "	UnknownType::declare(),\n",
+        "};\n",
         "#endif // CIMCLASSLIST_H\n",
     ]
 
@@ -424,13 +636,23 @@ def resolve_headers(path: str, version: str):  # NOSONAR
         "CIMClassList.hpp",
         class_list_header,
         class_list_footer,
-        "    ",
+        "	",
         "::declare(),\n",
         class_blacklist,
     )
 
-    iec61970_header = ["#ifndef IEC61970_H\n", "#define IEC61970_H\n"]
-    iec61970_footer = ['#include "UnknownType.hpp"\n', "#endif"]
+    iec61970_header = [
+        "#ifndef IEC61970_H\n",
+        "#define IEC61970_H\n",
+        "/*\n",
+        "Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cimgen\n",
+        "*/\n",
+        "\n",
+    ]
+    iec61970_footer = [
+        '#include "UnknownType.hpp"\n',
+        "#endif",
+    ]
 
     _create_header_include_file(
         path,
