@@ -106,20 +106,51 @@ def _get_type_and_default(text, renderer) -> tuple[str, str]:
         return ("float", "default=0.0")
 
 
+def _primitive_to_data_type(datatype):
+    if datatype.lower() == "integer":
+        return "int"
+    if datatype.lower() == "boolean":
+        return "bool"
+    if datatype.lower() == "string":
+        return "str"
+    if datatype.lower() == "datetime":
+        return "datetime"
+    if datatype.lower() == "monthday":
+        return "str"  # TO BE FIXED? I could not find a datatype in python that holds only month and day.
+    if datatype.lower() == "date":
+        return "date"
+    # as of today no CIM model is using only time.
+    if datatype.lower() == "time":
+        return "time"
+    if datatype.lower() == "float":
+        return "float"
+    if datatype.lower() == "string":
+        return "str"
+    else:
+        # this actually never happens
+        return "float"
+
+
 def run_template(output_path, class_details):
-    template = template_files
-    class_details["setDefault"] = _set_default
-    class_details["setType"] = _set_type
-    resource_file = _create_file(output_path, class_details, template)
+    if class_details["is_a_primitive"]:
+        # Primitives are never used in the in memory representation but only for
+        # the schema
+        template = primitive_template_files
+        class_details["python_type"] = _primitive_to_data_type(class_details["class_name"])
+    else:
+        template = template_files
+        class_details["setDefault"] = _set_default
+        class_details["setType"] = _set_type
+    resource_file = _create_file(output_path, class_details, template["ext"])
     _write_templated_file(resource_file, class_details, template["filename"])
 
 
-def _create_file(output_path, class_details, template) -> str:
+def _create_file(output_path, class_details, template_ext) -> str:
     resource_file = Path(
         os.path.join(
             output_path,
             "resources",
-            class_details["class_name"] + template["ext"],
+            class_details["class_name"] + template_ext,
         )
     )
     if not resource_file.exists():
