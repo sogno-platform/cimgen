@@ -107,24 +107,6 @@ def _get_type_and_default(text, renderer) -> tuple[str, str]:
 
 
 def run_template(output_path, class_details):
-    # if class_details["class_name"] == 'PositionPoint':
-    #     #this class is created manually to support types conversions
-    #     return
-    # elif class_details["is_a_primitive"] is True:
-    #     # Primitives are never used in the in memory representation but only for
-    #     # the schema
-    #     run_template_primitive(output_path, class_details, primitive_template_files)
-    # elif class_details["is_a_cim_data_type"] is True:
-    #     # Datatypes based on primitives are never used in the in memory
-    #     # representation but only for the schema
-    #     run_template_cimdatatype(output_path, class_details, cimdatatype_template_files)
-    if class_details["has_instances"] is True:
-        run_template_enum(output_path, class_details, enum_template_files)
-    else:
-        run_template_schema(output_path, class_details, template_files)
-
-
-def run_template_schema(output_path, class_details, template_files):
     for template_info in template_files:
         resource_file = Path(
             os.path.join(
@@ -152,40 +134,6 @@ def _write_templated_file(class_file, class_details, template_filename):
             }
             output = chevron.render(**args)
         file.write(output)
-
-
-def run_template_enum(output_path, class_details, template_files):
-    for template_info in template_files:
-        # class_file = Path(version_path, "resources",  "enum" + template_info["ext"])
-        resource_file = Path(
-            os.path.join(
-                output_path,
-                "resources",
-                "enum",
-                class_details["class_name"] + template_info["ext"],
-            )
-        )
-        if not os.path.exists(resource_file):
-            if not (parent := resource_file.parent).exists():
-                parent.mkdir()
-            # with open(class_file, "w", encoding="utf-8") as file:
-            #     header_file_path = os.path.join(
-            #         os.getcwd(), "modernpython", "enum_header.py"
-            #     )
-            #     header_file = open(header_file_path, "r")
-            #     file.write(header_file.read())
-        with open(resource_file, "a", encoding="utf-8") as file:
-            class_details["setInstances"] = _set_instances
-
-            templates = files("cimgen.languages.modernpython.templates")
-            with templates.joinpath(template_info["filename"]).open(encoding="utf-8") as f:
-                args = {
-                    "data": class_details,
-                    "template": f,
-                    "partials_dict": partials,
-                }
-                output = chevron.render(**args)
-            file.write(output)
 
 
 def _create_constants(output_path: str, cim_namespace: str):
