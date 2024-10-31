@@ -4,6 +4,7 @@ import re
 from distutils.dir_util import copy_tree
 from pathlib import Path
 from importlib.resources import files
+import ast
 
 import chevron
 
@@ -35,9 +36,12 @@ def location(version):  # NOSONAR
 base = {"base_class": "Base", "class_location": location}
 
 # These are the files that are used to generate the python files.
-template_files = [{"filename": "cimpy_class_template.mustache", "ext": ".py"}]
-constants_template_files = [{"filename": "cimpy_constants_template.mustache", "ext": ".py"}]
-profile_template_files = [{"filename": "cimpy_cgmesProfile_template.mustache", "ext": ".py"}]
+template_files = {"filename": "cimpy_class_template.mustache", "ext": ".py"}
+constants_template_files = {"filename": "cimpy_constants_template.mustache", "ext": ".py"}
+profile_template_files = {"filename": "cimpy_cgmesProfile_template.mustache", "ext": ".py"}
+enum_template_files = {"filename": "enum_class_template.mustache", "ext": ".py"}
+primitive_template_files = {"filename": "primitive_template.mustache", "ext": ".py"}
+cimdatatype_template_files = {"filename": "cimdatatype_template.mustache", "ext": ".py"}
 
 
 def get_class_location(class_name, class_map, version):  # NOSONAR
@@ -54,6 +58,27 @@ def _set_default(text, render):
 
 def _set_type(text, render):
     return _get_type_and_default(text, render)[0]
+
+
+# called by chevron, text contains the label {{dataType}}, which is evaluated by the renderer (see class template)
+def _set_instances(text, render):
+    instance = None
+    try:
+        # render(text) returns a python dict.
+        # Some fileds might be quoted by '&quot;' instead of '"', making the first eval fail.
+        instance = ast.literal_eval(render(text))
+    except SyntaxError as se:
+        rendered = render(text)
+        rendered = rendered.replace("&quot;", '"')
+        instance = eval(rendered)
+        logger.warning("Exception in evaluating %s : %s . Handled replacing quotes", rendered, se.msg)
+    if "label" in instance:
+        value = instance["label"] + ' = "' + instance["label"] + '"'
+        if "comment" in instance:
+            value += "  # " + instance["comment"]
+        return value
+    else:
+        return ""
 
 
 def _get_type_and_default(text, renderer) -> tuple[str, str]:
@@ -81,21 +106,59 @@ def _get_type_and_default(text, renderer) -> tuple[str, str]:
         return ("float", "default=0.0")
 
 
+def _primitive_to_data_type(datatype):
+    if datatype.lower() == "integer":
+        return "int"
+    if datatype.lower() == "boolean":
+        return "bool"
+    if datatype.lower() == "string":
+        return "str"
+    if datatype.lower() == "datetime":
+        return "datetime"
+    if datatype.lower() == "monthday":
+        return "str"  # TO BE FIXED? I could not find a datatype in python that holds only month and day.
+    if datatype.lower() == "date":
+        return "date"
+    # as of today no CIM model is using only time.
+    if datatype.lower() == "time":
+        return "time"
+    if datatype.lower() == "float":
+        return "float"
+    if datatype.lower() == "string":
+        return "str"
+    else:
+        # this actually never happens
+        return "float"
+
+
 def run_template(output_path, class_details):
-    for template_info in template_files:
-        resource_file = Path(
-            os.path.join(
-                output_path,
-                "resources",
-                class_details["class_name"] + template_info["ext"],
-            )
-        )
-        if not resource_file.exists():
-            if not (parent := resource_file.parent).exists():
-                parent.mkdir()
+    if class_details["is_a_primitive"]:
+        # Primitives are never used in the in memory representation but only for the schema
+        template = primitive_template_files
+        class_details["python_type"] = _primitive_to_data_type(class_details["class_name"])
+    elif class_details["is_an_enum_class"]:
+        template = enum_template_files
+        class_details["setInstances"] = _set_instances
+    else:
+        template = template_files
         class_details["setDefault"] = _set_default
         class_details["setType"] = _set_type
-        _write_templated_file(resource_file, class_details, template_info["filename"])
+    resource_file = _create_file(output_path, class_details, template["ext"])
+    _write_templated_file(resource_file, class_details, template["filename"])
+
+
+def _create_file(output_path, class_details, template_ext) -> str:
+    resource_file = Path(
+        os.path.join(
+            output_path,
+            "resources",
+            class_details["class_name"] + template_ext,
+        )
+    )
+    if not resource_file.exists():
+        if not (parent := resource_file.parent).exists():
+            parent.mkdir()
+    return resource_file
 
 
 def _write_templated_file(class_file, class_details, template_filename):
@@ -112,17 +175,15 @@ def _write_templated_file(class_file, class_details, template_filename):
 
 
 def _create_constants(output_path: str, cim_namespace: str):
-    for template_info in constants_template_files:
-        class_file = os.path.join(output_path, "utils", "constants" + template_info["ext"])
-        class_details = {"cim_namespace": cim_namespace}
-        _write_templated_file(class_file, class_details, template_info["filename"])
+    class_file = os.path.join(output_path, "utils", "constants" + constants_template_files["ext"])
+    class_details = {"cim_namespace": cim_namespace}
+    _write_templated_file(class_file, class_details, constants_template_files["filename"])
 
 
 def _create_cgmes_profile(output_path: str, profile_details: list):
-    for template_info in profile_template_files:
-        class_file = os.path.join(output_path, "utils", "profile" + template_info["ext"])
-        class_details = {"profiles": profile_details}
-        _write_templated_file(class_file, class_details, template_info["filename"])
+    class_file = os.path.join(output_path, "utils", "profile" + profile_template_files["ext"])
+    class_details = {"profiles": profile_details}
+    _write_templated_file(class_file, class_details, profile_template_files["filename"])
 
 
 def resolve_headers(path: str, version: str):
