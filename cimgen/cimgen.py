@@ -210,6 +210,7 @@ class CIMComponentDefinition:
         self.origin_list = []
         self.super = rdfsEntry.subClassOf()
         self.subclasses = []
+        self.stereotype = rdfsEntry.stereotype()
 
     def attributes(self):
         return self.attribute_list
@@ -279,6 +280,9 @@ class CIMComponentDefinition:
             if not candidate_array[key]:
                 return False
         return True
+
+    def is_a_cim_datatype(self):
+        return self.stereotype == "CIMDatatype"
 
 
 def get_profile_name(descriptions):
@@ -479,6 +483,7 @@ def _write_python_files(elem_dict, lang_pack, output_path, version):
             "enum_instances": elem_dict[class_name].enum_instances(),
             "is_an_enum_class": elem_dict[class_name].is_an_enum_class(),
             "is_a_float_class": elem_dict[class_name].is_a_float_class(),
+            "is_a_cim_data_type": elem_dict[class_name].is_a_cim_datatype(),
             "langPack": lang_pack,
             "sub_class_of": elem_dict[class_name].superClass(),
             "sub_classes": elem_dict[class_name].subClasses(),
