@@ -194,9 +194,7 @@ def _compute_cim_data_type(attributes) -> tuple[str, str, str]:
 
 def _set_cim_data_type(text, render) -> str:
     attribute = eval(render(text))
-    if _is_primitive_class(attribute["class_name"]):
-        return """"data_type": """ + attribute["class_name"] + ","
-    elif _is_cim_data_type_class(attribute["class_name"]):
+    if _is_primitive_class(attribute["class_name"]) or _is_cim_data_type_class(attribute["class_name"]):
         return """"data_type": """ + attribute["class_name"] + ","
     return ""
 
