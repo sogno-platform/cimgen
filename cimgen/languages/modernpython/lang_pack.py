@@ -48,59 +48,6 @@ def get_class_location(class_name, class_map, version):
 partials = {}
 
 
-def _primitive_to_data_type(datatype):
-    if datatype.lower() == "integer":
-        return "int"
-    if datatype.lower() == "boolean":
-        return "bool"
-    if datatype.lower() == "string":
-        return "str"
-    if datatype.lower() == "datetime":
-        return "datetime"
-    if datatype.lower() == "monthday":
-        return "str"  # TO BE FIXED? I could not find a datatype in python that holds only month and day.
-    if datatype.lower() == "date":
-        return "date"
-    # as of today no CIM model is using only time.
-    if datatype.lower() == "time":
-        return "time"
-    if datatype.lower() == "float":
-        return "float"
-    if datatype.lower() == "string":
-        return "str"
-    else:
-        # this actually never happens
-        return "float"
-
-
-def _compute_cim_data_type(attributes) -> tuple[str, str, str]:
-    python_type = "None"
-    unit = "UnitSymbol.none"
-    multiplier = "UnitMultiplier.none"
-    for attribute in attributes:
-        if "about" in attribute and attribute["about"] and "value" in attribute["about"] and "class_name" in attribute:
-            python_type = _primitive_to_data_type(attribute["class_name"])
-        if (
-            "about" in attribute
-            and attribute["about"]
-            and "multiplier" in attribute["about"]
-            and "isFixed" in attribute
-        ):
-            multiplier = "UnitMultiplier." + attribute["isFixed"]
-        if "about" in attribute and attribute["about"] and "unit" in attribute["about"] and "isFixed" in attribute:
-            unit = "UnitSymbol." + attribute["isFixed"]
-    return (python_type, unit, multiplier)
-
-
-def _set_cim_data_type(text, render) -> str:
-    attribute = eval(render(text))
-    if is_primitive_class(attribute["class_name"]):
-        return """"data_type": """ + attribute["class_name"] + ","
-    elif is_cim_data_type_class(attribute["class_name"]):
-        return """"data_type": """ + attribute["class_name"] + ","
-    return ""
-
-
 # called by chevron, text contains the label {{dataType}}, which is evaluated by the renderer (see class template)
 def _set_default(text, render):
     return _get_type_and_default(text, render)[1]
@@ -108,40 +55,6 @@ def _set_default(text, render):
 
 def _set_type(text, render):
     return _get_type_and_default(text, render)[0]
-
-
-# called by chevron, text contains the label {{dataType}}, which is evaluated by the renderer (see class template)
-def _set_instances(text, render):
-    instance = None
-    try:
-        # render(text) returns a python dict.
-        # Some fileds might be quoted by '&quot;' instead of '"', making the first eval fail.
-        instance = ast.literal_eval(render(text))
-    except SyntaxError as se:
-        rendered = render(text)
-        rendered = rendered.replace("&quot;", '"')
-        instance = eval(rendered)
-        logger.warning("Exception in evaluating %s : %s . Handled replacing quotes", rendered, se.msg)
-    if "label" in instance:
-        value = instance["label"] + ' = "' + instance["label"] + '"'
-        if "comment" in instance:
-            value += " #" + instance["comment"]
-        return value
-    else:
-        return ""
-
-
-def _set_imports(attributes):
-
-    classes = set()
-    for attribute in attributes:
-        if is_primitive_class(attribute["class_name"]) or is_cim_data_type_class(attribute["class_name"]):
-            classes.add(attribute["dataType"].split("#")[1])
-
-    result = ""
-    for val in classes:
-        result += "from ." + val + " import " + val + "\n"
-    return result
 
 
 def _get_type_and_default(text, renderer) -> tuple[str, str]:
@@ -169,6 +82,10 @@ def _get_type_and_default(text, renderer) -> tuple[str, str]:
         return ("float", "default=0.0")
 
 
+primitive_classes = {}
+cim_data_type_classes = {}
+
+
 def set_enum_classes(new_enum_classes):
     return
 
@@ -177,20 +94,9 @@ def set_float_classes(new_float_classes):
     return
 
 
-primitive_classes = {}
-
-
 def set_primitive_classes(new_primitive_classes):
     for new_class in new_primitive_classes:
         primitive_classes[new_class] = new_primitive_classes[new_class]
-
-
-def is_primitive_class(name):
-    if name in primitive_classes:
-        return primitive_classes[name]
-
-
-cim_data_type_classes = {}
 
 
 def set_cim_data_type_classes(new_cim_data_type_classes):
@@ -198,63 +104,132 @@ def set_cim_data_type_classes(new_cim_data_type_classes):
         cim_data_type_classes[new_class] = new_cim_data_type_classes[new_class]
 
 
-def is_cim_data_type_class(name):
+def _is_primitive_class(name):
+    if name in primitive_classes:
+        return primitive_classes[name]
+
+
+def _is_cim_data_type_class(name):
     if name in cim_data_type_classes:
         return cim_data_type_classes[name]
+
+
+def _primitive_to_data_type(datatype):
+    if datatype.lower() == "integer":
+        return "int"
+    if datatype.lower() == "boolean":
+        return "bool"
+    if datatype.lower() == "string":
+        return "str"
+    if datatype.lower() == "datetime":
+        return "datetime"
+    if datatype.lower() == "monthday":
+        return "str"  # TO BE FIXED? I could not find a datatype in python that holds only month and day.
+    if datatype.lower() == "date":
+        return "date"
+    # as of today no CIM model is using only time.
+    if datatype.lower() == "time":
+        return "time"
+    if datatype.lower() == "float":
+        return "float"
+    if datatype.lower() == "string":
+        return "str"
+    else:
+        # this actually never happens
+        return "float"
+
+
+def _set_imports(attributes):
+    classes = set()
+    for attribute in attributes:
+        if _is_primitive_class(attribute["class_name"]) or _is_cim_data_type_class(attribute["class_name"]):
+            classes.add(attribute["dataType"].split("#")[1])
+
+    result = ""
+    for val in classes:
+        result += "from ." + val + " import " + val + "\n"
+    return result
+
+
+# called by chevron, text contains the label {{dataType}}, which is evaluated by the renderer (see class template)
+def _set_instances(text, render):
+    instance = None
+    try:
+        # render(text) returns a python dict.
+        # Some fileds might be quoted by '&quot;' instead of '"', making the first eval fail.
+        instance = ast.literal_eval(render(text))
+    except SyntaxError as se:
+        rendered = render(text)
+        rendered = rendered.replace("&quot;", '"')
+        instance = eval(rendered)
+        logger.warning("Exception in evaluating %s : %s . Handled replacing quotes", rendered, se.msg)
+    if "label" in instance:
+        value = instance["label"] + ' = "' + instance["label"] + '"'
+        if "comment" in instance:
+            value += " #" + instance["comment"]
+        return value
+    else:
+        return ""
+
+
+def _compute_cim_data_type(attributes) -> tuple[str, str, str]:
+    python_type = "None"
+    unit = "UnitSymbol.none"
+    multiplier = "UnitMultiplier.none"
+
+    for attribute in attributes:
+        if "about" in attribute and attribute["about"] and "value" in attribute["about"] and "class_name" in attribute:
+            python_type = _primitive_to_data_type(attribute["class_name"])
+        if (
+            "about" in attribute
+            and attribute["about"]
+            and "multiplier" in attribute["about"]
+            and "isFixed" in attribute
+        ):
+            multiplier = "UnitMultiplier." + attribute["isFixed"]
+        if "about" in attribute and attribute["about"] and "unit" in attribute["about"] and "isFixed" in attribute:
+            unit = "UnitSymbol." + attribute["isFixed"]
+    return (python_type, unit, multiplier)
+
+
+def _set_cim_data_type(text, render) -> str:
+    attribute = eval(render(text))
+    if _is_primitive_class(attribute["class_name"]):
+        return """"data_type": """ + attribute["class_name"] + ","
+    elif _is_cim_data_type_class(attribute["class_name"]):
+        return """"data_type": """ + attribute["class_name"] + ","
+    return ""
 
 
 def run_template(output_path, class_details):
     # if class_details["class_name"] == 'PositionPoint':
     #     #this class is created manually to support types conversions
     #     return
-    if class_details["is_a_primitive"] is True:
+    if class_details["is_a_primitive"]:
         # Primitives are never used in the in memory representation but only for
         # the schema
-        run_template_primitive(output_path, class_details, primitive_template_files)
-    elif class_details["is_a_cim_data_type"] is True:
+        class_details["python_type"] = _primitive_to_data_type(class_details["class_name"])
+        _write_templated_file(output_path, class_details, primitive_template_files)
+    elif class_details["is_a_cim_data_type"]:
         # Datatypes based on primitives are never used in the in memory
         # representation but only for the schema
-        run_template_cimdatatype(output_path, class_details, cimdatatype_template_files)
-    elif class_details["has_instances"] is True:
-        run_template_enum(output_path, class_details, enum_template_files)
+        class_details["python_type"] = _compute_cim_data_type(class_details["attributes"])[0]
+        class_details["unit"] = _compute_cim_data_type(class_details["attributes"])[1]
+        class_details["multiplier"] = _compute_cim_data_type(class_details["attributes"])[2]
+        _write_templated_file(output_path, class_details, cimdatatype_template_files)
+    elif class_details["has_instances"]:
+        class_details["setInstances"] = _set_instances
+        _write_templated_file(output_path, class_details, enum_template_files)
     else:
-        run_template_schema(output_path, class_details, template_files)
+        class_details["setDefault"] = _set_default
+        class_details["setType"] = _set_type
+        class_details["setCimDataType"] = _set_cim_data_type
+        class_details["setImports"] = _set_imports(class_details["attributes"])
+        _write_templated_file(output_path, class_details, template_files)
 
 
-def run_template_schema(output_path, class_details, template_files):
+def _write_templated_file(output_path, class_details, template_files):
     for template_info in template_files:
-
-        resource_file = Path(
-            os.path.join(
-                output_path,
-                "resources",
-                class_details["class_name"] + template_info["ext"],
-            )
-        )
-        if not resource_file.exists():
-            if not (parent := resource_file.parent).exists():
-                parent.mkdir()
-
-            with open(resource_file, "w", encoding="utf-8") as file:
-                class_details["setDefault"] = _set_default
-                class_details["setType"] = _set_type
-                class_details["setCimDataType"] = _set_cim_data_type
-                class_details["setImports"] = _set_imports(class_details["attributes"])
-
-                templates = files("cimgen.languages.modernpython.templates")
-                with templates.joinpath(template_info["filename"]).open(encoding="utf-8") as f:
-                    args = {
-                        "data": class_details,
-                        "template": f,
-                        "partials_dict": partials,
-                    }
-                    output = chevron.render(**args)
-                file.write(output)
-
-
-def run_template_enum(output_path, class_details, template_files):
-    for template_info in template_files:
-        # class_file = Path(version_path, "resources",  "enum" + template_info["ext"])
         resource_file = Path(
             os.path.join(
                 output_path,
@@ -267,52 +242,6 @@ def run_template_enum(output_path, class_details, template_files):
                 parent.mkdir()
 
         with open(resource_file, "a", encoding="utf-8") as file:
-            class_details["setInstances"] = _set_instances
-
-            templates = files("cimgen.languages.modernpython.templates")
-            with templates.joinpath(template_info["filename"]).open(encoding="utf-8") as f:
-                args = {
-                    "data": class_details,
-                    "template": f,
-                    "partials_dict": partials,
-                }
-                output = chevron.render(**args)
-            file.write(output)
-
-
-def run_template_primitive(version_path, class_details, template_files):
-    for template_info in template_files:
-        resource_file = Path(version_path, "resources", class_details["class_name"] + template_info["ext"])
-        if not os.path.exists(resource_file):
-            if not (parent := resource_file.parent).exists():
-                parent.mkdir()
-
-        with open(resource_file, "a", encoding="utf-8") as file:
-            class_details["data_type"] = _primitive_to_data_type(class_details["class_name"])
-
-            templates = files("cimgen.languages.modernpython.templates")
-            with templates.joinpath(template_info["filename"]).open(encoding="utf-8") as f:
-                args = {
-                    "data": class_details,
-                    "template": f,
-                    "partials_dict": partials,
-                }
-                output = chevron.render(**args)
-            file.write(output)
-
-
-def run_template_cimdatatype(version_path, class_details, template_files):
-    for template_info in template_files:
-        class_file = Path(version_path, "resources", class_details["class_name"] + template_info["ext"])
-        if not os.path.exists(class_file):
-            if not (parent := class_file.parent).exists():
-                parent.mkdir()
-
-        with open(class_file, "a", encoding="utf-8") as file:
-            class_details["data_type"] = _compute_cim_data_type(class_details["attributes"])[0]
-            class_details["unit"] = _compute_cim_data_type(class_details["attributes"])[1]
-            class_details["multiplier"] = _compute_cim_data_type(class_details["attributes"])[2]
-
             templates = files("cimgen.languages.modernpython.templates")
             with templates.joinpath(template_info["filename"]).open(encoding="utf-8") as f:
                 args = {
