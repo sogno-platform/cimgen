@@ -6,9 +6,14 @@ from datetime import date, datetime, time
 from ..utils.datatypes import Primitive
 from ..utils.profile import Profile
 
-{{class_name}} = Primitive(name="{{class_name}}", type={{python_type}}, profiles=[{{#class_origin}}Profile.{{origin}}, {{/class_origin}}])
+{{class_name}} = Primitive(
+    name="{{class_name}}",
+    type={{python_type}},
+    profiles=[{{#class_origin}}
+        Profile.{{origin}},{{/class_origin}}
+    ],
+)
 
 """
 {{{wrapped_class_comment}}}
 """
-

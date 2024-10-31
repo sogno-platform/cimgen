@@ -32,7 +32,7 @@ public class {{class_name}} extends {{sub_class_of}}
 	{{#primitives}}
 	{{> label}}(){
 			public BaseClass construct (java.lang.String value) {
-				return new {{class_name}}(value);
+				return new {{attribute_class}}(value);
 			}
 		},
 	{{/primitives}}

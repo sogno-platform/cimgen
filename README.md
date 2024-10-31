@@ -59,4 +59,4 @@ your publications:
 Dinkelbach, J., Razik, L., Mirz, M., Benigni, A., Monti, A.: Template-based
 generation of programming language specific code for smart grid modelling
 compliant with CIM and CGMES.
-J. Eng. 2023, 1–13 (2022). [https://doi.org/10.1049/tje2.12208](https://doi.org/10.1049/tje2.12208)
+J. Eng. 2023, 1-13 (2022). [https://doi.org/10.1049/tje2.12208](https://doi.org/10.1049/tje2.12208)

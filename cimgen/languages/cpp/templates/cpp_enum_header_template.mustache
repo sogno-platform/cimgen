@@ -7,12 +7,12 @@ namespace CIMPP {
 	*/
 	enum class {{class_name}}
 	{
-{{#instances}}
+{{#enum_instances}}
 		/**
 		 * {{comment}}
 		 */
 		{{label}},
-{{/instances}}
+{{/enum_instances}}
 	};
 	std::istream& operator>>(std::istream& lop, CIMPP::{{class_name}}& rop);
 }

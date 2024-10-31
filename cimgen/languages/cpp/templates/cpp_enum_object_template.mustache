@@ -19,13 +19,13 @@ namespace CIMPP {
 
 		EnumSymbol = EnumSymbol.substr(pos + 1);
 
-{{#instances}}
+{{#enum_instances}}
 		if(EnumSymbol == "{{label}}")
 		{
 			rop = {{class_name}}::{{label}};
 			return lop;
 		}
-{{/instances}}
+{{/enum_instances}}
 
 		lop.setstate(std::ios::failbit);
 		return lop;

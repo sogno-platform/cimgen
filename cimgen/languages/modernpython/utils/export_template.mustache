@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<rdf:RDF{{#namespaces}} xmlns:{{key}}="{{url}}"{{/namespaces}}>
+  {{#model}}
+  <md:FullModel rdf:about="{{id}}">
+    {{#description}}
+    <md:Model.{{attr_name}}>{{value}}</md:Model.{{attr_name}}>
+    {{/description}}
+  </md:FullModel>
+  {{/model}}
+  {{#main}}
+  <cim:{{type}} rdf:ID="{{id}}">
+    {{#attributes}}
+    {{#is_class_attribute}}
+    <cim:{{attr_name}} rdf:resource="#{{value}}" />
+    {{/is_class_attribute}}
+    {{#is_enum_attribute}}
+    <cim:{{attr_name}} rdf:resource="{{namespace}}{{value}}" />
+    {{/is_enum_attribute}}
+    {{#is_list_attribute}}
+    <cim:{{attr_name}} rdf:resource="#{{value}}" />
+    {{/is_list_attribute}}
+    {{#is_primitive_attribute}}
+    <cim:{{attr_name}}>{{value}}</cim:{{attr_name}}>
+    {{/is_primitive_attribute}}
+    {{/attributes}}
+  </cim:{{type}}>
+  {{/main}}
+  {{#about}}
+  <cim:{{type}} rdf:about="#{{id}}">
+    {{#attributes}}
+    {{#is_class_attribute}}
+    <cim:{{attr_name}} rdf:resource="#{{value}}" />
+    {{/is_class_attribute}}
+    {{#is_enum_attribute}}
+    <cim:{{attr_name}} rdf:resource="{{namespace}}{{value}}" />
+    {{/is_enum_attribute}}
+    {{#is_list_attribute}}
+    <cim:{{attr_name}} rdf:resource="#{{value}}" />
+    {{/is_list_attribute}}
+    {{#is_primitive_attribute}}
+    <cim:{{attr_name}}>{{value}}</cim:{{attr_name}}>
+    {{/is_primitive_attribute}}
+    {{/attributes}}
+  </cim:{{type}}>
+  {{/about}}
+</rdf:RDF>
