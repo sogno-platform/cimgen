@@ -4,12 +4,12 @@ Generated from the CGMES 3 files via cimgen: https://github.com/sogno-platform/c
 
 from enum import Enum
 
-class {{class_name}}(str,Enum):
 
-    '''
+class {{class_name}}(str, Enum):
+    """
     {{{class_comment}}}
-    '''
+    """
 
-    {{#instances}}
+    {{#enum_instances}}
     {{#setInstances}}{{.}}{{/setInstances}}
-    {{/instances}}
+    {{/enum_instances}}

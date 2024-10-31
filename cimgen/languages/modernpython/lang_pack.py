@@ -75,7 +75,7 @@ def _set_instances(text, render):
     if "label" in instance:
         value = instance["label"] + ' = "' + instance["label"] + '"'
         if "comment" in instance:
-            value += " #" + instance["comment"]
+            value += "  # " + instance["comment"]
         return value
     else:
         return ""
@@ -133,10 +133,12 @@ def _primitive_to_data_type(datatype):
 
 def run_template(output_path, class_details):
     if class_details["is_a_primitive"]:
-        # Primitives are never used in the in memory representation but only for
-        # the schema
+        # Primitives are never used in the in memory representation but only for the schema
         template = primitive_template_files
         class_details["python_type"] = _primitive_to_data_type(class_details["class_name"])
+    elif class_details["is_an_enum_class"]:
+        template = enum_template_files
+        class_details["setInstances"] = _set_instances
     else:
         template = template_files
         class_details["setDefault"] = _set_default
