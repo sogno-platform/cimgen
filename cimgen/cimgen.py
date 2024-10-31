@@ -518,36 +518,21 @@ def _write_python_files(elem_dict, lang_pack, output_path, version):
     recommended_class_profiles = _get_recommended_class_profiles(elem_dict)
 
     for class_name in elem_dict.keys():
-        if "modernpython" in lang_pack.__name__:
-            class_details = {
-                "attributes": _find_multiple_attributes(elem_dict[class_name].attributes()),
-                "class_location": lang_pack.get_class_location(class_name, elem_dict, output_path),
-                "class_name": class_name,
-                "class_origin": elem_dict[class_name].origins(),
-                "instances": elem_dict[class_name].instances(),
-                "has_instances": elem_dict[class_name].has_instances(),
-                "is_a_float": elem_dict[class_name].is_a_float(),
-                "is_a_primitive": elem_dict[class_name].is_a_primitive(),
-                "is_a_cim_data_type": elem_dict[class_name].is_a_cim_datatype(),
-                "langPack": lang_pack,
-                "sub_class_of": elem_dict[class_name].superClass(),
-                "sub_classes": elem_dict[class_name].subClasses(),
-                "recommended_class_profile": recommended_class_profiles[class_name],
-            }
-        else:
-            class_details = {
-                "attributes": _find_multiple_attributes(elem_dict[class_name].attributes()),
-                "class_location": lang_pack.get_class_location(class_name, elem_dict, output_path),
-                "class_name": class_name,
-                "class_origin": elem_dict[class_name].origins(),
-                "instances": elem_dict[class_name].instances(),
-                "has_instances": elem_dict[class_name].has_instances(),
-                "is_a_float": elem_dict[class_name].is_a_float(),
-                "langPack": lang_pack,
-                "sub_class_of": elem_dict[class_name].superClass(),
-                "sub_classes": elem_dict[class_name].subClasses(),
-                "recommended_class_profile": recommended_class_profiles[class_name],
-            }
+        class_details = {
+            "attributes": _find_multiple_attributes(elem_dict[class_name].attributes()),
+            "class_location": lang_pack.get_class_location(class_name, elem_dict, output_path),
+            "class_name": class_name,
+            "class_origin": elem_dict[class_name].origins(),
+            "instances": elem_dict[class_name].instances(),
+            "has_instances": elem_dict[class_name].has_instances(),
+            "is_a_float": elem_dict[class_name].is_a_float(),
+            "is_a_primitive": elem_dict[class_name].is_a_primitive(),
+            "is_a_cim_data_type": elem_dict[class_name].is_a_cim_datatype(),
+            "langPack": lang_pack,
+            "sub_class_of": elem_dict[class_name].superClass(),
+            "sub_classes": elem_dict[class_name].subClasses(),
+            "recommended_class_profile": recommended_class_profiles[class_name],
+        }
 
         # extract comments
         if elem_dict[class_name].comment:
