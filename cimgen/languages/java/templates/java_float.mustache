@@ -33,6 +33,16 @@ public class {{class_name}} extends BaseClass {
 	}
 
 	@Override
+	public boolean isPrimitive() {
+		return true;
+	}
+
+	@Override
+	public boolean isInitialized() {
+		return initialized;
+	}
+
+	@Override
 	public void setValue(java.lang.String s) {
 		try {
 			value = java.lang.Float.valueOf(s.trim()).floatValue();
@@ -40,6 +50,11 @@ public class {{class_name}} extends BaseClass {
 		} catch (NumberFormatException nfe) {
 			System.out.println("NumberFormatException: " + nfe.getMessage());
 		}
+	}
+
+	@Override
+	public Object getValue() {
+		return Double.valueOf(value);
 	}
 
 	@Override

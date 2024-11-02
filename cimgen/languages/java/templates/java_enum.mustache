@@ -40,6 +40,16 @@ public class {{class_name}} extends BaseClass {
 	}
 
 	@Override
+	public boolean isPrimitive() {
+		return true;
+	}
+
+	@Override
+	public boolean isInitialized() {
+		return initialized;
+	}
+
+	@Override
 	public void setValue(java.lang.String s) {
 		try {
 			value = {{class_name}}_ENUM.valueOf(s.trim());
@@ -47,6 +57,11 @@ public class {{class_name}} extends BaseClass {
 		} catch (IllegalArgumentException iae) {
 			System.out.println("IllegalArgumentException: " + iae.getMessage());
 		}
+	}
+
+	@Override
+	public Object getValue() {
+		return value.toString();
 	}
 
 	@Override

@@ -27,10 +27,25 @@ public class Boolean extends BaseClass {
 	}
 
 	@Override
+	public boolean isPrimitive() {
+		return true;
+	}
+
+	@Override
+	public boolean isInitialized() {
+		return initialized;
+	}
+
+	@Override
 	public void setValue(java.lang.String s) {
 		java.lang.String s_ignore_case = s.toLowerCase();
 		value = (s_ignore_case.equals("true"));
 		initialized = true;
+	}
+
+	@Override
+	public Object getValue() {
+		return java.lang.Boolean.valueOf(value);
 	}
 
 	@Override

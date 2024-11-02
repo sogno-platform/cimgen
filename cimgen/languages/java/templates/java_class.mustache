@@ -4,6 +4,10 @@ Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cim
 
 package cim4j;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
+
 {{#class_comment}}
 /**
  * {{{class_comment}}}
@@ -14,6 +18,11 @@ public class {{class_name}} extends {{sub_class_of}} {
 	private BaseClass[] {{class_name}}_class_attributes;
 	private BaseClass[] {{class_name}}_primitive_attributes;
 	private java.lang.String rdfid;
+
+	private static final Map<java.lang.String, java.lang.String> ATTRIBUTE_NAMES_MAP;
+	static {
+		ATTRIBUTE_NAMES_MAP = new {{class_name}}().getAttributeNamesMap();
+	}
 
 	private enum {{class_name}}_primitive_builder implements PrimitiveBuilder {
 {{#attributes}}
@@ -66,6 +75,11 @@ public class {{class_name}} extends {{sub_class_of}} {
 		rdfid = id;
 	}
 
+	@Override
+	public java.lang.String getRdfid() {
+		return rdfid;
+	}
+
 	private void updateAttributeInArray({{class_name}}_class_attributes_enum attrEnum, BaseClass value) {
 		try {
 			{{class_name}}_class_attributes[attrEnum.ordinal()] = value;
@@ -103,6 +117,62 @@ public class {{class_name}} extends {{sub_class_of}} {
 		} catch (IllegalArgumentException iae) {
 			super.setAttribute(attrName, value);
 		}
+	}
+
+	@Override
+	public BaseClass getAttribute(java.lang.String attrName) {
+		boolean defined = false;
+		try {
+			{{class_name}}_primitive_builder attrEnum = {{class_name}}_primitive_builder.valueOf(attrName);
+			defined = true;
+			BaseClass attrValue = {{class_name}}_primitive_attributes[attrEnum.ordinal()];
+			if (attrValue != null) {
+				return attrValue;
+			}
+		} catch (IllegalArgumentException ignored) {
+		}
+
+		try {
+			{{class_name}}_class_attributes_enum attrEnum = {{class_name}}_class_attributes_enum.valueOf(attrName);
+			defined = true;
+			BaseClass attrValue = {{class_name}}_class_attributes[attrEnum.ordinal()];
+			if (attrValue != null) {
+				return attrValue;
+			}
+		} catch (IllegalArgumentException ignored) {
+		}
+
+		if (!defined) {
+			return super.getAttribute(attrName);
+		}
+		return null;
+	}
+
+	@Override
+	protected Map<java.lang.String, java.lang.String> getAttributeNamesMap() {
+		Map<java.lang.String, java.lang.String> namesMap = new LinkedHashMap<>();
+		for (var enumValue : {{class_name}}_primitive_builder.values()) {
+			if (enumValue != {{class_name}}_primitive_builder.LAST_ENUM) {
+				namesMap.put(enumValue.name(), "{{class_name}}." + enumValue.name());
+			}
+		}
+		for (var enumValue : {{class_name}}_class_attributes_enum.values()) {
+			if (enumValue != {{class_name}}_class_attributes_enum.LAST_ENUM) {
+				namesMap.put(enumValue.name(), "{{class_name}}." + enumValue.name());
+			}
+		}
+		namesMap.putAll(super.getAttributeNamesMap());
+		return namesMap;
+	}
+
+	@Override
+	public Set<java.lang.String> getAttributeNames() {
+		return ATTRIBUTE_NAMES_MAP.keySet();
+	}
+
+	@Override
+	public java.lang.String getAttributeFullName(java.lang.String attrName) {
+		return ATTRIBUTE_NAMES_MAP.get(attrName);
 	}
 
 	@Override

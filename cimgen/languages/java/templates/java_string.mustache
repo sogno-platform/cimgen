@@ -28,9 +28,24 @@ public class {{class_name}} extends BaseClass {
 	}
 
 	@Override
+	public boolean isPrimitive() {
+		return true;
+	}
+
+	@Override
+	public boolean isInitialized() {
+		return initialized;
+	}
+
+	@Override
 	public void setValue(java.lang.String s) {
 		value = s;
 		initialized = true;
+	}
+
+	@Override
+	public Object getValue() {
+		return value;
 	}
 
 	@Override

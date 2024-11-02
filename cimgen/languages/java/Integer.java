@@ -27,6 +27,16 @@ public class Integer extends BaseClass {
 	}
 
 	@Override
+	public boolean isPrimitive() {
+		return true;
+	}
+
+	@Override
+	public boolean isInitialized() {
+		return initialized;
+	}
+
+	@Override
 	public void setValue(java.lang.String s) {
 		try {
 			value = java.lang.Integer.parseInt(s.trim());
@@ -34,6 +44,11 @@ public class Integer extends BaseClass {
 		} catch (NumberFormatException nfe) {
 			System.out.println("NumberFormatException: " + nfe.getMessage());
 		}
+	}
+
+	@Override
+	public Object getValue() {
+		return java.lang.Integer.valueOf(value);
 	}
 
 	@Override
