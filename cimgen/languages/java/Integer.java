@@ -1,23 +1,16 @@
 package cim4j;
 
-import java.util.Map;
-import java.util.HashMap;
-import java.lang.IllegalArgumentException;
-
 /**
-* An Integer number. The range is unspecified and not limited.
-*/
-public class Integer extends BaseClass implements AttributeInterface {
+ * An Integer number. The range is unspecified and not limited.
+ */
+public class Integer extends BaseClass {
 
-	public int     value = 0;
+	private int value = 0;
 
-	public boolean initialized = false;
+	private boolean initialized = false;
 
-	public BaseClass construct() {
-		return new Integer();
+	public Integer() {
 	}
-
-	public Integer(){}
 
 	public Integer(int v) {
 		value = v;
@@ -28,33 +21,40 @@ public class Integer extends BaseClass implements AttributeInterface {
 		setValue(s);
 	}
 
+	@Override
+	public BaseClass construct() {
+		return new Integer();
+	}
+
+	@Override
+	public void setValue(java.lang.String s) {
+		try {
+			value = java.lang.Integer.parseInt(s.trim());
+			initialized = true;
+		} catch (NumberFormatException nfe) {
+			System.out.println("NumberFormatException: " + nfe.getMessage());
+		}
+	}
+
+	@Override
+	public void setAttribute(java.lang.String attrName, BaseClass value) {
+		throw new IllegalArgumentException("Integer class cannot set attribute: " + attrName);
+	}
+
+	@Override
 	public void setAttribute(java.lang.String attrName, java.lang.String value) {
 		throw new IllegalArgumentException("Integer class cannot set attribute: " + attrName);
 	}
 
-	public void setValue(java.lang.String s) {
-		try
-		{
-			value = java.lang.Integer.parseInt(s.trim());
-			initialized = true;
-		}
-		catch (NumberFormatException nfe)
-		{
-			System.out.println("NumberFormatException: " + nfe.getMessage());
-		}
-        }
-
-	public java.lang.String debugName = "Integer";
-
-	public java.lang.String debugString() {
-		return debugName;
-        }
-
-	public void setAttribute(java.lang.String attributeName, BaseClass value) {
-		throw new IllegalArgumentException("Integer class cannot set attribute: " + attributeName);
-	}
-
-	public java.lang.String toString(boolean b) {
+	@Override
+	public java.lang.String toString(boolean topClass) {
 		return java.lang.Integer.toString(value);
 	}
-};
+
+	private final java.lang.String debugName = "Integer";
+
+	@Override
+	public java.lang.String debugString() {
+		return debugName;
+	}
+}

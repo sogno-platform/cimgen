@@ -4,65 +4,70 @@ Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cim
 
 package cim4j;
 
-import java.util.Map;
-import java.util.HashMap;
-import java.lang.ArrayIndexOutOfBoundsException;
-import java.lang.IllegalArgumentException;
+{{#class_comment}}
+/**
+ * {{{class_comment}}}
+ */
+{{/class_comment}}
+public class {{class_name}} extends BaseClass {
 
-/*
-{{{class_comment}}}
-*/
-public class {{class_name}} extends BaseClass
-{
-	private enum {{class_name}}_ENUM
-	{
-	{{#enum_instances}}
+	private enum {{class_name}}_ENUM {
+{{#enum_instances}}
+{{#comment}}
 		/**
 		 * {{comment}}
 		 */
+{{/comment}}
 		{{label}},
-	{{/enum_instances}}
-		MAX_{{class_name}}_ENUM;
+{{/enum_instances}}
+		MAX_{{class_name}}_ENUM
 	}
 
 	private {{class_name}}_ENUM value;
 
-	public BaseClass construct() {
-		return new {{class_name}}();
-        }
+	private boolean initialized = false;
 
-	public {{class_name}}() {}
+	public {{class_name}}() {
+	}
 
 	public {{class_name}}(java.lang.String s) {
 		setValue(s);
-        }
+	}
 
+	@Override
+	public BaseClass construct() {
+		return new {{class_name}}();
+	}
+
+	@Override
 	public void setValue(java.lang.String s) {
-		try
-		{
+		try {
 			value = {{class_name}}_ENUM.valueOf(s.trim());
-		}
-		catch (IllegalArgumentException iae)
-		{
+			initialized = true;
+		} catch (IllegalArgumentException iae) {
 			System.out.println("IllegalArgumentException: " + iae.getMessage());
 		}
-        }
+	}
 
+	@Override
+	public void setAttribute(java.lang.String attrName, BaseClass value) {
+		throw new IllegalArgumentException("ENUM cannot set attribute: " + attrName);
+	}
+
+	@Override
 	public void setAttribute(java.lang.String attrName, java.lang.String value) {
 		throw new IllegalArgumentException("ENUM cannot set attribute: " + attrName);
 	}
 
-	public void setAttribute(java.lang.String attributeName, BaseClass value) {
-		throw new IllegalArgumentException("ENUM cannot set attribute: " + attributeName);
-	}
-
-	private java.lang.String debugName = "{{class_name}}";
-
-	public java.lang.String debugString(){
-		return debugName;
-	}
-
-	public java.lang.String toString(boolean b) {
+	@Override
+	public java.lang.String toString(boolean topClass) {
 		return "Enum (" + value.toString() + ")";
 	}
-};
+
+	private final java.lang.String debugName = "{{class_name}}";
+
+	@Override
+	public java.lang.String debugString() {
+		return debugName;
+	}
+}
