@@ -14,8 +14,8 @@ public class Integer extends BaseClass implements AttributeInterface {
 	public boolean initialized = false;
 
 	public BaseClass construct() {
-		return new Float();
-        }
+		return new Integer();
+	}
 
 	public Integer(){}
 
@@ -28,8 +28,8 @@ public class Integer extends BaseClass implements AttributeInterface {
 		setValue(s);
 	}
 
-	public void setAttribute(java.lang.String attributeName, java.lang.String value) {
-		setValue(value);
+	public void setAttribute(java.lang.String attrName, java.lang.String value) {
+		throw new IllegalArgumentException("Integer class cannot set attribute: " + attrName);
 	}
 
 	public void setValue(java.lang.String s) {

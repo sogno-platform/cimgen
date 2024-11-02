@@ -48,16 +48,8 @@ public class {{class_name}} extends BaseClass
 		throw new IllegalArgumentException("Float class cannot set attribute: " + attributeName);
 	}
 
-	public void setAttribute(java.lang.String s, java.lang.String v) {
-		try
-		{
-			value = java.lang.Float.parseFloat(v.trim());
-			initialized = true;
-		}
-		catch (NumberFormatException nfe)
-		{
-			System.out.println("NumberFormatException: " + nfe.getMessage());
-		}
+	public void setAttribute(java.lang.String attrName, java.lang.String value) {
+		throw new IllegalArgumentException("Float class cannot set attribute: " + attrName);
 	}
 
 	public java.lang.String toString(boolean b) {

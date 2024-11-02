@@ -30,15 +30,15 @@ public class Boolean extends BaseClass {
 		return debugName;
 	}
 
-	public void setAttribute(java.lang.String attributeName, java.lang.String value) {
-		setValue(value);
+	public void setAttribute(java.lang.String attrName, java.lang.String value) {
+		throw new IllegalArgumentException("Boolean class cannot set attribute: " + attrName);
 	}
 
 	public void setValue(java.lang.String s) {
-                java.lang.String s_ignore_case = s.toLowerCase();
-	        value = (s == "true");
+		java.lang.String s_ignore_case = s.toLowerCase();
+		value = (s_ignore_case.equals("true"));
 		initialized = true;
-        }
+	}
 
 	boolean value = false;
 	boolean initialized = false;

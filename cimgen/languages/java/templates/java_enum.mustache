@@ -40,20 +40,13 @@ public class {{class_name}} extends BaseClass
 		}
 		catch (IllegalArgumentException iae)
 		{
-			System.out.println("NumberFormatException: " + iae.getMessage());
+			System.out.println("IllegalArgumentException: " + iae.getMessage());
 		}
         }
 
-	public void setAttribute(java.lang.String a, java.lang.String s) {
-		try
-		{
-			value = {{class_name}}_ENUM.valueOf(s.trim());
-		}
-		catch (IllegalArgumentException iae)
-		{
-			System.out.println("NumberFormatException: " + iae.getMessage());
-		}
-        }
+	public void setAttribute(java.lang.String attrName, java.lang.String value) {
+		throw new IllegalArgumentException("ENUM cannot set attribute: " + attrName);
+	}
 
 	public void setAttribute(java.lang.String attributeName, BaseClass value) {
 		throw new IllegalArgumentException("ENUM cannot set attribute: " + attributeName);
