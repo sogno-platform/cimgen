@@ -272,6 +272,9 @@ def _create_header_include_file(directory, header_include_filename, header, foot
 
 def resolve_headers(path: str, version: str):  # NOSONAR
     class_list_header = [
+        "/*\n",
+        "Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cimgen\n",
+        "*/\n",
         "package cim4j;\n",
         "import java.util.Map;\n",
         "import java.util.Arrays;\n",
