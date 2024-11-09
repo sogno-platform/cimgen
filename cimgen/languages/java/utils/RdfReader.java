@@ -1,58 +1,69 @@
-import javax.xml.parsers.*;
-import org.xml.sax.*;
-import org.xml.sax.helpers.*;
+package cim4j.utils;
 
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.HashMap;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Stack;
-import java.util.Enumeration;
-import java.io.PrintStream;
-import java.lang.String;
-import java.lang.Integer;
-import java.io.File;
 
-import cim4j.*;
+import javax.xml.parsers.SAXParserFactory;
 
-public class XMLTest extends DefaultHandler {
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
+import org.xml.sax.helpers.DefaultHandler;
 
-	Hashtable<String, Integer> tags;
-	Map<String, cim4j.BaseClass> model;
-	Stack<String> subjectStack;
-	Stack<BaseClass> objectStack;
+import cim4j.BaseClass;
+import cim4j.CIMClassMap;
 
-	static public void main(String[] args) throws Exception {
-		String filename = null;
+/**
+ * Read rdf files into a map of rdfid to cim object.
+ */
+public class RdfReader extends DefaultHandler {
 
-		for (int i = 0; i < args.length; i++) {
-			filename = args[i];
-			if (i != args.length - 1) {
-				usage();
-			}
+	private LinkedHashMap<String, BaseClass> model;
+	private Stack<String> subjectStack;
+	private Stack<BaseClass> objectStack;
+
+	/**
+	 * Read the cim data from a rdf file.
+	 *
+	 * @param path path of file to read
+	 */
+	public static Map<String, BaseClass> read(String path) {
+		try {
+			var parserFactory = SAXParserFactory.newInstance();
+			parserFactory.setNamespaceAware(true);
+
+			var parser = parserFactory.newSAXParser();
+			var reader = parser.getXMLReader();
+
+			var handler = new RdfReader();
+			reader.setContentHandler(handler);
+			reader.setErrorHandler(handler);
+
+			reader.parse(path);
+
+			return handler.getModel();
+		} catch (Exception ex) {
+			String txt = "Error while reading rdf file: " + path;
+			LOG.error(txt, ex);
+			throw new RuntimeException(txt, ex);
 		}
-
-		if (filename == null) {
-			usage();
-		}
-
-		SAXParserFactory spf = SAXParserFactory.newInstance();
-		spf.setNamespaceAware(true);
-		SAXParser saxParser = spf.newSAXParser();
-		XMLReader xmlReader = saxParser.getXMLReader();
-		xmlReader.setContentHandler(new XMLTest());
-		xmlReader.setErrorHandler(new MyErrorHandler(System.err));
-		xmlReader.parse(convertToFileURL(filename));
 	}
 
-	public void startDocument() throws SAXException {
-		tags = new Hashtable<>();
-		model = new HashMap<String, cim4j.BaseClass>();
-		subjectStack = new Stack<String>();
-		objectStack = new Stack<BaseClass>();
+	public Map<String, BaseClass> getModel() {
+		return Collections.unmodifiableMap(model);
 	}
 
-	public void characters(char ch[], int start, int length) throws SAXException {
+	@Override
+	public void startDocument() {
+		model = new LinkedHashMap<>();
+		subjectStack = new Stack<>();
+		objectStack = new Stack<>();
+	}
+
+	@Override
+	public void characters(char[] ch, int start, int length) {
 		String content = String.valueOf(ch, start, length);
 		if (content.length() == 0 || content.isBlank()) {
 			return;
@@ -69,14 +80,10 @@ public class XMLTest extends DefaultHandler {
 		}
 	}
 
-	public void startElement(String namespaceURI,
-			String localName,
-			String qName,
-			Attributes atts)
-			throws SAXException {
 
+	@Override
+	public void startElement(String namespaceUri, String localName, String qName, Attributes attributes) {
 		String rdfid = "";
-
 		if (!qName.startsWith("cim")) {
 			return;
 		}
@@ -127,11 +134,8 @@ public class XMLTest extends DefaultHandler {
 
 	}
 
-	public void endElement(String namespaceURI,
-			String localName,
-			String qName,
-			Attributes atts)
-			throws SAXException {
+	@Override
+	public void endElement(String namespaceUri, String localName, String qName) {
 		if (!subjectStack.empty()) {
 			subjectStack.pop();
 		}
@@ -144,69 +148,43 @@ public class XMLTest extends DefaultHandler {
 		}
 	}
 
-	public void endDocument() throws SAXException {
-		Iterator it = model.entrySet().iterator();
-		while (it.hasNext()) {
-			Map.Entry pair = (Map.Entry) it.next();
-			String key = (String) pair.getKey();
-			BaseClass value = (BaseClass) pair.getValue();
+	@Override
+	public void endDocument() {
+		for (String key : model.keySet()) {
+			var value = model.get(key);
 			String type = value.debugString();
 			System.out.println("Model contains a " + type + " with rdf:ID " + key + " and attributes:"
 					+ System.lineSeparator() + value.toString());
 		}
 	}
 
-	private static String convertToFileURL(String filename) {
-		String path = new File(filename).getAbsolutePath();
-		if (File.separatorChar != '/') {
-			path = path.replace(File.separatorChar, '/');
-		}
-
-		if (!path.startsWith("/")) {
-			path = "/" + path;
-		}
-		return "file:" + path;
+	@Override
+	public void warning(SAXParseException ex) {
+		out.println("Warning: " + getParseExceptionInfo(ex));
 	}
 
-	private static void usage() {
-		System.err.println("Usage: XMLTest <file.xml>");
-		System.err.println("       -usage or -help = this message");
-		System.exit(1);
+	@Override
+	public void error(SAXParseException ex) throws SAXException {
+		String message = "Error: " + getParseExceptionInfo(ex);
+		throw new SAXException(message);
 	}
 
-	private static class MyErrorHandler implements ErrorHandler {
+	@Override
+	public void fatalError(SAXParseException ex) throws SAXException {
+		String txt = getParseExceptionInfo(ex);
+		throw new SAXException(txt, ex);
+	}
 
-		private PrintStream out;
+	private String getParseExceptionInfo(SAXParseException ex) {
+		String systemId = ex.getSystemId();
 
-		MyErrorHandler(PrintStream out) {
-			this.out = out;
+		if (systemId == null) {
+			systemId = "null";
 		}
 
-		private String getParseExceptionInfo(SAXParseException spe) {
-			String systemId = spe.getSystemId();
+		String info = "URI=" + systemId + " Line="
+				+ spe.getLineNumber() + ": " + spe.getMessage();
 
-			if (systemId == null) {
-				systemId = "null";
-			}
-
-			String info = "URI=" + systemId + " Line="
-					+ spe.getLineNumber() + ": " + spe.getMessage();
-
-			return info;
-		}
-
-		public void warning(SAXParseException spe) throws SAXException {
-			out.println("Warning: " + getParseExceptionInfo(spe));
-		}
-
-		public void error(SAXParseException spe) throws SAXException {
-			String message = "Error: " + getParseExceptionInfo(spe);
-			throw new SAXException(message);
-		}
-
-		public void fatalError(SAXParseException spe) throws SAXException {
-			String message = "Fatal Error: " + getParseExceptionInfo(spe);
-			throw new SAXException(message);
-		}
+		return info;
 	}
 }
