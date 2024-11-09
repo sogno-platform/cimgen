@@ -162,10 +162,10 @@ public class RdfReader extends DefaultHandler {
 			if (qName.equals("rdf:resource")) {
 				String rdfid = attributes.getValue(idx);
 
-				BaseClass attributeObject = createOrLinkObject(attributeName, rdfid);
 				if (!objectStack.isEmpty()) {
 					BaseClass object = objectStack.peek();
 					if (object != null) {
+						BaseClass attributeObject = createOrLinkObject("IdentifiedObject", rdfid);
 						object.setAttribute(attributeName, attributeObject);
 					}
 				}
