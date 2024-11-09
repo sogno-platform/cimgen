@@ -14,11 +14,14 @@ import org.xml.sax.helpers.DefaultHandler;
 
 import cim4j.BaseClass;
 import cim4j.CIMClassMap;
+import cim4j.Logging;
 
 /**
  * Read rdf files into a map of rdfid to cim object.
  */
 public class RdfReader extends DefaultHandler {
+
+	private static final Logging LOG = Logging.getLogger(RdfReader.class);
 
 	private LinkedHashMap<String, BaseClass> model;
 	private Stack<String> subjectStack;
@@ -65,17 +68,13 @@ public class RdfReader extends DefaultHandler {
 	@Override
 	public void characters(char[] ch, int start, int length) {
 		String content = String.valueOf(ch, start, length);
-		if (content.length() == 0 || content.isBlank()) {
-			return;
-		}
-
-		if (!subjectStack.empty()) {
+		if (!content.isBlank() && !subjectStack.empty()) {
 			String subject = subjectStack.peek();
 			if (!objectStack.empty()) {
 				BaseClass object = objectStack.peek();
-				System.out.println("About to set " + subject + " in " + object.debugString() + " with characters: ["
-						+ length + "]" + content);
 				object.setAttribute(subject, content);
+			} else {
+				LOG.error(String.format("Cannot set attribute with name %s because object stack is empty", subject));
 			}
 		}
 	}
@@ -153,38 +152,30 @@ public class RdfReader extends DefaultHandler {
 		for (String key : model.keySet()) {
 			var value = model.get(key);
 			String type = value.debugString();
-			System.out.println("Model contains a " + type + " with rdf:ID " + key + " and attributes:"
-					+ System.lineSeparator() + value.toString());
+			LOG.debug(String.format("Model contains a %s with rdf:ID %s and attributes:", type, key));
+			LOG.debug(value.toString(true));
 		}
 	}
 
 	@Override
 	public void warning(SAXParseException ex) {
-		out.println("Warning: " + getParseExceptionInfo(ex));
+		LOG.warn(getParseExceptionInfo(ex), ex);
 	}
 
 	@Override
-	public void error(SAXParseException ex) throws SAXException {
-		String message = "Error: " + getParseExceptionInfo(ex);
-		throw new SAXException(message);
+	public void error(SAXParseException ex) {
+		LOG.error(getParseExceptionInfo(ex), ex);
 	}
 
 	@Override
 	public void fatalError(SAXParseException ex) throws SAXException {
 		String txt = getParseExceptionInfo(ex);
+		LOG.fatal(txt, ex);
 		throw new SAXException(txt, ex);
 	}
 
 	private String getParseExceptionInfo(SAXParseException ex) {
 		String systemId = ex.getSystemId();
-
-		if (systemId == null) {
-			systemId = "null";
-		}
-
-		String info = "URI=" + systemId + " Line="
-				+ spe.getLineNumber() + ": " + spe.getMessage();
-
-		return info;
+		return "URI=" + systemId + " Line=" + ex.getLineNumber() + ": " + ex.getMessage();
 	}
 }
