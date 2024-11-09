@@ -79,10 +79,59 @@ public class RdfReader extends DefaultHandler {
 		}
 	}
 
+	private BaseClass createOrLinkObject(String className, String rdfid) {
+		if (rdfid.startsWith("#")) {
+			rdfid = rdfid.substring(1);
+		}
+		final BaseClass template = CIMClassMap.classMap.get(className);
+		if (template != null) {
+			BaseClass object;
+			if (model.containsKey(rdfid)) {
+				object = model.get(rdfid);
+				var oldType = object.getClass();
+				var newType = template.getClass();
+				if (!oldType.equals(newType) && oldType.isAssignableFrom(newType)) {
+					var oldObject = object;
+					LOG.debug(String.format("Retyping object with rdf:ID: %s from type: %s to type: %s", rdfid,
+							oldObject.debugString(), className));
+					// Create new object with new type
+					object = template.construct();
+					object.setRdfid(rdfid);
+					// Copy attributes from old object to the new object
+					for (String attrName : oldObject.getAttributeNames()) {
+						var attrObj = oldObject.getAttribute(attrName);
+						if (attrObj != null) {
+							object.setAttribute(attrName, attrObj);
+						}
+					}
+					// Replace old object with new object in attributes of all objects in the model
+					for (var cimObj : model.values()) {
+						for (String attrName : cimObj.getAttributeNames()) {
+							if (cimObj.getAttribute(attrName) == oldObject) {
+								cimObj.setAttribute(attrName, object);
+							}
+						}
+					}
+					// Replace old object with new object in model
+					model.put(rdfid, object);
+				} else {
+					LOG.debug(String.format("Found %s with rdf:ID: %s in map", object.debugString(), rdfid));
+				}
+			} else {
+				LOG.debug(String.format("Creating object of type: %s with rdf:ID: %s", className, rdfid));
+				object = template.construct();
+				object.setRdfid(rdfid);
+				model.put(rdfid, object);
+			}
+			return object;
+		}
+
+		LOG.debug(String.format("Could not find %s in map", className));
+		return null;
+	}
 
 	@Override
 	public void startElement(String namespaceUri, String localName, String qName, Attributes attributes) {
-		String rdfid = "";
 		if (!qName.startsWith("cim")) {
 			return;
 		}
@@ -96,41 +145,32 @@ public class RdfReader extends DefaultHandler {
 		}
 
 		subjectStack.push(attributeName);
-		System.out.println("Attribute is a " + attributeName);
 
-		for (int i = 0; i < atts.getLength(); i++) {
-			// System.out.println("name is " + atts.getQName(i));
-			// System.out.println("value is " + atts.getValue(i));
-
-			if (atts.getQName(i) == "rdf:ID") {
-				// System.out.println("rdf:ID is " + atts.getValue(i));
-				rdfid = atts.getValue(i);
+		for (int idx = 0; idx < attributes.getLength(); ++idx) {
+			qName = attributes.getQName(idx);
+			if (qName.equals("rdf:ID")) {
+				String rdfid = attributes.getValue(idx);
 
 				// If we have a class, make a new object and record it in the map
 				if (CIMClassMap.isCIMClass(localName)) {
-					cim4j.BaseClass bc = CIMClassMap.classMap.get(localName);
-					if (model.containsKey(rdfid)) {
-						BaseClass object = model.get(rdfid);
-						System.out.println("Object: " + rdfid + " already exists and is a " + object.debugString());
-						objectStack.push(object);
-					} else {
-						BaseClass object = bc.construct();
-						System.out.println("Object: " + rdfid + " being created as a " + object.debugString());
-						model.put(rdfid, object);
-						objectStack.push(object);
+					BaseClass object = createOrLinkObject(localName, rdfid);
+					objectStack.push(object);
+				} else {
+					LOG.debug(String.format("Possible class element: %s", qName));
+				}
+			}
+			if (qName.equals("rdf:resource")) {
+				String rdfid = attributes.getValue(idx);
+
+				BaseClass attributeObject = createOrLinkObject(attributeName, rdfid);
+				if (!objectStack.isEmpty()) {
+					BaseClass object = objectStack.peek();
+					if (object != null) {
+						object.setAttribute(attributeName, attributeObject);
 					}
 				}
-
-				// If we have an attribute pointing to a class that exists, set
-				// the reference to that instance and check for reverse pointers
-			} else if (atts.getQName(i) == "rdf:resource") {
-				System.out.println("rdf:resource is " + atts.getValue(i));
 			}
 		}
-
-		// if we have an attribute pointing to a class that doesn't exist,
-		// create the class in the map with the reverse pointer set.
-
 	}
 
 	@Override
@@ -139,9 +179,7 @@ public class RdfReader extends DefaultHandler {
 			subjectStack.pop();
 		}
 		if (CIMClassMap.isCIMClass(localName)) {
-			if (objectStack.size() == 0) {
-				System.out.println("WARNING: Nearly tried to pop empty object stack for tag: " + qName);
-			} else {
+			if (!objectStack.empty()) {
 				objectStack.pop();
 			}
 		}
