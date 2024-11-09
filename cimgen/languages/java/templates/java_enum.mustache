@@ -11,6 +11,8 @@ package cim4j;
 {{/class_comment}}
 public class {{class_name}} extends BaseClass {
 
+	private static final Logging LOG = Logging.getLogger({{class_name}}.class);
+
 	private enum {{class_name}}_ENUM {
 {{#enum_instances}}
 {{#comment}}
@@ -55,7 +57,7 @@ public class {{class_name}} extends BaseClass {
 			value = {{class_name}}_ENUM.valueOf(s.trim());
 			initialized = true;
 		} catch (IllegalArgumentException iae) {
-			System.out.println("IllegalArgumentException: " + iae.getMessage());
+			LOG.error("IllegalArgumentException: " + iae.getMessage());
 		}
 	}
 

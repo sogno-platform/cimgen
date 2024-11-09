@@ -11,6 +11,8 @@ package cim4j;
 {{/class_comment}}
 public class {{class_name}} extends BaseClass {
 
+	private static final Logging LOG = Logging.getLogger({{class_name}}.class);
+
 	private double value = 0.0;
 
 	private boolean initialized = false;
@@ -48,7 +50,7 @@ public class {{class_name}} extends BaseClass {
 			value = java.lang.Float.valueOf(s.trim()).floatValue();
 			initialized = true;
 		} catch (NumberFormatException nfe) {
-			System.out.println("NumberFormatException: " + nfe.getMessage());
+			LOG.error("NumberFormatException: " + nfe.getMessage());
 		}
 	}
 

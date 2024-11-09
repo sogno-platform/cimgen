@@ -5,6 +5,8 @@ package cim4j;
  */
 public class Integer extends BaseClass {
 
+	private static final Logging LOG = Logging.getLogger(Integer.class);
+
 	private int value = 0;
 
 	private boolean initialized = false;
@@ -42,7 +44,7 @@ public class Integer extends BaseClass {
 			value = java.lang.Integer.parseInt(s.trim());
 			initialized = true;
 		} catch (NumberFormatException nfe) {
-			System.out.println("NumberFormatException: " + nfe.getMessage());
+			LOG.error("NumberFormatException: " + nfe.getMessage());
 		}
 	}
 

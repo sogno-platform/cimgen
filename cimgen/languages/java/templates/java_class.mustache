@@ -15,6 +15,8 @@ import java.util.Set;
 {{/class_comment}}
 public class {{class_name}} extends {{sub_class_of}} {
 
+	private static final Logging LOG = Logging.getLogger({{class_name}}.class);
+
 	private BaseClass[] {{class_name}}_class_attributes;
 	private BaseClass[] {{class_name}}_primitive_attributes;
 	private java.lang.String rdfid;
@@ -67,7 +69,7 @@ public class {{class_name}} extends {{sub_class_of}} {
 
 	@Override
 	public void setValue(java.lang.String s) {
-		System.out.println(debugString() + " is not sure what to do with " + s);
+		LOG.error(debugString() + " is not sure what to do with " + s);
 	}
 
 	@Override
@@ -84,7 +86,7 @@ public class {{class_name}} extends {{sub_class_of}} {
 		try {
 			{{class_name}}_class_attributes[attrEnum.ordinal()] = value;
 		} catch (ArrayIndexOutOfBoundsException aoobe) {
-			System.out.println("No such attribute: " + attrEnum.name() + ": " + aoobe.getMessage());
+			LOG.error("No such attribute: " + attrEnum.name() + ": " + aoobe.getMessage());
 		}
 	}
 
@@ -92,7 +94,7 @@ public class {{class_name}} extends {{sub_class_of}} {
 		try {
 			{{class_name}}_primitive_attributes[attrEnum.ordinal()] = value;
 		} catch (ArrayIndexOutOfBoundsException aoobe) {
-			System.out.println("No such attribute: " + attrEnum.name() + ": " + aoobe.getMessage());
+			LOG.error("No such attribute: " + attrEnum.name() + ": " + aoobe.getMessage());
 		}
 	}
 
@@ -101,7 +103,7 @@ public class {{class_name}} extends {{sub_class_of}} {
 		try {
 			{{class_name}}_class_attributes_enum attrEnum = {{class_name}}_class_attributes_enum.valueOf(attrName);
 			updateAttributeInArray(attrEnum, value);
-			System.out.println("Updated {{class_name}}, setting " + attrName);
+			LOG.debug("Updated {{class_name}}, setting " + attrName);
 		} catch (IllegalArgumentException iae) {
 			super.setAttribute(attrName, value);
 		}
@@ -113,7 +115,7 @@ public class {{class_name}} extends {{sub_class_of}} {
 		try {
 			{{class_name}}_primitive_builder attrEnum = {{class_name}}_primitive_builder.valueOf(attrName);
 			updateAttributeInArray(attrEnum, attrEnum.construct(value));
-			System.out.println("Updated {{class_name}}, setting " + attrName + " to: " + value);
+			LOG.debug("Updated {{class_name}}, setting " + attrName + " to: " + value);
 		} catch (IllegalArgumentException iae) {
 			super.setAttribute(attrName, value);
 		}

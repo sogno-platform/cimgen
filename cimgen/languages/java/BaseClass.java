@@ -7,6 +7,8 @@ import java.util.Set;
 
 public abstract class BaseClass implements BaseClassInterface, BaseClassBuilder, AttributeInterface {
 
+	private static final Logging LOG = Logging.getLogger(BaseClass.class);
+
 	@Override
 	public boolean isPrimitive() {
 		return false;
@@ -24,7 +26,7 @@ public abstract class BaseClass implements BaseClassInterface, BaseClassBuilder,
 
 	@Override
 	public void setRdfid(java.lang.String id) {
-		System.out.println("Shouldn't have instantiated an abstract class: " + id);
+		LOG.error("Shouldn't have instantiated an abstract class: " + id);
 	}
 
 	@Override
@@ -34,12 +36,12 @@ public abstract class BaseClass implements BaseClassInterface, BaseClassBuilder,
 
 	@Override
 	public void setAttribute(java.lang.String attrName, BaseClass value) {
-		System.out.println("No-one knows what to do with the attribute: " + attrName);
+		LOG.error("No-one knows what to do with the attribute: " + attrName);
 	}
 
 	@Override
 	public void setAttribute(java.lang.String attrName, java.lang.String value) {
-		System.out.println("No-one knows what to do with the attribute: " + attrName);
+		LOG.error("No-one knows what to do with the attribute: " + attrName);
 	}
 
 	@Override
