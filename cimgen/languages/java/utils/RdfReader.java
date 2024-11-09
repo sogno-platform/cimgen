@@ -148,7 +148,7 @@ public class RdfReader extends DefaultHandler {
 
 		for (int idx = 0; idx < attributes.getLength(); ++idx) {
 			qName = attributes.getQName(idx);
-			if (qName.equals("rdf:ID")) {
+			if (qName.equals("rdf:ID") || qName.equals("rdf:about")) {
 				String rdfid = attributes.getValue(idx);
 
 				// If we have a class, make a new object and record it in the map
