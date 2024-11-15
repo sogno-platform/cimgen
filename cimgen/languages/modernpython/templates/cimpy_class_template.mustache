@@ -10,7 +10,7 @@ from pydantic.dataclasses import dataclass
 
 from ..utils.profile import BaseProfile, Profile
 from {{class_location}} import {{sub_class_of}}
-
+{{setImports}}
 
 @dataclass
 class {{class_name}}({{sub_class_of}}):
@@ -37,7 +37,8 @@ class {{class_name}}({{sub_class_of}}):
             "is_enum_attribute": {{#is_enum_attribute}}True{{/is_enum_attribute}}{{^is_enum_attribute}}False{{/is_enum_attribute}},
             "is_list_attribute": {{#is_list_attribute}}True{{/is_list_attribute}}{{^is_list_attribute}}False{{/is_list_attribute}},
             "is_primitive_attribute": {{#is_primitive_attribute}}True{{/is_primitive_attribute}}{{^is_primitive_attribute}}False{{/is_primitive_attribute}},
-        },
+            "is_cim_datatype": {{#is_cim_datatype}}True{{/is_cim_datatype}}{{^is_cim_datatype}}False{{/is_cim_datatype}},
+            {{#setCimDataType}}{{.}}{{/setCimDataType}}},
     )
 
     {{/attributes}}

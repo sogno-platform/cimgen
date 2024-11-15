@@ -103,6 +103,18 @@ def _primitive_to_data_type(datatype):
         return "float"
 
 
+def _set_imports(attributes):
+    classes = set()
+    for attribute in attributes:
+        if attribute["is_cim_datatype"] or attribute["is_primitive_attribute"]:
+            classes.add(attribute["attribute_class"])
+
+    result = ""
+    for val in classes:
+        result += "from ." + val + " import " + val + "\n"
+    return result + "\n"
+
+
 def _compute_cim_data_type(attributes) -> dict:
     cim_attributes = {}
     cim_attributes["python_type"] = "None"
@@ -129,6 +141,14 @@ def _compute_cim_data_type(attributes) -> dict:
     return cim_attributes
 
 
+def _set_cim_data_type(text, render) -> str:
+    attribute = eval(render(text))
+    cim_data_type = ""
+    if attribute["is_cim_datatype"] or attribute["is_primitive_attribute"]:
+        cim_data_type = """"cim_data_type": """ + attribute["attribute_class"] + ",\n\t\t"
+    return cim_data_type
+
+
 def run_template(output_path, class_details):
     if class_details["is_a_primitive_class"]:
         # Primitives are never used in the in memory representation but only for
@@ -144,6 +164,8 @@ def run_template(output_path, class_details):
         template = template_files
         class_details["setDefault"] = _set_default
         class_details["setType"] = _set_type
+        class_details["setCimDataType"] = _set_cim_data_type
+        class_details["setImports"] = _set_imports(class_details["attributes"])
     resource_file = _create_file(output_path, class_details, template)
     _write_templated_file(resource_file, class_details, template["filename"])
 
