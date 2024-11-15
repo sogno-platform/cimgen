@@ -147,7 +147,8 @@ def _set_cim_data_type(text, render) -> str:
     attribute = eval(render(text))
     cim_data_type = ""
     if attribute["is_cim_datatype"] or attribute["is_primitive_attribute"]:
-        cim_data_type = """"cim_data_type": """ + attribute["attribute_class"] + ",\n\t\t"
+        cim_data_type += "\n            "
+        cim_data_type += """"cim_data_type": """ + attribute["attribute_class"] + ","
     return cim_data_type
 
 
