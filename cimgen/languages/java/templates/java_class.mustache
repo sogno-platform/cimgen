@@ -35,6 +35,13 @@ public class {{class_name}} extends {{sub_class_of}} {
 			}
 		},
 {{/is_primitive_attribute}}
+{{#is_datatype_attribute}}
+		{{> label}}() {
+			public BaseClass construct(java.lang.String value) {
+				return new {{attribute_class}}(value);
+			}
+		},
+{{/is_datatype_attribute}}
 {{#is_enum_attribute}}
 		{{> label}}() {
 			public BaseClass construct(java.lang.String value) {
