@@ -35,9 +35,9 @@ def location(version):  # NOSONAR
 base = {"base_class": "Base", "class_location": location}
 
 # These are the files that are used to generate the python files.
-template_files = [{"filename": "cimpy_class_template.mustache", "ext": ".py"}]
-constants_template_files = [{"filename": "cimpy_constants_template.mustache", "ext": ".py"}]
-profile_template_files = [{"filename": "cimpy_cgmesProfile_template.mustache", "ext": ".py"}]
+template_files = {"filename": "cimpy_class_template.mustache", "ext": ".py"}
+constants_template_files = {"filename": "cimpy_constants_template.mustache", "ext": ".py"}
+profile_template_files = {"filename": "cimpy_cgmesProfile_template.mustache", "ext": ".py"}
 
 
 def get_class_location(class_name, class_map, version):  # NOSONAR
@@ -79,20 +79,25 @@ def _get_type_and_default(text, render) -> tuple[str, str]:
 def run_template(output_path, class_details):
     if class_details["is_a_primitive_class"] or class_details["is_a_datatype_class"]:
         return
-    for template_info in template_files:
-        resource_file = Path(
-            os.path.join(
-                output_path,
-                "resources",
-                class_details["class_name"] + template_info["ext"],
-            )
+    template = template_files
+    class_details["setDefault"] = _set_default
+    class_details["setType"] = _set_type
+    resource_file = _create_file(output_path, class_details, template)
+    _write_templated_file(resource_file, class_details, template["filename"])
+
+
+def _create_file(output_path, class_details, template) -> str:
+    resource_file = Path(
+        os.path.join(
+            output_path,
+            "resources",
+            class_details["class_name"] + template["ext"],
         )
-        if not resource_file.exists():
-            if not (parent := resource_file.parent).exists():
-                parent.mkdir()
-        class_details["setDefault"] = _set_default
-        class_details["setType"] = _set_type
-        _write_templated_file(resource_file, class_details, template_info["filename"])
+    )
+    if not resource_file.exists():
+        if not (parent := resource_file.parent).exists():
+            parent.mkdir()
+    return resource_file
 
 
 def _write_templated_file(class_file, class_details, template_filename):
@@ -109,17 +114,15 @@ def _write_templated_file(class_file, class_details, template_filename):
 
 
 def _create_constants(output_path: str, cim_namespace: str):
-    for template_info in constants_template_files:
-        class_file = os.path.join(output_path, "utils", "constants" + template_info["ext"])
-        class_details = {"cim_namespace": cim_namespace}
-        _write_templated_file(class_file, class_details, template_info["filename"])
+    class_file = os.path.join(output_path, "utils", "constants" + constants_template_files["ext"])
+    class_details = {"cim_namespace": cim_namespace}
+    _write_templated_file(class_file, class_details, constants_template_files["filename"])
 
 
 def _create_cgmes_profile(output_path: str, profile_details: list):
-    for template_info in profile_template_files:
-        class_file = os.path.join(output_path, "utils", "profile" + template_info["ext"])
-        class_details = {"profiles": profile_details}
-        _write_templated_file(class_file, class_details, template_info["filename"])
+    class_file = os.path.join(output_path, "utils", "profile" + profile_template_files["ext"])
+    class_details = {"profiles": profile_details}
+    _write_templated_file(class_file, class_details, profile_template_files["filename"])
 
 
 def resolve_headers(path: str, version: str):
