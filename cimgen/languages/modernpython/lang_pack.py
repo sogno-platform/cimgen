@@ -1,6 +1,7 @@
 import logging
 import os
 import re
+import ast
 from distutils.dir_util import copy_tree
 from pathlib import Path
 from importlib.resources import files
@@ -38,6 +39,7 @@ base = {"base_class": "Base", "class_location": location}
 template_files = {"filename": "cimpy_class_template.mustache", "ext": ".py"}
 constants_template_files = {"filename": "cimpy_constants_template.mustache", "ext": ".py"}
 profile_template_files = {"filename": "cimpy_cgmesProfile_template.mustache", "ext": ".py"}
+enum_template_files = {"filename": "enum_class_template.mustache", "ext": ".py"}
 primitive_template_files = {"filename": "primitive_template.mustache", "ext": ".py"}
 cimdatatype_template_files = {"filename": "cimdatatype_template.mustache", "ext": ".py"}
 
@@ -149,6 +151,27 @@ def _set_cim_data_type(text, render) -> str:
     return cim_data_type
 
 
+# called by chevron, text contains the label {{dataType}}, which is evaluated by the renderer (see class template)
+def _set_instances(text, render):
+    instance = None
+    try:
+        # render(text) returns a python dict.
+        # Some fields might be quoted by '&quot;' instead of '"', making the first eval fail.
+        instance = ast.literal_eval(render(text))
+    except SyntaxError as se:
+        rendered = render(text)
+        rendered = rendered.replace("&quot;", '"')
+        instance = eval(rendered)
+        logger.warning("Exception in evaluating %s : %s . Handled replacing quotes", rendered, se.msg)
+    if "label" in instance:
+        value = instance["label"] + ' = "' + instance["label"] + '"'
+        if "comment" in instance:
+            value += "  # " + instance["comment"]
+        return value
+    else:
+        return ""
+
+
 def run_template(output_path, class_details):
     if class_details["is_a_primitive_class"]:
         # Primitives are never used in the in memory representation but only for
@@ -160,6 +183,9 @@ def run_template(output_path, class_details):
         # representation but only for the schema
         template = cimdatatype_template_files
         class_details.update(_compute_cim_data_type(class_details["attributes"]))
+    elif class_details["is_an_enum_class"]:
+        template = enum_template_files
+        class_details["setInstances"] = _set_instances
     else:
         template = template_files
         class_details["setDefault"] = _set_default
