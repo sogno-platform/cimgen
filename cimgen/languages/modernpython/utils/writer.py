@@ -190,6 +190,7 @@ class Writer:
                             "namespace": extra.get("namespace", obj.namespace),
                             "value": getattr(obj, attr),
                             "is_class_attribute": extra.get("is_class_attribute"),
+                            "is_datatype_attribute": extra.get("is_datatype_attribute"),
                             "is_enum_attribute": extra.get("is_enum_attribute"),
                             "is_list_attribute": extra.get("is_list_attribute"),
                             "is_primitive_attribute": extra.get("is_primitive_attribute"),

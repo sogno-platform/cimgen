@@ -56,7 +56,7 @@ partials = {
 # This is the function that runs the template.
 def run_template(output_path, class_details):
 
-    if class_details["is_a_float_class"]:
+    if class_details["is_a_datatype_class"] or class_details["class_name"] in ("Float", "Decimal"):
         templates = float_template_files
     elif class_details["is_an_enum_class"]:
         templates = enum_template_files
@@ -104,7 +104,7 @@ def label(text, render):
 def insert_assign_fn(text, render):
     attribute_txt = render(text)
     attribute_json = eval(attribute_txt)
-    if not (attribute_json["is_primitive_attribute"] or attribute_json["is_enum_attribute"]):
+    if not _attribute_is_primitive_or_datatype_or_enum(attribute_json):
         return ""
     label = attribute_json["label"]
     class_name = attribute_json["domain"]
@@ -124,7 +124,7 @@ def insert_assign_fn(text, render):
 def insert_class_assign_fn(text, render):
     attribute_txt = render(text)
     attribute_json = eval(attribute_txt)
-    if attribute_json["is_primitive_attribute"] or attribute_json["is_enum_attribute"]:
+    if _attribute_is_primitive_or_datatype_or_enum(attribute_json):
         return ""
     label = attribute_json["label"]
     class_name = attribute_json["domain"]
@@ -165,7 +165,7 @@ def create_class_assign(text, render):
     attribute_json = eval(attribute_txt)
     assign = ""
     attribute_class = attribute_json["attribute_class"]
-    if attribute_json["is_primitive_attribute"] or attribute_json["is_enum_attribute"]:
+    if _attribute_is_primitive_or_datatype_or_enum(attribute_json):
         return ""
     if attribute_json["is_list_attribute"]:
         assign = (
@@ -229,7 +229,7 @@ def create_assign(text, render):
     attribute_json = eval(attribute_txt)
     assign = ""
     _class = attribute_json["attribute_class"]
-    if not (attribute_json["is_primitive_attribute"] or attribute_json["is_enum_attribute"]):
+    if not _attribute_is_primitive_or_datatype_or_enum(attribute_json):
         return ""
     label_without_keyword = attribute_json["label"]
     if label_without_keyword == "switch":
@@ -282,7 +282,7 @@ def attribute_decl(text, render):
 
 def _attribute_decl(attribute):
     _class = attribute["attribute_class"]
-    if attribute["is_primitive_attribute"] or attribute["is_enum_attribute"]:
+    if _attribute_is_primitive_or_datatype_or_enum(attribute):
         return "CIMPP::" + _class
     if attribute["is_list_attribute"]:
         return "std::list<CIMPP::" + _class + "*>"
@@ -299,7 +299,7 @@ def _create_attribute_includes(text, render):
     if jsonStringNoHtmlEsc is not None and jsonStringNoHtmlEsc != "":
         attributes = json.loads(jsonStringNoHtmlEsc)
         for attribute in attributes:
-            if attribute["is_primitive_attribute"] or attribute["is_enum_attribute"]:
+            if _attribute_is_primitive_or_datatype_or_enum(attribute):
                 unique[attribute["attribute_class"]] = True
     for clarse in unique:
         include_string += '\n#include "' + clarse + '.hpp"'
@@ -347,6 +347,14 @@ def set_default(dataType):
         return "0.0"
     else:
         return "nullptr"
+
+
+def _attribute_is_primitive_or_datatype_or_enum(attribute: dict) -> bool:
+    return _attribute_is_primitive_or_datatype(attribute) or attribute["is_enum_attribute"]
+
+
+def _attribute_is_primitive_or_datatype(attribute: dict) -> bool:
+    return attribute["is_primitive_attribute"] or attribute["is_datatype_attribute"]
 
 
 # The code below this line is used after the main cim_generate phase to generate

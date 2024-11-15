@@ -63,7 +63,9 @@ def _get_type_and_default(text, render) -> tuple[str, str]:
         return ("Optional[str]", "default=None")
     elif attribute_json["is_list_attribute"]:
         return ("list", "default_factory=list")
-    elif attribute_json["is_primitive_float_attribute"]:
+    elif attribute_json["is_datatype_attribute"]:
+        return ("float", "default=0.0")
+    elif attribute_json["attribute_class"] in ("Float", "Decimal"):
         return ("float", "default=0.0")
     elif attribute_json["attribute_class"] == "Integer":
         return ("int", "default=0")
@@ -75,7 +77,7 @@ def _get_type_and_default(text, render) -> tuple[str, str]:
 
 
 def run_template(output_path, class_details):
-    if class_details["is_a_primitive_class"] or class_details["is_a_float_class"]:
+    if class_details["is_a_primitive_class"] or class_details["is_a_datatype_class"]:
         return
     for template_info in template_files:
         resource_file = Path(

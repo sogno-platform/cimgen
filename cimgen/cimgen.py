@@ -246,40 +246,11 @@ class CIMComponentDefinition:
     def setSubClasses(self, classes):
         self.subclasses = classes
 
-    @staticmethod
-    def _simple_float_attribute(attr):
-        if "dataType" in attr:
-            return attr["label"] == "value" and attr["dataType"] == "#Float"
-        return False
-
-    def is_a_float_class(self):
-        if self.about in ("Float", "Decimal"):
-            return True
-        simple_float = False
-        for attr in self.attribute_list:
-            if CIMComponentDefinition._simple_float_attribute(attr):
-                simple_float = True
-        for attr in self.attribute_list:
-            if not CIMComponentDefinition._simple_float_attribute(attr):
-                simple_float = False
-        if simple_float:
-            return True
-
-        candidate_array = {"value": False, "unit": False, "multiplier": False}
-        optional_attributes = ["denominatorUnit", "denominatorMultiplier"]
-        for attr in self.attribute_list:
-            key = attr["label"]
-            if key in candidate_array:
-                candidate_array[key] = True
-            elif key not in optional_attributes:
-                return False
-        for key in candidate_array:
-            if not candidate_array[key]:
-                return False
-        return True
-
     def is_a_primitive_class(self):
         return self.stereotype == "Primitive"
+
+    def is_a_datatype_class(self):
+        return self.stereotype == "CIMDatatype"
 
 
 def wrap_and_clean(txt: str, width: int = 120, initial_indent="", subsequent_indent="    ") -> str:
@@ -460,8 +431,8 @@ def _write_python_files(elem_dict, lang_pack, output_path, version):
             "class_origin": elem_dict[class_name].origins(),
             "enum_instances": elem_dict[class_name].enum_instances(),
             "is_an_enum_class": elem_dict[class_name].is_an_enum_class(),
-            "is_a_float_class": elem_dict[class_name].is_a_float_class(),
             "is_a_primitive_class": elem_dict[class_name].is_a_primitive_class(),
+            "is_a_datatype_class": elem_dict[class_name].is_a_datatype_class(),
             "langPack": lang_pack,
             "sub_class_of": elem_dict[class_name].superClass(),
             "sub_classes": elem_dict[class_name].subClasses(),
@@ -494,7 +465,7 @@ def _write_python_files(elem_dict, lang_pack, output_path, version):
             attribute["is_enum_attribute"] = _get_bool_string(attribute_type == "enum")
             attribute["is_list_attribute"] = _get_bool_string(attribute_type == "list")
             attribute["is_primitive_attribute"] = _get_bool_string(attribute_type == "primitive")
-            attribute["is_primitive_float_attribute"] = _get_bool_string(elem_dict[attribute_class].is_a_float_class())
+            attribute["is_datatype_attribute"] = _get_bool_string(attribute_type == "datatype")
             attribute["attribute_class"] = attribute_class
 
         class_details["attributes"].sort(key=lambda d: d["label"])
@@ -760,14 +731,16 @@ def _get_attribute_class(attribute: dict) -> str:
 
 
 def _get_attribute_type(attribute: dict, class_infos: CIMComponentDefinition) -> str:
-    """Get the type of an attribute: "class", "enum", "list", or "primitive".
+    """Get the type of an attribute: "class", "datatype", "enum", "list", or "primitive".
 
     :param attribute:        Dictionary with information about an attribute of a class.
     :param class_infos:      Information about the attribute class.
     :return:                 Type of the attribute.
     """
     attribute_type = "class"
-    if class_infos.is_a_primitive_class() or class_infos.is_a_float_class():
+    if class_infos.is_a_datatype_class():
+        attribute_type = "datatype"
+    elif class_infos.is_a_primitive_class():
         attribute_type = "primitive"
     elif class_infos.is_an_enum_class():
         attribute_type = "enum"
