@@ -39,6 +39,7 @@ template_files = {"filename": "cimpy_class_template.mustache", "ext": ".py"}
 constants_template_files = {"filename": "cimpy_constants_template.mustache", "ext": ".py"}
 profile_template_files = {"filename": "cimpy_cgmesProfile_template.mustache", "ext": ".py"}
 primitive_template_files = {"filename": "primitive_template.mustache", "ext": ".py"}
+cimdatatype_template_files = {"filename": "cimdatatype_template.mustache", "ext": ".py"}
 
 
 def get_class_location(class_name, class_map, version):  # NOSONAR
@@ -102,6 +103,32 @@ def _primitive_to_data_type(datatype):
         return "float"
 
 
+def _compute_cim_data_type(attributes) -> dict:
+    cim_attributes = {}
+    cim_attributes["python_type"] = "None"
+    cim_attributes["unit"] = "UnitSymbol.none"
+    cim_attributes["multiplier"] = "UnitMultiplier.none"
+
+    for attribute in attributes:
+        if (
+            "about" in attribute
+            and attribute["about"]
+            and "value" in attribute["about"]
+            and "attribute_class" in attribute
+        ):
+            cim_attributes["python_type"] = _primitive_to_data_type(attribute["attribute_class"])
+        if (
+            "about" in attribute
+            and attribute["about"]
+            and "multiplier" in attribute["about"]
+            and "isFixed" in attribute
+        ):
+            cim_attributes["multiplier"] = "UnitMultiplier." + attribute["isFixed"]
+        if "about" in attribute and attribute["about"] and "unit" in attribute["about"] and "isFixed" in attribute:
+            cim_attributes["unit"] = "UnitSymbol." + attribute["isFixed"]
+    return cim_attributes
+
+
 def run_template(output_path, class_details):
     if class_details["is_a_primitive_class"]:
         # Primitives are never used in the in memory representation but only for
@@ -109,7 +136,10 @@ def run_template(output_path, class_details):
         template = primitive_template_files
         class_details["python_type"] = _primitive_to_data_type(class_details["class_name"])
     elif class_details["is_a_datatype_class"]:
-        return
+        # Datatypes based on primitives are never used in the in memory
+        # representation but only for the schema
+        template = cimdatatype_template_files
+        class_details.update(_compute_cim_data_type(class_details["attributes"]))
     else:
         template = template_files
         class_details["setDefault"] = _set_default
