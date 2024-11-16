@@ -1,5 +1,7 @@
 import os
+import shutil
 import chevron
+from pathlib import Path
 from importlib.resources import files
 
 
@@ -13,11 +15,15 @@ def location(version):  # NOSONAR
 # We don't use that here because we aren't exporting into
 # separate profiles.
 def setup(output_path: str, cgmes_profile_details: list, cim_namespace: str):  # NOSONAR
-    if not os.path.exists(output_path):
-        os.makedirs(output_path)
-    else:
-        for filename in os.listdir(output_path):
-            os.remove(os.path.join(output_path, filename))
+    source_dir = Path(__file__).parent
+    dest_dir = Path(output_path)
+    for file in dest_dir.glob("**/*.java"):
+        file.unlink()
+    # Add all hardcoded utils and create parent dir
+    for file in source_dir.glob("**/*.java"):
+        dest_file = dest_dir / file.relative_to(source_dir)
+        dest_file.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy(file, dest_file)
 
 
 base = {"base_class": "BaseClass", "class_location": location}
@@ -95,6 +101,7 @@ class_blacklist = [
     "PrimitiveBuilder",
     "BaseClass",
     "CIMClassList",
+    "Logging",
 ]
 
 
