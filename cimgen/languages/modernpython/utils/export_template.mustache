@@ -13,6 +13,9 @@
     {{#is_class_attribute}}
     <cim:{{attr_name}} rdf:resource="#{{value}}" />
     {{/is_class_attribute}}
+    {{#is_datatype_attribute}}
+    <cim:{{attr_name}}>{{value}}</cim:{{attr_name}}>
+    {{/is_datatype_attribute}}
     {{#is_enum_attribute}}
     <cim:{{attr_name}} rdf:resource="{{namespace}}{{value}}" />
     {{/is_enum_attribute}}
@@ -31,6 +34,9 @@
     {{#is_class_attribute}}
     <cim:{{attr_name}} rdf:resource="#{{value}}" />
     {{/is_class_attribute}}
+    {{#is_datatype_attribute}}
+    <cim:{{attr_name}}>{{value}}</cim:{{attr_name}}>
+    {{/is_datatype_attribute}}
     {{#is_enum_attribute}}
     <cim:{{attr_name}} rdf:resource="{{namespace}}{{value}}" />
     {{/is_enum_attribute}}

@@ -2,12 +2,12 @@ import logging
 import os
 import textwrap
 import warnings
-import re
 from time import time
 
 import xmltodict
 from bs4 import BeautifulSoup
 
+logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(__name__)
 
 
@@ -210,11 +210,12 @@ class CIMComponentDefinition:
         self.origin_list = []
         self.super = rdfsEntry.subClassOf()
         self.subclasses = []
+        self.stereotype = rdfsEntry.stereotype()
 
     def attributes(self):
         return self.attribute_list
 
-    def addAttribute(self, attribute):
+    def add_attribute(self, attribute):
         self.attribute_list.append(attribute)
 
     def is_an_enum_class(self):
@@ -226,10 +227,6 @@ class CIMComponentDefinition:
     def add_enum_instance(self, instance):
         instance["index"] = len(self.enum_instance_list)
         self.enum_instance_list.append(instance)
-
-    def addAttributes(self, attributes):
-        for attribute in attributes:
-            self.attribute_list.append(attribute)
 
     def origins(self):
         return self.origin_list
@@ -249,52 +246,11 @@ class CIMComponentDefinition:
     def setSubClasses(self, classes):
         self.subclasses = classes
 
-    def _simple_float_attribute(attr):
-        if "dataType" in attr:
-            return attr["label"] == "value" and attr["dataType"] == "#Float"
-        return False
+    def is_a_primitive_class(self):
+        return self.stereotype == "Primitive"
 
-    def is_a_float_class(self):
-        if self.about == "Float":
-            return True
-        simple_float = False
-        for attr in self.attribute_list:
-            if CIMComponentDefinition._simple_float_attribute(attr):
-                simple_float = True
-        for attr in self.attribute_list:
-            if not CIMComponentDefinition._simple_float_attribute(attr):
-                simple_float = False
-        if simple_float:
-            return True
-
-        candidate_array = {"value": False, "unit": False, "multiplier": False}
-        optional_attributes = ["denominatorUnit", "denominatorMultiplier"]
-        for attr in self.attribute_list:
-            key = attr["label"]
-            if key in candidate_array:
-                candidate_array[key] = True
-            elif key not in optional_attributes:
-                return False
-        for key in candidate_array:
-            if not candidate_array[key]:
-                return False
-        return True
-
-
-def get_profile_name(descriptions):
-    for list_elem in descriptions:
-        # only for CGMES-Standard
-        rdfsEntry = RDFSEntry(list_elem)
-        if rdfsEntry.stereotype() == "Entsoe":
-            return rdfsEntry.about()
-
-
-def get_short_profile_name(descriptions):
-    for list_elem in descriptions:
-        # only for CGMES-Standard
-        rdfsEntry = RDFSEntry(list_elem)
-        if rdfsEntry.label() == "shortName":
-            return rdfsEntry.fixed()
+    def is_a_datatype_class(self):
+        return self.stereotype == "CIMDatatype"
 
 
 def wrap_and_clean(txt: str, width: int = 120, initial_indent="", subsequent_indent="    ") -> str:
@@ -318,10 +274,9 @@ def wrap_and_clean(txt: str, width: int = 120, initial_indent="", subsequent_ind
     )
 
 
-short_package_name = {}
+long_profile_names = {}
 package_listed_by_short_name = {}
 cim_namespace = ""
-profiles = {}
 
 
 def _rdfs_entry_types(rdfs_entry: RDFSEntry, version) -> list:
@@ -380,27 +335,24 @@ def _add_class(classes_map, rdfs_entry):
     """
     if rdfs_entry.label() in classes_map:
         logger.error("Class {} already exists".format(rdfs_entry.label()))
-    if rdfs_entry.label() != "String":
-        classes_map[rdfs_entry.label()] = CIMComponentDefinition(rdfs_entry)
+    classes_map[rdfs_entry.label()] = CIMComponentDefinition(rdfs_entry)
 
 
-def _add_profile_to_packages(profile_name, short_profile_name, profile_uri_list):
+def _add_profile_to_packages(profile_name: str, short_profile_name: str, profile_uri_list: list[str]) -> None:
     """
-    Add profile_uris
+    Add profile_uris and set long profile_name.
     """
-    if profile_name not in profiles and profile_uri_list:
-        profiles[profile_name] = profile_uri_list
-    else:
-        profiles[profile_name].extend(profile_uri_list)
-    if short_profile_name not in package_listed_by_short_name and profile_uri_list:
-        package_listed_by_short_name[short_profile_name] = profile_uri_list
-    else:
-        package_listed_by_short_name[short_profile_name].extend(profile_uri_list)
+    uri_list = package_listed_by_short_name.setdefault(short_profile_name, [])
+    for uri in profile_uri_list:
+        if uri not in uri_list:
+            uri_list.append(uri)
+    long_profile_names[short_profile_name] = profile_name.removesuffix("Version").removesuffix("Profile")
 
 
 def _parse_rdf(input_dic, version):  # NOSONAR
     classes_map = {}
     profile_name = ""
+    short_profile_name = ""
     profile_uri_list = []
     attributes = []
     enum_instances = []
@@ -424,27 +376,28 @@ def _parse_rdf(input_dic, version):  # NOSONAR
             attributes.append(object_dic)
         if "rest_non_class_category" in rdfs_entry_types:
             enum_instances.append(object_dic)
-        if "profile_name_v2_4" in rdfs_entry_types:
-            profile_name = rdfsEntry.about()
-        if "profile_name_v3" in rdfs_entry_types:
-            profile_name = rdfsEntry.label()
-        if "short_profile_name_v2_4" in rdfs_entry_types and rdfsEntry.fixed():
-            short_profile_name = rdfsEntry.fixed()
-        if "short_profile_name_v3" in rdfs_entry_types:
-            short_profile_name = rdfsEntry.keyword()
+        if not profile_name:
+            if "profile_name_v2_4" in rdfs_entry_types:
+                profile_name = rdfsEntry.about()
+            if "profile_name_v3" in rdfs_entry_types:
+                profile_name = rdfsEntry.label()
+        if not short_profile_name:
+            if "short_profile_name_v2_4" in rdfs_entry_types and rdfsEntry.fixed():
+                short_profile_name = rdfsEntry.fixed()
+            if "short_profile_name_v3" in rdfs_entry_types:
+                short_profile_name = rdfsEntry.keyword()
         if "profile_iri_v2_4" in rdfs_entry_types and rdfsEntry.fixed():
             profile_uri_list.append(rdfsEntry.fixed())
         if "profile_iri_v3" in rdfs_entry_types:
             profile_uri_list.append(rdfsEntry.version_iri())
 
-    short_package_name[profile_name] = short_profile_name
-    package_listed_by_short_name[short_profile_name] = []
     _add_profile_to_packages(profile_name, short_profile_name, profile_uri_list)
+
     # Add attributes to corresponding class
     for attribute in attributes:
         clarse = attribute["domain"]
         if clarse and classes_map[clarse]:
-            classes_map[clarse].addAttribute(attribute)
+            classes_map[clarse].add_attribute(attribute)
         else:
             logger.info("Class {} for attribute {} not found.".format(clarse, attribute))
 
@@ -472,13 +425,14 @@ def _write_python_files(elem_dict, lang_pack, output_path, version):
     for class_name in elem_dict.keys():
 
         class_details = {
-            "attributes": _find_multiple_attributes(elem_dict[class_name].attributes()),
+            "attributes": elem_dict[class_name].attributes(),
             "class_location": lang_pack.get_class_location(class_name, elem_dict, version),
             "class_name": class_name,
             "class_origin": elem_dict[class_name].origins(),
             "enum_instances": elem_dict[class_name].enum_instances(),
             "is_an_enum_class": elem_dict[class_name].is_an_enum_class(),
-            "is_a_float_class": elem_dict[class_name].is_a_float_class(),
+            "is_a_primitive_class": elem_dict[class_name].is_a_primitive_class(),
+            "is_a_datatype_class": elem_dict[class_name].is_a_datatype_class(),
             "langPack": lang_pack,
             "sub_class_of": elem_dict[class_name].superClass(),
             "sub_classes": elem_dict[class_name].subClasses(),
@@ -506,12 +460,12 @@ def _write_python_files(elem_dict, lang_pack, output_path, version):
                     subsequent_indent=" " * 6,
                 )
             attribute_class = _get_attribute_class(attribute)
-            is_an_enum_class = attribute_class in elem_dict and elem_dict[attribute_class].is_an_enum_class()
-            attribute_type = _get_attribute_type(attribute, is_an_enum_class)
+            attribute_type = _get_attribute_type(attribute, elem_dict[attribute_class])
             attribute["is_class_attribute"] = _get_bool_string(attribute_type == "class")
             attribute["is_enum_attribute"] = _get_bool_string(attribute_type == "enum")
             attribute["is_list_attribute"] = _get_bool_string(attribute_type == "list")
             attribute["is_primitive_attribute"] = _get_bool_string(attribute_type == "primitive")
+            attribute["is_datatype_attribute"] = _get_bool_string(attribute_type == "datatype")
             attribute["attribute_class"] = attribute_class
 
         class_details["attributes"].sort(key=lambda d: d["label"])
@@ -551,20 +505,6 @@ def _write_files(class_details, output_path, version):
     class_details["langPack"].run_template(output_path, class_details)
 
 
-# Find multiple entries for the same attribute
-def _find_multiple_attributes(attributes_array):
-    merged_attributes = []
-    for elem in attributes_array:
-        found = False
-        for i in range(len(merged_attributes)):
-            if elem["label"] == merged_attributes[i]["label"]:
-                found = True
-                break
-        if found is False:
-            merged_attributes.append(elem)
-    return merged_attributes
-
-
 # If multiple CGMES schema files for one profile are read, e.g. Equipment Core and Equipment Core Short Circuit
 # this function merges these into one profile, e.g. Equipment, after this function only one dictionary entry for each
 # profile exists. The profiles_array contains one entry for each CGMES schema file which was read.
@@ -573,21 +513,21 @@ def _merge_profiles(profiles_array):
     # Iterate through array elements
     for elem_dict in profiles_array:
         # Iterate over profile names
-        for profile_key in elem_dict.keys():
-            if profile_key in profiles_dict.keys():
-                # Iterate over classes and check for multiple class definitions
-                for class_key in elem_dict[profile_key]:
-                    if class_key in profiles_dict[profile_key].keys():
-                        # If class already exists in packageDict add attributes to attributes array
-                        if len(elem_dict[profile_key][class_key].attributes()) > 0:
-                            attributes_array = elem_dict[profile_key][class_key].attributes()
-                            profiles_dict[profile_key][class_key].addAttributes(attributes_array)
-                    # If class is not in packageDict, create entry
-                    else:
-                        profiles_dict[profile_key][class_key] = elem_dict[profile_key][class_key]
-            # If package name not in packageDict create entry
-            else:
-                profiles_dict[profile_key] = elem_dict[profile_key]
+        for profile_key, new_class_dict in elem_dict.items():
+            class_dict = profiles_dict.setdefault(profile_key, {})
+            # Iterate over classes and check for multiple class definitions
+            for class_key, new_class_infos in new_class_dict.items():
+                if class_key in class_dict:
+                    class_infos = class_dict[class_key]
+                    for new_attr in new_class_infos.attributes():
+                        # Iterate over attributes and check for multiple attribute definitions
+                        for attr in class_infos.attributes():
+                            if new_attr["label"] == attr["label"]:
+                                break
+                        else:
+                            class_infos.add_attribute(new_attr)
+                else:
+                    class_dict[class_key] = new_class_infos
     return profiles_dict
 
 
@@ -596,63 +536,37 @@ def _merge_profiles(profiles_array):
 # the possibleProfileList used for the serialization.
 def _merge_classes(profiles_dict):
     class_dict = {}
-
     # Iterate over profiles
-    for package_key in profiles_dict.keys():
-        # get short name of the profile
-        short_name = ""
-        if package_key in short_package_name:
-            short_name = short_package_name[package_key]
-        else:
-            short_name = package_key
-
+    for profile_key, new_class_dict in profiles_dict.items():
+        origin = {"origin": profile_key}
         # iterate over classes in the current profile
-        for class_key in profiles_dict[package_key]:
-            # class already defined?
-            if class_key not in class_dict:
-                # store class and class origin
-                class_dict[class_key] = profiles_dict[package_key][class_key]
-                class_dict[class_key].addOrigin({"origin": short_name})
-                for attr in class_dict[class_key].attributes():
-                    # store origin of the attributes
-                    attr["attr_origin"] = [{"origin": short_name}]
-            else:
+        for class_key, new_class_infos in new_class_dict.items():
+            if class_key in class_dict:
+                class_infos = class_dict[class_key]
                 # some inheritance information is stored only in one of the packages. Therefore it has to be checked
                 # if the subClassOf attribute is set. See for example TopologicalNode definitions in SV and TP.
-                if not class_dict[class_key].superClass():
-                    if profiles_dict[package_key][class_key].superClass():
-                        class_dict[class_key].super = profiles_dict[package_key][class_key].superClass()
-
-                # check if profile is already stored in class origin list
-                multiple_origin = False
-                for origin in class_dict[class_key].origins():
-                    if short_name == origin["origin"]:
-                        # origin already stored
-                        multiple_origin = True
-                        break
-                if not multiple_origin:
-                    class_dict[class_key].addOrigin({"origin": short_name})
-
-                for attr in profiles_dict[package_key][class_key].attributes():
-                    # check if attribute is already in attributes list
-                    multiple_attr = False
-                    for attr_set in class_dict[class_key].attributes():
-                        if attr["label"] == attr_set["label"]:
+                if not class_infos.superClass():
+                    class_infos.super = new_class_infos.superClass()
+                if origin not in class_infos.origins():
+                    class_infos.addOrigin(origin)
+                for new_attr in new_class_infos.attributes():
+                    for attr in class_infos.attributes():
+                        if attr["label"] == new_attr["label"]:
                             # attribute already in attributes list, check if origin is new
-                            multiple_attr = True
-                            for origin in attr_set["attr_origin"]:
-                                multiple_attr_origin = False
-                                if origin["origin"] == short_name:
-                                    multiple_attr_origin = True
-                                    break
-                            if not multiple_attr_origin:
-                                # new origin
-                                attr_set["attr_origin"].append({"origin": short_name})
+                            origin_list = attr["attr_origin"]
+                            if origin not in origin_list:
+                                origin_list.append(origin)
                             break
-                    if not multiple_attr:
+                    else:
                         # new attribute
-                        attr["attr_origin"] = [{"origin": short_name}]
-                        class_dict[class_key].addAttribute(attr)
+                        new_attr["attr_origin"] = [origin]
+                        class_infos.add_attribute(new_attr)
+            else:
+                # store new class and origin
+                new_class_infos.addOrigin(origin)
+                for attr in new_class_infos.attributes():
+                    attr["attr_origin"] = [origin]
+                class_dict[class_key] = new_class_infos
     return class_dict
 
 
@@ -720,7 +634,7 @@ def cim_generate(directory, output_path, version, lang_pack):
                 superClass = class_dict_with_origins[superClassName]
                 superClass.addSubClass(className)
             else:
-                print("No match for superClass in dict: :", superClassName)
+                logger.error("No match for superClass in dict: %s", superClassName)
 
     # recursively add the subclasses of subclasses
     addSubClassesOfSubClasses(class_dict_with_origins)
@@ -740,30 +654,11 @@ def _get_profile_details(cgmes_profile_uris):
         profile_info = {
             "index": index,
             "short_name": profile,
-            "long_name": _extract_profile_long_name(cgmes_profile_uris[profile]),
+            "long_name": long_profile_names[profile],
             "uris": [{"uri": uri} for uri in cgmes_profile_uris[profile]],
         }
         profile_details.append(profile_info)
     return profile_details
-
-
-def _extract_profile_long_name(profile_uris):
-    # Extract name from uri, e.g. "Topology" from "http://iec.ch/TC57/2013/61970-456/Topology/4"
-    # Examples of other possible uris: "http://entsoe.eu/CIM/Topology/4/1", "http://iec.ch/TC57/ns/CIM/Topology-EU/3.0"
-    # If more than one uri given, extract common part (e.g. "Equipment" from "EquipmentCore" and "EquipmentOperation")
-    long_name = ""
-    for uri in profile_uris:
-        match = re.search(r"/([^/-]*)(-[^/]*)?(/\d+)?/[\d.]+?$", uri)
-        if match:
-            name = match.group(1)
-            if long_name:
-                for idx in range(1, len(long_name)):
-                    if idx >= len(name) or long_name[idx] != name[idx]:
-                        long_name = long_name[:idx]
-                        break
-            else:
-                long_name = name
-    return long_name
 
 
 def _get_sorted_profile_keys(profile_key_list):
@@ -806,7 +701,7 @@ def _get_recommended_class_profiles(elem_dict):
         profile_count_map = {}
         name = class_name
         while name:
-            for attribute in _find_multiple_attributes(elem_dict[name].attributes()):
+            for attribute in elem_dict[name].attributes():
                 profiles = [origin["origin"] for origin in attribute["attr_origin"]]
                 ambiguous_profile = len(profiles) > 1
                 for profile in profiles:
@@ -835,28 +730,21 @@ def _get_attribute_class(attribute: dict) -> str:
     return _get_rid_of_hash(name)
 
 
-def _get_attribute_type(attribute: dict, is_an_enum_class: bool) -> str:
-    """Get the type of an attribute: "class", "enum", "list", or "primitive".
+def _get_attribute_type(attribute: dict, class_infos: CIMComponentDefinition) -> str:
+    """Get the type of an attribute: "class", "datatype", "enum", "list", or "primitive".
 
     :param attribute:        Dictionary with information about an attribute of a class.
-    :param is_an_enum_class: Is this attribute an enumation?
+    :param class_infos:      Information about the attribute class.
     :return:                 Type of the attribute.
     """
-    so_far_not_primitive = _get_attribute_class(attribute) in (
-        "Date",
-        "DateTime",
-        "MonthDay",
-        "Status",
-        "StreetAddress",
-        "StreetDetail",
-        "TownDetail",
-    )
     attribute_type = "class"
-    if "dataType" in attribute and not so_far_not_primitive:
+    if class_infos.is_a_datatype_class():
+        attribute_type = "datatype"
+    elif class_infos.is_a_primitive_class():
         attribute_type = "primitive"
-    elif is_an_enum_class:
+    elif class_infos.is_an_enum_class():
         attribute_type = "enum"
-    elif attribute.get("multiplicity") in ("M:0..n", "M:1..n"):
+    elif attribute.get("multiplicity") in ("M:0..n", "M:0..2", "M:1..n", "M:2..n"):
         attribute_type = "list"
     return attribute_type
 

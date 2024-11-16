@@ -76,7 +76,9 @@ aggregateRenderer = {
 def select_primitive_render_function(class_details):
     class_name = class_details["class_name"]
     render = ""
-    if class_details["is_a_float_class"]:
+    if class_details["is_a_datatype_class"]:
+        render = aggregateRenderer["renderFloat"]
+    elif class_name in ("Float", "Decimal"):
         render = aggregateRenderer["renderFloat"]
     elif class_name == "String":
         render = aggregateRenderer["renderString"]
@@ -86,9 +88,6 @@ def select_primitive_render_function(class_details):
         # TODO: Implementation Required!
         render = aggregateRenderer["renderString"]
     elif class_name == "DateTime":
-        # TODO: Implementation Required!
-        render = aggregateRenderer["renderString"]
-    elif class_name == "Decimal":
         # TODO: Implementation Required!
         render = aggregateRenderer["renderString"]
     elif class_name == "Integer":
@@ -102,6 +101,8 @@ def select_primitive_render_function(class_details):
 
 # This is the function that runs the template.
 def run_template(output_path, class_details):
+    if class_details["class_name"] == "String":
+        return
 
     for index, attribute in enumerate(class_details["attributes"]):
         if not attribute["is_used"]:
@@ -156,8 +157,7 @@ def _create_cgmes_profile(output_path: str, profile_details: list, cim_namespace
 
 
 def _get_class_type(class_details):
-    class_name = class_details["class_name"]
-    if class_details["is_a_float_class"] or class_name in ("String", "Boolean", "Integer"):
+    if class_details["is_a_primitive_class"] or class_details["is_a_datatype_class"]:
         return "primitive"
     if class_details["is_an_enum_class"]:
         return "enum"
