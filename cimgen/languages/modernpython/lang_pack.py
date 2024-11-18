@@ -155,19 +155,11 @@ def _set_cim_data_type(text, render) -> str:
 # called by chevron, text contains the label {{dataType}}, which is evaluated by the renderer (see class template)
 def _set_instances(text, render):
     instance = None
-    try:
-        # render(text) returns a python dict.
-        # Some fields might be quoted by '&quot;' instead of '"', making the first eval fail.
-        instance = ast.literal_eval(render(text))
-    except SyntaxError as se:
-        rendered = render(text)
-        rendered = rendered.replace("&quot;", '"')
-        instance = eval(rendered)
-        logger.warning("Exception in evaluating %s : %s . Handled replacing quotes", rendered, se.msg)
+    instance = ast.literal_eval(render(text).replace("&quot;", '"'))
     if "label" in instance:
         value = instance["label"] + ' = "' + instance["label"] + '"'
         if "comment" in instance:
-            value += "  # " + instance["comment"]
+            value += "  # " + instance["comment"] + " noqa: E501"
         return value
     else:
         return ""
