@@ -83,21 +83,18 @@ def _get_type_and_default(text, render) -> tuple[str, str]:
 def _primitive_to_data_type(datatype):
     if datatype.lower() == "integer":
         return "int"
-    if datatype.lower() == "boolean":
-        return "bool"
-    if datatype.lower() == "string":
-        return "str"
-    if datatype.lower() == "datetime":
-        return "datetime"
-    if datatype.lower() == "monthday":
-        return "str"  # TO BE FIXED? I could not find a datatype in python that holds only month and day.
-    if datatype.lower() == "date":
-        return "date"
-    # as of today no CIM model is using only time.
-    if datatype.lower() == "time":
-        return "time"
     if datatype.lower() == "float":
         return "float"
+    if datatype.lower() == "boolean":
+        return "bool"
+    if datatype.lower() == "datetime":
+        return "datetime"
+    if datatype.lower() == "date":
+        return "date"
+    if datatype.lower() == "time":
+        return "time"
+    if datatype.lower() == "monthday":
+        return "str"  # TO BE FIXED? I could not find a datatype in python that holds only month and day.
     if datatype.lower() == "string":
         return "str"
     else:
@@ -117,11 +114,11 @@ def _set_imports(attributes):
     return result + "\n"
 
 
-def _compute_cim_data_type(attributes) -> dict:
-    cim_attributes = {}
-    cim_attributes["python_type"] = "None"
-    cim_attributes["unit"] = "UnitSymbol.none"
-    cim_attributes["multiplier"] = "UnitMultiplier.none"
+def _set_datatype_attributes(attributes) -> dict:
+    datatype_attributes = {}
+    datatype_attributes["python_type"] = "None"
+    datatype_attributes["unit"] = "UnitSymbol.none"
+    datatype_attributes["multiplier"] = "UnitMultiplier.none"
 
     for attribute in attributes:
         if (
@@ -130,25 +127,25 @@ def _compute_cim_data_type(attributes) -> dict:
             and "value" in attribute["about"]
             and "attribute_class" in attribute
         ):
-            cim_attributes["python_type"] = _primitive_to_data_type(attribute["attribute_class"])
+            datatype_attributes["python_type"] = _primitive_to_data_type(attribute["attribute_class"])
         if (
             "about" in attribute
             and attribute["about"]
             and "multiplier" in attribute["about"]
             and "isFixed" in attribute
         ):
-            cim_attributes["multiplier"] = "UnitMultiplier." + attribute["isFixed"]
+            datatype_attributes["multiplier"] = "UnitMultiplier." + attribute["isFixed"]
         if "about" in attribute and attribute["about"] and "unit" in attribute["about"] and "isFixed" in attribute:
-            cim_attributes["unit"] = "UnitSymbol." + attribute["isFixed"]
-    return cim_attributes
+            datatype_attributes["unit"] = "UnitSymbol." + attribute["isFixed"]
+    return datatype_attributes
 
 
-def _set_cim_data_type(text, render) -> str:
+def _set_attribute_class(text, render) -> str:
     attribute = eval(render(text))
     cim_data_type = ""
     if attribute["is_datatype_attribute"] or attribute["is_primitive_attribute"]:
         cim_data_type += "\n            "
-        cim_data_type += """"cim_data_type": """ + attribute["attribute_class"] + ","
+        cim_data_type += """"attribute_class": """ + attribute["attribute_class"] + ","
     return cim_data_type
 
 
@@ -175,7 +172,7 @@ def run_template(output_path, class_details):
         # Datatypes based on primitives are never used in the in memory
         # representation but only for the schema
         template = cimdatatype_template_files
-        class_details.update(_compute_cim_data_type(class_details["attributes"]))
+        class_details.update(_set_datatype_attributes(class_details["attributes"]))
     elif class_details["is_an_enum_class"]:
         template = enum_template_files
         class_details["setInstances"] = _set_instances
@@ -183,7 +180,7 @@ def run_template(output_path, class_details):
         template = template_files
         class_details["setDefault"] = _set_default
         class_details["setType"] = _set_type
-        class_details["setCimDataType"] = _set_cim_data_type
+        class_details["setAttributeClass"] = _set_attribute_class
         class_details["setImports"] = _set_imports(class_details["attributes"])
     resource_file = _create_file(output_path, class_details, template)
     _write_templated_file(resource_file, class_details, template["filename"])
