@@ -142,11 +142,11 @@ def _set_datatype_attributes(attributes) -> dict:
 
 def _set_attribute_class(text, render) -> str:
     attribute = eval(render(text))
-    cim_data_type = ""
+    attribute_class = ""
     if attribute["is_datatype_attribute"] or attribute["is_primitive_attribute"]:
-        cim_data_type += "\n            "
-        cim_data_type += """"attribute_class": """ + attribute["attribute_class"] + ","
-    return cim_data_type
+        attribute_class += "\n            "
+        attribute_class += """"attribute_class": """ + attribute["attribute_class"] + ","
+    return attribute_class
 
 
 # called by chevron, text contains the label {{dataType}}, which is evaluated by the renderer (see class template)
