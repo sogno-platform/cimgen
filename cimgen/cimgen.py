@@ -20,6 +20,8 @@ class RDFSEntry:
         jsonObject = {}
         if self.about() is not None:
             jsonObject["about"] = self.about()
+        if self.namespace() is not None:
+            jsonObject["namespace"] = self.namespace()
         if self.comment() is not None:
             jsonObject["comment"] = self.comment()
         if self.dataType() is not None:
@@ -48,6 +50,12 @@ class RDFSEntry:
     def about(self):
         if "$rdf:about" in self.jsonDefinition:
             return _get_rid_of_hash(RDFSEntry._get_about_or_resource(self.jsonDefinition["$rdf:about"]))
+        else:
+            return None
+
+    def namespace(self):
+        if "$rdf:about" in self.jsonDefinition:
+            return self.jsonDefinition["$rdf:about"][: -len(self.about())]
         else:
             return None
 
@@ -211,6 +219,7 @@ class CIMComponentDefinition:
         self.super = rdfsEntry.subClassOf()
         self.subclasses = []
         self.stereotype = rdfsEntry.stereotype()
+        self.namespace = rdfsEntry.namespace()
 
     def attributes(self):
         return self.attribute_list
@@ -429,6 +438,7 @@ def _write_python_files(elem_dict, lang_pack, output_path, version):
             "class_location": lang_pack.get_class_location(class_name, elem_dict, version),
             "class_name": class_name,
             "class_origin": elem_dict[class_name].origins(),
+            "class_namespace": _get_namespace(elem_dict[class_name].namespace),
             "enum_instances": elem_dict[class_name].enum_instances(),
             "is_an_enum_class": elem_dict[class_name].is_an_enum_class(),
             "is_a_primitive_class": elem_dict[class_name].is_a_primitive_class(),
@@ -467,6 +477,7 @@ def _write_python_files(elem_dict, lang_pack, output_path, version):
             attribute["is_primitive_attribute"] = _get_bool_string(attribute_type == "primitive")
             attribute["is_datatype_attribute"] = _get_bool_string(attribute_type == "datatype")
             attribute["attribute_class"] = attribute_class
+            attribute["attribute_namespace"] = _get_namespace(attribute["namespace"])
 
         class_details["attributes"].sort(key=lambda d: d["label"])
         _write_files(class_details, output_path, version)
@@ -747,6 +758,14 @@ def _get_attribute_type(attribute: dict, class_infos: CIMComponentDefinition) ->
     elif attribute.get("multiplicity") in ("M:0..n", "M:0..2", "M:1..n", "M:2..n"):
         attribute_type = "list"
     return attribute_type
+
+
+def _get_namespace(parsed_namespace: str) -> str:
+    if parsed_namespace == "#":
+        namespace = cim_namespace
+    else:
+        namespace = parsed_namespace
+    return namespace
 
 
 def _get_bool_string(bool_value: bool) -> str:
