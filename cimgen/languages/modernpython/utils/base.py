@@ -320,6 +320,17 @@ class Base:
 
         return attribute_dict
 
+    def update_from_xml(self, xml_fragment: str):
+        """
+        Updates the instance by parsing an xml fragment defining the attributes of this instance
+        example: updating the instance by parsing the corresponding fragment from the SSH profile
+        """
+        attribute_dict = self._parse_xml_fragment(xml_fragment)
+
+        if attribute_dict["mRID"] == self.mRID:
+            for key, value in attribute_dict.items():
+                setattr(self, key, value)
+
     @classmethod
     def from_xml(cls, xml_fragment: str):
         """
