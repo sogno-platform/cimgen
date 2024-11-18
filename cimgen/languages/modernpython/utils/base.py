@@ -1,8 +1,9 @@
 # Drop in dataclass replacement, allowing easier json dump and validation in the future.
 import importlib
+from lxml import etree
 from dataclasses import Field, fields
 from functools import cached_property
-from typing import Any, TypeAlias, TypedDict
+from typing import Any, TypeAlias, TypedDict, Optional
 
 from pydantic.dataclasses import dataclass
 
@@ -173,6 +174,80 @@ class Base:
                     seen_attrs.add(shortname)
 
         return qual_attrs
+
+    def to_xml(self, profile_to_export: BaseProfile, id: Optional[str] = None) -> Optional[etree.Element]:
+        """Creates an etree element of self with all non-empty attributes of the profile_to_export
+        that are not already defined in the recommanded profile
+        This can then be used to generate the xml file of the profile_to_export
+        Args:
+            profile_to_export (Profile): Profile for which we want to obtain the xml tree (eg. Profile.EQ)
+            id (Optional[str], optional): "_mRID", optional: some objects don't have mRID attribute. Defaults to None.
+        Returns:
+            Optional[etree.Element]: etree describing self for the profile_to_export, None if nothing to export
+        """
+        profile_attributes = self.cgmes_attributes_in_profile(profile_to_export)
+        is_recommanded_profile = self.recommended_profile.value == profile_to_export.value
+
+        if not is_recommanded_profile:
+            # remove attributes that are also present in "recommended_profile"
+            attributes_main = self.cgmes_attributes_in_profile(self.recommended_profile)
+            for key in attributes_main.keys():
+                if key in profile_attributes:
+                    del profile_attributes[key]
+        profile_attributes = self._remove_empty_attributes(profile_attributes)
+
+        if "mRID" in self.to_dict():
+            obj_id = "_" + self.mRID
+        else:
+            obj_id = id
+
+        # if no attribute to export or no mRID, return None
+        if profile_attributes == {} or obj_id is None:
+            root = None
+        else:
+            nsmap = NAMESPACES
+            # Create root element
+            root = etree.Element("{" + self.namespace + "}" + self.resource_name, nsmap=nsmap)
+
+            # Add the ID ass attribute to the root
+            rdf_namespace = f"""{{{nsmap["rdf"]}}}"""
+            if is_recommanded_profile:
+                root.set(rdf_namespace + "ID", obj_id)
+            else:
+                root.set(rdf_namespace + "about", "#" + obj_id)
+
+            for field_name, attribute in profile_attributes.items():
+                # add all attributes relevant to the profile as SubElements
+                attr_namespace = attribute["namespace"]
+                element_name = f"{{{attr_namespace}}}{field_name}"
+
+                if attribute["is_class_attribute"]:
+                    # class_attributes are exported as rdf: resource #_mRID_of_target
+                    element = etree.SubElement(root, element_name)
+                    element.set(rdf_namespace + "resource", "#" + attribute["value"])
+                elif attribute["is_enum_attribute"]:
+                    element = etree.SubElement(root, element_name)
+                    element.set(rdf_namespace + "resource", nsmap["cim"] + attribute["value"])
+                else:
+                    element = etree.SubElement(root, element_name)
+                    element.text = str(attribute["value"])
+        return root
+
+    @staticmethod
+    def _remove_empty_attributes(attributes: dict) -> dict:
+        for key, attribute in list(attributes.items()):
+            # Remove empty attributes
+            if attribute["value"] is None or attribute["value"] == "":
+                del attributes[key]
+            else:
+                # Make bool lower str for XML
+                if (
+                    "is_datatype_attribute" in attribute
+                    and attribute["attribute_class"]
+                    and attribute["attribute_class"].name == "Boolean"
+                ):
+                    attribute["value"] = str(attribute["value"]).lower()
+        return attributes
 
     def __str__(self) -> str:
         """Returns the string representation of this resource."""
