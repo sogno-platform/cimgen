@@ -1,8 +1,9 @@
 # Drop in dataclass replacement, allowing easier json dump and validation in the future.
 import importlib
+from lxml import etree
 from dataclasses import Field, fields
 from functools import cached_property
-from typing import Any, TypeAlias, TypedDict
+from typing import Any, TypeAlias, TypedDict, Optional
 
 from pydantic.dataclasses import dataclass
 
@@ -88,6 +89,24 @@ class Base:
         """
         return cls.__name__
 
+    def get_attribute_main_profile(self, attr: str) -> BaseProfile | None:
+        """Get the profile for this attribute of the CIM object.
+
+        This function searches for the profile of an attribute for the CIM type of an object.
+        If the main profile of the type is a possible profile of the attribute it should be choosen.
+        Otherwise, the first profile in the list of possible profiles ordered by profile number.
+
+        :param attr:           Attribute to check
+        :return:               Attribute profile.
+        """
+        attr_profiles_map = self.possible_attribute_profiles
+        profiles = attr_profiles_map.get(attr, [])
+        if self.recommended_profile in profiles:
+            return self.recommended_profile
+        if profiles:
+            return sorted(profiles)[0]
+        return None
+
     def cgmes_attribute_names_in_profile(self, profile: BaseProfile | None) -> set[Field]:
         """
         Returns all fields accross the parent tree which are in the profile in parameter.
@@ -132,37 +151,216 @@ class Base:
             for f in fields(parent):
                 shortname = f.name
                 qualname = f"{parent.apparent_name()}.{shortname}"  # type: ignore
-                if f not in self.cgmes_attribute_names_in_profile(profile) or shortname in seen_attrs:
-                    # Wrong profile or already found from a parent.
-                    continue
-                else:
-                    # Namespace finding
-                    # "class namespace" means the first namespace defined in the inheritance tree.
-                    # This can go up to Base, which will give the default cim NS.
-                    if (extra := getattr(f.default, "json_schema_extra", None)) is None:
-                        # The attribute does not have extra metadata. It might be a custom atttribute
-                        # without it, or a base type (int...).
-                        # Use the class namespace.
-                        namespace = self.namespace
-                    elif (attr_ns := extra.get("namespace", None)) is None:
-                        # The attribute has some extras, but not namespace.
-                        # Use the class namespace.
-                        namespace = self.namespace
-                    else:
-                        # The attribute has an explicit namesapce
-                        namespace = attr_ns
+                infos = dict()
 
-                    qual_attrs[qualname] = CgmesAttribute(
-                        value=getattr(self, shortname),
-                        namespace=namespace,
-                    )
-                    seen_attrs.add(shortname)
+                if f not in self.cgmes_attribute_names_in_profile(profile) or shortname in seen_attrs:
+                    continue
+
+                # Namespace finding
+                # "class namespace" means the first namespace defined in the inheritance tree.
+                # This can go up to Base, which will give the default cim NS.
+                infos["namespace"] = self.namespace
+                extra = getattr(f.default, "json_schema_extra", None)
+                if extra and extra.get("is_used"):
+                    # adding the extras, used for xml generation
+                    extra_info = {
+                        "attr_name": qualname,
+                        "is_class_attribute": extra.get("is_class_attribute"),
+                        "is_enum_attribute": extra.get("is_enum_attribute"),
+                        "is_list_attribute": extra.get("is_list_attribute"),
+                        "is_primitive_attribute": extra.get("is_primitive_attribute"),
+                        "is_datatype_attribute": extra.get("is_datatype_attribute"),
+                        "attribute_class": extra.get("attribute_class"),
+                        "attribute_main_profile": self.get_attribute_main_profile(shortname),
+                    }
+                    if extra.get("namespace"):
+                        # The attribute has an explicit namesapce
+                        extra_info["namespace"] = extra.get("namespace", self.namespace)
+                    infos.update(extra_info)
+
+                infos["value"] = getattr(self, shortname)
+
+                qual_attrs[qualname] = CgmesAttribute(infos)
+                seen_attrs.add(shortname)
 
         return qual_attrs
+
+    def to_xml(self, profile_to_export: BaseProfile, id: Optional[str] = None) -> Optional[etree.Element]:
+        """Creates an etree element of self with all non-empty attributes of the profile_to_export
+        that are not already defined in the recommanded profile
+        This can then be used to generate the xml file of the profile_to_export
+        Args:
+            profile_to_export (Profile): Profile for which we want to obtain the xml tree (eg. Profile.EQ)
+            id (Optional[str], optional): "mRID", optional: some objects don't have mRID attribute. Defaults to None.
+        Returns:
+            Optional[etree.Element]: etree describing self for the profile_to_export, None if nothing to export
+        """
+        profile_attributes = self._get_attributes_to_export(profile_to_export)
+
+        if "mRID" in self.to_dict():
+            obj_id = self.mRID
+        else:
+            obj_id = id
+
+        # if no attribute to export or no mRID, return None
+        if profile_attributes == {} or obj_id is None:
+            root = None
+        else:
+            # Create root element
+            nsmap = NAMESPACES
+            root = etree.Element("{" + self.namespace + "}" + self.resource_name, nsmap=nsmap)
+
+            # Add the ID as attribute to the root
+            if self.recommended_profile.value == profile_to_export.value:
+                root.set(f"""{{{nsmap["rdf"]}}}""" + "ID", obj_id)
+            else:
+                root.set(f"""{{{nsmap["rdf"]}}}""" + "about", "#" + obj_id)
+
+            root = self._add_attribute_to_etree(attributes=profile_attributes, root=root, nsmap=nsmap)
+        return root
+
+    def _get_attributes_to_export(self, profile_to_export: BaseProfile) -> dict:
+        attributes_to_export = {}
+        attributes_in_profile = self.cgmes_attributes_in_profile(profile_to_export)
+        for key, attribute in attributes_in_profile.items():
+            if attribute["attribute_main_profile"] == profile_to_export:
+                attributes_to_export[key] = attribute
+        attributes_to_export = self._remove_empty_attributes(attributes_to_export)
+        return attributes_to_export
+
+    @staticmethod
+    def _remove_empty_attributes(attributes: dict) -> dict:
+        for key, attribute in list(attributes.items()):
+            # Remove empty attributes
+            if attribute["value"] in [None, "", []]:
+                del attributes[key]
+            elif attribute.get("attribute_class") and attribute["attribute_class"] == "Boolean":
+                attribute["value"] = str(attribute["value"]).lower()
+        return attributes
+
+    @staticmethod
+    def _add_attribute_to_etree(attributes: dict, root: etree.Element, nsmap: dict) -> etree.Element:
+        rdf_namespace = f"""{{{nsmap["rdf"]}}}"""
+        for field_name, attribute in attributes.items():
+            # add all attributes relevant to the profile as SubElements
+            attr_namespace = attribute["namespace"]
+            element_name = f"{{{attr_namespace}}}{field_name}"
+
+            if attribute["is_class_attribute"]:
+                # class_attributes are exported as rdf: resource #mRID_of_target
+                element = etree.SubElement(root, element_name)
+                element.set(rdf_namespace + "resource", "#" + attribute["value"])
+            elif attribute["is_enum_attribute"]:
+                element = etree.SubElement(root, element_name)
+                element.set(rdf_namespace + "resource", nsmap["cim"] + attribute["value"])
+            else:
+                element = etree.SubElement(root, element_name)
+                element.text = str(attribute["value"])
+        return root
 
     def __str__(self) -> str:
         """Returns the string representation of this resource."""
         return "\n".join([f"{k}={v}" for k, v in sorted(self.to_dict().items())])
+
+    def _parse_xml_fragment(self, xml_fragment: str) -> dict:
+        """parses an xml fragment into a dict defining the class attributes
+
+        Args:
+            xml_fragment (str): xml string defining an instance of the current class
+
+        Returns:
+            attribute_dict (dict): a dictionnary of attributes to create/update the class instance
+        """
+        attribute_dict = {}
+        xml_tree = etree.fromstring(xml_fragment)
+
+        # raise an error if the xml does not describe the expected class
+        if not xml_tree.tag.endswith(self.resource_name):
+            raise (KeyError(f"The fragment does not correspond to the class {self.resource_name}"))
+
+        attribute_dict.update(self._extract_mrid_from_etree(xml_tree=xml_tree))
+
+        # parsing attributes defined in class
+        class_attributes = self.cgmes_attributes_in_profile(None)
+        for key, class_attribute in class_attributes.items():
+            xml_attribute = xml_tree.findall(".//{*}" + key)
+            if len(xml_attribute) != 1:
+                continue
+            xml_attribute = xml_attribute[0]
+            attr = key.rsplit(".")[-1]
+
+            attr_value = self._extract_attr_value_from_etree(attr, class_attribute, xml_attribute)
+            if hasattr(self, attr) and attr_value is not None:
+                attribute_dict[attr] = attr_value
+
+        return attribute_dict
+
+    def _extract_mrid_from_etree(self, xml_tree: etree.Element) -> dict:
+        """Parsing the mRID from etree attributes"""
+        mrid_dict = {}
+        for key, value in xml_tree.attrib.items():
+            if key.endswith("ID") or key.endswith("about"):
+                if value.startswith("#"):
+                    value = value[1:]
+                if hasattr(self, "mRID") and value is not None:
+                    mrid_dict = {"mRID": value}
+        return mrid_dict
+
+    def _extract_attr_value_from_etree(self, attr_name: str, class_attribute: dict, xml_attribute: etree.Element):
+        """Parsing the attribute value from etree attributes"""
+        attr_value = None
+        # class attributes are pointing to another class/instance defined in .attrib
+        if class_attribute["is_class_attribute"] and len(xml_attribute.keys()) == 1:
+            attr_value = xml_attribute.values()[0]
+            if attr_value.startswith("#"):
+                attr_value = attr_value[1:]
+
+        # enum attributes are defined in .attrib and has a prefix ending in "#"
+        elif class_attribute["is_enum_attribute"] and len(xml_attribute.keys()) == 1:
+            attr_value = xml_attribute.values()[0]
+            if "#" in attr_value:
+                attr_value = attr_value.split("#")[-1]
+
+        elif class_attribute["is_list_attribute"]:
+            attr_value = eval(xml_attribute.text)
+        elif class_attribute["is_primitive_attribute"] or class_attribute["is_datatype_attribute"]:
+            attr_value = xml_attribute.text
+            if self.__dataclass_fields__[attr_name].type == bool:
+                attr_value = {"true": True, "false": False}.get(attr_value, None)
+            else:
+                # types are int, float or str (date, time and datetime treated as str)
+                attr_value = self.__dataclass_fields__[attr_name].type(attr_value)
+        else:
+            # other attributes types are defined in .text
+            attr_value = xml_attribute.text
+        return attr_value
+
+    def update_from_xml(self, xml_fragment: str):
+        """
+        Updates the instance by parsing an xml fragment defining the attributes of this instance
+        example: updating the instance by parsing the corresponding fragment from the SSH profile
+        """
+        attribute_dict = self._parse_xml_fragment(xml_fragment)
+
+        if attribute_dict["mRID"] == self.mRID:
+            for key, value in attribute_dict.items():
+                attr = getattr(self, key)
+                if isinstance(attr, list):
+                    getattr(self, key).extend(value)
+                else:
+                    setattr(self, key, value)
+
+    @classmethod
+    def from_xml(cls, xml_fragment: str):
+        """
+        Returns an instance of the class from an xml fragment defining the attributes written in the form:
+        <cim:IdentifiedObject.name>...</cim:IdentifiedObject.name>
+        example: creating an instance by parsing a fragment from the EQ profile
+        """
+        attribute_dict = cls()._parse_xml_fragment(xml_fragment)
+
+        # Instantiate the class with the dictionary
+        return cls(**attribute_dict)
 
     @staticmethod
     def get_extra_prop(field: Field, prop: str) -> Any:

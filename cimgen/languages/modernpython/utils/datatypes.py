@@ -2,13 +2,13 @@ from typing import List, Optional, Union
 
 from pydantic import Field
 from pydantic.dataclasses import dataclass
-
-from ..resources.Currency import Currency
-from ..resources.UnitMultiplier import UnitMultiplier
-from ..resources.UnitSymbol import UnitSymbol
-from .config import cgmes_resource_config
 from .constants import NAMESPACES
+
+from .config import cgmes_resource_config
 from .profile import BaseProfile
+from ..resources.types.UnitMultiplier import UnitMultiplier
+from ..resources.types.UnitSymbol import UnitSymbol
+from ..resources.types.Currency import Currency
 
 
 @dataclass(config=cgmes_resource_config)

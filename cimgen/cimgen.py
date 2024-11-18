@@ -21,6 +21,8 @@ class RDFSEntry:
         json_object = {}
         if self.about():
             json_object["about"] = self.about()
+        if self.namespace() is not None:
+            json_object["namespace"] = self.namespace()
         if self.comment():
             json_object["comment"] = self.comment()
         if self.datatype():
@@ -49,6 +51,12 @@ class RDFSEntry:
     def about(self) -> str:
         if "$rdf:about" in self.json_definition:
             return _get_rid_of_hash(RDFSEntry._get_about_or_resource(self.json_definition["$rdf:about"]))
+        else:
+            return ""
+
+    def namespace(self):
+        if "$rdf:about" in self.json_definition:
+            return self.json_definition["$rdf:about"][: -len(self.about())]
         else:
             return ""
 
@@ -194,6 +202,7 @@ class CIMComponentDefinition:
         self.superclass: str = rdfs_entry.subclass_of()
         self.subclass_list: list[str] = []
         self.stereotype: str = rdfs_entry.stereotype()
+        self.namespace = rdfs_entry.namespace()
 
     def attributes(self) -> list[dict]:
         return self.attribute_list
@@ -391,6 +400,13 @@ def _parse_rdf(input_dic: dict, version: str) -> dict[str, dict[str, CIMComponen
     for instance in enum_instances:
         clarse = _get_rid_of_hash(instance["type"])
         if clarse and clarse in classes_map:
+            if instance.get("comment"):
+                instance["wrapped_comment"] = _wrap_and_clean(
+                    instance["comment"],
+                    width=100,
+                    initial_indent="# ",
+                    subsequent_indent=("    # "),
+                )
             classes_map[clarse].add_enum_instance(instance)
         else:
             logger.info("Class {} for enum instance {} not found.".format(clarse, instance))
@@ -417,6 +433,7 @@ def _write_all_files(
             "class_location": lang_pack.get_class_location(class_name, elem_dict, version),
             "class_name": class_name,
             "class_origin": elem_dict[class_name].origins(),
+            "class_namespace": _get_namespace(elem_dict[class_name].namespace),
             "enum_instances": elem_dict[class_name].enum_instances(),
             "is_an_enum_class": elem_dict[class_name].is_an_enum_class(),
             "is_a_primitive_class": elem_dict[class_name].is_a_primitive_class(),
@@ -455,6 +472,7 @@ def _write_all_files(
             attribute["is_primitive_attribute"] = _get_bool_string(attribute_type == "primitive")
             attribute["is_datatype_attribute"] = _get_bool_string(attribute_type == "datatype")
             attribute["attribute_class"] = attribute_class
+            attribute["attribute_namespace"] = _get_namespace(attribute["namespace"])
 
         class_details["attributes"].sort(key=lambda d: d["label"])
         _write_files(class_details, output_path)
@@ -736,6 +754,14 @@ def _get_attribute_type(attribute: dict, class_infos: CIMComponentDefinition) ->
     elif attribute.get("multiplicity") in ("M:0..n", "M:0..2", "M:1..n", "M:2..n"):
         attribute_type = "list"
     return attribute_type
+
+
+def _get_namespace(parsed_namespace: str) -> str:
+    if parsed_namespace == "#":
+        namespace = cim_namespace
+    else:
+        namespace = parsed_namespace
+    return namespace
 
 
 def _get_bool_string(bool_value: bool) -> str:
