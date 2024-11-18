@@ -133,6 +133,7 @@ class Base:
             for f in fields(parent):
                 shortname = f.name
                 qualname = f"{parent.apparent_name()}.{shortname}"  # type: ignore
+                infos = dict()
                 if f not in self.cgmes_attribute_names_in_profile(profile) or shortname in seen_attrs:
                     # Wrong profile or already found from a parent.
                     continue
@@ -144,19 +145,31 @@ class Base:
                         # The attribute does not have extra metadata. It might be a custom atttribute
                         # without it, or a base type (int...).
                         # Use the class namespace.
-                        namespace = self.namespace
-                    elif (attr_ns := extra.get("namespace", None)) is None:
-                        # The attribute has some extras, but not namespace.
-                        # Use the class namespace.
-                        namespace = self.namespace
-                    else:
-                        # The attribute has an explicit namesapce
-                        namespace = attr_ns
+                        infos["namespace"] = self.namespace
+                    elif extra.get("is_used"):
+                        if (extra.get("attribute_namespace", None)) is None:
+                            # The attribute has some extras, but not namespace.
+                            # Use the class namespace.
+                            infos["namespace"] = self.namespace
 
-                    qual_attrs[qualname] = CgmesAttribute(
-                        value=getattr(self, shortname),
-                        namespace=namespace,
-                    )
+                        else:
+                            # The attribute has an explicit namesapce
+                            infos["namespace"] = extra.get("attribute_namespace", self.namespace)
+                        # adding the extras, used for xml generation
+                        extra_info = {
+                            "attr_name": qualname,
+                            "is_class_attribute": extra.get("is_class_attribute"),
+                            "is_enum_attribute": extra.get("is_enum_attribute"),
+                            "is_list_attribute": extra.get("is_list_attribute"),
+                            "is_primitive_attribute": extra.get("is_primitive_attribute"),
+                            "is_datatype_attribute": extra.get("is_datatype_attribute"),
+                            "attribute_class": extra.get("attribute_class"),
+                        }
+                        infos.update(extra_info)
+
+                    infos["value"] = getattr(self, shortname)
+
+                    qual_attrs[qualname] = CgmesAttribute(infos)
                     seen_attrs.add(shortname)
 
         return qual_attrs
