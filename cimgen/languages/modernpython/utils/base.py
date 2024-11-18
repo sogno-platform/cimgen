@@ -253,6 +253,85 @@ class Base:
         """Returns the string representation of this resource."""
         return "\n".join([f"{k}={v}" for k, v in sorted(self.to_dict().items())])
 
+    def _parse_xml_fragment(self, xml_fragment: str) -> dict:
+        """parses an xml fragment into a dict defining the class attributes
+
+        Args:
+            xml_fragment (str): xml string defining an instance of the current class
+
+        Returns:
+            attribute_dict (dict): a dictionnary of attributes to create/update the class instance
+        """
+        attribute_dict = {}
+        xml_tree = etree.fromstring(xml_fragment)
+
+        # raise an error if the xml does not describe the expected class
+        if not xml_tree.tag.endswith(self.resource_name):
+            raise (KeyError(f"The fragment does not correspond to the class {self.resource_name}"))
+
+        # parsing the mRID
+        for key, value in xml_tree.attrib.items():
+            if key.endswith("ID") or key.endswith("about"):
+                if value.startswith("#"):
+                    value = value[1:]
+                if value.startswith("_"):
+                    value = value[1:]
+                if hasattr(self, "mRID") and value is not None:
+                    attribute_dict["mRID"] = value
+
+        # parsing attributes defined in class
+        class_attributes = self.cgmes_attributes_in_profile(None)
+        for key, class_attribute in class_attributes.items():
+            xml_attribute = xml_tree.findall(".//{*}" + key)
+            if len(xml_attribute) != 1:
+                continue
+            xml_attribute = xml_attribute[0]
+            attr = key.rsplit(".")[-1]
+            attr_value = None
+
+            # class attributes are pointing to another class/instance defined in .attrib
+            if class_attribute["is_class_attribute"]:
+                if len(xml_attribute.keys()) == 1:
+                    attr_value = xml_attribute.values()[0]
+                    if attr_value.startswith("#"):
+                        attr_value = attr_value[1:]
+
+            # enum attributes are defined in .attrib and has a prefix ending in "#"
+            elif class_attribute["is_enum_attribute"]:
+                if len(xml_attribute.keys()) == 1:
+                    attr_value = xml_attribute.values()[0]
+                    if "#" in attr_value:
+                        attr_value = attr_value.rsplit("#")[-1]
+
+            elif class_attribute["is_list_attribute"]:
+                # other attributes types are defined in .text
+                attr_value = xml_attribute
+                attr_value = self.key.append(attr_value)
+            else:
+                attr_value = xml_attribute.text
+                # primitive classes are described in "cim_data_type" allowing to retrieve the data type
+                if class_attribute["is_primitive_attribute"] or class_attribute["is_datatype_attribute"]:
+                    if class_attribute["attribute_class"].type == bool:
+                        attr_value = {"true": True, "false": False}.get(attr_value, None)
+                    else:
+                        attr_value = class_attribute["attribute_class"].type(attr_value)
+            if hasattr(self, attr) and attr_value is not None:
+                attribute_dict[attr] = attr_value
+
+        return attribute_dict
+
+    @classmethod
+    def from_xml(cls, xml_fragment: str):
+        """
+        Returns an instance of the class from an xml fragment defining the attributes written in the form:
+        <cim:IdentifiedObject.name>...</cim:IdentifiedObject.name>
+        example: creating an instance by parsing a fragment from the EQ profile
+        """
+        attribute_dict = cls()._parse_xml_fragment(xml_fragment)
+
+        # Instantiate the class with the dictionary
+        return cls(**attribute_dict)
+
     @staticmethod
     def get_extra_prop(field: Field, prop: str) -> Any:
         # The field is defined as a pydantic field, not a dataclass field,
