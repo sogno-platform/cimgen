@@ -112,7 +112,7 @@ def _set_imports(attributes):
             classes.add(attribute["attribute_class"])
 
     result = ""
-    for val in classes:
+    for val in sorted(classes):
         result += "from ." + val + " import " + val + "\n"
     return result + "\n"
 
