@@ -35,6 +35,7 @@ class {{class_name}}({{subclass_of}}):
                 {{/attr_origin}}
             ],
             "is_used": {{#is_used}}True{{/is_used}}{{^is_used}}False{{/is_used}},
+            "namespace": "{{attribute_namespace}}",  # NOSONAR
             "is_class_attribute": {{#is_class_attribute}}True{{/is_class_attribute}}{{^is_class_attribute}}False{{/is_class_attribute}},
             "is_datatype_attribute": {{#is_datatype_attribute}}True{{/is_datatype_attribute}}{{^is_datatype_attribute}}False{{/is_datatype_attribute}},
             "is_enum_attribute": {{#is_enum_attribute}}True{{/is_enum_attribute}}{{^is_enum_attribute}}False{{/is_enum_attribute}},
