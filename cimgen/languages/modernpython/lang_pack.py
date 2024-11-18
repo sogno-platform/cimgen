@@ -108,7 +108,7 @@ def _primitive_to_data_type(datatype):
 def _set_imports(attributes):
     classes = set()
     for attribute in attributes:
-        if attribute["is_cim_datatype"] or attribute["is_primitive_attribute"]:
+        if attribute["is_datatype_attribute"] or attribute["is_primitive_attribute"]:
             classes.add(attribute["attribute_class"])
 
     result = ""
@@ -146,7 +146,7 @@ def _compute_cim_data_type(attributes) -> dict:
 def _set_cim_data_type(text, render) -> str:
     attribute = eval(render(text))
     cim_data_type = ""
-    if attribute["is_cim_datatype"] or attribute["is_primitive_attribute"]:
+    if attribute["is_datatype_attribute"] or attribute["is_primitive_attribute"]:
         cim_data_type += "\n            "
         cim_data_type += """"cim_data_type": """ + attribute["attribute_class"] + ","
     return cim_data_type
