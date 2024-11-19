@@ -172,7 +172,7 @@ class Reader(BaseModel):
         try:
             namespace = self.import_result["meta_info"]["namespaces"]["rdf"]
         except KeyError:
-            namespace = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+            namespace = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"  # NOSONAR
             logger.warning("No rdf namespace found. Using %s" % namespace)
         return namespace
 
