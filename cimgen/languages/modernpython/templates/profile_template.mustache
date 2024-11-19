@@ -10,7 +10,7 @@ class BaseProfile(str, Enum):
     """
     Profile parent. Use it if you need your own profiles.
 
-    All pycgmes objects requiring a Profile are actually asking for a `BaseProfile`. As
+    All CGMES objects requiring a Profile are actually asking for a `BaseProfile`. As
     Enum with fields cannot be inherited or composed, just create your own CustomProfile without
     trying to extend Profile. It will work.
     """

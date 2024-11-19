@@ -6,9 +6,9 @@ from typing import Any, TypeAlias, TypedDict
 
 from pydantic.dataclasses import dataclass
 
-from pycgmes.utils.constants import NAMESPACES
+from .constants import NAMESPACES
 
-from ..utils.config import cgmes_resource_config
+from .config import cgmes_resource_config
 from .profile import BaseProfile
 
 
