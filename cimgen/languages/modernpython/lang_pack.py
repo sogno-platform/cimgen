@@ -36,12 +36,12 @@ def location(version):  # NOSONAR
 base = {"base_class": "Base", "class_location": location}
 
 # These are the files that are used to generate the python files.
-template_files = {"filename": "cimpy_class_template.mustache", "ext": ".py"}
-constants_template_files = {"filename": "cimpy_constants_template.mustache", "ext": ".py"}
-profile_template_files = {"filename": "cimpy_cgmesProfile_template.mustache", "ext": ".py"}
-enum_template_files = {"filename": "enum_class_template.mustache", "ext": ".py"}
-primitive_template_files = {"filename": "primitive_template.mustache", "ext": ".py"}
-cimdatatype_template_files = {"filename": "cimdatatype_template.mustache", "ext": ".py"}
+class_template_file = {"filename": "class_template.mustache", "ext": ".py"}
+constants_template_file = {"filename": "constants_template.mustache", "ext": ".py"}
+profile_template_file = {"filename": "profile_template.mustache", "ext": ".py"}
+enum_template_file = {"filename": "enum_template.mustache", "ext": ".py"}
+primitive_template_file = {"filename": "primitive_template.mustache", "ext": ".py"}
+datatype_template_file = {"filename": "datatype_template.mustache", "ext": ".py"}
 
 
 def get_class_location(class_name, class_map, version):  # NOSONAR
@@ -166,18 +166,18 @@ def run_template(output_path, class_details):
     if class_details["is_a_primitive_class"]:
         # Primitives are never used in the in memory representation but only for
         # the schema
-        template = primitive_template_files
+        template = primitive_template_file
         class_details["python_type"] = _primitive_to_data_type(class_details["class_name"])
     elif class_details["is_a_datatype_class"]:
         # Datatypes based on primitives are never used in the in memory
         # representation but only for the schema
-        template = cimdatatype_template_files
+        template = datatype_template_file
         class_details.update(_set_datatype_attributes(class_details["attributes"]))
     elif class_details["is_an_enum_class"]:
-        template = enum_template_files
+        template = enum_template_file
         class_details["setInstances"] = _set_instances
     else:
-        template = template_files
+        template = class_template_file
         class_details["setDefault"] = _set_default
         class_details["setType"] = _set_type
         class_details["setAttributeClass"] = _set_attribute_class
@@ -214,15 +214,15 @@ def _write_templated_file(class_file, class_details, template_filename):
 
 
 def _create_constants(output_path: str, cim_namespace: str):
-    class_file = os.path.join(output_path, "utils", "constants" + constants_template_files["ext"])
+    class_file = os.path.join(output_path, "utils", "constants" + constants_template_file["ext"])
     class_details = {"cim_namespace": cim_namespace}
-    _write_templated_file(class_file, class_details, constants_template_files["filename"])
+    _write_templated_file(class_file, class_details, constants_template_file["filename"])
 
 
 def _create_cgmes_profile(output_path: str, profile_details: list):
-    class_file = os.path.join(output_path, "utils", "profile" + profile_template_files["ext"])
+    class_file = os.path.join(output_path, "utils", "profile" + profile_template_file["ext"])
     class_details = {"profiles": profile_details}
-    _write_templated_file(class_file, class_details, profile_template_files["filename"])
+    _write_templated_file(class_file, class_details, profile_template_file["filename"])
 
 
 def resolve_headers(path: str, version: str):
