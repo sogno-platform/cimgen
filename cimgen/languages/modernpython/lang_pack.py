@@ -1,7 +1,6 @@
 import logging
 import os
 import re
-import ast
 from distutils.dir_util import copy_tree
 from pathlib import Path
 from importlib.resources import files
@@ -149,19 +148,6 @@ def _set_attribute_class(text, render) -> str:
     return attribute_class
 
 
-# called by chevron, text contains the label {{dataType}}, which is evaluated by the renderer (see class template)
-def _set_instances(text, render):
-    instance = None
-    instance = ast.literal_eval(render(text).replace("&quot;", '"'))
-    if "label" in instance:
-        value = instance["label"] + ' = "' + instance["label"] + '"'
-        if "comment" in instance:
-            value += "  # " + instance["comment"] + " noqa: E501"
-        return value
-    else:
-        return ""
-
-
 def run_template(output_path, class_details):
     if class_details["is_a_primitive_class"]:
         # Primitives are never used in the in memory representation but only for
@@ -175,7 +161,6 @@ def run_template(output_path, class_details):
         class_details.update(_set_datatype_attributes(class_details["attributes"]))
     elif class_details["is_an_enum_class"]:
         template = enum_template_file
-        class_details["setInstances"] = _set_instances
     else:
         template = class_template_file
         class_details["setDefault"] = _set_default

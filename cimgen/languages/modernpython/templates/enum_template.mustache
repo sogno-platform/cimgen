@@ -7,9 +7,9 @@ from enum import Enum
 
 class {{class_name}}(str, Enum):
     """
-    {{{class_comment}}}
+    {{{class_comment}}}  # noqa: E501
     """
 
     {{#enum_instances}}
-    {{#setInstances}}{{.}}{{/setInstances}}
+    {{label}} = "{{label}}"{{#comment}}  # {{comment}}{{/comment}}  # noqa: E501
     {{/enum_instances}}
