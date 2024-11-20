@@ -15,7 +15,7 @@ class Writer(BaseModel):
     """
 
     objects: Dict
-    Model_metadata: Dict[str, str] = {}
+    model_metadata: Dict[str, str] = {}
 
     def write(
         self,
@@ -61,14 +61,14 @@ class Writer(BaseModel):
         :param custom_namespaces:  Optional[Dict[str, str]]: {"namespace_prefix": "namespace_uri"}
         :return:                   etree of the profile
         """
-        Model = {"modelingAuthoritySet": "www.sogno.energy"}
-        Model.update(self.Model_metadata)
-        FullModel = {
+        model = {"modelingAuthoritySet": "www.sogno.energy"}
+        model.update(self.model_metadata)
+        fullmodel = {
             "id": model_id,
-            "Model": Model,
+            "Model": model,
         }
         for uri in profile.uris:
-            FullModel["Model"].update({"profile": uri})
+            fullmodel["Model"].update({"profile": uri})
 
         nsmap = NAMESPACES
         nsmap.update(custom_namespaces)
@@ -80,8 +80,8 @@ class Writer(BaseModel):
 
         # FullModel header
         model = etree.Element(md_namespace + "FullModel", nsmap=nsmap)
-        model.set(rdf_namespace + "about", "#" + FullModel["id"])
-        for key, value in FullModel["Model"].items():
+        model.set(rdf_namespace + "about", "#" + fullmodel["id"])
+        for key, value in fullmodel["Model"].items():
             element = etree.SubElement(model, md_namespace + "Model." + key)
             element.text = value
         root.append(model)

@@ -60,7 +60,6 @@ class Reader(BaseModel):
             namespace_rdf (str): rdf namespace uri
         """
         context = etree.iterparse(xml_file, ("start", "end"))
-        _, root = next(context)
         level = 0
 
         for event, elem in context:
@@ -70,7 +69,7 @@ class Reader(BaseModel):
                 level += 1
 
             class_namespace = next((namespace for namespace in bases if elem.tag.startswith(namespace)), None)
-            if event == "start" and class_namespace is not None and level == 1:
+            if event == "start" and class_namespace is not None and level == 2:
                 class_name, uuid = self._extract_classname_uuid(elem, class_namespace, namespace_rdf)
                 if uuid is not None:
                     self._process_element(class_name, uuid, class_namespace, elem)
@@ -96,9 +95,8 @@ class Reader(BaseModel):
             uuid = elem.get("{%s}about" % namespace_rdf)
             if uuid is not None:
                 uuid = uuid[1:]
-        if uuid is not None:
-            if not uuid.startswith("_"):
-                uuid = "_" + uuid
+        if uuid is not None and not uuid.startswith("_"):
+            uuid = "_" + uuid
         return class_name, uuid
 
     def _process_element(self, class_name: str, uuid: str, class_namespace: str, elem):
@@ -141,17 +139,15 @@ class Reader(BaseModel):
                 if package_key in elem.text:
                     break
         # the author of all imported files should be the same, avoid multiple entries
-        elif "author" in self.import_result["meta_info"].keys():
-            pass
-        # extract author
-        elif "Model.createdBy" in elem.tag:
-            self.import_result["meta_info"]["author"] = elem.text
-        elif "Model.modelingAuthoritySet" in elem.tag:
-            self.import_result["meta_info"]["author"] = elem.text
+        elif "author" not in self.import_result["meta_info"].keys():
+            if "Model.createdBy" in elem.tag:
+                self.import_result["meta_info"]["author"] = elem.text
+            elif "Model.modelingAuthoritySet" in elem.tag:
+                self.import_result["meta_info"]["author"] = elem.text
 
     # Returns a map of class_namespace to namespace for the given XML file.
     @staticmethod
-    def _get_namespaces(source) -> str:
+    def _get_namespaces(source) -> Dict:
         namespaces = {}
         events = ("end", "start-ns", "end-ns")
         for event, elem in etree.iterparse(source, events):
