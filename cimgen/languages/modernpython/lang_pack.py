@@ -139,15 +139,6 @@ def _set_datatype_attributes(attributes) -> dict:
     return datatype_attributes
 
 
-def _set_attribute_class(text, render) -> str:
-    attribute = eval(render(text))
-    attribute_class = ""
-    if attribute["is_datatype_attribute"] or attribute["is_primitive_attribute"]:
-        attribute_class += "\n            "
-        attribute_class += """"attribute_class": """ + attribute["attribute_class"] + ","
-    return attribute_class
-
-
 def run_template(output_path, class_details):
     if class_details["is_a_primitive_class"]:
         # Primitives are never used in the in memory representation but only for
@@ -165,7 +156,6 @@ def run_template(output_path, class_details):
         template = class_template_file
         class_details["setDefault"] = _set_default
         class_details["setType"] = _set_type
-        class_details["setAttributeClass"] = _set_attribute_class
         class_details["setImports"] = _set_imports(class_details["attributes"])
     resource_file = _create_file(output_path, class_details, template)
     _write_templated_file(resource_file, class_details, template["filename"])
