@@ -135,33 +135,35 @@ class Base:
                 shortname = f.name
                 qualname = f"{parent.apparent_name()}.{shortname}"  # type: ignore
                 infos = dict()
-                if f in self.cgmes_attribute_names_in_profile(profile) and shortname not in seen_attrs:
-                    # Namespace finding
-                    # "class namespace" means the first namespace defined in the inheritance tree.
-                    # This can go up to Base, which will give the default cim NS.
 
-                    infos["namespace"] = self.namespace
-                    extra = getattr(f.default, "json_schema_extra", None)
-                    if extra is not None and extra.get("is_used"):
-                        # adding the extras, used for xml generation
-                        extra_info = {
-                            "attr_name": qualname,
-                            "is_class_attribute": extra.get("is_class_attribute"),
-                            "is_enum_attribute": extra.get("is_enum_attribute"),
-                            "is_list_attribute": extra.get("is_list_attribute"),
-                            "is_primitive_attribute": extra.get("is_primitive_attribute"),
-                            "is_datatype_attribute": extra.get("is_datatype_attribute"),
-                            "attribute_class": extra.get("attribute_class"),
-                        }
-                        if (extra.get("attribute_namespace", None)) is not None:
-                            # The attribute has an explicit namesapce
-                            extra_info["namespace"] = extra.get("attribute_namespace", self.namespace)
-                        infos.update(extra_info)
+                if f not in self.cgmes_attribute_names_in_profile(profile) or shortname in seen_attrs:
+                    continue
 
-                    infos["value"] = getattr(self, shortname)
+                # Namespace finding
+                # "class namespace" means the first namespace defined in the inheritance tree.
+                # This can go up to Base, which will give the default cim NS.
+                infos["namespace"] = self.namespace
+                extra = getattr(f.default, "json_schema_extra", None)
+                if extra is not None and extra.get("is_used"):
+                    # adding the extras, used for xml generation
+                    extra_info = {
+                        "attr_name": qualname,
+                        "is_class_attribute": extra.get("is_class_attribute"),
+                        "is_enum_attribute": extra.get("is_enum_attribute"),
+                        "is_list_attribute": extra.get("is_list_attribute"),
+                        "is_primitive_attribute": extra.get("is_primitive_attribute"),
+                        "is_datatype_attribute": extra.get("is_datatype_attribute"),
+                        "attribute_class": extra.get("attribute_class"),
+                    }
+                    if (extra.get("attribute_namespace", None)) is not None:
+                        # The attribute has an explicit namesapce
+                        extra_info["namespace"] = extra.get("attribute_namespace", self.namespace)
+                    infos.update(extra_info)
 
-                    qual_attrs[qualname] = CgmesAttribute(infos)
-                    seen_attrs.add(shortname)
+                infos["value"] = getattr(self, shortname)
+
+                qual_attrs[qualname] = CgmesAttribute(infos)
+                seen_attrs.add(shortname)
 
         return qual_attrs
 
@@ -267,7 +269,7 @@ class Base:
         if not xml_tree.tag.endswith(self.resource_name):
             raise (KeyError(f"The fragment does not correspond to the class {self.resource_name}"))
 
-        attribute_dict.update(self._extract_mRID_from_etree(xml_tree=xml_tree))
+        attribute_dict.update(self._extract_mrid_from_etree(xml_tree=xml_tree))
 
         # parsing attributes defined in class
         class_attributes = self.cgmes_attributes_in_profile(None)
@@ -284,9 +286,9 @@ class Base:
 
         return attribute_dict
 
-    def _extract_mRID_from_etree(self, xml_tree: etree.Element) -> dict:
+    def _extract_mrid_from_etree(self, xml_tree: etree.Element) -> dict:
         """Parsing the mRID from etree attributes"""
-        mRID_dict = {}
+        mrid_dict = {}
         for key, value in xml_tree.attrib.items():
             if key.endswith("ID") or key.endswith("about"):
                 if value.startswith("#"):
@@ -294,25 +296,23 @@ class Base:
                 if value.startswith("_"):
                     value = value[1:]
                 if hasattr(self, "mRID") and value is not None:
-                    mRID_dict = {"mRID": value}
-        return mRID_dict
+                    mrid_dict = {"mRID": value}
+        return mrid_dict
 
-    def _extract_attr_value_from_etree(self, class_attribute: dict, xml_attribute: dict):
+    def _extract_attr_value_from_etree(self, class_attribute: dict, xml_attribute: etree.Element):
         """Parsing the attribute value from etree attributes"""
         attr_value = None
         # class attributes are pointing to another class/instance defined in .attrib
-        if class_attribute["is_class_attribute"]:
-            if len(xml_attribute.keys()) == 1:
-                attr_value = xml_attribute.values()[0]
-                if attr_value.startswith("#"):
-                    attr_value = attr_value[1:]
+        if class_attribute["is_class_attribute"] and len(xml_attribute.keys()) == 1:
+            attr_value = xml_attribute.values()[0]
+            if attr_value.startswith("#"):
+                attr_value = attr_value[1:]
 
         # enum attributes are defined in .attrib and has a prefix ending in "#"
-        elif class_attribute["is_enum_attribute"]:
-            if len(xml_attribute.keys()) == 1:
-                attr_value = xml_attribute.values()[0]
-                if "#" in attr_value:
-                    attr_value = attr_value.rsplit("#")[-1]
+        elif class_attribute["is_enum_attribute"] and len(xml_attribute.keys()) == 1:
+            attr_value = xml_attribute.values()[0]
+            if "#" in attr_value:
+                attr_value = attr_value.rsplit("#")[-1]
 
         elif class_attribute["is_list_attribute"]:
             # other attributes types are defined in .text
