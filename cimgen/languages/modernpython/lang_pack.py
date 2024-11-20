@@ -172,7 +172,7 @@ def _create_file(output_path, class_details, template) -> str:
     if not resource_file.exists():
         if not (parent := resource_file.parent).exists():
             parent.mkdir()
-    return resource_file
+    return str(resource_file)
 
 
 def _write_templated_file(class_file, class_details, template_filename):
