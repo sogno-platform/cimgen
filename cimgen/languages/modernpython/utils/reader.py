@@ -140,9 +140,7 @@ class Reader(BaseModel):
                     break
         # the author of all imported files should be the same, avoid multiple entries
         elif "author" not in self.import_result["meta_info"].keys():
-            if "Model.createdBy" in elem.tag:
-                self.import_result["meta_info"]["author"] = elem.text
-            elif "Model.modelingAuthoritySet" in elem.tag:
+            if any(author_field in elem.tag for author_field in ("Model.createdBy", "Model.modelingAuthoritySet")):
                 self.import_result["meta_info"]["author"] = elem.text
 
     # Returns a map of class_namespace to namespace for the given XML file.
