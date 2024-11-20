@@ -315,13 +315,14 @@ class Base:
                 attr_value = attr_value.rsplit("#")[-1]
 
         elif class_attribute["is_list_attribute"]:
-            # other attributes types are defined in .text
             attr_value = xml_attribute
             attr_value = self.key.append(attr_value)
         else:
+            # other attributes types are defined in .text
             attr_value = xml_attribute.text
-            # primitive classes are described in "cim_data_type" allowing to retrieve the data type
+
             if class_attribute["is_primitive_attribute"] or class_attribute["is_datatype_attribute"]:
+                # primitive classes are described in "attribute_class" allowing to retrieve the data type
                 if class_attribute["attribute_class"].type == bool:
                     attr_value = {"true": True, "false": False}.get(attr_value, None)
                 else:
