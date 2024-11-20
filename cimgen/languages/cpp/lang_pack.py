@@ -275,20 +275,14 @@ def create_assign(text, render):
     attribute_txt = render(text)
     attribute_json = eval(attribute_txt)
     assign = ""
-    _class = attribute_json["attribute_class"]
     if not _attribute_is_primitive_or_datatype_or_enum(attribute_json):
         return ""
     label_without_keyword = attribute_json["label"]
     if label_without_keyword == "switch":
         label_without_keyword = "_switch"
 
-    if (
-        attribute_json["is_enum_attribute"]
-        or attribute_json["is_datatype_attribute"]
-        or _class in ("Float", "Decimal", "Integer", "Boolean")
-    ):
-        assign = (
-            """
+    assign = (
+        """
 bool assign_CLASS_LABEL(std::stringstream &buffer, BaseClass* BaseClass_ptr1)
 {
 	if (CLASS* element = dynamic_cast<CLASS*>(BaseClass_ptr1))
@@ -301,29 +295,11 @@ bool assign_CLASS_LABEL(std::stringstream &buffer, BaseClass* BaseClass_ptr1)
 	}
 	return false;
 }""".replace(  # noqa: E101,W191
-                "CLASS", attribute_json["domain"]
-            )
-            .replace("LABEL", attribute_json["label"])
-            .replace("LBL_WO_KEYWORD", label_without_keyword)
-        )
-    else:  # is_primitive_string_attribute
-        assign = """
-bool assign_CLASS_LABEL(std::stringstream &buffer, BaseClass* BaseClass_ptr1)
-{
-	if (CLASS* element = dynamic_cast<CLASS*>(BaseClass_ptr1))
-	{
-		element->LABEL = buffer.str();
-		if (buffer.fail())
-			return false;
-		else
-			return true;
-	}
-	return false;
-}""".replace(  # noqa: E101,W191
             "CLASS", attribute_json["domain"]
-        ).replace(
-            "LABEL", attribute_json["label"]
         )
+        .replace("LABEL", attribute_json["label"])
+        .replace("LBL_WO_KEYWORD", label_without_keyword)
+    )
 
     return assign
 
