@@ -1,5 +1,4 @@
 import logging
-import os
 import re
 from distutils.dir_util import copy_tree
 from pathlib import Path
@@ -79,11 +78,9 @@ def _get_type_and_default(text, render) -> tuple[str, str]:
         return ("str", 'default=""')
 
 
-def _primitive_to_data_type(datatype):
+def _get_python_type(datatype):
     if datatype.lower() == "integer":
         return "int"
-    if datatype.lower() == "float":
-        return "float"
     if datatype.lower() == "boolean":
         return "bool"
     if datatype.lower() == "datetime":
@@ -97,45 +94,28 @@ def _primitive_to_data_type(datatype):
     if datatype.lower() == "string":
         return "str"
     else:
-        # this actually never happens
+        # everything else should be a float
         return "float"
 
 
 def _set_imports(attributes):
-    classes = set()
+    import_set = set()
     for attribute in attributes:
         if attribute["is_datatype_attribute"] or attribute["is_primitive_attribute"]:
-            classes.add(attribute["attribute_class"])
-
-    result = ""
-    for val in sorted(classes):
-        result += "from ." + val + " import " + val + "\n"
-    return result + "\n"
+            import_set.add(attribute["attribute_class"])
+    return sorted(import_set)
 
 
 def _set_datatype_attributes(attributes) -> dict:
     datatype_attributes = {}
     datatype_attributes["python_type"] = "None"
-    datatype_attributes["unit"] = "UnitSymbol.none"
-    datatype_attributes["multiplier"] = "UnitMultiplier.none"
-
+    import_set = set()
     for attribute in attributes:
-        if (
-            "about" in attribute
-            and attribute["about"]
-            and "value" in attribute["about"]
-            and "attribute_class" in attribute
-        ):
-            datatype_attributes["python_type"] = _primitive_to_data_type(attribute["attribute_class"])
-        if (
-            "about" in attribute
-            and attribute["about"]
-            and "multiplier" in attribute["about"]
-            and "isFixed" in attribute
-        ):
-            datatype_attributes["multiplier"] = "UnitMultiplier." + attribute["isFixed"]
-        if "about" in attribute and attribute["about"] and "unit" in attribute["about"] and "isFixed" in attribute:
-            datatype_attributes["unit"] = "UnitSymbol." + attribute["isFixed"]
+        if "value" in attribute.get("about", "") and "attribute_class" in attribute:
+            datatype_attributes["python_type"] = _get_python_type(attribute["attribute_class"])
+        if "isFixed" in attribute:
+            import_set.add(attribute["attribute_class"])
+    datatype_attributes["isFixed_imports"] = sorted(import_set)
     return datatype_attributes
 
 
@@ -144,7 +124,7 @@ def run_template(output_path, class_details):
         # Primitives are never used in the in memory representation but only for
         # the schema
         template = primitive_template_file
-        class_details["python_type"] = _primitive_to_data_type(class_details["class_name"])
+        class_details["python_type"] = _get_python_type(class_details["class_name"])
     elif class_details["is_a_datatype_class"]:
         # Datatypes based on primitives are never used in the in memory
         # representation but only for the schema
@@ -156,22 +136,14 @@ def run_template(output_path, class_details):
         template = class_template_file
         class_details["setDefault"] = _set_default
         class_details["setType"] = _set_type
-        class_details["setImports"] = _set_imports(class_details["attributes"])
+        class_details["imports"] = _set_imports(class_details["attributes"])
     resource_file = _create_file(output_path, class_details, template)
     _write_templated_file(resource_file, class_details, template["filename"])
 
 
 def _create_file(output_path, class_details, template) -> str:
-    resource_file = Path(
-        os.path.join(
-            output_path,
-            "resources",
-            class_details["class_name"] + template["ext"],
-        )
-    )
-    if not resource_file.exists():
-        if not (parent := resource_file.parent).exists():
-            parent.mkdir()
+    resource_file = Path(output_path) / "resources" / (class_details["class_name"] + template["ext"])
+    resource_file.parent.mkdir(exist_ok=True)
     return str(resource_file)
 
 
@@ -189,13 +161,13 @@ def _write_templated_file(class_file, class_details, template_filename):
 
 
 def _create_constants(output_path: str, cim_namespace: str):
-    class_file = os.path.join(output_path, "utils", "constants" + constants_template_file["ext"])
+    class_file = Path(output_path) / "utils" / ("constants" + constants_template_file["ext"])
     class_details = {"cim_namespace": cim_namespace}
     _write_templated_file(class_file, class_details, constants_template_file["filename"])
 
 
 def _create_cgmes_profile(output_path: str, profile_details: list):
-    class_file = os.path.join(output_path, "utils", "profile" + profile_template_file["ext"])
+    class_file = Path(output_path) / "utils" / ("profile" + profile_template_file["ext"])
     class_details = {"profiles": profile_details}
     _write_templated_file(class_file, class_details, profile_template_file["filename"])
 

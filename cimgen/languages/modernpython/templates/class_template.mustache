@@ -10,7 +10,11 @@ from pydantic.dataclasses import dataclass
 
 from ..utils.profile import BaseProfile, Profile
 from {{class_location}} import {{sub_class_of}}
-{{setImports}}
+{{#imports}}
+from .{{.}} import {{.}}
+{{/imports}}
+
+
 @dataclass
 class {{class_name}}({{sub_class_of}}):
     """
