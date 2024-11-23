@@ -9,3 +9,4 @@ __pycache__/
 .vscode/*
 */.DS_Store
 .DS_Store
+tests/

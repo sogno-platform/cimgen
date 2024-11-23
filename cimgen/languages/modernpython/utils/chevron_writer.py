@@ -3,9 +3,9 @@ from pathlib import Path
 
 import chevron
 
-from pycgmes.utils.base import Base
-from pycgmes.utils.constants import NAMESPACES
-from pycgmes.utils.profile import BaseProfile, Profile
+from .base import Base
+from .constants import NAMESPACES
+from .profile import BaseProfile, Profile
 
 
 class ChevronWriter:
