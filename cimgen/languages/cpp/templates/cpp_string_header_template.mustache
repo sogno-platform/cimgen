@@ -4,6 +4,7 @@
 Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cimgen
 */
 
+#include <string>
 #include <istream>
 #include <ostream>
 
@@ -17,25 +18,13 @@ namespace CIMPP
 	class {{class_name}}
 	{
 	public:
-		enum {{class_name}}_ENUM
-		{
-{{#enum_instances}}
-{{#comment}}
-			/**
-			 * {{comment}}
-			 */
-{{/comment}}
-			{{label}},
-{{/enum_instances}}
-		};
+		{{class_name}}() : initialized(false) {}
+		{{class_name}}(const std::string& value) : value(value), initialized(true) {}
 
-		{{class_name}}() : value(), initialized(false) {}
-		{{class_name}}({{class_name}}_ENUM value) : value(value), initialized(true) {}
+		{{class_name}}& operator=(const std::string &rop);
+		operator std::string() const;
 
-		{{class_name}}& operator=({{class_name}}_ENUM rop);
-		operator {{class_name}}_ENUM() const;
-
-		{{class_name}}_ENUM value;
+		std::string value;
 		bool initialized;
 
 		static const char debugName[];
