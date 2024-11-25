@@ -219,14 +219,12 @@ class Base:
             # Remove empty attributes
             if attribute["value"] is None or attribute["value"] == "":
                 del attributes[key]
-            else:
-                # Make bool lower str for XML
-                if (
-                    "is_datatype_attribute" in attribute
-                    and attribute["attribute_class"]
-                    and attribute["attribute_class"].name == "Boolean"
-                ):
-                    attribute["value"] = str(attribute["value"]).lower()
+            elif (
+                "is_datatype_attribute" in attribute
+                and attribute["attribute_class"]
+                and attribute["attribute_class"].name == "Boolean"
+            ):
+                attribute["value"] = str(attribute["value"]).lower()
         return attributes
 
     @staticmethod
@@ -312,21 +310,20 @@ class Base:
         elif class_attribute["is_enum_attribute"] and len(xml_attribute.keys()) == 1:
             attr_value = xml_attribute.values()[0]
             if "#" in attr_value:
-                attr_value = attr_value.rsplit("#")[-1]
+                attr_value = attr_value.split("#")[-1]
 
         elif class_attribute["is_list_attribute"]:
             attr_value = xml_attribute
             attr_value = self.key.append(attr_value)
+        elif class_attribute["is_primitive_attribute"] or class_attribute["is_datatype_attribute"]:
+            attr_value = xml_attribute.text
+            if class_attribute["attribute_class"].type == bool:
+                attr_value = {"true": True, "false": False}.get(attr_value, None)
+            else:
+                attr_value = class_attribute["attribute_class"].type(attr_value)
         else:
             # other attributes types are defined in .text
             attr_value = xml_attribute.text
-
-            if class_attribute["is_primitive_attribute"] or class_attribute["is_datatype_attribute"]:
-                # primitive classes are described in "attribute_class" allowing to retrieve the data type
-                if class_attribute["attribute_class"].type == bool:
-                    attr_value = {"true": True, "false": False}.get(attr_value, None)
-                else:
-                    attr_value = class_attribute["attribute_class"].type(attr_value)
         return attr_value
 
     def update_from_xml(self, xml_fragment: str):
