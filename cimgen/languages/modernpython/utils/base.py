@@ -144,7 +144,7 @@ class Base:
                 # This can go up to Base, which will give the default cim NS.
                 infos["namespace"] = self.namespace
                 extra = getattr(f.default, "json_schema_extra", None)
-                if extra is not None and extra.get("is_used"):
+                if extra and extra.get("is_used"):
                     # adding the extras, used for xml generation
                     extra_info = {
                         "attr_name": qualname,
@@ -155,9 +155,9 @@ class Base:
                         "is_datatype_attribute": extra.get("is_datatype_attribute"),
                         "attribute_class": extra.get("attribute_class"),
                     }
-                    if (extra.get("attribute_namespace", None)) is not None:
+                    if extra.get("namespace"):
                         # The attribute has an explicit namesapce
-                        extra_info["namespace"] = extra.get("attribute_namespace", self.namespace)
+                        extra_info["namespace"] = extra.get("namespace", self.namespace)
                     infos.update(extra_info)
 
                 infos["value"] = getattr(self, shortname)
@@ -219,11 +219,7 @@ class Base:
             # Remove empty attributes
             if attribute["value"] is None or attribute["value"] == "":
                 del attributes[key]
-            elif (
-                "is_datatype_attribute" in attribute
-                and attribute["attribute_class"]
-                and attribute["attribute_class"].name == "Boolean"
-            ):
+            elif attribute.get("attribute_class") and attribute["attribute_class"] == "Boolean":
                 attribute["value"] = str(attribute["value"]).lower()
         return attributes
 
@@ -278,7 +274,7 @@ class Base:
             xml_attribute = xml_attribute[0]
             attr = key.rsplit(".")[-1]
 
-            attr_value = self._extract_attr_value_from_etree(class_attribute, xml_attribute)
+            attr_value = self._extract_attr_value_from_etree(attr, class_attribute, xml_attribute)
             if hasattr(self, attr) and attr_value is not None:
                 attribute_dict[attr] = attr_value
 
@@ -297,7 +293,7 @@ class Base:
                     mrid_dict = {"mRID": value}
         return mrid_dict
 
-    def _extract_attr_value_from_etree(self, class_attribute: dict, xml_attribute: etree.Element):
+    def _extract_attr_value_from_etree(self, attr_name: str, class_attribute: dict, xml_attribute: etree.Element):
         """Parsing the attribute value from etree attributes"""
         attr_value = None
         # class attributes are pointing to another class/instance defined in .attrib
@@ -317,10 +313,11 @@ class Base:
             attr_value = self.key.append(attr_value)
         elif class_attribute["is_primitive_attribute"] or class_attribute["is_datatype_attribute"]:
             attr_value = xml_attribute.text
-            if class_attribute["attribute_class"].type == bool:
+            if self.__dataclass_fields__[attr_name].type == bool:
                 attr_value = {"true": True, "false": False}.get(attr_value, None)
             else:
-                attr_value = class_attribute["attribute_class"].type(attr_value)
+                # types are int, float or str (date, time and datetime treated as str)
+                attr_value = self.__dataclass_fields__[attr_name].type(attr_value)
         else:
             # other attributes types are defined in .text
             attr_value = xml_attribute.text
