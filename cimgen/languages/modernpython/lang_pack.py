@@ -88,14 +88,6 @@ def _get_python_type(datatype: str) -> str:
         return "float"
 
 
-def _set_imports(attributes: list[dict]) -> list[str]:
-    import_set = set()
-    for attribute in attributes:
-        if attribute["is_datatype_attribute"] or attribute["is_primitive_attribute"]:
-            import_set.add(attribute["attribute_class"])
-    return sorted(import_set)
-
-
 def _set_datatype_attributes(attributes: list[dict]) -> dict:
     datatype_attributes = {}
     datatype_attributes["python_type"] = "None"
@@ -137,7 +129,6 @@ def run_template(output_path: str, class_details: dict) -> None:
         template = class_template_file
         class_details["set_default"] = _set_default
         class_details["set_type"] = _set_type
-        class_details["imports"] = _set_imports(class_details["attributes"])
     resource_file = _create_file(output_path, class_details, template)
     _write_templated_file(resource_file, class_details, template["filename"])
 
