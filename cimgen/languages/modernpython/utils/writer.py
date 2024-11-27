@@ -15,7 +15,7 @@ class Writer(BaseModel):
     """
 
     objects: Dict
-    model_metadata: Dict[str, str] = {}
+    writer_metadata: Dict[str, str] = {}
 
     def write(
         self,
@@ -61,11 +61,11 @@ class Writer(BaseModel):
         :param custom_namespaces:  Optional[Dict[str, str]]: {"namespace_prefix": "namespace_uri"}
         :return:                   etree of the profile
         """
-        model = {"modelingAuthoritySet": "www.sogno.energy"}
-        model.update(self.model_metadata)
+        writer_info = {"modelingAuthoritySet": "www.sogno.energy"}
+        writer_info.update(self.writer_metadata)
         fullmodel = {
             "id": model_id,
-            "Model": model,
+            "Model": writer_info,
         }
         for uri in profile.uris:
             fullmodel["Model"].update({"profile": uri})
