@@ -414,6 +414,13 @@ def _parse_rdf(input_dic, version):  # NOSONAR
     for instance in enum_instances:
         clarse = _get_rid_of_hash(instance["type"])
         if clarse and clarse in classes_map:
+            if instance.get("comment"):
+                instance["wrapped_comment"] = wrap_and_clean(
+                    instance["comment"],
+                    width=100,
+                    initial_indent="# ",
+                    subsequent_indent=("    # "),
+                )
             classes_map[clarse].add_enum_instance(instance)
         else:
             logger.info("Class {} for enum instance {} not found.".format(clarse, instance))
