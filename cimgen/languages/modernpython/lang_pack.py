@@ -133,7 +133,15 @@ def run_template(output_path, class_details):
 
 
 def _create_file(output_path, class_details, template) -> str:
-    resource_file = Path(output_path) / "resources" / (class_details["class_name"] + template["ext"])
+    if (
+        class_details["is_a_primitive_class"]
+        or class_details["is_a_datatype_class"]
+        or class_details["is_an_enum_class"]
+    ):
+        class_category = "types"
+    else:
+        class_category = ""
+    resource_file = Path(output_path) / "resources" / class_category / (class_details["class_name"] + template["ext"])
     resource_file.parent.mkdir(exist_ok=True)
     return str(resource_file)
 
