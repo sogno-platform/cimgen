@@ -14,19 +14,19 @@ class Reader(BaseModel):
 
     Args:
         cgmes_version_path (str): Path to the cgmes resources folder containing the class definition
-        custom_namespaces (Optional[Dict[str, str]]): {"namespace_prefix": "namespace_uri"}
-        custom_folder (Optional[Dict[str, str]]): {"namespace_uri": "path_to_custom_resources_folder"}
+        custom_namespaces (Optional[[str, str]]): {"namespace_prefix": "namespace_uri"}
+        custom_folder (Optional[str]): "path_to_custom_resources_folder"
     """
 
     cgmes_version_path: str
     custom_namespaces: Optional[Dict[str, str]] = None
-    custom_folder: Optional[Dict[str, str]] = None
+    custom_folder: Optional[str] = None
     logger_grouped: Dict[str, Dict[str, int]] = Field(default_factory=lambda: {"errors": {}, "info": {}})
     import_result: Dict = Field(default_factory=lambda: {"meta_info": {}, "topology": {}})
 
     def parse_profiles(self, xml_files: list[str], start_dict: Optional[Dict] = None):
         """Parses all profiles contained in xml_files and returns a list containing
-        all the objects defined in the profiles "_mRID": Object\n
+        all the objects defined in the profiles "mRID": Object\n
         Errors encounterd in the parsing can be recovered in Reader.logger_grouped
 
         Args:
@@ -34,7 +34,7 @@ class Reader(BaseModel):
             start_dict (Optional[Dict]): To parse profiles on top of an existing list dict(meta_info, topology)
 
         Returns:
-            list: ["topology": dict of all the objects defined in the profiles {"_mRID": Object}, "meta_info"]
+            list: ["topology": dict of all the objects defined in the profiles {"mRID": Object}, "meta_info"]
         """
         if start_dict is not None:
             self.import_result = start_dict
@@ -72,14 +72,14 @@ class Reader(BaseModel):
             if event == "start" and class_namespace is not None and level == 2:
                 class_name, uuid = self._extract_classname_uuid(elem, class_namespace, namespace_rdf)
                 if uuid is not None:
-                    self._process_element(class_name, uuid, class_namespace, elem)
+                    self._process_element(class_name, uuid, elem)
             # Check which package is read
             elif event == "end":
                 self._check_metadata(elem)
 
     @staticmethod
     def _extract_classname_uuid(elem, class_namespace: str, namespace_rdf: str) -> tuple:
-        """Extracts class name and instance uuid ("_mRID")
+        """Extracts class name and instance uuid ("mRID")
 
         Args:
             elem (etree.Element): description of the instance for the given profile
@@ -87,7 +87,7 @@ class Reader(BaseModel):
             namespace_rdf (str): rdf namespace uri
 
         Returns:
-            tuple: (class_name: example "ACLineSgement", instance_uuid: "_mRID")
+            tuple: (class_name: example "ACLineSgement", instance_uuid: "mRID")
         """
         class_name = elem.tag[len(class_namespace) :]
         uuid = elem.get("{%s}ID" % namespace_rdf)
@@ -95,25 +95,22 @@ class Reader(BaseModel):
             uuid = elem.get("{%s}about" % namespace_rdf)
             if uuid is not None:
                 uuid = uuid[1:]
-        if uuid is not None and not uuid.startswith("_"):
-            uuid = "_" + uuid
         return class_name, uuid
 
-    def _process_element(self, class_name: str, uuid: str, class_namespace: str, elem):
+    def _process_element(self, class_name: str, uuid: str, elem):
         """Creates or updates (if an object with the same uuid exists)
         an instance of the class based on the fragment of the profile
 
         Args:
             class_name (str): Name of the class of the instance to create/update (example: ACLineSegment)
-            uuid (str): _mRID
-            class_namespace (str): namespace defining the class
+            uuid (str): mRID
             elem (etree.Element): description of the instance for the given profile
         """
         topology = self.import_result["topology"]
         elem_str = etree.tostring(elem, encoding="utf8")
         try:
             # Import the module for the CGMES object.
-            module_name = self._get_path_to_module(class_namespace) + "." + class_name
+            module_name = self._get_path_to_module(class_name)
             module = importlib.import_module(module_name)
 
             klass = getattr(module, class_name)
@@ -170,12 +167,11 @@ class Reader(BaseModel):
             logger.warning("No rdf namespace found. Using %s" % namespace)
         return namespace
 
-    def _get_path_to_module(self, class_namespace: str) -> str:
-        namespace = class_namespace[1:-1]
-        if self.custom_folder and namespace in self.custom_folder:
-            path_to_module = self.custom_folder[namespace]
+    def _get_path_to_module(self, class_name: str) -> str:
+        if self.custom_folder and importlib.find_loader(self.custom_folder + "." + class_name):
+            path_to_module = self.custom_folder + "." + class_name
         else:
-            path_to_module = self.cgmes_version_path
+            path_to_module = self.cgmes_version_path + "." + class_name
         return path_to_module
 
     def _log_message(self, log_type: Literal["errors", "info"], message: str):

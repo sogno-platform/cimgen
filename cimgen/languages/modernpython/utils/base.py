@@ -90,6 +90,24 @@ class Base:
         """
         return cls.__name__
 
+    def get_attribute_main_profile(self, attr: str) -> BaseProfile | None:
+        """Get the profile for this attribute of the CIM object.
+
+        This function searches for the profile of an attribute for the CIM type of an object.
+        If the main profile of the type is a possible profile of the attribute it should be choosen.
+        Otherwise, the first profile in the list of possible profiles ordered by profile number.
+
+        :param attr:           Attribute to check
+        :return:               Attribute profile.
+        """
+        attr_profiles_map = self.possible_attribute_profiles
+        profiles = attr_profiles_map.get(attr, [])
+        if self.recommended_profile in profiles:
+            return self.recommended_profile
+        if profiles:
+            return sorted(profiles)[0]
+        return None
+
     def cgmes_attribute_names_in_profile(self, profile: BaseProfile | None) -> set[Field]:
         """
         Returns all fields accross the parent tree which are in the profile in parameter.
@@ -154,6 +172,7 @@ class Base:
                         "is_primitive_attribute": extra.get("is_primitive_attribute"),
                         "is_datatype_attribute": extra.get("is_datatype_attribute"),
                         "attribute_class": extra.get("attribute_class"),
+                        "attribute_main_profile": self.get_attribute_main_profile(shortname),
                     }
                     if extra.get("namespace"):
                         # The attribute has an explicit namesapce
@@ -173,14 +192,14 @@ class Base:
         This can then be used to generate the xml file of the profile_to_export
         Args:
             profile_to_export (Profile): Profile for which we want to obtain the xml tree (eg. Profile.EQ)
-            id (Optional[str], optional): "_mRID", optional: some objects don't have mRID attribute. Defaults to None.
+            id (Optional[str], optional): "mRID", optional: some objects don't have mRID attribute. Defaults to None.
         Returns:
             Optional[etree.Element]: etree describing self for the profile_to_export, None if nothing to export
         """
         profile_attributes = self._get_attributes_to_export(profile_to_export)
 
         if "mRID" in self.to_dict():
-            obj_id = "_" + self.mRID
+            obj_id = self.mRID
         else:
             obj_id = id
 
@@ -202,14 +221,11 @@ class Base:
         return root
 
     def _get_attributes_to_export(self, profile_to_export: BaseProfile) -> dict:
-        attributes_to_export = self.cgmes_attributes_in_profile(profile_to_export)
-        is_recommanded_profile = self.recommended_profile.value == profile_to_export.value
-        if not is_recommanded_profile:
-            # remove attributes that are also present in "recommended_profile"
-            attributes_main = self.cgmes_attributes_in_profile(self.recommended_profile)
-            for key in attributes_main.keys():
-                if key in attributes_to_export:
-                    del attributes_to_export[key]
+        attributes_to_export = {}
+        attributes_in_profile = self.cgmes_attributes_in_profile(profile_to_export)
+        for key, attribute in attributes_in_profile.items():
+            if attribute["attribute_main_profile"] == profile_to_export:
+                attributes_to_export[key] = attribute
         attributes_to_export = self._remove_empty_attributes(attributes_to_export)
         return attributes_to_export
 
@@ -217,7 +233,7 @@ class Base:
     def _remove_empty_attributes(attributes: dict) -> dict:
         for key, attribute in list(attributes.items()):
             # Remove empty attributes
-            if attribute["value"] is None or attribute["value"] == "":
+            if attribute["value"] in [None, "", []]:
                 del attributes[key]
             elif attribute.get("attribute_class") and attribute["attribute_class"] == "Boolean":
                 attribute["value"] = str(attribute["value"]).lower()
@@ -232,7 +248,7 @@ class Base:
             element_name = f"{{{attr_namespace}}}{field_name}"
 
             if attribute["is_class_attribute"]:
-                # class_attributes are exported as rdf: resource #_mRID_of_target
+                # class_attributes are exported as rdf: resource #mRID_of_target
                 element = etree.SubElement(root, element_name)
                 element.set(rdf_namespace + "resource", "#" + attribute["value"])
             elif attribute["is_enum_attribute"]:
@@ -287,8 +303,6 @@ class Base:
             if key.endswith("ID") or key.endswith("about"):
                 if value.startswith("#"):
                     value = value[1:]
-                if value.startswith("_"):
-                    value = value[1:]
                 if hasattr(self, "mRID") and value is not None:
                     mrid_dict = {"mRID": value}
         return mrid_dict
@@ -309,8 +323,7 @@ class Base:
                 attr_value = attr_value.split("#")[-1]
 
         elif class_attribute["is_list_attribute"]:
-            attr_value = xml_attribute
-            attr_value = self.key.append(attr_value)
+            attr_value = eval(xml_attribute.text)
         elif class_attribute["is_primitive_attribute"] or class_attribute["is_datatype_attribute"]:
             attr_value = xml_attribute.text
             if self.__dataclass_fields__[attr_name].type == bool:
@@ -332,7 +345,11 @@ class Base:
 
         if attribute_dict["mRID"] == self.mRID:
             for key, value in attribute_dict.items():
-                setattr(self, key, value)
+                attr = getattr(self, key)
+                if isinstance(attr, list):
+                    getattr(self, key).extend(value)
+                else:
+                    setattr(self, key, value)
 
     @classmethod
     def from_xml(cls, xml_fragment: str):
