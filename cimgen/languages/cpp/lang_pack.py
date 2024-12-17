@@ -281,8 +281,9 @@ def create_assign(text, render):
     if label_without_keyword == "switch":
         label_without_keyword = "_switch"
 
-    assign = (
-        """
+    if not _attribute_is_primitive_string(attribute_json):
+        assign = (
+            """
 bool assign_CLASS_LABEL(std::stringstream &buffer, BaseClass* BaseClass_ptr1)
 {
 	if (CLASS* element = dynamic_cast<CLASS*>(BaseClass_ptr1))
@@ -295,11 +296,29 @@ bool assign_CLASS_LABEL(std::stringstream &buffer, BaseClass* BaseClass_ptr1)
 	}
 	return false;
 }""".replace(  # noqa: E101,W191
-            "CLASS", attribute_json["domain"]
+                "CLASS", attribute_json["domain"]
+            )
+            .replace("LABEL", attribute_json["label"])
+            .replace("LBL_WO_KEYWORD", label_without_keyword)
         )
-        .replace("LABEL", attribute_json["label"])
-        .replace("LBL_WO_KEYWORD", label_without_keyword)
-    )
+    else:  # _attribute_is_primitive_string
+        assign = """
+bool assign_CLASS_LABEL(std::stringstream &buffer, BaseClass* BaseClass_ptr1)
+{
+	if (CLASS* element = dynamic_cast<CLASS*>(BaseClass_ptr1))
+	{
+		element->LABEL = buffer.str();
+		if (buffer.fail())
+			return false;
+		else
+			return true;
+	}
+	return false;
+}""".replace(  # noqa: E101,W191
+            "CLASS", attribute_json["domain"]
+        ).replace(
+            "LABEL", attribute_json["label"]
+        )
 
     return assign
 
@@ -385,6 +404,12 @@ def _attribute_is_primitive_or_datatype_or_enum(attribute: dict) -> bool:
 
 def _attribute_is_primitive_or_datatype(attribute: dict) -> bool:
     return attribute["is_primitive_attribute"] or attribute["is_datatype_attribute"]
+
+
+def _attribute_is_primitive_string(attribute: dict) -> bool:
+    return attribute["is_primitive_attribute"] and (
+        attribute["attribute_class"] not in ("Float", "Decimal", "Integer", "Boolean")
+    )
 
 
 # The code below this line is used after the main cim_generate phase to generate
