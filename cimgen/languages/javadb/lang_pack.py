@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2021 SOGNO
+# SPDX-FileCopyrightText: 2024 SOGNO
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -48,6 +48,9 @@ def get_class_location(class_name: str, class_map: dict, version: str) -> str:  
 
 # This is the function that runs the template.
 def run_template(output_path: str, class_details: dict) -> None:
+    # Add some class infos
+    class_details["table_name"] = _table_name(class_details["class_name"])
+
     # Add some attribute infos
     for attribute in class_details["attributes"]:
         attribute["is_primitive_string"] = "true" if _attribute_is_primitive_string(attribute) else ""
@@ -61,6 +64,7 @@ def run_template(output_path: str, class_details: dict) -> None:
         attribute["variable_name"] = _variable_name(attribute["label"], class_details["class_name"])
         attribute["getter_name"] = _getter_setter_name("get", attribute["label"])
         attribute["setter_name"] = _getter_setter_name("set", attribute["label"])
+        attribute["column_name"] = _column_name(attribute["label"])
         if attribute["is_class_attribute"] or attribute["is_list_attribute"]:
             if "inverse_role" in attribute:
                 inverse_label = attribute["inverse_role"].split(".")[1]
@@ -83,7 +87,7 @@ def run_template(output_path: str, class_details: dict) -> None:
 def _write_templated_file(class_file: Path, class_details: dict, template_filename: str) -> None:
     class_file.parent.mkdir(parents=True, exist_ok=True)
     with class_file.open("w", encoding="utf-8") as file:
-        templates = files("cimgen.languages.java.templates")
+        templates = files("cimgen.languages.javadb.templates")
         with templates.joinpath(template_filename).open(encoding="utf-8") as f:
             args = {
                 "data": class_details,
@@ -138,6 +142,32 @@ def _getter_setter_name(prefix: str, label: str) -> str:
     return prefix + label
 
 
+def _table_name(class_name: str) -> str:
+    """Get the name of the database table for a class name.
+
+    Some class names are not allowed as name of a database table.
+
+    :param class_name:  Original class name
+    :return:            Table name
+    """
+    if class_name in ("Limit", "Resource"):
+        class_name += "_"
+    return class_name
+
+
+def _column_name(label: str) -> str:
+    """Get the name of the database column for a label.
+
+    Some label names are not allowed as name of a database column.
+
+    :param label:  Original label
+    :return:       Column name
+    """
+    if label in ("mode", "number", "order", "value"):
+        label += "_"
+    return label
+
+
 def _attribute_is_primitive_string(attribute: dict) -> bool:
     """Check if the attribute is a primitive attribute that is used like a string (Date, MonthDay etc).
 
@@ -154,6 +184,8 @@ def _attribute_is_primitive_string(attribute: dict) -> bool:
 class_blacklist = [
     "BaseClass",
     "CGMESProfile",
+    "CimModel",
+    "CimModelService",
     "CimClassMap",
     "CimConstants",
     "Logging",
