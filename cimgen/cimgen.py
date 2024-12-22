@@ -192,6 +192,7 @@ class CIMComponentDefinition:
         self.enum_instance_list: list[dict] = []
         self.origin_list: list[dict] = []
         self.superclass: str = rdfs_entry.subclass_of()
+        self.superclass_list: list[str] = []
         self.subclass_list: list[str] = []
         self.stereotype: str = rdfs_entry.stereotype()
 
@@ -223,8 +224,11 @@ class CIMComponentDefinition:
     def set_subclass_of(self, name: str) -> None:
         self.superclass = name
 
-    def add_subclass(self, name: str) -> None:
-        self.subclass_list.append(name)
+    def superclasses(self) -> list[str]:
+        return self.superclass_list
+
+    def set_superclasses(self, classes: list[str]) -> None:
+        self.superclass_list = classes
 
     def subclasses(self) -> list[str]:
         return self.subclass_list
@@ -423,6 +427,7 @@ def _write_all_files(
             "is_a_datatype_class": elem_dict[class_name].is_a_datatype_class(),
             "lang_pack": lang_pack,
             "subclass_of": elem_dict[class_name].subclass_of(),
+            "superclasses": elem_dict[class_name].superclasses(),
             "subclasses": elem_dict[class_name].subclasses(),
             "recommended_class_profile": recommended_class_profiles[class_name],
         }
@@ -562,19 +567,38 @@ def _merge_classes(profiles_dict: dict[str, dict[str, CIMComponentDefinition]]) 
     return class_dict
 
 
-def _recursively_add_subclasses(class_dict: dict[str, CIMComponentDefinition], class_name: str) -> list[str]:
-    new_subclasses: list[str] = []
-    the_class = class_dict[class_name]
-    for name in the_class.subclasses():
-        new_subclasses.append(name)
-        new_new_subclasses = _recursively_add_subclasses(class_dict, name)
-        new_subclasses = new_subclasses + new_new_subclasses
-    return new_subclasses
+def _add_superclasses_of_superclasses(class_dict: dict[str, CIMComponentDefinition]) -> None:
+    """Set the list of superclasses for each class.
+
+    The algorithm searches superclasses of superclasses recursively. The resulting lists are set as attribute
+    superclasses in the class definition. They are sorted upwards according to the hierarchy.
+
+    :param class_dict:  Dictionary with all class definitions.
+    """
+    for class_name in class_dict:
+        superclass_list = []
+        superclass = class_dict[class_name].subclass_of()
+        while superclass:
+            superclass_list.append(superclass)
+            superclass = class_dict[superclass].subclass_of()
+        class_dict[class_name].set_superclasses(superclass_list)
 
 
 def _add_subclasses_of_subclasses(class_dict: dict[str, CIMComponentDefinition]) -> None:
+    """Set the list of subclasses for each class.
+
+    The algorithm searches subclasses of subclasses using the attribute superclasses of all classes. The superclasses
+    lists must therefore have been filled beforehand. The resulting lists are set as attribute subclasses in the class
+    definition. They are sorted alphabetically.
+
+    :param class_dict:  Dictionary with all class definitions.
+    """
+    subclasses_map: dict[str, set[str]] = {}
     for class_name in class_dict:
-        class_dict[class_name].set_subclasses(_recursively_add_subclasses(class_dict, class_name))
+        for superclass in class_dict[class_name].superclasses():
+            subclasses_map.setdefault(superclass, set()).add(class_name)
+    for class_name in class_dict:
+        class_dict[class_name].set_subclasses(sorted(subclasses_map.get(class_name, set())))
 
 
 def cim_generate(directory: str, output_path: str, version: str, lang_pack: ModuleType) -> None:
@@ -618,17 +642,8 @@ def cim_generate(directory: str, output_path: str, version: str, lang_pack: Modu
     # merge classes from different profiles into one class and track origin of the classes and their attributes
     class_dict_with_origins = _merge_classes(profiles_dict)
 
-    # work out the subclasses for each class by noting the reverse relationship
-    for class_name in class_dict_with_origins:
-        superclass_name = class_dict_with_origins[class_name].subclass_of()
-        if superclass_name:
-            if superclass_name in class_dict_with_origins:
-                superclass = class_dict_with_origins[superclass_name]
-                superclass.add_subclass(class_name)
-            else:
-                logger.error("No match for superclass in dict: %s", superclass_name)
-
-    # recursively add the subclasses of subclasses
+    # recursively add the superclasses of superclasses and the subclasses of subclasses
+    _add_superclasses_of_superclasses(class_dict_with_origins)
     _add_subclasses_of_subclasses(class_dict_with_origins)
 
     # get information for writing language specific files and write these files
