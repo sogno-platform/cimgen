@@ -455,6 +455,9 @@ def _write_all_files(
             attribute["is_primitive_attribute"] = _get_bool_string(attribute_type == "primitive")
             attribute["is_datatype_attribute"] = _get_bool_string(attribute_type == "datatype")
             attribute["attribute_class"] = attribute_class
+            attribute["is_class_attribute_with_inverse_list"] = _get_bool_string(
+                _is_class_attribute_with_inverse_list(attribute, elem_dict)
+            )
 
         class_details["attributes"].sort(key=lambda d: d["label"])
         _write_files(class_details, output_path)
@@ -752,3 +755,20 @@ def _get_bool_string(bool_value: bool) -> str:
         return "true"
     else:
         return ""
+
+
+def _is_class_attribute_with_inverse_list(attribute: dict, elem_dict: dict[str, CIMComponentDefinition]) -> bool:
+    """Check if the inverse role of the attribute is a list.
+
+    :param attribute: Dictionary with information about an attribute of a class.
+    :param elem_dict: Information about all classes.
+    :return:          Is the inverse role of the attribute a list?
+    """
+    if "inverse_role" in attribute:
+        inverse_class, inverse_label = attribute["inverse_role"].split(".")
+        for inverse_attribute in elem_dict[inverse_class].attributes():
+            if inverse_attribute["label"] == inverse_label:
+                attribute_class = _get_attribute_class(inverse_attribute)
+                attribute_type = _get_attribute_type(inverse_attribute, elem_dict[attribute_class])
+                return attribute_type == "list"
+    return False
