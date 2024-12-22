@@ -390,10 +390,10 @@ def _parse_rdf(input_dic, version):  # NOSONAR
     return {short_profile_name: classes_map}
 
 
-# This function extracts all information needed for the creation of the python class files like the comments or the
-# class name. After the extraction the function write_files is called to write the files with the template engine
+# This function extracts all information needed for the creation of the class files like the comments or the
+# class name. After the extraction the function _write_files is called to write the files with the template engine
 # chevron
-def _write_python_files(elem_dict, lang_pack, output_path, version):
+def _write_all_files(elem_dict, lang_pack, output_path, version):
 
     # Setup called only once: make output directory, create base class, create profile class, etc.
     lang_pack.setup(output_path, _get_profile_details(package_listed_by_short_name), cim_namespace)
@@ -566,13 +566,13 @@ def addSubClassesOfSubClasses(class_dict):
 def cim_generate(directory, output_path, version, lang_pack):
     """Generates cgmes python classes from cgmes ontology
 
-    This function uses package xmltodict to parse the RDF files. The parse_rdf function sorts the classes to
+    This function uses package xmltodict to parse the RDF files. The _parse_rdf function sorts the classes to
     the corresponding packages. Since multiple files can be read, e.g. Equipment Core and Equipment Short Circuit, the
-    classes of these profiles are merged into one profile with the merge_profiles function. After that the merge_classes
+    classes of these profiles are merged into one profile with _merge_profiles. After that the _merge_classes
     function merges classes defined in multiple profiles into one class and tracks the origin of the class and their
     attributes. This information is stored in the class variable possibleProfileList and used for serialization.
-    For more information see the cimexport function in the cimpy package. Finally the
-    write_python_files function extracts all information needed for the creation of the python files and creates them
+    For more information see the cimexport function in the cimpy package. Finally the _write_all_files function
+    extracts all information needed for the creation of the language specific files and creates them
     with the template engine chevron. The attribute version of this function defines the name of the folder where the
     created classes are stored. This folder should not exist and is created in the class generation procedure.
 
@@ -617,8 +617,8 @@ def cim_generate(directory, output_path, version, lang_pack):
     # recursively add the subclasses of subclasses
     addSubClassesOfSubClasses(class_dict_with_origins)
 
-    # get information for writing python files and write python files
-    _write_python_files(class_dict_with_origins, lang_pack, output_path, version)
+    # get information for writing language specific files and write these files
+    _write_all_files(class_dict_with_origins, lang_pack, output_path, version)
 
     lang_pack.resolve_headers(output_path, version)
 
