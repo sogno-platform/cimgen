@@ -98,12 +98,6 @@ class RDFSEntry:
         else:
             return None
 
-    def title(self):
-        if "dct:title" in self.jsonDefinition:
-            return RDFSEntry._extract_text(self.jsonDefinition["dct:title"])
-        else:
-            return None
-
     def inverseRole(self):
         if "cims:inverseRoleName" in self.jsonDefinition:
             return _get_rid_of_hash(RDFSEntry._extract_string(self.jsonDefinition["cims:inverseRoleName"]))
@@ -112,15 +106,7 @@ class RDFSEntry:
 
     def label(self):
         if "rdfs:label" in self.jsonDefinition:
-            return (
-                RDFSEntry._extract_text(self.jsonDefinition["rdfs:label"])
-                .replace("–", "-")
-                .replace("“", '"')
-                .replace("”", '"')
-                .replace("’", "'")
-                .replace("°", "")
-                .replace("\n", " ")
-            )
+            return RDFSEntry._extract_text(self.jsonDefinition["rdfs:label"])
         else:
             return None
 
@@ -179,14 +165,6 @@ class RDFSEntry:
                     return object_dic[0]
                 return RDFSEntry._get_about_or_resource(object_dic[0])
         return RDFSEntry._get_about_or_resource(object_dic)
-
-    # The definitions are often contained within a string with a name
-    # such as "$rdf:about" or "$rdf:resource", this extracts the
-    # useful bit
-    def _get_literal(object_dic):
-        if "$rdfs:Literal" in object_dic:
-            return object_dic["$rdfs:Literal"]
-        return object_dic
 
     # The definitions are often contained within a string with a name
     # such as "$rdf:about" or "$rdf:resource", this extracts the
