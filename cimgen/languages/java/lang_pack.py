@@ -2,9 +2,10 @@ import shutil
 import chevron
 from pathlib import Path
 from importlib.resources import files
+from typing import Callable
 
 
-def location(version):  # NOSONAR
+def location(version: str) -> str:  # NOSONAR
     return ""
 
 
@@ -13,7 +14,7 @@ def location(version):  # NOSONAR
 # cgmes_profile_details contains index, names and uris for each profile.
 # We don't use that here because we aren't exporting into
 # separate profiles.
-def setup(output_path: str, cgmes_profile_details: list, cim_namespace: str):  # NOSONAR
+def setup(output_path: str, cgmes_profile_details: list[dict], cim_namespace: str) -> None:  # NOSONAR
     source_dir = Path(__file__).parent
     dest_dir = Path(output_path)
     for file in dest_dir.glob("**/*.java"):
@@ -37,7 +38,7 @@ enum_template_files = [{"filename": "java_enum.mustache", "ext": ".java"}]
 string_template_files = [{"filename": "java_string.mustache", "ext": ".java"}]
 
 
-def get_class_location(class_name, class_map, version):  # NOSONAR
+def get_class_location(class_name: str, class_map: dict, version: str) -> str:  # NOSONAR
     return ""
 
 
@@ -47,7 +48,7 @@ partials = {
 
 
 # This is the function that runs the template.
-def run_template(output_path, class_details):
+def run_template(output_path: str, class_details: dict) -> None:
 
     if class_details["is_a_datatype_class"] or class_details["class_name"] in ("Float", "Decimal"):
         templates = float_template_files
@@ -68,7 +69,7 @@ def run_template(output_path, class_details):
         _write_templated_file(class_file, class_details, template_info["filename"])
 
 
-def _write_templated_file(class_file, class_details, template_filename):
+def _write_templated_file(class_file: Path, class_details: dict, template_filename: str) -> None:
     with class_file.open("w", encoding="utf-8") as file:
         templates = files("cimgen.languages.java.templates")
         with templates.joinpath(template_filename).open(encoding="utf-8") as f:
@@ -83,7 +84,7 @@ def _write_templated_file(class_file, class_details, template_filename):
 
 # This function just allows us to avoid declaring a variable called 'switch',
 # which is in the definition of the ExcBBC class.
-def label(text, render):
+def label(text: str, render: Callable[[str], str]) -> str:
     result = render(text)
     if result == "switch":
         return "_switch"
@@ -104,7 +105,15 @@ class_blacklist = [
 ]
 
 
-def _create_header_include_file(directory, header_include_filename, header, footer, before, after, blacklist):
+def _create_header_include_file(
+    directory: Path,
+    header_include_filename: str,
+    header: list[str],
+    footer: list[str],
+    before: str,
+    after: str,
+    blacklist: list[str],
+) -> None:
     lines = []
     for file in sorted(directory.glob("*.java"), key=lambda f: f.stem):
         basename = file.stem
@@ -120,7 +129,7 @@ def _create_header_include_file(directory, header_include_filename, header, foot
         f.writelines(header)
 
 
-def resolve_headers(path: str, version: str):  # NOSONAR
+def resolve_headers(path: str, version: str) -> None:  # NOSONAR
     class_list_header = [
         "/*\n",
         "Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cimgen\n",

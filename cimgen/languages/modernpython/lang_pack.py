@@ -4,6 +4,7 @@ import re
 import shutil
 from pathlib import Path
 from importlib.resources import files
+from typing import Callable
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +28,7 @@ def setup(output_path: str, cgmes_profile_details: list[dict], cim_namespace: st
     _create_cgmes_profile(dest_dir, cgmes_profile_details)
 
 
-def location(version):  # NOSONAR
+def location(version: str) -> str:
     return "..utils.base"
 
 
@@ -42,7 +43,7 @@ primitive_template_file = {"filename": "primitive_template.mustache", "ext": ".p
 datatype_template_file = {"filename": "datatype_template.mustache", "ext": ".py"}
 
 
-def get_class_location(class_name, class_map, version):  # NOSONAR
+def get_class_location(class_name: str, class_map: dict, version: str) -> str:  # NOSONAR
     return f".{class_map[class_name].superClass()}"
 
 
@@ -50,15 +51,15 @@ partials = {}
 
 
 # called by chevron, text contains the attribute infos, which are evaluated by the renderer (see class template)
-def _set_default(text, render):
+def _set_default(text: str, render: Callable[[str], str]) -> str:
     return _get_type_and_default(text, render)[1]
 
 
-def _set_type(text, render):
+def _set_type(text: str, render: Callable[[str], str]) -> str:
     return _get_type_and_default(text, render)[0]
 
 
-def _get_type_and_default(text, render) -> tuple[str, str]:
+def _get_type_and_default(text: str, render: Callable[[str], str]) -> tuple[str, str]:
     attribute_txt = render(text)
     attribute_json = eval(attribute_txt)
     if attribute_json["is_class_attribute"]:
@@ -78,7 +79,7 @@ def _get_type_and_default(text, render) -> tuple[str, str]:
         return ("str", 'default=""')
 
 
-def _get_python_type(datatype):
+def _get_python_type(datatype: str) -> str:
     if datatype.lower() == "integer":
         return "int"
     if datatype.lower() == "boolean":
@@ -98,7 +99,7 @@ def _get_python_type(datatype):
         return "float"
 
 
-def _set_imports(attributes):
+def _set_imports(attributes: list[dict]) -> list[str]:
     import_set = set()
     for attribute in attributes:
         if attribute["is_datatype_attribute"] or attribute["is_primitive_attribute"]:
@@ -106,7 +107,7 @@ def _set_imports(attributes):
     return sorted(import_set)
 
 
-def _set_datatype_attributes(attributes) -> dict:
+def _set_datatype_attributes(attributes: list[dict]) -> dict:
     datatype_attributes = {}
     datatype_attributes["python_type"] = "None"
     import_set = set()
@@ -119,7 +120,7 @@ def _set_datatype_attributes(attributes) -> dict:
     return datatype_attributes
 
 
-def run_template(output_path, class_details):
+def run_template(output_path: str, class_details: dict) -> None:
     if class_details["is_a_primitive_class"]:
         # Primitives are never used in the in memory representation but only for
         # the schema
@@ -172,7 +173,7 @@ def _create_cgmes_profile(output_path: Path, profile_details: list[dict]) -> Non
     _write_templated_file(class_file, class_details, profile_template_file["filename"])
 
 
-def resolve_headers(path: str, version: str):
+def resolve_headers(path: str, version: str) -> None:
     """Add all classes in __init__.py"""
 
     if match := re.search(r"(?P<num>\d+_\d+_\d+)", version):  # NOSONAR

@@ -3,9 +3,10 @@ import json
 import shutil
 from pathlib import Path
 from importlib.resources import files
+from typing import Callable
 
 
-def location(version):  # NOSONAR
+def location(version: str) -> str:  # NOSONAR
     return ""
 
 
@@ -54,7 +55,7 @@ profile_template_files = [
 ]
 
 
-def get_class_location(class_name, class_map, version):  # NOSONAR
+def get_class_location(class_name: str, class_map: dict, version: str) -> str:  # NOSONAR
     return ""
 
 
@@ -70,7 +71,7 @@ partials = {
 
 
 # This is the function that runs the template.
-def run_template(output_path, class_details):
+def run_template(output_path: str, class_details: dict) -> None:
 
     if class_details["is_a_datatype_class"] or class_details["class_name"] in ("Float", "Decimal"):
         templates = float_template_files
@@ -116,7 +117,7 @@ def _create_cgmes_profile(output_path: Path, profile_details: list[dict], cim_na
 
 # This function just allows us to avoid declaring a variable called 'switch',
 # which is in the definition of the ExcBBC class.
-def label(text, render):
+def label(text: str, render: Callable[[str], str]) -> str:
     result = render(text)
     if result == "switch":
         return "_switch"
@@ -128,7 +129,7 @@ def label(text, render):
 # maps, for use in assignments.cpp and Task.cpp
 # TODO: implement this as one function, determine in template if it should be called.
 # TODO: reorganize json object so we don't have to keep doing the same processing.
-def insert_assign_fn(text, render):
+def insert_assign_fn(text: str, render: Callable[[str], str]) -> str:
     attribute_txt = render(text)
     attribute_json = eval(attribute_txt)
     if not _attribute_is_primitive_or_datatype_or_enum(attribute_json):
@@ -148,7 +149,7 @@ def insert_assign_fn(text, render):
     )
 
 
-def insert_class_assign_fn(text, render):
+def insert_class_assign_fn(text: str, render: Callable[[str], str]) -> str:
     attribute_txt = render(text)
     attribute_json = eval(attribute_txt)
     if _attribute_is_primitive_or_datatype_or_enum(attribute_json):
@@ -168,7 +169,7 @@ def insert_class_assign_fn(text, render):
     )
 
 
-def insert_get_fn(text, render):
+def insert_get_fn(text: str, render: Callable[[str], str]) -> str:
     attribute_txt = render(text)
     attribute_json = eval(attribute_txt)
     if not _attribute_is_primitive_or_datatype(attribute_json):
@@ -178,7 +179,7 @@ def insert_get_fn(text, render):
     return '	get_map.emplace("cim:' + class_name + "." + label + '", &get_' + class_name + "_" + label + ");\n"
 
 
-def insert_class_get_fn(text, render):
+def insert_class_get_fn(text: str, render: Callable[[str], str]) -> str:
     attribute_txt = render(text)
     attribute_json = eval(attribute_txt)
     if _attribute_is_primitive_or_datatype_or_enum(attribute_json):
@@ -190,7 +191,7 @@ def insert_class_get_fn(text, render):
     return '	get_map.emplace("cim:' + class_name + "." + label + '", &get_' + class_name + "_" + label + ");\n"
 
 
-def insert_enum_get_fn(text, render):
+def insert_enum_get_fn(text: str, render: Callable[[str], str]) -> str:
     attribute_txt = render(text)
     attribute_json = eval(attribute_txt)
     if not attribute_json["is_enum_attribute"]:
@@ -200,7 +201,7 @@ def insert_enum_get_fn(text, render):
     return '	get_map.emplace("cim:' + class_name + "." + label + '", &get_' + class_name + "_" + label + ");\n"
 
 
-def create_nullptr_assigns(text, render):
+def create_nullptr_assigns(text: str, render: Callable[[str], str]) -> str:
     attributes_txt = render(text)
     if attributes_txt.strip() == "":
         return ""
@@ -219,7 +220,7 @@ def create_nullptr_assigns(text, render):
 
 # These create_ functions are used to generate the implementations for
 # the entries in the dynamic_switch maps referenced in assignments.cpp and Task.cpp
-def create_class_assign(text, render):
+def create_class_assign(text: str, render: Callable[[str], str]) -> str:
     attribute_txt = render(text)
     attribute_json = eval(attribute_txt)
     assign = ""
@@ -325,7 +326,7 @@ bool assign_OBJECT_CLASS_LABEL(BaseClass* BaseClass_ptr1, BaseClass* BaseClass_p
     return assign
 
 
-def create_assign(text, render):
+def create_assign(text: str, render: Callable[[str], str]) -> str:
     attribute_txt = render(text)
     attribute_json = eval(attribute_txt)
     assign = ""
@@ -377,7 +378,7 @@ bool assign_CLASS_LABEL(std::stringstream &buffer, BaseClass* BaseClass_ptr1)
     return assign
 
 
-def create_class_get(text, render):
+def create_class_get(text: str, render: Callable[[str], str]) -> str:
     attribute_txt = render(text)
     attribute_json = eval(attribute_txt)
     if _attribute_is_primitive_or_datatype_or_enum(attribute_json):
@@ -421,7 +422,7 @@ bool get_OBJECT_CLASS_LABEL(const BaseClass* BaseClass_ptr1, std::list<const Bas
     return get
 
 
-def create_get(text, render):
+def create_get(text: str, render: Callable[[str], str]) -> str:
     attribute_txt = render(text)
     attribute_json = eval(attribute_txt)
     get = ""
@@ -455,7 +456,7 @@ bool get_CLASS_LABEL(const BaseClass* BaseClass_ptr1, std::stringstream& buffer)
     return get
 
 
-def create_enum_get(text, render):
+def create_enum_get(text: str, render: Callable[[str], str]) -> str:
     attribute_txt = render(text)
     attribute_json = eval(attribute_txt)
     if not attribute_json["is_enum_attribute"]:
@@ -483,13 +484,13 @@ bool get_CLASS_LABEL(const BaseClass* BaseClass_ptr1, std::stringstream& buffer)
     return get
 
 
-def attribute_decl(text, render):
+def attribute_decl(text: str, render: Callable[[str], str]) -> str:
     attribute_txt = render(text)
     attribute_json = eval(attribute_txt)
     return _attribute_decl(attribute_json)
 
 
-def _attribute_decl(attribute):
+def _attribute_decl(attribute: dict) -> str:
     _class = attribute["attribute_class"]
     if _attribute_is_primitive_or_datatype_or_enum(attribute):
         return "CIMPP::" + _class
@@ -499,7 +500,7 @@ def _attribute_decl(attribute):
         return "CIMPP::" + _class + "*"
 
 
-def _create_attribute_includes(text, render):
+def _create_attribute_includes(text: str, render: Callable[[str], str]) -> str:
     unique = {}
     include_string = ""
     inputText = render(text)
@@ -515,7 +516,7 @@ def _create_attribute_includes(text, render):
     return include_string
 
 
-def _create_attribute_class_declarations(text, render):
+def _create_attribute_class_declarations(text: str, render: Callable[[str], str]) -> str:
     unique = {}
     include_string = ""
     inputText = render(text)
@@ -531,18 +532,17 @@ def _create_attribute_class_declarations(text, render):
     return include_string
 
 
-def _set_default(text, render):
+def _set_default(text: str, render: Callable[[str], str]) -> str:
     result = render(text)
     return set_default(result)
 
 
-def set_default(dataType):
-
+def set_default(dataType: str) -> str:
     # the field {{dataType}} either contains the multiplicity of an attribute if it is a reference or otherwise the
     # datatype of the attribute. If no datatype is set and there is also no multiplicity entry for an attribute, the
     # default value is set to None. The multiplicity is set for all attributes, but the datatype is only set for basic
     # data types. If the data type entry for an attribute is missing, the attribute contains a reference and therefore
-    # the default value is either None or [] depending on the multiplicity. See also write_python_files
+    # the default value is either None or [] depending on the multiplicity. See also _write_files in cimgen.py.
     if dataType in ["M:1", "M:0..1", "M:1..1", "M:0..n", "M:1..n", ""] or "M:" in dataType:
         return "0"
     dataType = dataType.split("#")[1]
@@ -606,7 +606,15 @@ def _is_primitive_or_enum_class(file: Path) -> bool:
     return True
 
 
-def _create_header_include_file(directory, header_include_filename, header, footer, before, after, blacklist):
+def _create_header_include_file(
+    directory: Path,
+    header_include_filename: str,
+    header: list[str],
+    footer: list[str],
+    before: str,
+    after: str,
+    blacklist: list[str],
+) -> None:
     lines = []
     for file in sorted(directory.glob("*.hpp"), key=lambda f: f.stem):
         basename = file.stem
@@ -621,7 +629,7 @@ def _create_header_include_file(directory, header_include_filename, header, foot
         f.writelines(header)
 
 
-def resolve_headers(path: str, version: str):  # NOSONAR
+def resolve_headers(path: str, version: str) -> None:  # NOSONAR
     class_list_header = [
         "#ifndef CIMCLASSLIST_H\n",
         "#define CIMCLASSLIST_H\n",
