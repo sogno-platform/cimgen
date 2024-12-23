@@ -5,10 +5,6 @@ from importlib.resources import files
 from typing import Callable
 
 
-def location(version: str) -> str:  # NOSONAR
-    return ""
-
-
 # Setup called only once: make output directory, create base class, create profile class, etc.
 # This just makes sure we have somewhere to write the classes.
 # cgmes_profile_details contains index, names and uris for each profile.
@@ -26,8 +22,6 @@ def setup(output_path: str, cgmes_profile_details: list[dict], cim_namespace: st
         shutil.copy(file, dest_file)
 
 
-base = {"base_class": "BaseClass", "class_location": location}
-
 # These are the files that are used to generate the java files.
 # There is a template set for the large number of classes that are floats. They
 # have unit, multiplier and value attributes in the schema, but only appear in
@@ -37,14 +31,17 @@ float_template_files = [{"filename": "java_float.mustache", "ext": ".java"}]
 enum_template_files = [{"filename": "java_enum.mustache", "ext": ".java"}]
 string_template_files = [{"filename": "java_string.mustache", "ext": ".java"}]
 
-
-def get_class_location(class_name: str, class_map: dict, version: str) -> str:  # NOSONAR
-    return ""
-
-
 partials = {
     "label": "{{#lang_pack.label}}{{label}}{{/lang_pack.label}}",
 }
+
+
+def get_base_class() -> str:
+    return "BaseClass"
+
+
+def get_class_location(class_name: str, class_map: dict, version: str) -> str:  # NOSONAR
+    return ""
 
 
 # This is the function that runs the template.

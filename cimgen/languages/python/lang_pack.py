@@ -23,23 +23,9 @@ def setup(output_path: str, cgmes_profile_details: list[dict], cim_namespace: st
     _create_cgmes_profile(output_path, cgmes_profile_details, cim_namespace)
 
 
-def location(version: str) -> str:
-    return "cimpy." + version + ".Base"
-
-
-base = {"base_class": "Base", "class_location": location}
-
 # These are the files that are used to generate the python files.
 template_files = [{"filename": "cimpy_class_template.mustache", "ext": ".py"}]
 profile_template_files = [{"filename": "cimpy_cgmesProfile_template.mustache", "ext": ".py"}]
-
-
-def get_class_location(class_name: str, class_map: dict, version: str) -> str:
-    # Check if the current class has a parent class
-    if class_map[class_name].subclass_of() and class_map[class_name].subclass_of() in class_map:
-        return "cimpy." + version + "." + class_map[class_name].subclass_of()
-    return location(version)
-
 
 partials = {}
 
@@ -68,6 +54,17 @@ def _set_default(text: str, render: Callable[[str], str]) -> str:
     else:
         # everything else should be a float
         return "0.0"
+
+
+def get_base_class() -> str:
+    return "Base"
+
+
+def get_class_location(class_name: str, class_map: dict, version: str) -> str:
+    # Check if the current class has a parent class
+    if class_map[class_name].subclass_of() and class_map[class_name].subclass_of() in class_map:
+        return "cimpy." + version + "." + class_map[class_name].subclass_of()
+    return "cimpy." + version + ".Base"
 
 
 def run_template(output_path: str, class_details: dict) -> None:

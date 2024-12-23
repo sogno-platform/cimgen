@@ -6,10 +6,6 @@ from importlib.resources import files
 from typing import Callable
 
 
-def location(version: str) -> str:  # NOSONAR
-    return ""
-
-
 # Setup called only once: make output directory, create base class, create profile class, etc.
 # This just makes sure we have somewhere to write the classes.
 # cgmes_profile_details contains index, names and uris for each profile.
@@ -26,8 +22,6 @@ def setup(output_path: str, cgmes_profile_details: list[dict], cim_namespace: st
         shutil.copy(file, dest_file)
     _create_cgmes_profile(dest_dir, cgmes_profile_details, cim_namespace)
 
-
-base = {"base_class": "BaseClass", "class_location": location}
 
 # These are the files that are used to generate the header and object files.
 # There is a template set for the large number of classes that are floats. They
@@ -54,11 +48,6 @@ profile_template_files = [
     {"filename": "cpp_cgmesProfile_object_template.mustache", "ext": ".cpp"},
 ]
 
-
-def get_class_location(class_name: str, class_map: dict, version: str) -> str:  # NOSONAR
-    return ""
-
-
 partials = {
     "attribute_decl": "{{#lang_pack.attribute_decl}}{{.}}{{/lang_pack.attribute_decl}}",
     "label_without_keyword": "{{#lang_pack.label_without_keyword}}{{label}}{{/lang_pack.label_without_keyword}}",
@@ -80,6 +69,14 @@ partials = {
     "{{attributes}}{{/lang_pack.create_attribute_class_declarations}}",
     "set_default": "{{#lang_pack.set_default}}{{datatype}}{{/lang_pack.set_default}}",
 }
+
+
+def get_base_class() -> str:
+    return "BaseClass"
+
+
+def get_class_location(class_name: str, class_map: dict, version: str) -> str:  # NOSONAR
+    return ""
 
 
 # This is the function that runs the template.

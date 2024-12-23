@@ -28,12 +28,6 @@ def setup(output_path: str, cgmes_profile_details: list[dict], cim_namespace: st
     _create_cgmes_profile(dest_dir, cgmes_profile_details)
 
 
-def location(version: str) -> str:
-    return "..utils.base"
-
-
-base = {"base_class": "Base", "class_location": location}
-
 # These are the files that are used to generate the python files.
 class_template_file = {"filename": "class_template.mustache", "ext": ".py"}
 constants_template_file = {"filename": "constants_template.mustache", "ext": ".py"}
@@ -41,11 +35,6 @@ profile_template_file = {"filename": "profile_template.mustache", "ext": ".py"}
 enum_template_file = {"filename": "enum_template.mustache", "ext": ".py"}
 primitive_template_file = {"filename": "primitive_template.mustache", "ext": ".py"}
 datatype_template_file = {"filename": "datatype_template.mustache", "ext": ".py"}
-
-
-def get_class_location(class_name: str, class_map: dict, version: str) -> str:  # NOSONAR
-    return f".{class_map[class_name].subclass_of()}"
-
 
 partials = {}
 
@@ -118,6 +107,17 @@ def _set_datatype_attributes(attributes: list[dict]) -> dict:
             import_set.add(attribute["attribute_class"])
     datatype_attributes["is_fixed_imports"] = sorted(import_set)
     return datatype_attributes
+
+
+def get_base_class() -> str:
+    return "Base"
+
+
+def get_class_location(class_name: str, class_map: dict, version: str) -> str:  # NOSONAR
+    # Check if the current class has a parent class
+    if class_map[class_name].subclass_of() and class_map[class_name].subclass_of() in class_map:
+        return f".{class_map[class_name].subclass_of()}"
+    return "..utils.base"
 
 
 def run_template(output_path: str, class_details: dict) -> None:

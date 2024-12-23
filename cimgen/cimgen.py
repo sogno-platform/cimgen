@@ -474,8 +474,7 @@ def _get_rid_of_hash(name: str) -> str:
 def _write_files(class_details: dict, output_path: str, version: str) -> None:
     if not class_details["subclass_of"]:
         # If class has no subclass_of key it is a subclass of the Base class
-        class_details["subclass_of"] = class_details["lang_pack"].base["base_class"]
-        class_details["class_location"] = class_details["lang_pack"].base["class_location"](version)
+        class_details["subclass_of"] = class_details["lang_pack"].get_base_class()
         class_details["super_init"] = False
     else:
         # If class is a subclass a super().__init__() is needed

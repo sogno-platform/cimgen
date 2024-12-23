@@ -4,10 +4,6 @@ import sys
 from importlib.resources import files
 
 
-def location(version: str) -> str:  # NOSONAR
-    return ""
-
-
 # Setup called only once: make output directory, create base class, create profile class, etc.
 # This function makes sure we have somewhere to write the classes.
 # cgmes_profile_details contains index, names and uris for each profile.
@@ -22,19 +18,12 @@ def setup(output_path: str, cgmes_profile_details: list[dict], cim_namespace: st
     _create_cgmes_profile(output_path, cgmes_profile_details, cim_namespace)
 
 
-base = {"base_class": "BaseClass", "class_location": location}
-
 # These are the files that are used to generate the javascript files.
 template_files = [{"filename": "handlebars_template.mustache", "ext": ".js"}]
 base_template_files = [{"filename": "handlebars_baseclass_template.mustache", "ext": ".js"}]
 profile_template_files = [{"filename": "handlebars_cgmesProfile_template.mustache", "ext": ".js"}]
 
 partials = {}
-
-
-def get_class_location(class_name: str, class_map: dict, version: str) -> str:  # NOSONAR
-    return ""
-
 
 aggregateRenderer: dict[str, str] = {
     "renderFloat": "static renderAsAttribute(data) {\n\
@@ -97,6 +86,14 @@ def _select_primitive_render_function(class_details: dict) -> str:
         # TODO: Implementation Required!
         render = aggregateRenderer["renderString"]
     return render
+
+
+def get_base_class() -> str:
+    return "BaseClass"
+
+
+def get_class_location(class_name: str, class_map: dict, version: str) -> str:  # NOSONAR
+    return ""
 
 
 # This is the function that runs the template.
