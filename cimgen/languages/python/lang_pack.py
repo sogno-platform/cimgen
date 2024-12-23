@@ -24,8 +24,8 @@ def setup(output_path: str, cgmes_profile_details: list[dict], cim_namespace: st
 
 
 # These are the files that are used to generate the python files.
-template_files = [{"filename": "cimpy_class_template.mustache", "ext": ".py"}]
-profile_template_files = [{"filename": "cimpy_cgmesProfile_template.mustache", "ext": ".py"}]
+class_template_file = {"filename": "cimpy_class_template.mustache", "ext": ".py"}
+profile_template_file = {"filename": "cimpy_cgmesProfile_template.mustache", "ext": ".py"}
 
 partials = {}
 
@@ -70,9 +70,8 @@ def get_class_location(class_name: str, class_map: dict, version: str) -> str:
 def run_template(output_path: str, class_details: dict) -> None:
     if class_details["class_name"] == "String":
         return
-    for template_info in template_files:
-        class_file = os.path.join(output_path, class_details["class_name"] + template_info["ext"])
-        _write_templated_file(class_file, class_details, template_info["filename"])
+    class_file = os.path.join(output_path, class_details["class_name"] + class_template_file["ext"])
+    _write_templated_file(class_file, class_details, class_template_file["filename"])
 
 
 def _write_templated_file(class_file: str, class_details: dict, template_filename: str) -> None:
@@ -106,13 +105,12 @@ def _create_base(path: str) -> None:
 
 
 def _create_cgmes_profile(output_path: str, profile_details: list[dict], cim_namespace: str) -> None:
-    for template_info in profile_template_files:
-        class_file = os.path.join(output_path, "CGMESProfile" + template_info["ext"])
-        class_details = {
-            "profiles": profile_details,
-            "cim_namespace": cim_namespace,
-        }
-        _write_templated_file(class_file, class_details, template_info["filename"])
+    class_file = os.path.join(output_path, "CGMESProfile" + profile_template_file["ext"])
+    class_details = {
+        "profiles": profile_details,
+        "cim_namespace": cim_namespace,
+    }
+    _write_templated_file(class_file, class_details, profile_template_file["filename"])
 
 
 class_blacklist = ["CGMESProfile"]

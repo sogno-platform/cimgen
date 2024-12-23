@@ -19,9 +19,9 @@ def setup(output_path: str, cgmes_profile_details: list[dict], cim_namespace: st
 
 
 # These are the files that are used to generate the javascript files.
-template_files = [{"filename": "handlebars_template.mustache", "ext": ".js"}]
-base_template_files = [{"filename": "handlebars_baseclass_template.mustache", "ext": ".js"}]
-profile_template_files = [{"filename": "handlebars_cgmesProfile_template.mustache", "ext": ".js"}]
+template_file = {"filename": "handlebars_template.mustache", "ext": ".js"}
+base_template_file = {"filename": "handlebars_baseclass_template.mustache", "ext": ".js"}
+profile_template_file = {"filename": "handlebars_cgmesProfile_template.mustache", "ext": ".js"}
 
 partials = {}
 
@@ -118,9 +118,8 @@ def run_template(output_path: str, class_details: dict) -> None:
         sys.exit(1)
     class_details["renderAttribute"] = renderAttribute
 
-    for template_info in template_files:
-        class_file = os.path.join(output_path, class_details["class_name"] + template_info["ext"])
-        _write_templated_file(class_file, class_details, template_info["filename"])
+    class_file = os.path.join(output_path, class_details["class_name"] + template_file["ext"])
+    _write_templated_file(class_file, class_details, template_file["filename"])
 
 
 def _write_templated_file(class_file: str, class_details: dict, template_filename: str) -> None:
@@ -138,19 +137,17 @@ def _write_templated_file(class_file: str, class_details: dict, template_filenam
 
 # creates the Base class file, all classes inherit from this class
 def _create_base(output_path: str) -> None:
-    for template_info in base_template_files:
-        class_file = os.path.join(output_path, "BaseClass" + template_info["ext"])
-        _write_templated_file(class_file, {}, template_info["filename"])
+    class_file = os.path.join(output_path, "BaseClass" + base_template_file["ext"])
+    _write_templated_file(class_file, {}, base_template_file["filename"])
 
 
 def _create_cgmes_profile(output_path: str, profile_details: list[dict], cim_namespace: str) -> None:
-    for template_info in profile_template_files:
-        class_file = os.path.join(output_path, "CGMESProfile" + template_info["ext"])
-        class_details = {
-            "profiles": profile_details,
-            "cim_namespace": cim_namespace,
-        }
-        _write_templated_file(class_file, class_details, template_info["filename"])
+    class_file = os.path.join(output_path, "CGMESProfile" + profile_template_file["ext"])
+    class_details = {
+        "profiles": profile_details,
+        "cim_namespace": cim_namespace,
+    }
+    _write_templated_file(class_file, class_details, profile_template_file["filename"])
 
 
 def _get_class_type(class_details: dict) -> str:

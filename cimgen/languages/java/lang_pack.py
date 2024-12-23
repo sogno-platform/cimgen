@@ -26,10 +26,10 @@ def setup(output_path: str, cgmes_profile_details: list[dict], cim_namespace: st
 # There is a template set for the large number of classes that are floats. They
 # have unit, multiplier and value attributes in the schema, but only appear in
 # the file as a float string.
-template_files = [{"filename": "java_class.mustache", "ext": ".java"}]
-float_template_files = [{"filename": "java_float.mustache", "ext": ".java"}]
-enum_template_files = [{"filename": "java_enum.mustache", "ext": ".java"}]
-string_template_files = [{"filename": "java_string.mustache", "ext": ".java"}]
+class_template_file = {"filename": "java_class.mustache", "ext": ".java"}
+float_template_file = {"filename": "java_float.mustache", "ext": ".java"}
+enum_template_file = {"filename": "java_enum.mustache", "ext": ".java"}
+string_template_file = {"filename": "java_string.mustache", "ext": ".java"}
 
 partials = {
     "label": "{{#lang_pack.label}}{{label}}{{/lang_pack.label}}",
@@ -48,22 +48,21 @@ def get_class_location(class_name: str, class_map: dict, version: str) -> str:  
 def run_template(output_path: str, class_details: dict) -> None:
 
     if class_details["is_a_datatype_class"] or class_details["class_name"] in ("Float", "Decimal"):
-        templates = float_template_files
+        template = float_template_file
     elif class_details["is_an_enum_class"]:
-        templates = enum_template_files
+        template = enum_template_file
     elif class_details["is_a_primitive_class"]:
-        templates = string_template_files
+        template = string_template_file
     else:
-        templates = template_files
+        template = class_template_file
 
     if class_details["class_name"] in ("Integer", "Boolean"):
         # These classes are defined already
         # We have to implement operators for them
         return
 
-    for template_info in templates:
-        class_file = Path(output_path) / (class_details["class_name"] + template_info["ext"])
-        _write_templated_file(class_file, class_details, template_info["filename"])
+    class_file = Path(output_path) / (class_details["class_name"] + template["ext"])
+    _write_templated_file(class_file, class_details, template["filename"])
 
 
 def _write_templated_file(class_file: Path, class_details: dict, template_filename: str) -> None:
