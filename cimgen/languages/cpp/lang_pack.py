@@ -60,13 +60,25 @@ def get_class_location(class_name: str, class_map: dict, version: str) -> str:  
 
 
 partials = {
-    "attribute": "{{#langPack.attribute_decl}}{{.}}{{/langPack.attribute_decl}}",
-    "label": "{{#langPack.label}}{{label}}{{/langPack.label}}",
-    "insert_assign": "{{#langPack.insert_assign_fn}}{{.}}{{/langPack.insert_assign_fn}}",
-    "insert_class_assign": "{{#langPack.insert_class_assign_fn}}{{.}}{{/langPack.insert_class_assign_fn}}",
-    "insert_get": "{{#langPack.insert_get_fn}}{{.}}{{/langPack.insert_get_fn}}",
-    "insert_class_get": "{{#langPack.insert_class_get_fn}}{{.}}{{/langPack.insert_class_get_fn}}",
-    "insert_enum_get": "{{#langPack.insert_enum_get_fn}}{{.}}{{/langPack.insert_enum_get_fn}}",
+    "attribute_decl": "{{#lang_pack.attribute_decl}}{{.}}{{/lang_pack.attribute_decl}}",
+    "label_without_keyword": "{{#lang_pack.label_without_keyword}}{{label}}{{/lang_pack.label_without_keyword}}",
+    "insert_assign": "{{#lang_pack.insert_assign_fn}}{{.}}{{/lang_pack.insert_assign_fn}}",
+    "insert_class_assign": "{{#lang_pack.insert_class_assign_fn}}{{.}}{{/lang_pack.insert_class_assign_fn}}",
+    "insert_get": "{{#lang_pack.insert_get_fn}}{{.}}{{/lang_pack.insert_get_fn}}",
+    "insert_class_get": "{{#lang_pack.insert_class_get_fn}}{{.}}{{/lang_pack.insert_class_get_fn}}",
+    "insert_enum_get": "{{#lang_pack.insert_enum_get_fn}}{{.}}{{/lang_pack.insert_enum_get_fn}}",
+    "create_nullptr_assigns": "{{#lang_pack.create_nullptr_assigns}}"
+    " {{attributes}} {{/lang_pack.create_nullptr_assigns}} {};",
+    "create_assign": "{{#lang_pack.create_assign}}{{.}}{{/lang_pack.create_assign}}",
+    "create_class_assign": "{{#lang_pack.create_class_assign}}{{.}}{{/lang_pack.create_class_assign}}",
+    "create_get": "{{#lang_pack.create_get}}{{.}}{{/lang_pack.create_get}}",
+    "create_class_get": "{{#lang_pack.create_class_get}}{{.}}{{/lang_pack.create_class_get}}",
+    "create_enum_get": "{{#lang_pack.create_enum_get}}{{.}}{{/lang_pack.create_enum_get}}",
+    "create_attribute_includes": "{{#lang_pack.create_attribute_includes}}"
+    "{{attributes}}{{/lang_pack.create_attribute_includes}}",
+    "create_attribute_class_declarations": "{{#lang_pack.create_attribute_class_declarations}}"
+    "{{attributes}}{{/lang_pack.create_attribute_class_declarations}}",
+    "set_default": "{{#lang_pack.set_default}}{{dataType}}{{/lang_pack.set_default}}",
 }
 
 
@@ -117,12 +129,15 @@ def _create_cgmes_profile(output_path: Path, profile_details: list[dict], cim_na
 
 # This function just allows us to avoid declaring a variable called 'switch',
 # which is in the definition of the ExcBBC class.
-def label(text: str, render: Callable[[str], str]) -> str:
-    result = render(text)
-    if result == "switch":
+def label_without_keyword(text: str, render: Callable[[str], str]) -> str:
+    label = render(text)
+    return _get_label_without_keyword(label)
+
+
+def _get_label_without_keyword(label: str) -> str:
+    if label == "switch":
         return "_switch"
-    else:
-        return result
+    return label
 
 
 # These insert_ functions are used to generate the entries in the dynamic_switch
@@ -332,9 +347,6 @@ def create_assign(text: str, render: Callable[[str], str]) -> str:
     assign = ""
     if not _attribute_is_primitive_or_datatype_or_enum(attribute_json):
         return ""
-    label_without_keyword = attribute_json["label"]
-    if label_without_keyword == "switch":
-        label_without_keyword = "_switch"
 
     if not _attribute_is_primitive_string(attribute_json):
         assign = (
@@ -350,11 +362,12 @@ bool assign_CLASS_LABEL(std::stringstream &buffer, BaseClass* BaseClass_ptr1)
 			return true;
 	}
 	return false;
-}""".replace(  # noqa: E101,W191
+}
+""".replace(  # noqa: E101,W191
                 "CLASS", attribute_json["domain"]
             )
             .replace("LABEL", attribute_json["label"])
-            .replace("LBL_WO_KEYWORD", label_without_keyword)
+            .replace("LBL_WO_KEYWORD", _get_label_without_keyword(attribute_json["label"]))
         )
     else:  # _attribute_is_primitive_string
         assign = """
@@ -369,7 +382,8 @@ bool assign_CLASS_LABEL(std::stringstream &buffer, BaseClass* BaseClass_ptr1)
 			return true;
 	}
 	return false;
-}""".replace(  # noqa: E101,W191
+}
+""".replace(  # noqa: E101,W191
             "CLASS", attribute_json["domain"]
         ).replace(
             "LABEL", attribute_json["label"]
@@ -395,7 +409,8 @@ bool get_OBJECT_CLASS_LABEL(const BaseClass* BaseClass_ptr1, std::list<const Bas
 		return !BaseClass_list.empty();
 	}
 	return false;
-}""".replace(  # noqa: E101,W191
+}
+""".replace(  # noqa: E101,W191
             "OBJECT_CLASS", attribute_json["domain"]
         ).replace(
             "LABEL", attribute_json["label"]
@@ -413,7 +428,8 @@ bool get_OBJECT_CLASS_LABEL(const BaseClass* BaseClass_ptr1, std::list<const Bas
 		}
 	}
 	return false;
-}""".replace(  # noqa: E101,W191
+}
+""".replace(  # noqa: E101,W191
             "OBJECT_CLASS", attribute_json["domain"]
         ).replace(
             "LABEL", attribute_json["label"]
@@ -428,9 +444,6 @@ def create_get(text: str, render: Callable[[str], str]) -> str:
     get = ""
     if not _attribute_is_primitive_or_datatype(attribute_json):
         return ""
-    label_without_keyword = attribute_json["label"]
-    if label_without_keyword == "switch":
-        label_without_keyword = "_switch"
 
     get = (
         """
@@ -446,11 +459,12 @@ bool get_CLASS_LABEL(const BaseClass* BaseClass_ptr1, std::stringstream& buffer)
 	}
 	buffer.setstate(std::ios::failbit);
 	return false;
-}""".replace(  # noqa: E101,W191
+}
+""".replace(  # noqa: E101,W191
             "CLASS", attribute_json["domain"]
         )
         .replace("LABEL", attribute_json["label"])
-        .replace("LBL_WO_KEYWORD", label_without_keyword)
+        .replace("LBL_WO_KEYWORD", _get_label_without_keyword(attribute_json["label"]))
     )
 
     return get
@@ -475,7 +489,8 @@ bool get_CLASS_LABEL(const BaseClass* BaseClass_ptr1, std::stringstream& buffer)
 	}
 	buffer.setstate(std::ios::failbit);
 	return false;
-}""".replace(  # noqa: E101,W191
+}
+""".replace(  # noqa: E101,W191
         "CLASS", attribute_json["domain"]
     ).replace(
         "LABEL", attribute_json["label"]
@@ -500,7 +515,7 @@ def _attribute_decl(attribute: dict) -> str:
         return "CIMPP::" + _class + "*"
 
 
-def _create_attribute_includes(text: str, render: Callable[[str], str]) -> str:
+def create_attribute_includes(text: str, render: Callable[[str], str]) -> str:
     unique = {}
     include_string = ""
     inputText = render(text)
@@ -516,7 +531,7 @@ def _create_attribute_includes(text: str, render: Callable[[str], str]) -> str:
     return include_string
 
 
-def _create_attribute_class_declarations(text: str, render: Callable[[str], str]) -> str:
+def create_attribute_class_declarations(text: str, render: Callable[[str], str]) -> str:
     unique = {}
     include_string = ""
     inputText = render(text)
@@ -532,12 +547,12 @@ def _create_attribute_class_declarations(text: str, render: Callable[[str], str]
     return include_string
 
 
-def _set_default(text: str, render: Callable[[str], str]) -> str:
+def set_default(text: str, render: Callable[[str], str]) -> str:
     result = render(text)
-    return set_default(result)
+    return _set_default(result)
 
 
-def set_default(dataType: str) -> str:
+def _set_default(dataType: str) -> str:
     # the field {{dataType}} either contains the multiplicity of an attribute if it is a reference or otherwise the
     # datatype of the attribute. If no datatype is set and there is also no multiplicity entry for an attribute, the
     # default value is set to None. The multiplicity is set for all attributes, but the datatype is only set for basic

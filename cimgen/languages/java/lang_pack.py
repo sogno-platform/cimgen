@@ -43,7 +43,7 @@ def get_class_location(class_name: str, class_map: dict, version: str) -> str:  
 
 
 partials = {
-    "label": "{{#langPack.label}}{{label}}{{/langPack.label}}",
+    "label": "{{#lang_pack.label}}{{label}}{{/lang_pack.label}}",
 }
 
 

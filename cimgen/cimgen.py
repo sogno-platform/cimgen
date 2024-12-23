@@ -418,7 +418,7 @@ def _write_all_files(
             "is_an_enum_class": elem_dict[class_name].is_an_enum_class(),
             "is_a_primitive_class": elem_dict[class_name].is_a_primitive_class(),
             "is_a_datatype_class": elem_dict[class_name].is_a_datatype_class(),
-            "langPack": lang_pack,
+            "lang_pack": lang_pack,
             "sub_class_of": elem_dict[class_name].superClass(),
             "sub_classes": elem_dict[class_name].subClasses(),
             "recommended_class_profile": recommended_class_profiles[class_name],
@@ -471,8 +471,8 @@ def _get_rid_of_hash(name: str) -> str:
 def _write_files(class_details: dict, output_path: str, version: str) -> None:
     if not class_details["sub_class_of"]:
         # If class has no subClassOf key it is a subclass of the Base class
-        class_details["sub_class_of"] = class_details["langPack"].base["base_class"]
-        class_details["class_location"] = class_details["langPack"].base["class_location"](version)
+        class_details["sub_class_of"] = class_details["lang_pack"].base["base_class"]
+        class_details["class_location"] = class_details["lang_pack"].base["class_location"](version)
         class_details["super_init"] = False
     else:
         # If class is a subclass a super().__init__() is needed
@@ -487,7 +487,7 @@ def _write_files(class_details: dict, output_path: str, version: str) -> None:
         ):
             class_details["attributes"][i]["dataType"] = class_details["attributes"][i]["multiplicity"]
 
-    class_details["langPack"].run_template(output_path, class_details)
+    class_details["lang_pack"].run_template(output_path, class_details)
 
 
 # If multiple CGMES schema files for one profile are read, e.g. Equipment Core and Equipment Core Short Circuit
