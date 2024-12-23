@@ -101,9 +101,7 @@ def run_template(output_path: str, class_details: dict) -> None:
     if class_details["class_name"] == "String":
         return
 
-    for index, attribute in enumerate(class_details["attributes"]):
-        if not attribute["is_used"]:
-            del class_details["attributes"][index]
+    class_details["attributes"] = list(filter(lambda attr: attr["is_used"], class_details["attributes"]))
 
     renderAttribute = ""
     class_type = _get_class_type(class_details)
