@@ -78,7 +78,7 @@ partials = {
     "{{attributes}}{{/lang_pack.create_attribute_includes}}",
     "create_attribute_class_declarations": "{{#lang_pack.create_attribute_class_declarations}}"
     "{{attributes}}{{/lang_pack.create_attribute_class_declarations}}",
-    "set_default": "{{#lang_pack.set_default}}{{dataType}}{{/lang_pack.set_default}}",
+    "set_default": "{{#lang_pack.set_default}}{{datatype}}{{/lang_pack.set_default}}",
 }
 
 
@@ -243,8 +243,8 @@ def create_class_assign(text: str, render: Callable[[str], str]) -> str:
     if _attribute_is_primitive_or_datatype_or_enum(attribute_json):
         return ""
     if attribute_json["is_list_attribute"]:
-        if "inverseRole" in attribute_json:
-            inverse = attribute_json["inverseRole"].split(".")
+        if "inverse_role" in attribute_json:
+            inverse = attribute_json["inverse_role"].split(".")
             assign = (
                 """
 bool assign_INVERSEC_INVERSEL(BaseClass*, BaseClass*);
@@ -290,8 +290,8 @@ bool assign_OBJECT_CLASS_LABEL(BaseClass* BaseClass_ptr1, BaseClass* BaseClass_p
                 .replace("ATTRIBUTE_CLASS", attribute_class)
                 .replace("LABEL", attribute_json["label"])
             )
-    elif "inverseRole" in attribute_json:
-        inverse = attribute_json["inverseRole"].split(".")
+    elif "inverse_role" in attribute_json:
+        inverse = attribute_json["inverse_role"].split(".")
         assign = (
             """
 bool assign_INVERSEC_INVERSEL(BaseClass*, BaseClass*);
@@ -518,11 +518,11 @@ def _attribute_decl(attribute: dict) -> str:
 def create_attribute_includes(text: str, render: Callable[[str], str]) -> str:
     unique = {}
     include_string = ""
-    inputText = render(text)
-    jsonString = inputText.replace("'", '"')
-    jsonStringNoHtmlEsc = jsonString.replace("&quot;", '"')
-    if jsonStringNoHtmlEsc is not None and jsonStringNoHtmlEsc != "":
-        attributes = json.loads(jsonStringNoHtmlEsc)
+    input_text = render(text)
+    json_string = input_text.replace("'", '"')
+    json_string_no_html_esc = json_string.replace("&quot;", '"')
+    if json_string_no_html_esc:
+        attributes = json.loads(json_string_no_html_esc)
         for attribute in attributes:
             if _attribute_is_primitive_or_datatype_or_enum(attribute):
                 unique[attribute["attribute_class"]] = True
@@ -534,11 +534,11 @@ def create_attribute_includes(text: str, render: Callable[[str], str]) -> str:
 def create_attribute_class_declarations(text: str, render: Callable[[str], str]) -> str:
     unique = {}
     include_string = ""
-    inputText = render(text)
-    jsonString = inputText.replace("'", '"')
-    jsonStringNoHtmlEsc = jsonString.replace("&quot;", '"')
-    if jsonStringNoHtmlEsc is not None and jsonStringNoHtmlEsc != "":
-        attributes = json.loads(jsonStringNoHtmlEsc)
+    input_text = render(text)
+    json_string = input_text.replace("'", '"')
+    json_string_no_html_esc = json_string.replace("&quot;", '"')
+    if json_string_no_html_esc:
+        attributes = json.loads(json_string_no_html_esc)
         for attribute in attributes:
             if attribute["is_class_attribute"] or attribute["is_list_attribute"]:
                 unique[attribute["attribute_class"]] = True
@@ -552,22 +552,22 @@ def set_default(text: str, render: Callable[[str], str]) -> str:
     return _set_default(result)
 
 
-def _set_default(dataType: str) -> str:
-    # the field {{dataType}} either contains the multiplicity of an attribute if it is a reference or otherwise the
+def _set_default(datatype: str) -> str:
+    # the field {{datatype}} either contains the multiplicity of an attribute if it is a reference or otherwise the
     # datatype of the attribute. If no datatype is set and there is also no multiplicity entry for an attribute, the
     # default value is set to None. The multiplicity is set for all attributes, but the datatype is only set for basic
     # data types. If the data type entry for an attribute is missing, the attribute contains a reference and therefore
     # the default value is either None or [] depending on the multiplicity. See also _write_files in cimgen.py.
-    if dataType in ["M:1", "M:0..1", "M:1..1", "M:0..n", "M:1..n", ""] or "M:" in dataType:
+    if datatype in ["M:1", "M:0..1", "M:1..1", "M:0..n", "M:1..n", ""] or "M:" in datatype:
         return "0"
-    dataType = dataType.split("#")[1]
-    if dataType in ["integer", "Integer"]:
+    datatype = datatype.split("#")[1]
+    if datatype in ["integer", "Integer"]:
         return "0"
-    elif dataType in ["String", "DateTime", "Date"]:
+    elif datatype in ["String", "DateTime", "Date"]:
         return "''"
-    elif dataType == "Boolean":
+    elif datatype == "Boolean":
         return "false"
-    elif dataType == "Float":
+    elif datatype == "Float":
         return "0.0"
     else:
         return "nullptr"

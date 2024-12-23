@@ -1,5 +1,5 @@
 import templates from "../../templates/index.js"
-import {{sub_class_of}} from "./{{sub_class_of}}.js"
+import {{subclass_of}} from "./{{subclass_of}}.js"
 import common from "../../src/common.js"
 import CGMESProfile from "./CGMESProfile.js"
 
@@ -17,10 +17,10 @@ const possibleValues = [
 ]
 {{/is_an_enum_class}}
 
-class {{class_name}} extends {{sub_class_of}} {
+class {{class_name}} extends {{subclass_of}} {
 
     static attributeHTML(object, cimmenu, classType="{{class_name}}") {
-        let attributeEntries = {{sub_class_of}}.attributeHTML(object, cimmenu, classType);
+        let attributeEntries = {{subclass_of}}.attributeHTML(object, cimmenu, classType);
         {{#attributes}}
         if ('cim:{{about}}' in object) {
             attributeEntries['filledEntries']['cim:{{about}}'] =
@@ -62,7 +62,7 @@ class {{class_name}} extends {{sub_class_of}} {
         if ( attributes.indexOf(attribute) >= 0 ) {
             return true;
         }
-        else if ( {{sub_class_of}}.isMemberAttribute(attribute) ) {
+        else if ( {{subclass_of}}.isMemberAttribute(attribute) ) {
             return true;
         }
         else {
@@ -87,9 +87,9 @@ class {{class_name}} extends {{sub_class_of}} {
     {{{renderAttribute}}}
     static subClassList() {
         let subClasses = [
-        {{#sub_classes}}
+        {{#subclasses}}
         "{{.}}",
-        {{/sub_classes}}
+        {{/subclasses}}
         ];
         return subClasses;
     }

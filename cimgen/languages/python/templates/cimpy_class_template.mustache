@@ -1,13 +1,13 @@
-from .{{sub_class_of}} import {{sub_class_of}}
+from .{{subclass_of}} import {{subclass_of}}
 from .CGMESProfile import Profile
 
 
-class {{class_name}}({{sub_class_of}}):
+class {{class_name}}({{subclass_of}}):
     """
     {{{class_comment}}}
 
 {{#attributes}}
-    :{{label}}: {{{comment}}} Default: {{#setDefault}}{{dataType}}{{/setDefault}}
+    :{{label}}: {{{comment}}} Default: {{#set_default}}{{datatype}}{{/set_default}}
 {{/attributes}}
     """
 
@@ -23,10 +23,10 @@ class {{class_name}}({{sub_class_of}}):
     recommendedClassProfile = Profile.{{recommended_class_profile}}.value
 
 {{#super_init}}
-    __doc__ += "\nDocumentation of parent class {{sub_class_of}}:\n" + {{sub_class_of}}.__doc__
+    __doc__ += "\nDocumentation of parent class {{subclass_of}}:\n" + {{subclass_of}}.__doc__
 {{/super_init}}
 
-    def __init__(self{{#attributes}}, {{label}} = {{#setDefault}}{{dataType}}{{/setDefault}}{{/attributes}}{{#super_init}}, *args, **kw_args{{/super_init}}):
+    def __init__(self{{#attributes}}, {{label}} = {{#set_default}}{{datatype}}{{/set_default}}{{/attributes}}{{#super_init}}, *args, **kw_args{{/super_init}}):
 {{#super_init}}
         super().__init__(*args, **kw_args)
 {{/super_init}}

@@ -17,18 +17,18 @@ class RDFSEntry:
         self.jsonDefinition = jsonObject
         return
 
-    def asJson(self) -> dict[str, str]:
+    def as_json(self) -> dict[str, str]:
         jsonObject = {}
         if self.about():
             jsonObject["about"] = self.about()
         if self.comment():
             jsonObject["comment"] = self.comment()
-        if self.dataType():
-            jsonObject["dataType"] = self.dataType()
+        if self.datatype():
+            jsonObject["datatype"] = self.datatype()
         if self.domain():
             jsonObject["domain"] = self.domain()
-        if self.fixed():
-            jsonObject["isFixed"] = self.fixed()
+        if self.is_fixed():
+            jsonObject["is_fixed"] = self.is_fixed()
         if self.label():
             jsonObject["label"] = self.label()
         if self.multiplicity():
@@ -39,10 +39,10 @@ class RDFSEntry:
             jsonObject["stereotype"] = self.stereotype()
         if self.type():
             jsonObject["type"] = self.type()
-        if self.subClassOf():
-            jsonObject["subClassOf"] = self.subClassOf()
-        if self.inverseRole():
-            jsonObject["inverseRole"] = self.inverseRole()
+        if self.subclass_of():
+            jsonObject["subclass_of"] = self.subclass_of()
+        if self.inverse_role():
+            jsonObject["inverse_role"] = self.inverse_role()
         jsonObject["is_used"] = _get_bool_string(self.is_used())
         return jsonObject
 
@@ -75,7 +75,7 @@ class RDFSEntry:
         else:
             return ""
 
-    def dataType(self) -> str:
+    def datatype(self) -> str:
         if "cims:dataType" in self.jsonDefinition:
             return RDFSEntry._extract_string(self.jsonDefinition["cims:dataType"])
         else:
@@ -87,7 +87,7 @@ class RDFSEntry:
         else:
             return ""
 
-    def fixed(self) -> str:
+    def is_fixed(self) -> str:
         if "cims:isFixed" in self.jsonDefinition:
             return RDFSEntry._extract_text(self.jsonDefinition["cims:isFixed"])
         else:
@@ -99,7 +99,7 @@ class RDFSEntry:
         else:
             return ""
 
-    def inverseRole(self) -> str:
+    def inverse_role(self) -> str:
         if "cims:inverseRoleName" in self.jsonDefinition:
             return _get_rid_of_hash(RDFSEntry._extract_string(self.jsonDefinition["cims:inverseRoleName"]))
         else:
@@ -141,7 +141,7 @@ class RDFSEntry:
         else:
             return ""
 
-    def subClassOf(self) -> str:
+    def subclass_of(self) -> str:
         if "rdfs:subClassOf" in self.jsonDefinition:
             return _get_rid_of_hash(RDFSEntry._extract_string(self.jsonDefinition["rdfs:subClassOf"]))
         else:
@@ -185,15 +185,15 @@ class RDFSEntry:
 
 
 class CIMComponentDefinition:
-    def __init__(self, rdfsEntry: RDFSEntry):
-        self.about: str = rdfsEntry.about()
+    def __init__(self, rdfs_entry: RDFSEntry):
+        self.about: str = rdfs_entry.about()
         self.attribute_list: list[dict] = []
-        self.comment: str = rdfsEntry.comment()
+        self.comment: str = rdfs_entry.comment()
         self.enum_instance_list: list[dict] = []
         self.origin_list: list[dict] = []
-        self.super: str = rdfsEntry.subClassOf()
-        self.subclasses: list[str] = []
-        self.stereotype: str = rdfsEntry.stereotype()
+        self.superclass: str = rdfs_entry.subclass_of()
+        self.subclass_list: list[str] = []
+        self.stereotype: str = rdfs_entry.stereotype()
 
     def attributes(self) -> list[dict]:
         return self.attribute_list
@@ -214,20 +214,23 @@ class CIMComponentDefinition:
     def origins(self) -> list[dict]:
         return self.origin_list
 
-    def addOrigin(self, origin: dict) -> None:
+    def add_origin(self, origin: dict) -> None:
         self.origin_list.append(origin)
 
-    def superClass(self) -> str:
-        return self.super
+    def subclass_of(self) -> str:
+        return self.superclass
 
-    def addSubClass(self, name: str) -> None:
-        self.subclasses.append(name)
+    def set_subclass_of(self, name: str) -> None:
+        self.superclass = name
 
-    def subClasses(self) -> list[str]:
-        return self.subclasses
+    def add_subclass(self, name: str) -> None:
+        self.subclass_list.append(name)
 
-    def setSubClasses(self, classes: list[str]) -> None:
-        self.subclasses = classes
+    def subclasses(self) -> list[str]:
+        return self.subclass_list
+
+    def set_subclasses(self, classes: list[str]) -> None:
+        self.subclass_list = classes
 
     def is_a_primitive_class(self) -> bool:
         return self.stereotype == "Primitive"
@@ -236,7 +239,7 @@ class CIMComponentDefinition:
         return self.stereotype == "CIMDatatype"
 
 
-def wrap_and_clean(txt: str, width: int = 120, initial_indent="", subsequent_indent="    ") -> str:
+def _wrap_and_clean(txt: str, width: int = 120, initial_indent="", subsequent_indent="    ") -> str:
     """
     Used for comments: make them fit within <width> character, including indentation.
     """
@@ -349,30 +352,30 @@ def _parse_rdf(input_dic: dict, version: str) -> dict[str, dict[str, CIMComponen
 
     # Iterate over list elements
     for list_elem in descriptions:
-        rdfsEntry = RDFSEntry(list_elem)
-        object_dic = rdfsEntry.asJson()
-        rdfs_entry_types = _rdfs_entry_types(rdfsEntry, version)
+        rdfs_entry = RDFSEntry(list_elem)
+        object_dic = rdfs_entry.as_json()
+        rdfs_entry_types = _rdfs_entry_types(rdfs_entry, version)
 
         if "class" in rdfs_entry_types:
-            _add_class(classes_map, rdfsEntry)
+            _add_class(classes_map, rdfs_entry)
         if "property" in rdfs_entry_types:
             attributes.append(object_dic)
         if "rest_non_class_category" in rdfs_entry_types:
             enum_instances.append(object_dic)
         if not profile_name:
             if "profile_name_v2_4" in rdfs_entry_types:
-                profile_name = rdfsEntry.about()
+                profile_name = rdfs_entry.about()
             if "profile_name_v3" in rdfs_entry_types:
-                profile_name = rdfsEntry.label()
+                profile_name = rdfs_entry.label()
         if not short_profile_name:
-            if "short_profile_name_v2_4" in rdfs_entry_types and rdfsEntry.fixed():
-                short_profile_name = rdfsEntry.fixed()
+            if "short_profile_name_v2_4" in rdfs_entry_types and rdfs_entry.is_fixed():
+                short_profile_name = rdfs_entry.is_fixed()
             if "short_profile_name_v3" in rdfs_entry_types:
-                short_profile_name = rdfsEntry.keyword()
-        if "profile_iri_v2_4" in rdfs_entry_types and rdfsEntry.fixed():
-            profile_uri_list.append(rdfsEntry.fixed())
+                short_profile_name = rdfs_entry.keyword()
+        if "profile_iri_v2_4" in rdfs_entry_types and rdfs_entry.is_fixed():
+            profile_uri_list.append(rdfs_entry.is_fixed())
         if "profile_iri_v3" in rdfs_entry_types:
-            profile_uri_list.append(rdfsEntry.version_iri())
+            profile_uri_list.append(rdfs_entry.version_iri())
 
     _add_profile_to_packages(profile_name, short_profile_name, profile_uri_list)
 
@@ -419,15 +422,15 @@ def _write_all_files(
             "is_a_primitive_class": elem_dict[class_name].is_a_primitive_class(),
             "is_a_datatype_class": elem_dict[class_name].is_a_datatype_class(),
             "lang_pack": lang_pack,
-            "sub_class_of": elem_dict[class_name].superClass(),
-            "sub_classes": elem_dict[class_name].subClasses(),
+            "subclass_of": elem_dict[class_name].subclass_of(),
+            "subclasses": elem_dict[class_name].subclasses(),
             "recommended_class_profile": recommended_class_profiles[class_name],
         }
 
         # extract comments
         if elem_dict[class_name].comment:
             class_details["class_comment"] = elem_dict[class_name].comment
-            class_details["wrapped_class_comment"] = wrap_and_clean(
+            class_details["wrapped_class_comment"] = _wrap_and_clean(
                 elem_dict[class_name].comment,
                 width=116,
                 initial_indent="",
@@ -438,7 +441,7 @@ def _write_all_files(
             if "comment" in attribute:
                 attribute["comment"] = attribute["comment"].replace('"', "`")
                 attribute["comment"] = attribute["comment"].replace("'", "`")
-                attribute["wrapped_comment"] = wrap_and_clean(
+                attribute["wrapped_comment"] = _wrap_and_clean(
                     attribute["comment"],
                     width=114 - len(attribute["label"]),
                     initial_indent="",
@@ -469,23 +472,23 @@ def _get_rid_of_hash(name: str) -> str:
 
 
 def _write_files(class_details: dict, output_path: str, version: str) -> None:
-    if not class_details["sub_class_of"]:
-        # If class has no subClassOf key it is a subclass of the Base class
-        class_details["sub_class_of"] = class_details["lang_pack"].base["base_class"]
+    if not class_details["subclass_of"]:
+        # If class has no subclass_of key it is a subclass of the Base class
+        class_details["subclass_of"] = class_details["lang_pack"].base["base_class"]
         class_details["class_location"] = class_details["lang_pack"].base["class_location"](version)
         class_details["super_init"] = False
     else:
         # If class is a subclass a super().__init__() is needed
         class_details["super_init"] = True
 
-    # The entry dataType for an attribute is only set for basic data types. If the entry is not set here, the attribute
-    # is a reference to another class and therefore the entry dataType is generated and set to the multiplicity
+    # The entry datatype for an attribute is only set for basic data types. If the entry is not set here, the attribute
+    # is a reference to another class and therefore the entry datatype is generated and set to the multiplicity
     for i in range(len(class_details["attributes"])):
         if (
-            "dataType" not in class_details["attributes"][i].keys()
+            "datatype" not in class_details["attributes"][i].keys()
             and "multiplicity" in class_details["attributes"][i].keys()
         ):
-            class_details["attributes"][i]["dataType"] = class_details["attributes"][i]["multiplicity"]
+            class_details["attributes"][i]["datatype"] = class_details["attributes"][i]["multiplicity"]
 
     class_details["lang_pack"].run_template(output_path, class_details)
 
@@ -531,11 +534,11 @@ def _merge_classes(profiles_dict: dict[str, dict[str, CIMComponentDefinition]]) 
             if class_key in class_dict:
                 class_infos = class_dict[class_key]
                 # some inheritance information is stored only in one of the packages. Therefore it has to be checked
-                # if the subClassOf attribute is set. See for example TopologicalNode definitions in SV and TP.
-                if not class_infos.superClass():
-                    class_infos.super = new_class_infos.superClass()
+                # if the subclass_of attribute is set. See for example TopologicalNode definitions in SV and TP.
+                if not class_infos.subclass_of():
+                    class_infos.set_subclass_of(new_class_infos.subclass_of())
                 if origin not in class_infos.origins():
-                    class_infos.addOrigin(origin)
+                    class_infos.add_origin(origin)
                 for new_attr in new_class_infos.attributes():
                     for attr in class_infos.attributes():
                         if attr["label"] == new_attr["label"]:
@@ -550,26 +553,26 @@ def _merge_classes(profiles_dict: dict[str, dict[str, CIMComponentDefinition]]) 
                         class_infos.add_attribute(new_attr)
             else:
                 # store new class and origin
-                new_class_infos.addOrigin(origin)
+                new_class_infos.add_origin(origin)
                 for attr in new_class_infos.attributes():
                     attr["attr_origin"] = [origin]
                 class_dict[class_key] = new_class_infos
     return class_dict
 
 
-def recursivelyAddSubClasses(class_dict: dict[str, CIMComponentDefinition], class_name: str) -> list[str]:
+def _recursively_add_subclasses(class_dict: dict[str, CIMComponentDefinition], class_name: str) -> list[str]:
     newSubClasses: list[str] = []
     theClass = class_dict[class_name]
-    for name in theClass.subClasses():
+    for name in theClass.subclasses():
         newSubClasses.append(name)
-        newNewSubClasses = recursivelyAddSubClasses(class_dict, name)
+        newNewSubClasses = _recursively_add_subclasses(class_dict, name)
         newSubClasses = newSubClasses + newNewSubClasses
     return newSubClasses
 
 
-def addSubClassesOfSubClasses(class_dict: dict[str, CIMComponentDefinition]) -> None:
+def _add_subclasses_of_subclasses(class_dict: dict[str, CIMComponentDefinition]) -> None:
     for className in class_dict:
-        class_dict[className].setSubClasses(recursivelyAddSubClasses(class_dict, className))
+        class_dict[className].set_subclasses(_recursively_add_subclasses(class_dict, className))
 
 
 def cim_generate(directory: str, output_path: str, version: str, lang_pack: ModuleType) -> None:
@@ -615,16 +618,16 @@ def cim_generate(directory: str, output_path: str, version: str, lang_pack: Modu
 
     # work out the subclasses for each class by noting the reverse relationship
     for className in class_dict_with_origins:
-        superClassName = class_dict_with_origins[className].superClass()
+        superClassName = class_dict_with_origins[className].subclass_of()
         if superClassName:
             if superClassName in class_dict_with_origins:
                 superClass = class_dict_with_origins[superClassName]
-                superClass.addSubClass(className)
+                superClass.add_subclass(className)
             else:
                 logger.error("No match for superClass in dict: %s", superClassName)
 
     # recursively add the subclasses of subclasses
-    addSubClassesOfSubClasses(class_dict_with_origins)
+    _add_subclasses_of_subclasses(class_dict_with_origins)
 
     # get information for writing language specific files and write these files
     _write_all_files(class_dict_with_origins, lang_pack, output_path, version)
@@ -673,7 +676,7 @@ def _get_recommended_class_profiles(elem_dict: dict[str, CIMComponentDefinition]
     :param elem_dict: Information about all classes.
                       Used are here possible class profiles (elem_dict[class_name].origins()),
                       possible attribute profiles (elem_dict[class_name].attributes()[*]["attr_origin"])
-                      and the superclass of each class (elem_dict[class_name].superClass()).
+                      and the superclass of each class (elem_dict[class_name].subclass_of()).
     :return:          Mapping of class to profile.
     """
     recommended_class_profiles: dict[str, str] = {}
@@ -695,7 +698,7 @@ def _get_recommended_class_profiles(elem_dict: dict[str, CIMComponentDefinition]
                     # Use condition attribute["is_used"]? For CGMES 2.4.13/2.4.15/3.0.0 the results wouldn't change!
                     if ambiguous_profile and profile in class_profiles:
                         profile_count_map.setdefault(profile, []).append(attribute["label"])
-            name = elem_dict[name].superClass()
+            name = elem_dict[name].subclass_of()
 
         # Set the profile with most attributes as recommended profile for this class
         if profile_count_map:
@@ -713,7 +716,7 @@ def _get_attribute_class(attribute: dict) -> str:
     :param attribute: Dictionary with information about an attribute of a class.
     :return:          Class name of the attribute.
     """
-    name = attribute.get("range") or attribute.get("dataType") or ""
+    name = attribute.get("range") or attribute.get("datatype") or ""
     return _get_rid_of_hash(name)
 
 

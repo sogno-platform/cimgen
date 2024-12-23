@@ -41,7 +41,7 @@ std::map<std::string, std::list<CGMESProfile>>
 {{class_name}}::getPossibleProfilesForAttributes() const
 {
 	auto map = PossibleProfilesForAttributes;
-	auto&& parent_map = {{sub_class_of}}::getPossibleProfilesForAttributes();
+	auto&& parent_map = {{subclass_of}}::getPossibleProfilesForAttributes();
 	map.insert(parent_map.begin(), parent_map.end());
 	return map;
 }
@@ -93,7 +93,7 @@ void {{class_name}}::addClassAssignFnsToMap(std::unordered_map<std::string, clas
 
 void {{class_name}}::addPrimitiveGetFnsToMap(std::map<std::string, get_function>& get_map) const
 {
-	{{sub_class_of}}::addPrimitiveGetFnsToMap(get_map);
+	{{subclass_of}}::addPrimitiveGetFnsToMap(get_map);
 {{#attributes}}
 {{> insert_get}}
 {{/attributes}}
@@ -101,7 +101,7 @@ void {{class_name}}::addPrimitiveGetFnsToMap(std::map<std::string, get_function>
 
 void {{class_name}}::addClassGetFnsToMap(std::map<std::string, class_get_function>& get_map) const
 {
-	{{sub_class_of}}::addClassGetFnsToMap(get_map);
+	{{subclass_of}}::addClassGetFnsToMap(get_map);
 {{#attributes}}
 {{> insert_class_get}}
 {{/attributes}}
@@ -109,7 +109,7 @@ void {{class_name}}::addClassGetFnsToMap(std::map<std::string, class_get_functio
 
 void {{class_name}}::addEnumGetFnsToMap(std::map<std::string, get_function>& get_map) const
 {
-	{{sub_class_of}}::addEnumGetFnsToMap(get_map);
+	{{subclass_of}}::addEnumGetFnsToMap(get_map);
 {{#attributes}}
 {{> insert_enum_get}}
 {{/attributes}}

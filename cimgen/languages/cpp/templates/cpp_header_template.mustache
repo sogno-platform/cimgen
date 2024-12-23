@@ -9,7 +9,7 @@ Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cim
 #include <string>
 #include <unordered_map>
 
-#include "{{sub_class_of}}.hpp"
+#include "{{subclass_of}}.hpp"
 #include "BaseClassDefiner.hpp"
 #include "CGMESProfile.hpp"
 {{> create_attribute_includes}}
@@ -23,7 +23,7 @@ namespace CIMPP
 	{{{class_comment}}}
 	*/
 {{/class_comment}}
-	class {{class_name}} : public {{sub_class_of}}
+	class {{class_name}} : public {{subclass_of}}
 	{
 	public:
 		/* constructor initialising all attributes to null */

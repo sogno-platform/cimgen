@@ -9,14 +9,14 @@ from pydantic import Field
 from pydantic.dataclasses import dataclass
 
 from ..utils.profile import BaseProfile, Profile
-from {{class_location}} import {{sub_class_of}}
+from {{class_location}} import {{subclass_of}}
 {{#imports}}
 from .{{.}} import {{.}}
 {{/imports}}
 
 
 @dataclass
-class {{class_name}}({{sub_class_of}}):
+class {{class_name}}({{subclass_of}}):
     """
     {{{wrapped_class_comment}}}
 
@@ -26,8 +26,8 @@ class {{class_name}}({{sub_class_of}}):
     """
 
     {{#attributes}}
-    {{label}}: {{#setType}}{{.}}{{/setType}} = Field(
-        {{#setDefault}}{{.}}{{/setDefault}},
+    {{label}}: {{#set_type}}{{.}}{{/set_type}} = Field(
+        {{#set_default}}{{.}}{{/set_default}},
         json_schema_extra={
             "in_profiles": [
                 {{#attr_origin}}

@@ -36,19 +36,19 @@ profile_template_files = [{"filename": "cimpy_cgmesProfile_template.mustache", "
 
 def get_class_location(class_name: str, class_map: dict, version: str) -> str:
     # Check if the current class has a parent class
-    if class_map[class_name].superClass() and class_map[class_name].superClass() in class_map:
-        return "cimpy." + version + "." + class_map[class_name].superClass()
+    if class_map[class_name].subclass_of() and class_map[class_name].subclass_of() in class_map:
+        return "cimpy." + version + "." + class_map[class_name].subclass_of()
     return location(version)
 
 
 partials = {}
 
 
-# called by chevron, text contains the label {{dataType}}, which is evaluated by the renderer (see class template)
+# called by chevron, text contains the label {{datatype}}, which is evaluated by the renderer (see class template)
 def _set_default(text: str, render: Callable[[str], str]) -> str:
     result = render(text)
 
-    # the field {{dataType}} either contains the multiplicity of an attribute if it is a reference or otherwise the
+    # the field {{datatype}} either contains the multiplicity of an attribute if it is a reference or otherwise the
     # datatype of the attribute. If no datatype is set and there is also no multiplicity entry for an attribute, the
     # default value is set to None. The multiplicity is set for all attributes, but the datatype is only set for basic
     # data types. If the data type entry for an attribute is missing, the attribute contains a reference and therefore
@@ -80,7 +80,7 @@ def run_template(output_path: str, class_details: dict) -> None:
 
 def _write_templated_file(class_file: str, class_details: dict, template_filename: str) -> None:
     with open(class_file, "w", encoding="utf-8") as file:
-        class_details["setDefault"] = _set_default
+        class_details["set_default"] = _set_default
         templates = files("cimgen.languages.python.templates")
         with templates.joinpath(template_filename).open(encoding="utf-8") as f:
             args = {

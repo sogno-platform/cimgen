@@ -73,7 +73,7 @@ aggregateRenderer: dict[str, str] = {
 }
 
 
-def select_primitive_render_function(class_details: dict) -> str:
+def _select_primitive_render_function(class_details: dict) -> str:
     class_name = class_details["class_name"]
     render = ""
     if class_details["is_a_datatype_class"]:
@@ -113,7 +113,7 @@ def run_template(output_path: str, class_details: dict) -> None:
     if class_type == "enum":
         renderAttribute = aggregateRenderer["renderInstance"]
     elif class_type == "primitive":
-        renderAttribute = select_primitive_render_function(class_details)
+        renderAttribute = _select_primitive_render_function(class_details)
     else:
         renderAttribute = aggregateRenderer["renderClass"]
     if renderAttribute == "":

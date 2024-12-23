@@ -44,7 +44,7 @@ datatype_template_file = {"filename": "datatype_template.mustache", "ext": ".py"
 
 
 def get_class_location(class_name: str, class_map: dict, version: str) -> str:  # NOSONAR
-    return f".{class_map[class_name].superClass()}"
+    return f".{class_map[class_name].subclass_of()}"
 
 
 partials = {}
@@ -114,9 +114,9 @@ def _set_datatype_attributes(attributes: list[dict]) -> dict:
     for attribute in attributes:
         if "value" in attribute.get("about", "") and "attribute_class" in attribute:
             datatype_attributes["python_type"] = _get_python_type(attribute["attribute_class"])
-        if "isFixed" in attribute:
+        if "is_fixed" in attribute:
             import_set.add(attribute["attribute_class"])
-    datatype_attributes["isFixed_imports"] = sorted(import_set)
+    datatype_attributes["is_fixed_imports"] = sorted(import_set)
     return datatype_attributes
 
 
@@ -135,8 +135,8 @@ def run_template(output_path: str, class_details: dict) -> None:
         template = enum_template_file
     else:
         template = class_template_file
-        class_details["setDefault"] = _set_default
-        class_details["setType"] = _set_type
+        class_details["set_default"] = _set_default
+        class_details["set_type"] = _set_type
         class_details["imports"] = _set_imports(class_details["attributes"])
     resource_file = _create_file(output_path, class_details, template)
     _write_templated_file(resource_file, class_details, template["filename"])
