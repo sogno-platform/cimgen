@@ -107,7 +107,7 @@ class_blacklist = [
 
 def _create_header_include_file(directory, header_include_filename, header, footer, before, after, blacklist):
     lines = []
-    for file in sorted(directory.glob("*.java")):
+    for file in sorted(directory.glob("*.java"), key=lambda f: f.stem):
         basename = file.stem
         if basename not in blacklist:
             lines.append(before + 'Map.entry("' + basename + '", new cim4j.' + basename + after + "),\n")
