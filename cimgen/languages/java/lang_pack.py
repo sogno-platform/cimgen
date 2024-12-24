@@ -1,4 +1,3 @@
-import os
 import shutil
 import chevron
 from pathlib import Path
@@ -65,12 +64,13 @@ def run_template(output_path, class_details):
         return
 
     for template_info in templates:
-        class_file = os.path.join(output_path, class_details["class_name"] + template_info["ext"])
+        class_file = Path(output_path) / (class_details["class_name"] + template_info["ext"])
         _write_templated_file(class_file, class_details, template_info["filename"])
 
 
 def _write_templated_file(class_file, class_details, template_filename):
-    with open(class_file, "w", encoding="utf-8") as file:
+    class_file.parent.mkdir(parents=True, exist_ok=True)
+    with class_file.open("w", encoding="utf-8") as file:
         templates = files("cimgen.languages.java.templates")
         with templates.joinpath(template_filename).open(encoding="utf-8") as f:
             args = {
@@ -107,19 +107,17 @@ class_blacklist = [
 
 def _create_header_include_file(directory, header_include_filename, header, footer, before, after, blacklist):
     lines = []
-    for filename in sorted(os.listdir(directory)):
-        filepath = os.path.join(directory, filename)
-        basepath, ext = os.path.splitext(filepath)
-        basename = os.path.basename(basepath)
-        if ext == ".java" and basename not in blacklist:
+    for file in sorted(directory.glob("*.java")):
+        basename = file.stem
+        if basename not in blacklist:
             lines.append(before + 'Map.entry("' + basename + '", new cim4j.' + basename + after + "),\n")
     lines[-1] = lines[-1].replace("),", ")")
     for line in lines:
         header.append(line)
     for line in footer:
         header.append(line)
-    header_include_filepath = os.path.join(directory, header_include_filename)
-    with open(header_include_filepath, "w", encoding="utf-8") as f:
+    header_include_filepath = directory / header_include_filename
+    with header_include_filepath.open("w", encoding="utf-8") as f:
         f.writelines(header)
 
 
@@ -139,7 +137,7 @@ def resolve_headers(path: str, version: str):  # NOSONAR
     class_list_footer = ["	);\n", "}\n"]
 
     _create_header_include_file(
-        path,
+        Path(path),
         "CIMClassMap.java",
         class_list_header,
         class_list_footer,
