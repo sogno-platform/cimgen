@@ -69,7 +69,6 @@ def run_template(output_path, class_details):
 
 
 def _write_templated_file(class_file, class_details, template_filename):
-    class_file.parent.mkdir(parents=True, exist_ok=True)
     with class_file.open("w", encoding="utf-8") as file:
         templates = files("cimgen.languages.java.templates")
         with templates.joinpath(template_filename).open(encoding="utf-8") as f:
