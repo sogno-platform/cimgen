@@ -11,21 +11,7 @@ package cim4j;
 {{/class_comment}}
 public class {{class_name}} extends BaseClass {
 
-	private static final Logging LOG = Logging.getLogger({{class_name}}.class);
-
-	private enum {{class_name}}_ENUM {
-{{#enum_instances}}
-{{#comment}}
-		/**
-		 * {{comment}}
-		 */
-{{/comment}}
-		{{label}},
-{{/enum_instances}}
-		MAX_{{class_name}}_ENUM
-	}
-
-	private {{class_name}}_ENUM value;
+	private java.lang.String value = "";
 
 	private boolean initialized = false;
 
@@ -53,32 +39,28 @@ public class {{class_name}} extends BaseClass {
 
 	@Override
 	public void setValue(java.lang.String s) {
-		try {
-			value = {{class_name}}_ENUM.valueOf(s.trim());
-			initialized = true;
-		} catch (IllegalArgumentException iae) {
-			LOG.error("IllegalArgumentException: " + iae.getMessage());
-		}
+		value = s;
+		initialized = true;
 	}
 
 	@Override
 	public Object getValue() {
-		return value.toString();
+		return value;
 	}
 
 	@Override
 	public void setAttribute(java.lang.String attrName, BaseClass value) {
-		throw new IllegalArgumentException("ENUM cannot set attribute: " + attrName);
+		throw new IllegalArgumentException("String class cannot set attribute: " + attrName);
 	}
 
 	@Override
 	public void setAttribute(java.lang.String attrName, java.lang.String value) {
-		throw new IllegalArgumentException("ENUM cannot set attribute: " + attrName);
+		throw new IllegalArgumentException("String class cannot set attribute: " + attrName);
 	}
 
 	@Override
 	public java.lang.String toString(boolean topClass) {
-		return "Enum (" + value.toString() + ")";
+		return value;
 	}
 
 	private final java.lang.String debugName = "{{class_name}}";

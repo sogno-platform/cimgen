@@ -1,8 +1,5 @@
 package cim4j;
 
-import java.util.Map;
-import cim4j.BaseClass;
-
-public abstract interface PrimitiveBuilder {
-	public abstract BaseClass construct(String s);
-};
+public interface PrimitiveBuilder {
+	BaseClass construct(java.lang.String value);
+}
