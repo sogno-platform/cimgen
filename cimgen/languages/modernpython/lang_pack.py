@@ -1,10 +1,9 @@
+import chevron
 import logging
 import re
-from distutils.dir_util import copy_tree
+import shutil
 from pathlib import Path
 from importlib.resources import files
-
-import chevron
 
 logger = logging.getLogger(__name__)
 
@@ -14,17 +13,18 @@ logger = logging.getLogger(__name__)
 # creates a couple of files the python implementation needs.
 # cgmes_profile_details contains index, names and uris for each profile.
 # We use that to create the header data for the profiles.
-def setup(output_path: str, cgmes_profile_details: list, cim_namespace: str):
-    for file in Path(output_path).glob("**/*.py"):
+def setup(output_path: str, cgmes_profile_details: list[dict], cim_namespace: str) -> None:
+    source_dir = Path(__file__).parent
+    dest_dir = Path(output_path)
+    for file in dest_dir.glob("**/*.[mp]*"):
         file.unlink()
-
     # Add all hardcoded utils and create parent dir
-    source_dir = Path(__file__).parent / "utils"
-    dest_dir = Path(output_path) / "utils"
-
-    copy_tree(str(source_dir), str(dest_dir))
-    _create_constants(output_path, cim_namespace)
-    _create_cgmes_profile(output_path, cgmes_profile_details)
+    for file in source_dir.glob("utils/*.[mp]*"):
+        dest_file = dest_dir / file.relative_to(source_dir)
+        dest_file.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy(file, dest_file)
+    _create_constants(dest_dir, cim_namespace)
+    _create_cgmes_profile(dest_dir, cgmes_profile_details)
 
 
 def location(version):  # NOSONAR
@@ -141,14 +141,14 @@ def run_template(output_path, class_details):
     _write_templated_file(resource_file, class_details, template["filename"])
 
 
-def _create_file(output_path, class_details, template) -> str:
+def _create_file(output_path: str, class_details: dict, template: dict[str, str]) -> Path:
     resource_file = Path(output_path) / "resources" / (class_details["class_name"] + template["ext"])
     resource_file.parent.mkdir(exist_ok=True)
-    return str(resource_file)
+    return resource_file
 
 
-def _write_templated_file(class_file, class_details, template_filename):
-    with open(class_file, "w", encoding="utf-8") as file:
+def _write_templated_file(class_file: Path, class_details: dict, template_filename: str) -> None:
+    with class_file.open("w", encoding="utf-8") as file:
         templates = files("cimgen.languages.modernpython.templates")
         with templates.joinpath(template_filename).open(encoding="utf-8") as f:
             args = {
@@ -160,14 +160,14 @@ def _write_templated_file(class_file, class_details, template_filename):
         file.write(output)
 
 
-def _create_constants(output_path: str, cim_namespace: str):
-    class_file = Path(output_path) / "utils" / ("constants" + constants_template_file["ext"])
+def _create_constants(output_path: Path, cim_namespace: str) -> None:
+    class_file = output_path / "utils" / ("constants" + constants_template_file["ext"])
     class_details = {"cim_namespace": cim_namespace}
     _write_templated_file(class_file, class_details, constants_template_file["filename"])
 
 
-def _create_cgmes_profile(output_path: str, profile_details: list):
-    class_file = Path(output_path) / "utils" / ("profile" + profile_template_file["ext"])
+def _create_cgmes_profile(output_path: Path, profile_details: list[dict]) -> None:
+    class_file = output_path / "utils" / ("profile" + profile_template_file["ext"])
     class_details = {"profiles": profile_details}
     _write_templated_file(class_file, class_details, profile_template_file["filename"])
 

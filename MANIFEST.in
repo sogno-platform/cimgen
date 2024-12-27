@@ -1,7 +1,9 @@
 include cimgen/languages/cpp/templates/*.mustache
+include cimgen/languages/cpp/static/*
 include cimgen/languages/java/templates/*.mustache
 include cimgen/languages/java/*.java
 include cimgen/languages/java/**/*.java
 include cimgen/languages/javascript/templates/*.mustache
 include cimgen/languages/modernpython/templates/*.mustache
+include cimgen/languages/modernpython/utils/*.mustache
 include cimgen/languages/python/templates/*.mustache

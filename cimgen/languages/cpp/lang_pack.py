@@ -1,6 +1,7 @@
-import os
 import chevron
 import json
+import shutil
+from pathlib import Path
 from importlib.resources import files
 
 
@@ -12,13 +13,17 @@ def location(version):  # NOSONAR
 # This just makes sure we have somewhere to write the classes.
 # cgmes_profile_details contains index, names and uris for each profile.
 # We use that to create the header data for the profiles.
-def setup(output_path: str, cgmes_profile_details: list, cim_namespace: str):  # NOSONAR
-    if not os.path.exists(output_path):
-        os.makedirs(output_path)
-    else:
-        for filename in os.listdir(output_path):
-            os.remove(os.path.join(output_path, filename))
-    _create_cgmes_profile(output_path, cgmes_profile_details, cim_namespace)
+def setup(output_path: str, cgmes_profile_details: list[dict], cim_namespace: str) -> None:
+    source_dir = Path(__file__).parent
+    dest_dir = Path(output_path)
+    for file in dest_dir.glob("**/*.[ch]*"):
+        file.unlink()
+    # Add all hardcoded utils and create parent dir
+    for file in source_dir.glob("static/*.[ch]*"):
+        dest_file = dest_dir / file.relative_to(source_dir)
+        dest_file.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy(file, dest_file)
+    _create_cgmes_profile(dest_dir, cgmes_profile_details, cim_namespace)
 
 
 base = {"base_class": "BaseClass", "class_location": location}
@@ -82,12 +87,12 @@ def run_template(output_path, class_details):
         return
 
     for template_info in templates:
-        class_file = os.path.join(output_path, class_details["class_name"] + template_info["ext"])
+        class_file = Path(output_path) / (class_details["class_name"] + template_info["ext"])
         _write_templated_file(class_file, class_details, template_info["filename"])
 
 
-def _write_templated_file(class_file, class_details, template_filename):
-    with open(class_file, "w", encoding="utf-8") as file:
+def _write_templated_file(class_file: Path, class_details: dict, template_filename: str) -> None:
+    with class_file.open("w", encoding="utf-8") as file:
         templates = files("cimgen.languages.cpp.templates")
         with templates.joinpath(template_filename).open(encoding="utf-8") as f:
             args = {
@@ -99,9 +104,9 @@ def _write_templated_file(class_file, class_details, template_filename):
         file.write(output)
 
 
-def _create_cgmes_profile(output_path: str, profile_details: list, cim_namespace: str):
+def _create_cgmes_profile(output_path: Path, profile_details: list[dict], cim_namespace: str) -> None:
     for template_info in profile_template_files:
-        class_file = os.path.join(output_path, "CGMESProfile" + template_info["ext"])
+        class_file = output_path / ("CGMESProfile" + template_info["ext"])
         class_details = {
             "profiles": profile_details,
             "cim_namespace": cim_namespace,
@@ -590,31 +595,29 @@ class_blacklist = [
 iec61970_blacklist = ["CIMClassList", "CIMNamespaces", "Folders", "Task", "IEC61970"]
 
 
-def _is_primitive_or_enum_class(filepath):
-    with open(filepath, encoding="utf-8") as f:
+def _is_primitive_or_enum_class(file: Path) -> bool:
+    with file.open(encoding="utf-8") as f:
         try:
             for line in f:
                 if "static const BaseClassDefiner declare();" in line:
                     return False
         except UnicodeDecodeError as error:
-            print("Warning: UnicodeDecodeError parsing {0}: {1}".format(filepath, error))
+            print("Warning: UnicodeDecodeError parsing {0}: {1}".format(file.name, error))
     return True
 
 
 def _create_header_include_file(directory, header_include_filename, header, footer, before, after, blacklist):
     lines = []
-    for filename in sorted(os.listdir(directory)):
-        filepath = os.path.join(directory, filename)
-        basepath, ext = os.path.splitext(filepath)
-        basename = os.path.basename(basepath)
-        if ext == ".hpp" and not _is_primitive_or_enum_class(filepath) and basename not in blacklist:
+    for file in sorted(directory.glob("*.hpp"), key=lambda f: f.stem):
+        basename = file.stem
+        if not _is_primitive_or_enum_class(file) and basename not in blacklist:
             lines.append(before + basename + after)
     for line in lines:
         header.append(line)
     for line in footer:
         header.append(line)
-    header_include_filepath = os.path.join(directory, header_include_filename)
-    with open(header_include_filepath, "w", encoding="utf-8") as f:
+    header_include_filepath = directory / header_include_filename
+    with header_include_filepath.open("w", encoding="utf-8") as f:
         f.writelines(header)
 
 
@@ -638,7 +641,7 @@ def resolve_headers(path: str, version: str):  # NOSONAR
     ]
 
     _create_header_include_file(
-        path,
+        Path(path),
         "CIMClassList.hpp",
         class_list_header,
         class_list_footer,
@@ -661,7 +664,7 @@ def resolve_headers(path: str, version: str):  # NOSONAR
     ]
 
     _create_header_include_file(
-        path,
+        Path(path),
         "IEC61970.hpp",
         iec61970_header,
         iec61970_footer,
