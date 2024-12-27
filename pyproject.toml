@@ -46,3 +46,8 @@ include = ["cimgen*"]
 
 [tool.black]
 line-length = 120
+
+[tool.pyright]
+include = ["cimgen"]
+exclude = ["cimgen/languages/modernpython/utils"]
+typeCheckingMode = "basic"
