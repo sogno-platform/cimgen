@@ -3,10 +3,7 @@ import json
 import shutil
 from pathlib import Path
 from importlib.resources import files
-
-
-def location(version):  # NOSONAR
-    return ""
+from typing import Callable
 
 
 # Setup called only once: make output directory, create base class, create profile class, etc.
@@ -25,8 +22,6 @@ def setup(output_path: str, cgmes_profile_details: list[dict], cim_namespace: st
         shutil.copy(file, dest_file)
     _create_cgmes_profile(dest_dir, cgmes_profile_details, cim_namespace)
 
-
-base = {"base_class": "BaseClass", "class_location": location}
 
 # These are the files that are used to generate the header and object files.
 # There is a template set for the large number of classes that are floats. They
@@ -53,24 +48,39 @@ profile_template_files = [
     {"filename": "cpp_cgmesProfile_object_template.mustache", "ext": ".cpp"},
 ]
 
-
-def get_class_location(class_name, class_map, version):  # NOSONAR
-    return ""
-
-
 partials = {
-    "attribute": "{{#langPack.attribute_decl}}{{.}}{{/langPack.attribute_decl}}",
-    "label": "{{#langPack.label}}{{label}}{{/langPack.label}}",
-    "insert_assign": "{{#langPack.insert_assign_fn}}{{.}}{{/langPack.insert_assign_fn}}",
-    "insert_class_assign": "{{#langPack.insert_class_assign_fn}}{{.}}{{/langPack.insert_class_assign_fn}}",
-    "insert_get": "{{#langPack.insert_get_fn}}{{.}}{{/langPack.insert_get_fn}}",
-    "insert_class_get": "{{#langPack.insert_class_get_fn}}{{.}}{{/langPack.insert_class_get_fn}}",
-    "insert_enum_get": "{{#langPack.insert_enum_get_fn}}{{.}}{{/langPack.insert_enum_get_fn}}",
+    "attribute_decl": "{{#lang_pack.attribute_decl}}{{.}}{{/lang_pack.attribute_decl}}",
+    "label_without_keyword": "{{#lang_pack.label_without_keyword}}{{label}}{{/lang_pack.label_without_keyword}}",
+    "insert_assign": "{{#lang_pack.insert_assign_fn}}{{.}}{{/lang_pack.insert_assign_fn}}",
+    "insert_class_assign": "{{#lang_pack.insert_class_assign_fn}}{{.}}{{/lang_pack.insert_class_assign_fn}}",
+    "insert_get": "{{#lang_pack.insert_get_fn}}{{.}}{{/lang_pack.insert_get_fn}}",
+    "insert_class_get": "{{#lang_pack.insert_class_get_fn}}{{.}}{{/lang_pack.insert_class_get_fn}}",
+    "insert_enum_get": "{{#lang_pack.insert_enum_get_fn}}{{.}}{{/lang_pack.insert_enum_get_fn}}",
+    "create_nullptr_assigns": "{{#lang_pack.create_nullptr_assigns}}"
+    " {{attributes}} {{/lang_pack.create_nullptr_assigns}} {};",
+    "create_assign": "{{#lang_pack.create_assign}}{{.}}{{/lang_pack.create_assign}}",
+    "create_class_assign": "{{#lang_pack.create_class_assign}}{{.}}{{/lang_pack.create_class_assign}}",
+    "create_get": "{{#lang_pack.create_get}}{{.}}{{/lang_pack.create_get}}",
+    "create_class_get": "{{#lang_pack.create_class_get}}{{.}}{{/lang_pack.create_class_get}}",
+    "create_enum_get": "{{#lang_pack.create_enum_get}}{{.}}{{/lang_pack.create_enum_get}}",
+    "create_attribute_includes": "{{#lang_pack.create_attribute_includes}}"
+    "{{attributes}}{{/lang_pack.create_attribute_includes}}",
+    "create_attribute_class_declarations": "{{#lang_pack.create_attribute_class_declarations}}"
+    "{{attributes}}{{/lang_pack.create_attribute_class_declarations}}",
+    "set_default": "{{#lang_pack.set_default}}{{datatype}}{{/lang_pack.set_default}}",
 }
 
 
+def get_base_class() -> str:
+    return "BaseClass"
+
+
+def get_class_location(class_name: str, class_map: dict, version: str) -> str:  # NOSONAR
+    return ""
+
+
 # This is the function that runs the template.
-def run_template(output_path, class_details):
+def run_template(output_path: str, class_details: dict) -> None:
 
     if class_details["is_a_datatype_class"] or class_details["class_name"] in ("Float", "Decimal"):
         templates = float_template_files
@@ -116,19 +126,22 @@ def _create_cgmes_profile(output_path: Path, profile_details: list[dict], cim_na
 
 # This function just allows us to avoid declaring a variable called 'switch',
 # which is in the definition of the ExcBBC class.
-def label(text, render):
-    result = render(text)
-    if result == "switch":
+def label_without_keyword(text: str, render: Callable[[str], str]) -> str:
+    label = render(text)
+    return _get_label_without_keyword(label)
+
+
+def _get_label_without_keyword(label: str) -> str:
+    if label == "switch":
         return "_switch"
-    else:
-        return result
+    return label
 
 
 # These insert_ functions are used to generate the entries in the dynamic_switch
 # maps, for use in assignments.cpp and Task.cpp
 # TODO: implement this as one function, determine in template if it should be called.
 # TODO: reorganize json object so we don't have to keep doing the same processing.
-def insert_assign_fn(text, render):
+def insert_assign_fn(text: str, render: Callable[[str], str]) -> str:
     attribute_txt = render(text)
     attribute_json = eval(attribute_txt)
     if not _attribute_is_primitive_or_datatype_or_enum(attribute_json):
@@ -148,7 +161,7 @@ def insert_assign_fn(text, render):
     )
 
 
-def insert_class_assign_fn(text, render):
+def insert_class_assign_fn(text: str, render: Callable[[str], str]) -> str:
     attribute_txt = render(text)
     attribute_json = eval(attribute_txt)
     if _attribute_is_primitive_or_datatype_or_enum(attribute_json):
@@ -168,7 +181,7 @@ def insert_class_assign_fn(text, render):
     )
 
 
-def insert_get_fn(text, render):
+def insert_get_fn(text: str, render: Callable[[str], str]) -> str:
     attribute_txt = render(text)
     attribute_json = eval(attribute_txt)
     if not _attribute_is_primitive_or_datatype(attribute_json):
@@ -178,7 +191,7 @@ def insert_get_fn(text, render):
     return '	get_map.emplace("cim:' + class_name + "." + label + '", &get_' + class_name + "_" + label + ");\n"
 
 
-def insert_class_get_fn(text, render):
+def insert_class_get_fn(text: str, render: Callable[[str], str]) -> str:
     attribute_txt = render(text)
     attribute_json = eval(attribute_txt)
     if _attribute_is_primitive_or_datatype_or_enum(attribute_json):
@@ -190,7 +203,7 @@ def insert_class_get_fn(text, render):
     return '	get_map.emplace("cim:' + class_name + "." + label + '", &get_' + class_name + "_" + label + ");\n"
 
 
-def insert_enum_get_fn(text, render):
+def insert_enum_get_fn(text: str, render: Callable[[str], str]) -> str:
     attribute_txt = render(text)
     attribute_json = eval(attribute_txt)
     if not attribute_json["is_enum_attribute"]:
@@ -200,7 +213,7 @@ def insert_enum_get_fn(text, render):
     return '	get_map.emplace("cim:' + class_name + "." + label + '", &get_' + class_name + "_" + label + ");\n"
 
 
-def create_nullptr_assigns(text, render):
+def create_nullptr_assigns(text: str, render: Callable[[str], str]) -> str:
     attributes_txt = render(text)
     if attributes_txt.strip() == "":
         return ""
@@ -219,7 +232,7 @@ def create_nullptr_assigns(text, render):
 
 # These create_ functions are used to generate the implementations for
 # the entries in the dynamic_switch maps referenced in assignments.cpp and Task.cpp
-def create_class_assign(text, render):
+def create_class_assign(text: str, render: Callable[[str], str]) -> str:
     attribute_txt = render(text)
     attribute_json = eval(attribute_txt)
     assign = ""
@@ -227,8 +240,8 @@ def create_class_assign(text, render):
     if _attribute_is_primitive_or_datatype_or_enum(attribute_json):
         return ""
     if attribute_json["is_list_attribute"]:
-        if "inverseRole" in attribute_json:
-            inverse = attribute_json["inverseRole"].split(".")
+        if "inverse_role" in attribute_json:
+            inverse = attribute_json["inverse_role"].split(".")
             assign = (
                 """
 bool assign_INVERSEC_INVERSEL(BaseClass*, BaseClass*);
@@ -274,8 +287,8 @@ bool assign_OBJECT_CLASS_LABEL(BaseClass* BaseClass_ptr1, BaseClass* BaseClass_p
                 .replace("ATTRIBUTE_CLASS", attribute_class)
                 .replace("LABEL", attribute_json["label"])
             )
-    elif "inverseRole" in attribute_json:
-        inverse = attribute_json["inverseRole"].split(".")
+    elif "inverse_role" in attribute_json:
+        inverse = attribute_json["inverse_role"].split(".")
         assign = (
             """
 bool assign_INVERSEC_INVERSEL(BaseClass*, BaseClass*);
@@ -325,15 +338,12 @@ bool assign_OBJECT_CLASS_LABEL(BaseClass* BaseClass_ptr1, BaseClass* BaseClass_p
     return assign
 
 
-def create_assign(text, render):
+def create_assign(text: str, render: Callable[[str], str]) -> str:
     attribute_txt = render(text)
     attribute_json = eval(attribute_txt)
     assign = ""
     if not _attribute_is_primitive_or_datatype_or_enum(attribute_json):
         return ""
-    label_without_keyword = attribute_json["label"]
-    if label_without_keyword == "switch":
-        label_without_keyword = "_switch"
 
     if not _attribute_is_primitive_string(attribute_json):
         assign = (
@@ -349,11 +359,12 @@ bool assign_CLASS_LABEL(std::stringstream &buffer, BaseClass* BaseClass_ptr1)
 			return true;
 	}
 	return false;
-}""".replace(  # noqa: E101,W191
+}
+""".replace(  # noqa: E101,W191
                 "CLASS", attribute_json["domain"]
             )
             .replace("LABEL", attribute_json["label"])
-            .replace("LBL_WO_KEYWORD", label_without_keyword)
+            .replace("LBL_WO_KEYWORD", _get_label_without_keyword(attribute_json["label"]))
         )
     else:  # _attribute_is_primitive_string
         assign = """
@@ -368,7 +379,8 @@ bool assign_CLASS_LABEL(std::stringstream &buffer, BaseClass* BaseClass_ptr1)
 			return true;
 	}
 	return false;
-}""".replace(  # noqa: E101,W191
+}
+""".replace(  # noqa: E101,W191
             "CLASS", attribute_json["domain"]
         ).replace(
             "LABEL", attribute_json["label"]
@@ -377,7 +389,7 @@ bool assign_CLASS_LABEL(std::stringstream &buffer, BaseClass* BaseClass_ptr1)
     return assign
 
 
-def create_class_get(text, render):
+def create_class_get(text: str, render: Callable[[str], str]) -> str:
     attribute_txt = render(text)
     attribute_json = eval(attribute_txt)
     if _attribute_is_primitive_or_datatype_or_enum(attribute_json):
@@ -394,7 +406,8 @@ bool get_OBJECT_CLASS_LABEL(const BaseClass* BaseClass_ptr1, std::list<const Bas
 		return !BaseClass_list.empty();
 	}
 	return false;
-}""".replace(  # noqa: E101,W191
+}
+""".replace(  # noqa: E101,W191
             "OBJECT_CLASS", attribute_json["domain"]
         ).replace(
             "LABEL", attribute_json["label"]
@@ -412,7 +425,8 @@ bool get_OBJECT_CLASS_LABEL(const BaseClass* BaseClass_ptr1, std::list<const Bas
 		}
 	}
 	return false;
-}""".replace(  # noqa: E101,W191
+}
+""".replace(  # noqa: E101,W191
             "OBJECT_CLASS", attribute_json["domain"]
         ).replace(
             "LABEL", attribute_json["label"]
@@ -421,15 +435,12 @@ bool get_OBJECT_CLASS_LABEL(const BaseClass* BaseClass_ptr1, std::list<const Bas
     return get
 
 
-def create_get(text, render):
+def create_get(text: str, render: Callable[[str], str]) -> str:
     attribute_txt = render(text)
     attribute_json = eval(attribute_txt)
     get = ""
     if not _attribute_is_primitive_or_datatype(attribute_json):
         return ""
-    label_without_keyword = attribute_json["label"]
-    if label_without_keyword == "switch":
-        label_without_keyword = "_switch"
 
     get = (
         """
@@ -445,17 +456,18 @@ bool get_CLASS_LABEL(const BaseClass* BaseClass_ptr1, std::stringstream& buffer)
 	}
 	buffer.setstate(std::ios::failbit);
 	return false;
-}""".replace(  # noqa: E101,W191
+}
+""".replace(  # noqa: E101,W191
             "CLASS", attribute_json["domain"]
         )
         .replace("LABEL", attribute_json["label"])
-        .replace("LBL_WO_KEYWORD", label_without_keyword)
+        .replace("LBL_WO_KEYWORD", _get_label_without_keyword(attribute_json["label"]))
     )
 
     return get
 
 
-def create_enum_get(text, render):
+def create_enum_get(text: str, render: Callable[[str], str]) -> str:
     attribute_txt = render(text)
     attribute_json = eval(attribute_txt)
     if not attribute_json["is_enum_attribute"]:
@@ -474,7 +486,8 @@ bool get_CLASS_LABEL(const BaseClass* BaseClass_ptr1, std::stringstream& buffer)
 	}
 	buffer.setstate(std::ios::failbit);
 	return false;
-}""".replace(  # noqa: E101,W191
+}
+""".replace(  # noqa: E101,W191
         "CLASS", attribute_json["domain"]
     ).replace(
         "LABEL", attribute_json["label"]
@@ -483,13 +496,13 @@ bool get_CLASS_LABEL(const BaseClass* BaseClass_ptr1, std::stringstream& buffer)
     return get
 
 
-def attribute_decl(text, render):
+def attribute_decl(text: str, render: Callable[[str], str]) -> str:
     attribute_txt = render(text)
     attribute_json = eval(attribute_txt)
     return _attribute_decl(attribute_json)
 
 
-def _attribute_decl(attribute):
+def _attribute_decl(attribute: dict) -> str:
     _class = attribute["attribute_class"]
     if _attribute_is_primitive_or_datatype_or_enum(attribute):
         return "CIMPP::" + _class
@@ -499,14 +512,14 @@ def _attribute_decl(attribute):
         return "CIMPP::" + _class + "*"
 
 
-def _create_attribute_includes(text, render):
+def create_attribute_includes(text: str, render: Callable[[str], str]) -> str:
     unique = {}
     include_string = ""
-    inputText = render(text)
-    jsonString = inputText.replace("'", '"')
-    jsonStringNoHtmlEsc = jsonString.replace("&quot;", '"')
-    if jsonStringNoHtmlEsc is not None and jsonStringNoHtmlEsc != "":
-        attributes = json.loads(jsonStringNoHtmlEsc)
+    input_text = render(text)
+    json_string = input_text.replace("'", '"')
+    json_string_no_html_esc = json_string.replace("&quot;", '"')
+    if json_string_no_html_esc:
+        attributes = json.loads(json_string_no_html_esc)
         for attribute in attributes:
             if _attribute_is_primitive_or_datatype_or_enum(attribute):
                 unique[attribute["attribute_class"]] = True
@@ -515,14 +528,14 @@ def _create_attribute_includes(text, render):
     return include_string
 
 
-def _create_attribute_class_declarations(text, render):
+def create_attribute_class_declarations(text: str, render: Callable[[str], str]) -> str:
     unique = {}
     include_string = ""
-    inputText = render(text)
-    jsonString = inputText.replace("'", '"')
-    jsonStringNoHtmlEsc = jsonString.replace("&quot;", '"')
-    if jsonStringNoHtmlEsc is not None and jsonStringNoHtmlEsc != "":
-        attributes = json.loads(jsonStringNoHtmlEsc)
+    input_text = render(text)
+    json_string = input_text.replace("'", '"')
+    json_string_no_html_esc = json_string.replace("&quot;", '"')
+    if json_string_no_html_esc:
+        attributes = json.loads(json_string_no_html_esc)
         for attribute in attributes:
             if attribute["is_class_attribute"] or attribute["is_list_attribute"]:
                 unique[attribute["attribute_class"]] = True
@@ -531,28 +544,27 @@ def _create_attribute_class_declarations(text, render):
     return include_string
 
 
-def _set_default(text, render):
+def set_default(text: str, render: Callable[[str], str]) -> str:
     result = render(text)
-    return set_default(result)
+    return _set_default(result)
 
 
-def set_default(dataType):
-
-    # the field {{dataType}} either contains the multiplicity of an attribute if it is a reference or otherwise the
+def _set_default(datatype: str) -> str:
+    # the field {{datatype}} either contains the multiplicity of an attribute if it is a reference or otherwise the
     # datatype of the attribute. If no datatype is set and there is also no multiplicity entry for an attribute, the
     # default value is set to None. The multiplicity is set for all attributes, but the datatype is only set for basic
     # data types. If the data type entry for an attribute is missing, the attribute contains a reference and therefore
-    # the default value is either None or [] depending on the multiplicity. See also write_python_files
-    if dataType in ["M:1", "M:0..1", "M:1..1", "M:0..n", "M:1..n", ""] or "M:" in dataType:
+    # the default value is either None or [] depending on the multiplicity. See also _write_files in cimgen.py.
+    if datatype in ["M:1", "M:0..1", "M:1..1", "M:0..n", "M:1..n", ""] or "M:" in datatype:
         return "0"
-    dataType = dataType.split("#")[1]
-    if dataType in ["integer", "Integer"]:
+    datatype = datatype.split("#")[1]
+    if datatype in ["integer", "Integer"]:
         return "0"
-    elif dataType in ["String", "DateTime", "Date"]:
+    elif datatype in ["String", "DateTime", "Date"]:
         return "''"
-    elif dataType == "Boolean":
+    elif datatype == "Boolean":
         return "false"
-    elif dataType == "Float":
+    elif datatype == "Float":
         return "0.0"
     else:
         return "nullptr"
@@ -606,7 +618,15 @@ def _is_primitive_or_enum_class(file: Path) -> bool:
     return True
 
 
-def _create_header_include_file(directory, header_include_filename, header, footer, before, after, blacklist):
+def _create_header_include_file(
+    directory: Path,
+    header_include_filename: str,
+    header: list[str],
+    footer: list[str],
+    before: str,
+    after: str,
+    blacklist: list[str],
+) -> None:
     lines = []
     for file in sorted(directory.glob("*.hpp"), key=lambda f: f.stem):
         basename = file.stem
@@ -621,7 +641,7 @@ def _create_header_include_file(directory, header_include_filename, header, foot
         f.writelines(header)
 
 
-def resolve_headers(path: str, version: str):  # NOSONAR
+def resolve_headers(path: str, version: str) -> None:  # NOSONAR
     class_list_header = [
         "#ifndef CIMCLASSLIST_H\n",
         "#define CIMCLASSLIST_H\n",

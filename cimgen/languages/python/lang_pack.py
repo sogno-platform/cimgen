@@ -3,6 +3,7 @@ import chevron
 import logging
 import glob
 from importlib.resources import files
+from typing import Callable
 
 logger = logging.getLogger(__name__)
 
@@ -12,7 +13,7 @@ logger = logging.getLogger(__name__)
 # creates a couple of files the python implementation needs.
 # cgmes_profile_details contains index, names and uris for each profile.
 # We use that to create the header data for the profiles.
-def setup(output_path: str, cgmes_profile_details: list, cim_namespace: str):
+def setup(output_path: str, cgmes_profile_details: list[dict], cim_namespace: str) -> None:
     if not os.path.exists(output_path):
         os.makedirs(output_path)
     else:
@@ -22,36 +23,18 @@ def setup(output_path: str, cgmes_profile_details: list, cim_namespace: str):
     _create_cgmes_profile(output_path, cgmes_profile_details, cim_namespace)
 
 
-def location(version):
-    return "cimpy." + version + ".Base"
-
-
-base = {"base_class": "Base", "class_location": location}
-
 # These are the files that are used to generate the python files.
-template_files = [{"filename": "cimpy_class_template.mustache", "ext": ".py"}]
-profile_template_files = [{"filename": "cimpy_cgmesProfile_template.mustache", "ext": ".py"}]
-
-
-def get_class_location(class_name, class_map, version):
-    # Check if the current class has a parent class
-    if class_map[class_name].superClass():
-        if class_map[class_name].superClass() in class_map:
-            return "cimpy." + version + "." + class_map[class_name].superClass()
-        elif class_map[class_name].superClass() == "Base" or class_map[class_name].superClass() is None:
-            return location(version)
-    else:
-        return location(version)
-
+class_template_file = {"filename": "cimpy_class_template.mustache", "ext": ".py"}
+profile_template_file = {"filename": "cimpy_cgmesProfile_template.mustache", "ext": ".py"}
 
 partials = {}
 
 
-# called by chevron, text contains the label {{dataType}}, which is evaluated by the renderer (see class template)
-def _set_default(text, render):
+# called by chevron, text contains the label {{datatype}}, which is evaluated by the renderer (see class template)
+def _set_default(text: str, render: Callable[[str], str]) -> str:
     result = render(text)
 
-    # the field {{dataType}} either contains the multiplicity of an attribute if it is a reference or otherwise the
+    # the field {{datatype}} either contains the multiplicity of an attribute if it is a reference or otherwise the
     # datatype of the attribute. If no datatype is set and there is also no multiplicity entry for an attribute, the
     # default value is set to None. The multiplicity is set for all attributes, but the datatype is only set for basic
     # data types. If the data type entry for an attribute is missing, the attribute contains a reference and therefore
@@ -73,17 +56,27 @@ def _set_default(text, render):
         return "0.0"
 
 
-def run_template(output_path, class_details):
+def get_base_class() -> str:
+    return "Base"
+
+
+def get_class_location(class_name: str, class_map: dict, version: str) -> str:
+    # Check if the current class has a parent class
+    if class_map[class_name].subclass_of() and class_map[class_name].subclass_of() in class_map:
+        return "cimpy." + version + "." + class_map[class_name].subclass_of()
+    return "cimpy." + version + ".Base"
+
+
+def run_template(output_path: str, class_details: dict) -> None:
     if class_details["class_name"] == "String":
         return
-    for template_info in template_files:
-        class_file = os.path.join(output_path, class_details["class_name"] + template_info["ext"])
-        _write_templated_file(class_file, class_details, template_info["filename"])
+    class_file = os.path.join(output_path, class_details["class_name"] + class_template_file["ext"])
+    _write_templated_file(class_file, class_details, class_template_file["filename"])
 
 
-def _write_templated_file(class_file, class_details, template_filename):
+def _write_templated_file(class_file: str, class_details: dict, template_filename: str) -> None:
     with open(class_file, "w", encoding="utf-8") as file:
-        class_details["setDefault"] = _set_default
+        class_details["set_default"] = _set_default
         templates = files("cimgen.languages.python.templates")
         with templates.joinpath(template_filename).open(encoding="utf-8") as f:
             args = {
@@ -96,7 +89,7 @@ def _write_templated_file(class_file, class_details, template_filename):
 
 
 # creates the Base class file, all classes inherit from this class
-def _create_base(path):
+def _create_base(path: str) -> None:
     base_path = path + "/Base.py"
     base = [
         "class Base:\n",
@@ -111,20 +104,19 @@ def _create_base(path):
             f.write(line)
 
 
-def _create_cgmes_profile(output_path: str, profile_details: list, cim_namespace: str):
-    for template_info in profile_template_files:
-        class_file = os.path.join(output_path, "CGMESProfile" + template_info["ext"])
-        class_details = {
-            "profiles": profile_details,
-            "cim_namespace": cim_namespace,
-        }
-        _write_templated_file(class_file, class_details, template_info["filename"])
+def _create_cgmes_profile(output_path: str, profile_details: list[dict], cim_namespace: str) -> None:
+    class_file = os.path.join(output_path, "CGMESProfile" + profile_template_file["ext"])
+    class_details = {
+        "profiles": profile_details,
+        "cim_namespace": cim_namespace,
+    }
+    _write_templated_file(class_file, class_details, profile_template_file["filename"])
 
 
 class_blacklist = ["CGMESProfile"]
 
 
-def resolve_headers(path: str, version: str):  # NOSONAR
+def resolve_headers(path: str, version: str) -> None:  # NOSONAR
     """Add all classes in __init__.py"""
     filenames = glob.glob(path + "/*.py")
     include_names = []

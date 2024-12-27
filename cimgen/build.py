@@ -1,15 +1,16 @@
 import argparse
 import importlib
 import os
+from types import ModuleType
 
 from cimgen import cimgen
 
 
-def build():
+def build() -> None:
     parser = argparse.ArgumentParser(description="Generate some CIM classes.")
     parser.add_argument("--outdir", type=str, help="The output directory", required=True)
     parser.add_argument("--schemadir", type=str, help="The schema directory", required=True)
-    parser.add_argument("--langdir", type=str, help="The langpack directory", required=True)
+    parser.add_argument("--langdir", type=str, help="The language pack directory", required=True)
     parser.add_argument(
         "--cgmes_version",
         type=str,
@@ -19,9 +20,9 @@ def build():
     )
     args = parser.parse_args()
 
-    langPack = importlib.import_module(f"cimgen.languages.{args.langdir}.lang_pack")
+    lang_pack: ModuleType = importlib.import_module(f"cimgen.languages.{args.langdir}.lang_pack")
     schema_path = os.path.join(os.getcwd(), args.schemadir)
-    cimgen.cim_generate(schema_path, args.outdir, args.cgmes_version, langPack)
+    cimgen.cim_generate(schema_path, args.outdir, args.cgmes_version, lang_pack)
 
 
 if __name__ == "__main__":

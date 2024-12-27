@@ -14,7 +14,7 @@ Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cim
 
 using namespace CIMPP;
 
-{{class_name}}::{{class_name}}(){{#langPack.create_nullptr_assigns}} {{attributes}} {{/langPack.create_nullptr_assigns}} {};
+{{class_name}}::{{class_name}}(){{> create_nullptr_assigns}}
 {{class_name}}::~{{class_name}}() {};
 
 static const std::list<CGMESProfile> PossibleProfilesForClass =
@@ -41,29 +41,29 @@ std::map<std::string, std::list<CGMESProfile>>
 {{class_name}}::getPossibleProfilesForAttributes() const
 {
 	auto map = PossibleProfilesForAttributes;
-	auto&& parent_map = {{sub_class_of}}::getPossibleProfilesForAttributes();
+	auto&& parent_map = {{subclass_of}}::getPossibleProfilesForAttributes();
 	map.insert(parent_map.begin(), parent_map.end());
 	return map;
 }
 
 {{#attributes}}
-{{#langPack.create_assign}}{{.}}{{/langPack.create_assign}}
+{{> create_assign}}
 {{/attributes}}
 
 {{#attributes}}
-{{#langPack.create_class_assign}}{{.}}{{/langPack.create_class_assign}}
+{{> create_class_assign}}
 {{/attributes}}
 
 {{#attributes}}
-{{#langPack.create_get}}{{.}}{{/langPack.create_get}}
+{{> create_get}}
 {{/attributes}}
 
 {{#attributes}}
-{{#langPack.create_class_get}}{{.}}{{/langPack.create_class_get}}
+{{> create_class_get}}
 {{/attributes}}
 
 {{#attributes}}
-{{#langPack.create_enum_get}}{{.}}{{/langPack.create_enum_get}}
+{{> create_enum_get}}
 {{/attributes}}
 
 const char {{class_name}}::debugName[] = "{{class_name}}";
@@ -93,7 +93,7 @@ void {{class_name}}::addClassAssignFnsToMap(std::unordered_map<std::string, clas
 
 void {{class_name}}::addPrimitiveGetFnsToMap(std::map<std::string, get_function>& get_map) const
 {
-	{{sub_class_of}}::addPrimitiveGetFnsToMap(get_map);
+	{{subclass_of}}::addPrimitiveGetFnsToMap(get_map);
 {{#attributes}}
 {{> insert_get}}
 {{/attributes}}
@@ -101,7 +101,7 @@ void {{class_name}}::addPrimitiveGetFnsToMap(std::map<std::string, get_function>
 
 void {{class_name}}::addClassGetFnsToMap(std::map<std::string, class_get_function>& get_map) const
 {
-	{{sub_class_of}}::addClassGetFnsToMap(get_map);
+	{{subclass_of}}::addClassGetFnsToMap(get_map);
 {{#attributes}}
 {{> insert_class_get}}
 {{/attributes}}
@@ -109,7 +109,7 @@ void {{class_name}}::addClassGetFnsToMap(std::map<std::string, class_get_functio
 
 void {{class_name}}::addEnumGetFnsToMap(std::map<std::string, get_function>& get_map) const
 {
-	{{sub_class_of}}::addEnumGetFnsToMap(get_map);
+	{{subclass_of}}::addEnumGetFnsToMap(get_map);
 {{#attributes}}
 {{> insert_enum_get}}
 {{/attributes}}

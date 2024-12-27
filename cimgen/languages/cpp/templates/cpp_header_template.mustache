@@ -9,19 +9,21 @@ Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cim
 #include <string>
 #include <unordered_map>
 
-#include "{{sub_class_of}}.hpp"
+#include "{{subclass_of}}.hpp"
 #include "BaseClassDefiner.hpp"
 #include "CGMESProfile.hpp"
-{{#langPack._create_attribute_includes}}{{attributes}}{{/langPack._create_attribute_includes}}
+{{> create_attribute_includes}}
+
 namespace CIMPP
 {
-{{#langPack._create_attribute_class_declarations}}{{attributes}}{{/langPack._create_attribute_class_declarations}}
+{{> create_attribute_class_declarations}}
+
 {{#class_comment}}
 	/*
 	{{{class_comment}}}
 	*/
 {{/class_comment}}
-	class {{class_name}} : public {{sub_class_of}}
+	class {{class_name}} : public {{subclass_of}}
 	{
 	public:
 		/* constructor initialising all attributes to null */
@@ -29,7 +31,7 @@ namespace CIMPP
 		~{{class_name}}() override;
 
 {{#attributes}}
-		{{> attribute}} {{> label}};  /* {{comment}} Default: {{#langPack._set_default}}{{dataType}}{{/langPack._set_default}} */
+		{{> attribute_decl}} {{> label_without_keyword}};  /* {{comment}} Default: {{> set_default}} */
 {{/attributes}}
 
 		static const char debugName[];

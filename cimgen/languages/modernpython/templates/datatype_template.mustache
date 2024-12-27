@@ -4,18 +4,18 @@ Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cim
 
 from ..utils.datatypes import CIMDatatype
 from ..utils.profile import Profile
-{{#isFixed_imports}}
+{{#is_fixed_imports}}
 from .{{.}} import {{.}}
-{{/isFixed_imports}}
+{{/is_fixed_imports}}
 
 
 {{class_name}} = CIMDatatype(
     name="{{class_name}}",
     type={{python_type}},
 {{#attributes}}
-{{#isFixed}}
-    {{label}}={{attribute_class}}.{{isFixed}},
-{{/isFixed}}
+{{#is_fixed}}
+    {{label}}={{attribute_class}}.{{is_fixed}},
+{{/is_fixed}}
 {{/attributes}}
     profiles=[{{#class_origin}}
         Profile.{{origin}},{{/class_origin}}
