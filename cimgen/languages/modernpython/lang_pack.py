@@ -134,7 +134,7 @@ def _create_file(output_path: str, class_details: dict, template: dict[str, str]
 
 
 def _write_templated_file(class_file: Path, class_details: dict, template_filename: str) -> None:
-    with class_file.open("w", encoding="utf-8") as file:
+    with class_file.open("w", newline="", encoding="utf-8") as file:
         templates = files("cimgen.languages.modernpython.templates")
         with templates.joinpath(template_filename).open(encoding="utf-8") as f:
             args = {
@@ -196,6 +196,6 @@ def resolve_headers(path: str, version: str) -> None:
     dest = Path(path) / "resources"
     with open(src / "__init__.py", "r", encoding="utf-8") as template_file:
         template_text = template_file.read()
-    with open(dest / "__init__.py", "a", encoding="utf-8") as header_file:
+    with open(dest / "__init__.py", "w", newline="", encoding="utf-8") as header_file:
         header_file.write(template_text)
         header_file.write(f'\nCGMES_VERSION = "{version_number}"\n')
