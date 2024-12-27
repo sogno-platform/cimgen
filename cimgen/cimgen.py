@@ -13,57 +13,57 @@ logger = logging.getLogger(__name__)
 
 
 class RDFSEntry:
-    def __init__(self, jsonObject: dict):
-        self.jsonDefinition = jsonObject
+    def __init__(self, json_object: dict):
+        self.json_definition = json_object
         return
 
     def as_json(self) -> dict[str, str]:
-        jsonObject = {}
+        json_object = {}
         if self.about():
-            jsonObject["about"] = self.about()
+            json_object["about"] = self.about()
         if self.comment():
-            jsonObject["comment"] = self.comment()
+            json_object["comment"] = self.comment()
         if self.datatype():
-            jsonObject["datatype"] = self.datatype()
+            json_object["datatype"] = self.datatype()
         if self.domain():
-            jsonObject["domain"] = self.domain()
+            json_object["domain"] = self.domain()
         if self.is_fixed():
-            jsonObject["is_fixed"] = self.is_fixed()
+            json_object["is_fixed"] = self.is_fixed()
         if self.label():
-            jsonObject["label"] = self.label()
+            json_object["label"] = self.label()
         if self.multiplicity():
-            jsonObject["multiplicity"] = self.multiplicity()
+            json_object["multiplicity"] = self.multiplicity()
         if self.range():
-            jsonObject["range"] = self.range()
+            json_object["range"] = self.range()
         if self.stereotype():
-            jsonObject["stereotype"] = self.stereotype()
+            json_object["stereotype"] = self.stereotype()
         if self.type():
-            jsonObject["type"] = self.type()
+            json_object["type"] = self.type()
         if self.subclass_of():
-            jsonObject["subclass_of"] = self.subclass_of()
+            json_object["subclass_of"] = self.subclass_of()
         if self.inverse_role():
-            jsonObject["inverse_role"] = self.inverse_role()
-        jsonObject["is_used"] = _get_bool_string(self.is_used())
-        return jsonObject
+            json_object["inverse_role"] = self.inverse_role()
+        json_object["is_used"] = _get_bool_string(self.is_used())
+        return json_object
 
     def about(self) -> str:
-        if "$rdf:about" in self.jsonDefinition:
-            return _get_rid_of_hash(RDFSEntry._get_about_or_resource(self.jsonDefinition["$rdf:about"]))
+        if "$rdf:about" in self.json_definition:
+            return _get_rid_of_hash(RDFSEntry._get_about_or_resource(self.json_definition["$rdf:about"]))
         else:
             return ""
 
     # Capitalized True/False is valid in python but not in json.
     # Do not use this function in combination with json.load()
     def is_used(self) -> bool:
-        if "cims:AssociationUsed" in self.jsonDefinition:
-            return "yes" == RDFSEntry._extract_string(self.jsonDefinition["cims:AssociationUsed"]).lower()
+        if "cims:AssociationUsed" in self.json_definition:
+            return "yes" == RDFSEntry._extract_string(self.json_definition["cims:AssociationUsed"]).lower()
         else:
             return True
 
     def comment(self) -> str:
-        if "rdfs:comment" in self.jsonDefinition:
+        if "rdfs:comment" in self.json_definition:
             return (
-                RDFSEntry._extract_text(self.jsonDefinition["rdfs:comment"])
+                RDFSEntry._extract_text(self.json_definition["rdfs:comment"])
                 .replace("–", "-")
                 .replace("“", '"')
                 .replace("”", '"')
@@ -76,74 +76,74 @@ class RDFSEntry:
             return ""
 
     def datatype(self) -> str:
-        if "cims:dataType" in self.jsonDefinition:
-            return RDFSEntry._extract_string(self.jsonDefinition["cims:dataType"])
+        if "cims:dataType" in self.json_definition:
+            return RDFSEntry._extract_string(self.json_definition["cims:dataType"])
         else:
             return ""
 
     def domain(self) -> str:
-        if "rdfs:domain" in self.jsonDefinition:
-            return _get_rid_of_hash(RDFSEntry._extract_string(self.jsonDefinition["rdfs:domain"]))
+        if "rdfs:domain" in self.json_definition:
+            return _get_rid_of_hash(RDFSEntry._extract_string(self.json_definition["rdfs:domain"]))
         else:
             return ""
 
     def is_fixed(self) -> str:
-        if "cims:isFixed" in self.jsonDefinition:
-            return RDFSEntry._extract_text(self.jsonDefinition["cims:isFixed"])
+        if "cims:isFixed" in self.json_definition:
+            return RDFSEntry._extract_text(self.json_definition["cims:isFixed"])
         else:
             return ""
 
     def keyword(self) -> str:
-        if "dcat:keyword" in self.jsonDefinition:
-            return self.jsonDefinition["dcat:keyword"]
+        if "dcat:keyword" in self.json_definition:
+            return self.json_definition["dcat:keyword"]
         else:
             return ""
 
     def inverse_role(self) -> str:
-        if "cims:inverseRoleName" in self.jsonDefinition:
-            return _get_rid_of_hash(RDFSEntry._extract_string(self.jsonDefinition["cims:inverseRoleName"]))
+        if "cims:inverseRoleName" in self.json_definition:
+            return _get_rid_of_hash(RDFSEntry._extract_string(self.json_definition["cims:inverseRoleName"]))
         else:
             return ""
 
     def label(self) -> str:
-        if "rdfs:label" in self.jsonDefinition:
-            return RDFSEntry._extract_text(self.jsonDefinition["rdfs:label"])
+        if "rdfs:label" in self.json_definition:
+            return RDFSEntry._extract_text(self.json_definition["rdfs:label"])
         else:
             return ""
 
     def multiplicity(self) -> str:
-        if "cims:multiplicity" in self.jsonDefinition:
-            return _get_rid_of_hash(RDFSEntry._extract_string(self.jsonDefinition["cims:multiplicity"]))
+        if "cims:multiplicity" in self.json_definition:
+            return _get_rid_of_hash(RDFSEntry._extract_string(self.json_definition["cims:multiplicity"]))
         else:
             return ""
 
     def range(self) -> str:
-        if "rdfs:range" in self.jsonDefinition:
-            return RDFSEntry._extract_string(self.jsonDefinition["rdfs:range"])
+        if "rdfs:range" in self.json_definition:
+            return RDFSEntry._extract_string(self.json_definition["rdfs:range"])
         else:
             return ""
 
     def stereotype(self) -> str:
-        if "cims:stereotype" in self.jsonDefinition:
-            return RDFSEntry._extract_string(self.jsonDefinition["cims:stereotype"])
+        if "cims:stereotype" in self.json_definition:
+            return RDFSEntry._extract_string(self.json_definition["cims:stereotype"])
         else:
             return ""
 
     def type(self) -> str:
-        if "rdf:type" in self.jsonDefinition:
-            return RDFSEntry._extract_string(self.jsonDefinition["rdf:type"])
+        if "rdf:type" in self.json_definition:
+            return RDFSEntry._extract_string(self.json_definition["rdf:type"])
         else:
             return ""
 
     def version_iri(self) -> str:
-        if "owl:versionIRI" in self.jsonDefinition:
-            return RDFSEntry._extract_string(self.jsonDefinition["owl:versionIRI"])
+        if "owl:versionIRI" in self.json_definition:
+            return RDFSEntry._extract_string(self.json_definition["owl:versionIRI"])
         else:
             return ""
 
     def subclass_of(self) -> str:
-        if "rdfs:subClassOf" in self.jsonDefinition:
-            return _get_rid_of_hash(RDFSEntry._extract_string(self.jsonDefinition["rdfs:subClassOf"]))
+        if "rdfs:subClassOf" in self.json_definition:
+            return _get_rid_of_hash(RDFSEntry._extract_string(self.json_definition["rdfs:subClassOf"]))
         else:
             return ""
 
@@ -457,7 +457,7 @@ def _write_all_files(
             attribute["attribute_class"] = attribute_class
 
         class_details["attributes"].sort(key=lambda d: d["label"])
-        _write_files(class_details, output_path, version)
+        _write_files(class_details, output_path)
 
 
 # Some names are encoded as #name or http://some-url#name
@@ -471,7 +471,7 @@ def _get_rid_of_hash(name: str) -> str:
     return name
 
 
-def _write_files(class_details: dict, output_path: str, version: str) -> None:
+def _write_files(class_details: dict, output_path: str) -> None:
     if not class_details["subclass_of"]:
         # If class has no subclass_of key it is a subclass of the Base class
         class_details["subclass_of"] = class_details["lang_pack"].get_base_class()
@@ -560,18 +560,18 @@ def _merge_classes(profiles_dict: dict[str, dict[str, CIMComponentDefinition]]) 
 
 
 def _recursively_add_subclasses(class_dict: dict[str, CIMComponentDefinition], class_name: str) -> list[str]:
-    newSubClasses: list[str] = []
-    theClass = class_dict[class_name]
-    for name in theClass.subclasses():
-        newSubClasses.append(name)
-        newNewSubClasses = _recursively_add_subclasses(class_dict, name)
-        newSubClasses = newSubClasses + newNewSubClasses
-    return newSubClasses
+    new_subclasses: list[str] = []
+    the_class = class_dict[class_name]
+    for name in the_class.subclasses():
+        new_subclasses.append(name)
+        new_new_subclasses = _recursively_add_subclasses(class_dict, name)
+        new_subclasses = new_subclasses + new_new_subclasses
+    return new_subclasses
 
 
 def _add_subclasses_of_subclasses(class_dict: dict[str, CIMComponentDefinition]) -> None:
-    for className in class_dict:
-        class_dict[className].set_subclasses(_recursively_add_subclasses(class_dict, className))
+    for class_name in class_dict:
+        class_dict[class_name].set_subclasses(_recursively_add_subclasses(class_dict, class_name))
 
 
 def cim_generate(directory: str, output_path: str, version: str, lang_pack: ModuleType) -> None:
@@ -616,14 +616,14 @@ def cim_generate(directory: str, output_path: str, version: str, lang_pack: Modu
     class_dict_with_origins = _merge_classes(profiles_dict)
 
     # work out the subclasses for each class by noting the reverse relationship
-    for className in class_dict_with_origins:
-        superClassName = class_dict_with_origins[className].subclass_of()
-        if superClassName:
-            if superClassName in class_dict_with_origins:
-                superClass = class_dict_with_origins[superClassName]
-                superClass.add_subclass(className)
+    for class_name in class_dict_with_origins:
+        superclass_name = class_dict_with_origins[class_name].subclass_of()
+        if superclass_name:
+            if superclass_name in class_dict_with_origins:
+                superclass = class_dict_with_origins[superclass_name]
+                superclass.add_subclass(class_name)
             else:
-                logger.error("No match for superClass in dict: %s", superClassName)
+                logger.error("No match for superclass in dict: %s", superclass_name)
 
     # recursively add the subclasses of subclasses
     _add_subclasses_of_subclasses(class_dict_with_origins)
