@@ -46,6 +46,8 @@ profile_template_files = [
     {"filename": "cpp_cgmesProfile_header_template.mustache", "ext": ".hpp"},
     {"filename": "cpp_cgmesProfile_object_template.mustache", "ext": ".cpp"},
 ]
+classlist_template = {"filename": "cpp_classlist_template.mustache", "ext": ".hpp"}
+iec61970_template = {"filename": "cpp_iec61970_template.mustache", "ext": ".hpp"}
 
 partials = {
     "label_without_keyword": "{{#lang_pack.label_without_keyword}}{{label}}{{/lang_pack.label_without_keyword}}",
@@ -230,76 +232,27 @@ def _is_primitive_or_enum_class(file: Path) -> bool:
 
 
 def _create_header_include_file(
-    directory: Path,
-    header_include_filename: str,
-    header: list[str],
-    footer: list[str],
-    before: str,
-    after: str,
-    blacklist: list[str],
+    directory: Path, header_include_filename: str, template_info: dict[str, str], blacklist: list[str]
 ) -> None:
-    lines = []
+    classes = []
     for file in sorted(directory.glob("*.hpp"), key=lambda f: f.stem):
-        basename = file.stem
-        if not _is_primitive_or_enum_class(file) and basename not in blacklist:
-            lines.append(before + basename + after)
-    for line in lines:
-        header.append(line)
-    for line in footer:
-        header.append(line)
-    header_include_filepath = directory / header_include_filename
-    with header_include_filepath.open("w", encoding="utf-8") as f:
-        f.writelines(header)
+        class_name = file.stem
+        if not _is_primitive_or_enum_class(file) and class_name not in blacklist:
+            classes.append(class_name)
+    path = directory / (header_include_filename + template_info["ext"])
+    _write_templated_file(path, {"classes": classes}, template_info["filename"])
 
 
 def resolve_headers(path: str, version: str) -> None:  # NOSONAR
-    class_list_header = [
-        "#ifndef CIMCLASSLIST_H\n",
-        "#define CIMCLASSLIST_H\n",
-        "/*\n",
-        "Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cimgen\n",
-        "*/\n",
-        "#include <list>\n",
-        '#include "IEC61970.hpp"\n',
-        "using namespace CIMPP;\n",
-        "static std::list<BaseClassDefiner> CIMClassList =\n",
-        "{\n",
-    ]
-    class_list_footer = [
-        "	UnknownType::declare(),\n",
-        "};\n",
-        "#endif // CIMCLASSLIST_H\n",
-    ]
-
     _create_header_include_file(
         Path(path),
-        "CIMClassList.hpp",
-        class_list_header,
-        class_list_footer,
-        "	",
-        "::declare(),\n",
+        "CIMClassList",
+        classlist_template,
         class_blacklist,
     )
-
-    iec61970_header = [
-        "#ifndef IEC61970_H\n",
-        "#define IEC61970_H\n",
-        "/*\n",
-        "Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cimgen\n",
-        "*/\n",
-        "\n",
-    ]
-    iec61970_footer = [
-        '#include "UnknownType.hpp"\n',
-        "#endif",
-    ]
-
     _create_header_include_file(
         Path(path),
-        "IEC61970.hpp",
-        iec61970_header,
-        iec61970_footer,
-        '#include "',
-        '.hpp"\n',
+        "IEC61970",
+        iec61970_template,
         iec61970_blacklist,
     )
