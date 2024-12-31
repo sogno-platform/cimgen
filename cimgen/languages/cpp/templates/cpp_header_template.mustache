@@ -12,11 +12,15 @@ Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cim
 #include "{{subclass_of}}.hpp"
 #include "BaseClassDefiner.hpp"
 #include "CGMESProfile.hpp"
-{{> create_attribute_includes}}
+{{#attribute_class_includes}}
+#include "{{.}}.hpp"
+{{/attribute_class_includes}}
 
 namespace CIMPP
 {
-{{> create_attribute_class_declarations}}
+{{#attribute_class_declarations}}
+	class {{.}};
+{{/attribute_class_declarations}}
 
 {{#class_comment}}
 	/*
@@ -31,7 +35,21 @@ namespace CIMPP
 		~{{class_name}}() override;
 
 {{#attributes}}
-		{{> attribute_decl}} {{> label_without_keyword}};  /* {{comment}} Default: {{> set_default}} */
+{{#is_primitive_attribute}}
+		CIMPP::{{attribute_class}} {{> label_without_keyword}};  /* {{comment}} Default: {{> set_default}} */
+{{/is_primitive_attribute}}
+{{#is_datatype_attribute}}
+		CIMPP::{{attribute_class}} {{label}};  /* {{comment}} Default: {{> set_default}} */
+{{/is_datatype_attribute}}
+{{#is_enum_attribute}}
+		CIMPP::{{attribute_class}} {{label}};  /* {{comment}} Default: {{> set_default}} */
+{{/is_enum_attribute}}
+{{#is_class_attribute}}
+		CIMPP::{{attribute_class}}* {{label}};  /* {{comment}} Default: {{> set_default}} */
+{{/is_class_attribute}}
+{{#is_list_attribute}}
+		std::list<CIMPP::{{attribute_class}}*> {{label}};  /* {{comment}} Default: {{> set_default}} */
+{{/is_list_attribute}}
 {{/attributes}}
 
 		static const char debugName[];

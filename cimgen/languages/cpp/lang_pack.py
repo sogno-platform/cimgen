@@ -1,5 +1,4 @@
 import chevron
-import json
 import shutil
 from pathlib import Path
 from importlib.resources import files
@@ -49,24 +48,7 @@ profile_template_files = [
 ]
 
 partials = {
-    "attribute_decl": "{{#lang_pack.attribute_decl}}{{.}}{{/lang_pack.attribute_decl}}",
     "label_without_keyword": "{{#lang_pack.label_without_keyword}}{{label}}{{/lang_pack.label_without_keyword}}",
-    "insert_assign": "{{#lang_pack.insert_assign_fn}}{{.}}{{/lang_pack.insert_assign_fn}}",
-    "insert_class_assign": "{{#lang_pack.insert_class_assign_fn}}{{.}}{{/lang_pack.insert_class_assign_fn}}",
-    "insert_get": "{{#lang_pack.insert_get_fn}}{{.}}{{/lang_pack.insert_get_fn}}",
-    "insert_class_get": "{{#lang_pack.insert_class_get_fn}}{{.}}{{/lang_pack.insert_class_get_fn}}",
-    "insert_enum_get": "{{#lang_pack.insert_enum_get_fn}}{{.}}{{/lang_pack.insert_enum_get_fn}}",
-    "create_nullptr_assigns": "{{#lang_pack.create_nullptr_assigns}}"
-    " {{attributes}} {{/lang_pack.create_nullptr_assigns}} {};",
-    "create_assign": "{{#lang_pack.create_assign}}{{.}}{{/lang_pack.create_assign}}",
-    "create_class_assign": "{{#lang_pack.create_class_assign}}{{.}}{{/lang_pack.create_class_assign}}",
-    "create_get": "{{#lang_pack.create_get}}{{.}}{{/lang_pack.create_get}}",
-    "create_class_get": "{{#lang_pack.create_class_get}}{{.}}{{/lang_pack.create_class_get}}",
-    "create_enum_get": "{{#lang_pack.create_enum_get}}{{.}}{{/lang_pack.create_enum_get}}",
-    "create_attribute_includes": "{{#lang_pack.create_attribute_includes}}"
-    "{{attributes}}{{/lang_pack.create_attribute_includes}}",
-    "create_attribute_class_declarations": "{{#lang_pack.create_attribute_class_declarations}}"
-    "{{attributes}}{{/lang_pack.create_attribute_class_declarations}}",
     "set_default": "{{#lang_pack.set_default}}{{datatype}}{{/lang_pack.set_default}}",
 }
 
@@ -81,6 +63,19 @@ def get_class_location(class_name: str, class_map: dict, version: str) -> str:  
 
 # This is the function that runs the template.
 def run_template(output_path: str, class_details: dict) -> None:
+
+    # Add some class infos
+    class_details["attribute_class_includes"] = _get_attribute_class_includes(class_details["attributes"])
+    class_details["attribute_class_declarations"] = _get_attribute_class_declarations(class_details["attributes"])
+    class_details["nullptr_assigns"] = _get_nullptr_assigns(class_details["attributes"])
+
+    # Add some attribute infos
+    for attribute in class_details["attributes"]:
+        attribute["attribute_is_primitive_string"] = _attribute_is_primitive_string(attribute) and "true" or ""
+        if "inverse_role" in attribute:
+            attribute["inverse_role"] = [attribute["inverse_role"].replace(".", "_")]
+        else:
+            attribute["inverse_role"] = []
 
     if class_details["is_a_datatype_class"] or class_details["class_name"] in ("Float", "Decimal"):
         templates = float_template_files
@@ -137,411 +132,31 @@ def _get_label_without_keyword(label: str) -> str:
     return label
 
 
-# These insert_ functions are used to generate the entries in the dynamic_switch
-# maps, for use in assignments.cpp and Task.cpp
-# TODO: implement this as one function, determine in template if it should be called.
-# TODO: reorganize json object so we don't have to keep doing the same processing.
-def insert_assign_fn(text: str, render: Callable[[str], str]) -> str:
-    attribute_txt = render(text)
-    attribute_json = eval(attribute_txt)
-    if not _attribute_is_primitive_or_datatype_or_enum(attribute_json):
-        return ""
-    label = attribute_json["label"]
-    class_name = attribute_json["domain"]
-    return (
-        '	assign_map.insert(std::make_pair(std::string("cim:'
-        + class_name
-        + "."
-        + label
-        + '"), &assign_'
-        + class_name
-        + "_"
-        + label
-        + "));\n"
-    )
+def _get_nullptr_assigns(attributes: list[dict]) -> str:
+    # nullptr_list = [attr["label"] + "(nullptr)" for attr in attributes if attr["is_class_attribute"]]
+    nullptr_list = []
+    for attribute in attributes:
+        if attribute["is_class_attribute"]:
+            nullptr_list.append(attribute["label"] + "(nullptr)")
+    if nullptr_list:
+        return " : " + ", ".join(nullptr_list)
+    return ""
 
 
-def insert_class_assign_fn(text: str, render: Callable[[str], str]) -> str:
-    attribute_txt = render(text)
-    attribute_json = eval(attribute_txt)
-    if _attribute_is_primitive_or_datatype_or_enum(attribute_json):
-        return ""
-    label = attribute_json["label"]
-    class_name = attribute_json["domain"]
-    return (
-        '	assign_map.insert(std::make_pair(std::string("cim:'
-        + class_name
-        + "."
-        + label
-        + '"), &assign_'
-        + class_name
-        + "_"
-        + label
-        + "));\n"
-    )
+def _get_attribute_class_includes(attributes: list[dict]) -> list[str]:
+    class_set = set()
+    for attribute in attributes:
+        if _attribute_is_primitive_or_datatype_or_enum(attribute):
+            class_set.add(attribute["attribute_class"])
+    return list(sorted(class_set))
 
 
-def insert_get_fn(text: str, render: Callable[[str], str]) -> str:
-    attribute_txt = render(text)
-    attribute_json = eval(attribute_txt)
-    if not _attribute_is_primitive_or_datatype(attribute_json):
-        return ""
-    label = attribute_json["label"]
-    class_name = attribute_json["domain"]
-    return '	get_map.emplace("cim:' + class_name + "." + label + '", &get_' + class_name + "_" + label + ");\n"
-
-
-def insert_class_get_fn(text: str, render: Callable[[str], str]) -> str:
-    attribute_txt = render(text)
-    attribute_json = eval(attribute_txt)
-    if _attribute_is_primitive_or_datatype_or_enum(attribute_json):
-        return ""
-    if not attribute_json["is_used"]:
-        return ""
-    label = attribute_json["label"]
-    class_name = attribute_json["domain"]
-    return '	get_map.emplace("cim:' + class_name + "." + label + '", &get_' + class_name + "_" + label + ");\n"
-
-
-def insert_enum_get_fn(text: str, render: Callable[[str], str]) -> str:
-    attribute_txt = render(text)
-    attribute_json = eval(attribute_txt)
-    if not attribute_json["is_enum_attribute"]:
-        return ""
-    label = attribute_json["label"]
-    class_name = attribute_json["domain"]
-    return '	get_map.emplace("cim:' + class_name + "." + label + '", &get_' + class_name + "_" + label + ");\n"
-
-
-def create_nullptr_assigns(text: str, render: Callable[[str], str]) -> str:
-    attributes_txt = render(text)
-    if attributes_txt.strip() == "":
-        return ""
-    else:
-        attributes_json = eval(attributes_txt)
-        nullptr_init_string = ""
-        for attribute in attributes_json:
-            if attribute["is_class_attribute"]:
-                nullptr_init_string += "LABEL(nullptr), ".replace("LABEL", attribute["label"])
-
-    if len(nullptr_init_string) > 2:
-        return " : " + nullptr_init_string[:-2]
-    else:
-        return ""
-
-
-# These create_ functions are used to generate the implementations for
-# the entries in the dynamic_switch maps referenced in assignments.cpp and Task.cpp
-def create_class_assign(text: str, render: Callable[[str], str]) -> str:
-    attribute_txt = render(text)
-    attribute_json = eval(attribute_txt)
-    assign = ""
-    attribute_class = attribute_json["attribute_class"]
-    if _attribute_is_primitive_or_datatype_or_enum(attribute_json):
-        return ""
-    if attribute_json["is_list_attribute"]:
-        if "inverse_role" in attribute_json:
-            inverse = attribute_json["inverse_role"].split(".")
-            assign = (
-                """
-bool assign_INVERSEC_INVERSEL(BaseClass*, BaseClass*);
-bool assign_OBJECT_CLASS_LABEL(BaseClass* BaseClass_ptr1, BaseClass* BaseClass_ptr2)
-{
-	OBJECT_CLASS* element = dynamic_cast<OBJECT_CLASS*>(BaseClass_ptr1);
-	ATTRIBUTE_CLASS* element2 = dynamic_cast<ATTRIBUTE_CLASS*>(BaseClass_ptr2);
-	if (element != nullptr && element2 != nullptr)
-	{
-		if (std::find(element->LABEL.begin(), element->LABEL.end(), element2) == element->LABEL.end())
-		{
-			element->LABEL.push_back(element2);
-			return assign_INVERSEC_INVERSEL(BaseClass_ptr2, BaseClass_ptr1);
-		}
-		return true;
-	}
-	return false;
-}""".replace(  # noqa: E101,W191
-                    "OBJECT_CLASS", attribute_json["domain"]
-                )
-                .replace("ATTRIBUTE_CLASS", attribute_class)
-                .replace("LABEL", attribute_json["label"])
-                .replace("INVERSEC", inverse[0])
-                .replace("INVERSEL", inverse[1])
-            )
-        else:
-            assign = (
-                """
-bool assign_OBJECT_CLASS_LABEL(BaseClass* BaseClass_ptr1, BaseClass* BaseClass_ptr2)
-{
-	if (OBJECT_CLASS* element = dynamic_cast<OBJECT_CLASS*>(BaseClass_ptr1))
-	{
-		if (dynamic_cast<ATTRIBUTE_CLASS*>(BaseClass_ptr2) != nullptr)
-		{
-			element->LABEL.push_back(dynamic_cast<ATTRIBUTE_CLASS*>(BaseClass_ptr2));
-			return true;
-		}
-	}
-	return false;
-}""".replace(  # noqa: E101,W191
-                    "OBJECT_CLASS", attribute_json["domain"]
-                )
-                .replace("ATTRIBUTE_CLASS", attribute_class)
-                .replace("LABEL", attribute_json["label"])
-            )
-    elif "inverse_role" in attribute_json:
-        inverse = attribute_json["inverse_role"].split(".")
-        assign = (
-            """
-bool assign_INVERSEC_INVERSEL(BaseClass*, BaseClass*);
-bool assign_OBJECT_CLASS_LABEL(BaseClass* BaseClass_ptr1, BaseClass* BaseClass_ptr2)
-{
-	OBJECT_CLASS* element = dynamic_cast<OBJECT_CLASS*>(BaseClass_ptr1);
-	ATTRIBUTE_CLASS* element2 = dynamic_cast<ATTRIBUTE_CLASS*>(BaseClass_ptr2);
-	if (element != nullptr && element2 != nullptr)
-	{
-		if (element->LABEL != element2)
-		{
-			element->LABEL = element2;
-			return assign_INVERSEC_INVERSEL(BaseClass_ptr2, BaseClass_ptr1);
-		}
-		return true;
-	}
-	return false;
-}""".replace(  # noqa: E101,W191
-                "OBJECT_CLASS", attribute_json["domain"]
-            )
-            .replace("ATTRIBUTE_CLASS", attribute_class)
-            .replace("LABEL", attribute_json["label"])
-            .replace("INVERSEC", inverse[0])
-            .replace("INVERSEL", inverse[1])
-        )
-    else:
-        assign = (
-            """
-bool assign_OBJECT_CLASS_LABEL(BaseClass* BaseClass_ptr1, BaseClass* BaseClass_ptr2)
-{
-	if(OBJECT_CLASS* element = dynamic_cast<OBJECT_CLASS*>(BaseClass_ptr1))
-	{
-		element->LABEL = dynamic_cast<ATTRIBUTE_CLASS*>(BaseClass_ptr2);
-		if (element->LABEL != nullptr)
-		{
-			return true;
-		}
-	}
-	return false;
-}""".replace(  # noqa: E101,W191
-                "OBJECT_CLASS", attribute_json["domain"]
-            )
-            .replace("ATTRIBUTE_CLASS", attribute_class)
-            .replace("LABEL", attribute_json["label"])
-        )
-
-    return assign
-
-
-def create_assign(text: str, render: Callable[[str], str]) -> str:
-    attribute_txt = render(text)
-    attribute_json = eval(attribute_txt)
-    assign = ""
-    if not _attribute_is_primitive_or_datatype_or_enum(attribute_json):
-        return ""
-
-    if not _attribute_is_primitive_string(attribute_json):
-        assign = (
-            """
-bool assign_CLASS_LABEL(std::stringstream &buffer, BaseClass* BaseClass_ptr1)
-{
-	if (CLASS* element = dynamic_cast<CLASS*>(BaseClass_ptr1))
-	{
-		buffer >> element->LBL_WO_KEYWORD;
-		if (buffer.fail())
-			return false;
-		else
-			return true;
-	}
-	return false;
-}
-""".replace(  # noqa: E101,W191
-                "CLASS", attribute_json["domain"]
-            )
-            .replace("LABEL", attribute_json["label"])
-            .replace("LBL_WO_KEYWORD", _get_label_without_keyword(attribute_json["label"]))
-        )
-    else:  # _attribute_is_primitive_string
-        assign = """
-bool assign_CLASS_LABEL(std::stringstream &buffer, BaseClass* BaseClass_ptr1)
-{
-	if (CLASS* element = dynamic_cast<CLASS*>(BaseClass_ptr1))
-	{
-		element->LABEL = buffer.str();
-		if (buffer.fail())
-			return false;
-		else
-			return true;
-	}
-	return false;
-}
-""".replace(  # noqa: E101,W191
-            "CLASS", attribute_json["domain"]
-        ).replace(
-            "LABEL", attribute_json["label"]
-        )
-
-    return assign
-
-
-def create_class_get(text: str, render: Callable[[str], str]) -> str:
-    attribute_txt = render(text)
-    attribute_json = eval(attribute_txt)
-    if _attribute_is_primitive_or_datatype_or_enum(attribute_json):
-        return ""
-    if not attribute_json["is_used"]:
-        return ""
-    if attribute_json["is_list_attribute"]:
-        get = """
-bool get_OBJECT_CLASS_LABEL(const BaseClass* BaseClass_ptr1, std::list<const BaseClass*>& BaseClass_list)
-{
-	if (const OBJECT_CLASS* element = dynamic_cast<const OBJECT_CLASS*>(BaseClass_ptr1))
-	{
-		std::copy(element->LABEL.begin(), element->LABEL.end(), std::back_inserter(BaseClass_list));
-		return !BaseClass_list.empty();
-	}
-	return false;
-}
-""".replace(  # noqa: E101,W191
-            "OBJECT_CLASS", attribute_json["domain"]
-        ).replace(
-            "LABEL", attribute_json["label"]
-        )
-    else:
-        get = """
-bool get_OBJECT_CLASS_LABEL(const BaseClass* BaseClass_ptr1, std::list<const BaseClass*>& BaseClass_list)
-{
-	if (const OBJECT_CLASS* element = dynamic_cast<const OBJECT_CLASS*>(BaseClass_ptr1))
-	{
-		if (element->LABEL != 0)
-		{
-			BaseClass_list.push_back(element->LABEL);
-			return true;
-		}
-	}
-	return false;
-}
-""".replace(  # noqa: E101,W191
-            "OBJECT_CLASS", attribute_json["domain"]
-        ).replace(
-            "LABEL", attribute_json["label"]
-        )
-
-    return get
-
-
-def create_get(text: str, render: Callable[[str], str]) -> str:
-    attribute_txt = render(text)
-    attribute_json = eval(attribute_txt)
-    get = ""
-    if not _attribute_is_primitive_or_datatype(attribute_json):
-        return ""
-
-    get = (
-        """
-bool get_CLASS_LABEL(const BaseClass* BaseClass_ptr1, std::stringstream& buffer)
-{
-	if (const CLASS* element = dynamic_cast<const CLASS*>(BaseClass_ptr1))
-	{
-		buffer << element->LBL_WO_KEYWORD;
-		if (!buffer.str().empty())
-		{
-			return true;
-		}
-	}
-	buffer.setstate(std::ios::failbit);
-	return false;
-}
-""".replace(  # noqa: E101,W191
-            "CLASS", attribute_json["domain"]
-        )
-        .replace("LABEL", attribute_json["label"])
-        .replace("LBL_WO_KEYWORD", _get_label_without_keyword(attribute_json["label"]))
-    )
-
-    return get
-
-
-def create_enum_get(text: str, render: Callable[[str], str]) -> str:
-    attribute_txt = render(text)
-    attribute_json = eval(attribute_txt)
-    if not attribute_json["is_enum_attribute"]:
-        return ""
-
-    get = """
-bool get_CLASS_LABEL(const BaseClass* BaseClass_ptr1, std::stringstream& buffer)
-{
-	if (const CLASS* element = dynamic_cast<const CLASS*>(BaseClass_ptr1))
-	{
-		buffer << element->LABEL;
-		if (!buffer.str().empty())
-		{
-			return true;
-		}
-	}
-	buffer.setstate(std::ios::failbit);
-	return false;
-}
-""".replace(  # noqa: E101,W191
-        "CLASS", attribute_json["domain"]
-    ).replace(
-        "LABEL", attribute_json["label"]
-    )
-
-    return get
-
-
-def attribute_decl(text: str, render: Callable[[str], str]) -> str:
-    attribute_txt = render(text)
-    attribute_json = eval(attribute_txt)
-    return _attribute_decl(attribute_json)
-
-
-def _attribute_decl(attribute: dict) -> str:
-    _class = attribute["attribute_class"]
-    if _attribute_is_primitive_or_datatype_or_enum(attribute):
-        return "CIMPP::" + _class
-    if attribute["is_list_attribute"]:
-        return "std::list<CIMPP::" + _class + "*>"
-    else:
-        return "CIMPP::" + _class + "*"
-
-
-def create_attribute_includes(text: str, render: Callable[[str], str]) -> str:
-    unique = {}
-    include_string = ""
-    input_text = render(text)
-    json_string = input_text.replace("'", '"')
-    json_string_no_html_esc = json_string.replace("&quot;", '"')
-    if json_string_no_html_esc:
-        attributes = json.loads(json_string_no_html_esc)
-        for attribute in attributes:
-            if _attribute_is_primitive_or_datatype_or_enum(attribute):
-                unique[attribute["attribute_class"]] = True
-    for clarse in sorted(unique):
-        include_string += '#include "' + clarse + '.hpp"\n'
-    return include_string
-
-
-def create_attribute_class_declarations(text: str, render: Callable[[str], str]) -> str:
-    unique = {}
-    include_string = ""
-    input_text = render(text)
-    json_string = input_text.replace("'", '"')
-    json_string_no_html_esc = json_string.replace("&quot;", '"')
-    if json_string_no_html_esc:
-        attributes = json.loads(json_string_no_html_esc)
-        for attribute in attributes:
-            if attribute["is_class_attribute"] or attribute["is_list_attribute"]:
-                unique[attribute["attribute_class"]] = True
-    for clarse in sorted(unique):
-        include_string += "	class " + clarse + ";\n"
-    return include_string
+def _get_attribute_class_declarations(attributes: list[dict]) -> list[str]:
+    class_set = set()
+    for attribute in attributes:
+        if not _attribute_is_primitive_or_datatype_or_enum(attribute):
+            class_set.add(attribute["attribute_class"])
+    return list(sorted(class_set))
 
 
 def set_default(text: str, render: Callable[[str], str]) -> str:
@@ -571,11 +186,7 @@ def _set_default(datatype: str) -> str:
 
 
 def _attribute_is_primitive_or_datatype_or_enum(attribute: dict) -> bool:
-    return _attribute_is_primitive_or_datatype(attribute) or attribute["is_enum_attribute"]
-
-
-def _attribute_is_primitive_or_datatype(attribute: dict) -> bool:
-    return attribute["is_primitive_attribute"] or attribute["is_datatype_attribute"]
+    return attribute["is_primitive_attribute"] or attribute["is_datatype_attribute"] or attribute["is_enum_attribute"]
 
 
 def _attribute_is_primitive_string(attribute: dict) -> bool:

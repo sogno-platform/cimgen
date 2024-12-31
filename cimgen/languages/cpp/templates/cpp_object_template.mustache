@@ -14,7 +14,7 @@ Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cim
 
 using namespace CIMPP;
 
-{{class_name}}::{{class_name}}(){{> create_nullptr_assigns}}
+{{class_name}}::{{class_name}}(){{nullptr_assigns}} {};
 {{class_name}}::~{{class_name}}() {};
 
 static const std::list<CGMESProfile> PossibleProfilesForClass =
@@ -47,23 +47,213 @@ std::map<std::string, std::list<CGMESProfile>>
 }
 
 {{#attributes}}
-{{> create_assign}}
+{{#is_primitive_attribute}}
+
+bool assign_{{domain}}_{{label}}(std::stringstream &buffer, BaseClass* BaseClass_ptr1)
+{
+	if ({{domain}}* element = dynamic_cast<{{domain}}*>(BaseClass_ptr1))
+	{
+{{#attribute_is_primitive_string}}
+		element->{{> label_without_keyword}} = buffer.str();
+{{/attribute_is_primitive_string}}
+{{^attribute_is_primitive_string}}
+		buffer >> element->{{> label_without_keyword}};
+{{/attribute_is_primitive_string}}
+		if (buffer.fail())
+			return false;
+		else
+			return true;
+	}
+	return false;
+}
+{{/is_primitive_attribute}}
+{{#is_datatype_attribute}}
+
+bool assign_{{domain}}_{{label}}(std::stringstream &buffer, BaseClass* BaseClass_ptr1)
+{
+	if ({{domain}}* element = dynamic_cast<{{domain}}*>(BaseClass_ptr1))
+	{
+		buffer >> element->{{label}};
+		if (buffer.fail())
+			return false;
+		else
+			return true;
+	}
+	return false;
+}
+{{/is_datatype_attribute}}
+{{#is_enum_attribute}}
+
+bool assign_{{domain}}_{{label}}(std::stringstream &buffer, BaseClass* BaseClass_ptr1)
+{
+	if ({{domain}}* element = dynamic_cast<{{domain}}*>(BaseClass_ptr1))
+	{
+		buffer >> element->{{label}};
+		if (buffer.fail())
+			return false;
+		else
+			return true;
+	}
+	return false;
+}
+{{/is_enum_attribute}}
+{{/attributes}}
+
+
+{{#attributes}}
+{{#is_class_attribute}}
+{{#inverse_role}}
+bool assign_{{.}}(BaseClass*, BaseClass*);
+bool assign_{{domain}}_{{label}}(BaseClass* BaseClass_ptr1, BaseClass* BaseClass_ptr2)
+{
+	{{domain}}* element = dynamic_cast<{{domain}}*>(BaseClass_ptr1);
+	{{attribute_class}}* element2 = dynamic_cast<{{attribute_class}}*>(BaseClass_ptr2);
+	if (element != nullptr && element2 != nullptr)
+	{
+		if (element->{{label}} != element2)
+		{
+			element->{{label}} = element2;
+			return assign_{{.}}(BaseClass_ptr2, BaseClass_ptr1);
+		}
+		return true;
+	}
+	return false;
+}
+{{/inverse_role}}
+{{^inverse_role}}
+bool assign_{{domain}}_{{label}}(BaseClass* BaseClass_ptr1, BaseClass* BaseClass_ptr2)
+{
+	if({{domain}}* element = dynamic_cast<{{domain}}*>(BaseClass_ptr1))
+	{
+		element->{{label}} = dynamic_cast<{{attribute_class}}*>(BaseClass_ptr2);
+		if (element->{{label}} != nullptr)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+{{/inverse_role}}
+{{/is_class_attribute}}
+{{#is_list_attribute}}
+{{#inverse_role}}
+bool assign_{{.}}(BaseClass*, BaseClass*);
+bool assign_{{domain}}_{{label}}(BaseClass* BaseClass_ptr1, BaseClass* BaseClass_ptr2)
+{
+	{{domain}}* element = dynamic_cast<{{domain}}*>(BaseClass_ptr1);
+	{{attribute_class}}* element2 = dynamic_cast<{{attribute_class}}*>(BaseClass_ptr2);
+	if (element != nullptr && element2 != nullptr)
+	{
+		if (std::find(element->{{label}}.begin(), element->{{label}}.end(), element2) == element->{{label}}.end())
+		{
+			element->{{label}}.push_back(element2);
+			return assign_{{.}}(BaseClass_ptr2, BaseClass_ptr1);
+		}
+		return true;
+	}
+	return false;
+}
+{{/inverse_role}}
+{{^inverse_role}}
+bool assign_{{domain}}_{{label}}(BaseClass* BaseClass_ptr1, BaseClass* BaseClass_ptr2)
+{
+	if ({{domain}}* element = dynamic_cast<{{domain}}*>(BaseClass_ptr1))
+	{
+		if (dynamic_cast<{{attribute_class}}*>(BaseClass_ptr2) != nullptr)
+		{
+			element->{{label}}.push_back(dynamic_cast<{{attribute_class}}*>(BaseClass_ptr2));
+			return true;
+		}
+	}
+	return false;
+}
+{{/inverse_role}}
+{{/is_list_attribute}}
+{{/attributes}}
+{{#attributes}}
+{{#is_primitive_attribute}}
+
+bool get_{{domain}}_{{label}}(const BaseClass* BaseClass_ptr1, std::stringstream& buffer)
+{
+	if (const {{domain}}* element = dynamic_cast<const {{domain}}*>(BaseClass_ptr1))
+	{
+		buffer << element->{{> label_without_keyword}};
+		if (!buffer.str().empty())
+		{
+			return true;
+		}
+	}
+	buffer.setstate(std::ios::failbit);
+	return false;
+}
+{{/is_primitive_attribute}}
+{{#is_datatype_attribute}}
+
+bool get_{{domain}}_{{label}}(const BaseClass* BaseClass_ptr1, std::stringstream& buffer)
+{
+	if (const {{domain}}* element = dynamic_cast<const {{domain}}*>(BaseClass_ptr1))
+	{
+		buffer << element->{{label}};
+		if (!buffer.str().empty())
+		{
+			return true;
+		}
+	}
+	buffer.setstate(std::ios::failbit);
+	return false;
+}
+{{/is_datatype_attribute}}
 {{/attributes}}
 
 {{#attributes}}
-{{> create_class_assign}}
+{{#is_used}}
+{{#is_class_attribute}}
+
+bool get_{{domain}}_{{label}}(const BaseClass* BaseClass_ptr1, std::list<const BaseClass*>& BaseClass_list)
+{
+	if (const {{domain}}* element = dynamic_cast<const {{domain}}*>(BaseClass_ptr1))
+	{
+		if (element->{{label}} != 0)
+		{
+			BaseClass_list.push_back(element->{{label}});
+			return true;
+		}
+	}
+	return false;
+}
+{{/is_class_attribute}}
+{{#is_list_attribute}}
+
+bool get_{{domain}}_{{label}}(const BaseClass* BaseClass_ptr1, std::list<const BaseClass*>& BaseClass_list)
+{
+	if (const {{domain}}* element = dynamic_cast<const {{domain}}*>(BaseClass_ptr1))
+	{
+		std::copy(element->{{label}}.begin(), element->{{label}}.end(), std::back_inserter(BaseClass_list));
+		return !BaseClass_list.empty();
+	}
+	return false;
+}
+{{/is_list_attribute}}
+{{/is_used}}
 {{/attributes}}
 
 {{#attributes}}
-{{> create_get}}
-{{/attributes}}
+{{#is_enum_attribute}}
 
-{{#attributes}}
-{{> create_class_get}}
-{{/attributes}}
-
-{{#attributes}}
-{{> create_enum_get}}
+bool get_{{domain}}_{{label}}(const BaseClass* BaseClass_ptr1, std::stringstream& buffer)
+{
+	if (const {{domain}}* element = dynamic_cast<const {{domain}}*>(BaseClass_ptr1))
+	{
+		buffer << element->{{label}};
+		if (!buffer.str().empty())
+		{
+			return true;
+		}
+	}
+	buffer.setstate(std::ios::failbit);
+	return false;
+}
+{{/is_enum_attribute}}
 {{/attributes}}
 
 const char {{class_name}}::debugName[] = "{{class_name}}";
@@ -80,14 +270,27 @@ void {{class_name}}::addConstructToMap(std::unordered_map<std::string, BaseClass
 void {{class_name}}::addPrimitiveAssignFnsToMap(std::unordered_map<std::string, assign_function>& assign_map)
 {
 {{#attributes}}
-{{> insert_assign}}
+{{#is_primitive_attribute}}
+	assign_map.insert(std::make_pair(std::string("cim:{{domain}}.{{label}}"), &assign_{{domain}}_{{label}}));
+{{/is_primitive_attribute}}
+{{#is_datatype_attribute}}
+	assign_map.insert(std::make_pair(std::string("cim:{{domain}}.{{label}}"), &assign_{{domain}}_{{label}}));
+{{/is_datatype_attribute}}
+{{#is_enum_attribute}}
+	assign_map.insert(std::make_pair(std::string("cim:{{domain}}.{{label}}"), &assign_{{domain}}_{{label}}));
+{{/is_enum_attribute}}
 {{/attributes}}
 }
 
 void {{class_name}}::addClassAssignFnsToMap(std::unordered_map<std::string, class_assign_function>& assign_map)
 {
 {{#attributes}}
-{{> insert_class_assign}}
+{{#is_class_attribute}}
+	assign_map.insert(std::make_pair(std::string("cim:{{domain}}.{{label}}"), &assign_{{domain}}_{{label}}));
+{{/is_class_attribute}}
+{{#is_list_attribute}}
+	assign_map.insert(std::make_pair(std::string("cim:{{domain}}.{{label}}"), &assign_{{domain}}_{{label}}));
+{{/is_list_attribute}}
 {{/attributes}}
 }
 
@@ -95,7 +298,12 @@ void {{class_name}}::addPrimitiveGetFnsToMap(std::map<std::string, get_function>
 {
 	{{subclass_of}}::addPrimitiveGetFnsToMap(get_map);
 {{#attributes}}
-{{> insert_get}}
+{{#is_primitive_attribute}}
+	get_map.emplace("cim:{{domain}}.{{label}}", &get_{{domain}}_{{label}});
+{{/is_primitive_attribute}}
+{{#is_datatype_attribute}}
+	get_map.emplace("cim:{{domain}}.{{label}}", &get_{{domain}}_{{label}});
+{{/is_datatype_attribute}}
 {{/attributes}}
 }
 
@@ -103,7 +311,14 @@ void {{class_name}}::addClassGetFnsToMap(std::map<std::string, class_get_functio
 {
 	{{subclass_of}}::addClassGetFnsToMap(get_map);
 {{#attributes}}
-{{> insert_class_get}}
+{{#is_used}}
+{{#is_class_attribute}}
+	get_map.emplace("cim:{{domain}}.{{label}}", &get_{{domain}}_{{label}});
+{{/is_class_attribute}}
+{{#is_list_attribute}}
+	get_map.emplace("cim:{{domain}}.{{label}}", &get_{{domain}}_{{label}});
+{{/is_list_attribute}}
+{{/is_used}}
 {{/attributes}}
 }
 
@@ -111,7 +326,9 @@ void {{class_name}}::addEnumGetFnsToMap(std::map<std::string, get_function>& get
 {
 	{{subclass_of}}::addEnumGetFnsToMap(get_map);
 {{#attributes}}
-{{> insert_enum_get}}
+{{#is_enum_attribute}}
+	get_map.emplace("cim:{{domain}}.{{label}}", &get_{{domain}}_{{label}});
+{{/is_enum_attribute}}
 {{/attributes}}
 }
 
