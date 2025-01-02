@@ -51,7 +51,8 @@ std::map<std::string, std::list<CGMESProfile>>
 
 bool assign_{{domain}}_{{label}}(std::stringstream &buffer, BaseClass* BaseClass_ptr1)
 {
-	if ({{domain}}* element = dynamic_cast<{{domain}}*>(BaseClass_ptr1))
+	{{domain}}* element = dynamic_cast<{{domain}}*>(BaseClass_ptr1);
+	if (element != nullptr)
 	{
 {{#attribute_is_primitive_string}}
 		element->{{> label_without_keyword}} = buffer.str();
@@ -59,10 +60,10 @@ bool assign_{{domain}}_{{label}}(std::stringstream &buffer, BaseClass* BaseClass
 {{^attribute_is_primitive_string}}
 		buffer >> element->{{> label_without_keyword}};
 {{/attribute_is_primitive_string}}
-		if (buffer.fail())
-			return false;
-		else
+		if (!buffer.fail())
+		{
 			return true;
+		}
 	}
 	return false;
 }
@@ -71,13 +72,14 @@ bool assign_{{domain}}_{{label}}(std::stringstream &buffer, BaseClass* BaseClass
 
 bool assign_{{domain}}_{{label}}(std::stringstream &buffer, BaseClass* BaseClass_ptr1)
 {
-	if ({{domain}}* element = dynamic_cast<{{domain}}*>(BaseClass_ptr1))
+	{{domain}}* element = dynamic_cast<{{domain}}*>(BaseClass_ptr1);
+	if (element != nullptr)
 	{
 		buffer >> element->{{label}};
-		if (buffer.fail())
-			return false;
-		else
+		if (!buffer.fail())
+		{
 			return true;
+		}
 	}
 	return false;
 }
@@ -86,13 +88,14 @@ bool assign_{{domain}}_{{label}}(std::stringstream &buffer, BaseClass* BaseClass
 
 bool assign_{{domain}}_{{label}}(std::stringstream &buffer, BaseClass* BaseClass_ptr1)
 {
-	if ({{domain}}* element = dynamic_cast<{{domain}}*>(BaseClass_ptr1))
+	{{domain}}* element = dynamic_cast<{{domain}}*>(BaseClass_ptr1);
+	if (element != nullptr)
 	{
 		buffer >> element->{{label}};
-		if (buffer.fail())
-			return false;
-		else
+		if (!buffer.fail())
+		{
 			return true;
+		}
 	}
 	return false;
 }
@@ -123,7 +126,8 @@ bool assign_{{domain}}_{{label}}(BaseClass* BaseClass_ptr1, BaseClass* BaseClass
 {{^inverse_role}}
 bool assign_{{domain}}_{{label}}(BaseClass* BaseClass_ptr1, BaseClass* BaseClass_ptr2)
 {
-	if({{domain}}* element = dynamic_cast<{{domain}}*>(BaseClass_ptr1))
+	{{domain}}* element = dynamic_cast<{{domain}}*>(BaseClass_ptr1);
+	if (element != nullptr)
 	{
 		element->{{label}} = dynamic_cast<{{attribute_class}}*>(BaseClass_ptr2);
 		if (element->{{label}} != nullptr)
@@ -157,7 +161,8 @@ bool assign_{{domain}}_{{label}}(BaseClass* BaseClass_ptr1, BaseClass* BaseClass
 {{^inverse_role}}
 bool assign_{{domain}}_{{label}}(BaseClass* BaseClass_ptr1, BaseClass* BaseClass_ptr2)
 {
-	if ({{domain}}* element = dynamic_cast<{{domain}}*>(BaseClass_ptr1))
+	{{domain}}* element = dynamic_cast<{{domain}}*>(BaseClass_ptr1);
+	if (element != nullptr)
 	{
 		if (dynamic_cast<{{attribute_class}}*>(BaseClass_ptr2) != nullptr)
 		{
@@ -175,7 +180,8 @@ bool assign_{{domain}}_{{label}}(BaseClass* BaseClass_ptr1, BaseClass* BaseClass
 
 bool get_{{domain}}_{{label}}(const BaseClass* BaseClass_ptr1, std::stringstream& buffer)
 {
-	if (const {{domain}}* element = dynamic_cast<const {{domain}}*>(BaseClass_ptr1))
+	const {{domain}}* element = dynamic_cast<const {{domain}}*>(BaseClass_ptr1);
+	if (element != nullptr)
 	{
 		buffer << element->{{> label_without_keyword}};
 		if (!buffer.str().empty())
@@ -191,7 +197,8 @@ bool get_{{domain}}_{{label}}(const BaseClass* BaseClass_ptr1, std::stringstream
 
 bool get_{{domain}}_{{label}}(const BaseClass* BaseClass_ptr1, std::stringstream& buffer)
 {
-	if (const {{domain}}* element = dynamic_cast<const {{domain}}*>(BaseClass_ptr1))
+	const {{domain}}* element = dynamic_cast<const {{domain}}*>(BaseClass_ptr1);
+	if (element != nullptr)
 	{
 		buffer << element->{{label}};
 		if (!buffer.str().empty())
@@ -211,7 +218,8 @@ bool get_{{domain}}_{{label}}(const BaseClass* BaseClass_ptr1, std::stringstream
 
 bool get_{{domain}}_{{label}}(const BaseClass* BaseClass_ptr1, std::list<const BaseClass*>& BaseClass_list)
 {
-	if (const {{domain}}* element = dynamic_cast<const {{domain}}*>(BaseClass_ptr1))
+	const {{domain}}* element = dynamic_cast<const {{domain}}*>(BaseClass_ptr1);
+	if (element != nullptr)
 	{
 		if (element->{{label}} != 0)
 		{
@@ -226,7 +234,8 @@ bool get_{{domain}}_{{label}}(const BaseClass* BaseClass_ptr1, std::list<const B
 
 bool get_{{domain}}_{{label}}(const BaseClass* BaseClass_ptr1, std::list<const BaseClass*>& BaseClass_list)
 {
-	if (const {{domain}}* element = dynamic_cast<const {{domain}}*>(BaseClass_ptr1))
+	const {{domain}}* element = dynamic_cast<const {{domain}}*>(BaseClass_ptr1);
+	if (element != nullptr)
 	{
 		std::copy(element->{{label}}.begin(), element->{{label}}.end(), std::back_inserter(BaseClass_list));
 		return !BaseClass_list.empty();
@@ -242,7 +251,8 @@ bool get_{{domain}}_{{label}}(const BaseClass* BaseClass_ptr1, std::list<const B
 
 bool get_{{domain}}_{{label}}(const BaseClass* BaseClass_ptr1, std::stringstream& buffer)
 {
-	if (const {{domain}}* element = dynamic_cast<const {{domain}}*>(BaseClass_ptr1))
+	const {{domain}}* element = dynamic_cast<const {{domain}}*>(BaseClass_ptr1);
+	if (element != nullptr)
 	{
 		buffer << element->{{label}};
 		if (!buffer.str().empty())
@@ -264,20 +274,20 @@ const char* {{class_name}}::debugString() const
 
 void {{class_name}}::addConstructToMap(std::unordered_map<std::string, BaseClass* (*)()>& factory_map)
 {
-	factory_map.insert(std::make_pair(std::string("cim:{{class_name}}"), &{{class_name}}_factory));
+	factory_map.emplace("cim:{{class_name}}", &{{class_name}}_factory);
 }
 
 void {{class_name}}::addPrimitiveAssignFnsToMap(std::unordered_map<std::string, assign_function>& assign_map)
 {
 {{#attributes}}
 {{#is_primitive_attribute}}
-	assign_map.insert(std::make_pair(std::string("cim:{{domain}}.{{label}}"), &assign_{{domain}}_{{label}}));
+	assign_map.emplace("cim:{{domain}}.{{label}}", &assign_{{domain}}_{{label}});
 {{/is_primitive_attribute}}
 {{#is_datatype_attribute}}
-	assign_map.insert(std::make_pair(std::string("cim:{{domain}}.{{label}}"), &assign_{{domain}}_{{label}}));
+	assign_map.emplace("cim:{{domain}}.{{label}}", &assign_{{domain}}_{{label}});
 {{/is_datatype_attribute}}
 {{#is_enum_attribute}}
-	assign_map.insert(std::make_pair(std::string("cim:{{domain}}.{{label}}"), &assign_{{domain}}_{{label}}));
+	assign_map.emplace("cim:{{domain}}.{{label}}", &assign_{{domain}}_{{label}});
 {{/is_enum_attribute}}
 {{/attributes}}
 }
@@ -286,10 +296,10 @@ void {{class_name}}::addClassAssignFnsToMap(std::unordered_map<std::string, clas
 {
 {{#attributes}}
 {{#is_class_attribute}}
-	assign_map.insert(std::make_pair(std::string("cim:{{domain}}.{{label}}"), &assign_{{domain}}_{{label}}));
+	assign_map.emplace("cim:{{domain}}.{{label}}", &assign_{{domain}}_{{label}});
 {{/is_class_attribute}}
 {{#is_list_attribute}}
-	assign_map.insert(std::make_pair(std::string("cim:{{domain}}.{{label}}"), &assign_{{domain}}_{{label}}));
+	assign_map.emplace("cim:{{domain}}.{{label}}", &assign_{{domain}}_{{label}});
 {{/is_list_attribute}}
 {{/attributes}}
 }
