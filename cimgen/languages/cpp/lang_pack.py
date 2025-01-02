@@ -43,8 +43,8 @@ string_template_files = [
     {"filename": "cpp_string_object_template.mustache", "ext": ".cpp"},
 ]
 profile_template_files = [
-    {"filename": "cpp_cgmesProfile_header_template.mustache", "ext": ".hpp"},
-    {"filename": "cpp_cgmesProfile_object_template.mustache", "ext": ".cpp"},
+    {"filename": "cpp_profile_header_template.mustache", "ext": ".hpp"},
+    {"filename": "cpp_profile_object_template.mustache", "ext": ".cpp"},
 ]
 classlist_template = {"filename": "cpp_classlist_template.mustache", "ext": ".hpp"}
 iec61970_template = {"filename": "cpp_iec61970_template.mustache", "ext": ".hpp"}
