@@ -8,9 +8,9 @@ Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cim
 #include <iterator>
 #include <sstream>
 
-{{#attributes}}
-#include "{{attribute_class}}.hpp"
-{{/attributes}}
+{{#attribute_class_declarations}}
+#include "{{.}}.hpp"
+{{/attribute_class_declarations}}
 
 using namespace CIMPP;
 
