@@ -23,9 +23,7 @@ namespace CIMPP
 {{/attribute_class_declarations}}
 
 {{#class_comment}}
-	/*
-	{{{class_comment}}}
-	*/
+	/** \brief {{{class_comment}}} */
 {{/class_comment}}
 	class {{class_name}} : public {{subclass_of}}
 	{
@@ -33,22 +31,23 @@ namespace CIMPP
 		/* constructor initialising all attributes to null */
 		{{class_name}}();
 		~{{class_name}}() override;
-
 {{#attributes}}
+
+		/** \brief {{comment}} Default: {{> set_default}} */
 {{#is_primitive_attribute}}
-		CIMPP::{{attribute_class}} {{> label_without_keyword}};  /* {{comment}} Default: {{> set_default}} */
+		CIMPP::{{attribute_class}} {{> label_without_keyword}};
 {{/is_primitive_attribute}}
 {{#is_datatype_attribute}}
-		CIMPP::{{attribute_class}} {{label}};  /* {{comment}} Default: {{> set_default}} */
+		CIMPP::{{attribute_class}} {{label}};
 {{/is_datatype_attribute}}
 {{#is_enum_attribute}}
-		CIMPP::{{attribute_class}} {{label}};  /* {{comment}} Default: {{> set_default}} */
+		CIMPP::{{attribute_class}} {{label}};
 {{/is_enum_attribute}}
 {{#is_class_attribute}}
-		CIMPP::{{attribute_class}}* {{label}};  /* {{comment}} Default: {{> set_default}} */
+		CIMPP::{{attribute_class}}* {{label}};
 {{/is_class_attribute}}
 {{#is_list_attribute}}
-		std::list<CIMPP::{{attribute_class}}*> {{label}};  /* {{comment}} Default: {{> set_default}} */
+		std::list<CIMPP::{{attribute_class}}*> {{label}};
 {{/is_list_attribute}}
 {{/attributes}}
 
