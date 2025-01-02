@@ -87,7 +87,7 @@ public final class Main {
 	 * Write cim data to a rdf file.
 	 *
 	 * @param outputFile path of file to write
-	 * @param cimData	cim data as map of rdfid to cim object
+	 * @param cimData cim data as map of rdfid to cim object
 	 */
 	public static void writeRdf(String outputFile, Map<String, BaseClass> cimData) {
 		try {

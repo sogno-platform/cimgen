@@ -14,8 +14,8 @@ Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cim
 
 using namespace CIMPP;
 
-{{class_name}}::{{class_name}}(){{nullptr_assigns}} {};
-{{class_name}}::~{{class_name}}() {};
+{{class_name}}::{{class_name}}(){{nullptr_assigns}} {}
+{{class_name}}::~{{class_name}}() {}
 
 static const std::list<CGMESProfile> PossibleProfilesForClass =
 {
@@ -49,7 +49,7 @@ std::map<std::string, std::list<CGMESProfile>>
 {{#attributes}}
 {{#is_primitive_attribute}}
 
-bool assign_{{domain}}_{{label}}(std::stringstream &buffer, BaseClass* BaseClass_ptr1)
+bool assign_{{domain}}_{{label}}(std::stringstream& buffer, BaseClass* BaseClass_ptr1)
 {
 	{{domain}}* element = dynamic_cast<{{domain}}*>(BaseClass_ptr1);
 	if (element != nullptr)
@@ -70,7 +70,7 @@ bool assign_{{domain}}_{{label}}(std::stringstream &buffer, BaseClass* BaseClass
 {{/is_primitive_attribute}}
 {{#is_datatype_attribute}}
 
-bool assign_{{domain}}_{{label}}(std::stringstream &buffer, BaseClass* BaseClass_ptr1)
+bool assign_{{domain}}_{{label}}(std::stringstream& buffer, BaseClass* BaseClass_ptr1)
 {
 	{{domain}}* element = dynamic_cast<{{domain}}*>(BaseClass_ptr1);
 	if (element != nullptr)
@@ -86,7 +86,7 @@ bool assign_{{domain}}_{{label}}(std::stringstream &buffer, BaseClass* BaseClass
 {{/is_datatype_attribute}}
 {{#is_enum_attribute}}
 
-bool assign_{{domain}}_{{label}}(std::stringstream &buffer, BaseClass* BaseClass_ptr1)
+bool assign_{{domain}}_{{label}}(std::stringstream& buffer, BaseClass* BaseClass_ptr1)
 {
 	{{domain}}* element = dynamic_cast<{{domain}}*>(BaseClass_ptr1);
 	if (element != nullptr)
