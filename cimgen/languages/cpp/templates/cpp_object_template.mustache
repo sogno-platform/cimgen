@@ -48,7 +48,6 @@ std::map<std::string, std::list<CGMESProfile>>
 
 {{#attributes}}
 {{#is_primitive_attribute}}
-
 bool assign_{{domain}}_{{label}}(std::stringstream& buffer, BaseClass* BaseClass_ptr1)
 {
 	{{domain}}* element = dynamic_cast<{{domain}}*>(BaseClass_ptr1);
@@ -69,7 +68,6 @@ bool assign_{{domain}}_{{label}}(std::stringstream& buffer, BaseClass* BaseClass
 }
 {{/is_primitive_attribute}}
 {{#is_datatype_attribute}}
-
 bool assign_{{domain}}_{{label}}(std::stringstream& buffer, BaseClass* BaseClass_ptr1)
 {
 	{{domain}}* element = dynamic_cast<{{domain}}*>(BaseClass_ptr1);
@@ -85,7 +83,6 @@ bool assign_{{domain}}_{{label}}(std::stringstream& buffer, BaseClass* BaseClass
 }
 {{/is_datatype_attribute}}
 {{#is_enum_attribute}}
-
 bool assign_{{domain}}_{{label}}(std::stringstream& buffer, BaseClass* BaseClass_ptr1)
 {
 	{{domain}}* element = dynamic_cast<{{domain}}*>(BaseClass_ptr1);
@@ -100,10 +97,6 @@ bool assign_{{domain}}_{{label}}(std::stringstream& buffer, BaseClass* BaseClass
 	return false;
 }
 {{/is_enum_attribute}}
-{{/attributes}}
-
-
-{{#attributes}}
 {{#is_class_attribute}}
 {{#inverse_role}}
 bool assign_{{.}}(BaseClass*, BaseClass*);
@@ -174,10 +167,11 @@ bool assign_{{domain}}_{{label}}(BaseClass* BaseClass_ptr1, BaseClass* BaseClass
 }
 {{/inverse_role}}
 {{/is_list_attribute}}
+
 {{/attributes}}
 {{#attributes}}
+{{#is_used}}
 {{#is_primitive_attribute}}
-
 bool get_{{domain}}_{{label}}(const BaseClass* BaseClass_ptr1, std::stringstream& buffer)
 {
 	const {{domain}}* element = dynamic_cast<const {{domain}}*>(BaseClass_ptr1);
@@ -194,7 +188,6 @@ bool get_{{domain}}_{{label}}(const BaseClass* BaseClass_ptr1, std::stringstream
 }
 {{/is_primitive_attribute}}
 {{#is_datatype_attribute}}
-
 bool get_{{domain}}_{{label}}(const BaseClass* BaseClass_ptr1, std::stringstream& buffer)
 {
 	const {{domain}}* element = dynamic_cast<const {{domain}}*>(BaseClass_ptr1);
@@ -210,45 +203,7 @@ bool get_{{domain}}_{{label}}(const BaseClass* BaseClass_ptr1, std::stringstream
 	return false;
 }
 {{/is_datatype_attribute}}
-{{/attributes}}
-
-{{#attributes}}
-{{#is_used}}
-{{#is_class_attribute}}
-
-bool get_{{domain}}_{{label}}(const BaseClass* BaseClass_ptr1, std::list<const BaseClass*>& BaseClass_list)
-{
-	const {{domain}}* element = dynamic_cast<const {{domain}}*>(BaseClass_ptr1);
-	if (element != nullptr)
-	{
-		if (element->{{label}} != 0)
-		{
-			BaseClass_list.push_back(element->{{label}});
-			return true;
-		}
-	}
-	return false;
-}
-{{/is_class_attribute}}
-{{#is_list_attribute}}
-
-bool get_{{domain}}_{{label}}(const BaseClass* BaseClass_ptr1, std::list<const BaseClass*>& BaseClass_list)
-{
-	const {{domain}}* element = dynamic_cast<const {{domain}}*>(BaseClass_ptr1);
-	if (element != nullptr)
-	{
-		std::copy(element->{{label}}.begin(), element->{{label}}.end(), std::back_inserter(BaseClass_list));
-		return !BaseClass_list.empty();
-	}
-	return false;
-}
-{{/is_list_attribute}}
-{{/is_used}}
-{{/attributes}}
-
-{{#attributes}}
 {{#is_enum_attribute}}
-
 bool get_{{domain}}_{{label}}(const BaseClass* BaseClass_ptr1, std::stringstream& buffer)
 {
 	const {{domain}}* element = dynamic_cast<const {{domain}}*>(BaseClass_ptr1);
@@ -264,8 +219,36 @@ bool get_{{domain}}_{{label}}(const BaseClass* BaseClass_ptr1, std::stringstream
 	return false;
 }
 {{/is_enum_attribute}}
-{{/attributes}}
+{{#is_class_attribute}}
+bool get_{{domain}}_{{label}}(const BaseClass* BaseClass_ptr1, std::list<const BaseClass*>& BaseClass_list)
+{
+	const {{domain}}* element = dynamic_cast<const {{domain}}*>(BaseClass_ptr1);
+	if (element != nullptr)
+	{
+		if (element->{{label}} != 0)
+		{
+			BaseClass_list.push_back(element->{{label}});
+			return true;
+		}
+	}
+	return false;
+}
+{{/is_class_attribute}}
+{{#is_list_attribute}}
+bool get_{{domain}}_{{label}}(const BaseClass* BaseClass_ptr1, std::list<const BaseClass*>& BaseClass_list)
+{
+	const {{domain}}* element = dynamic_cast<const {{domain}}*>(BaseClass_ptr1);
+	if (element != nullptr)
+	{
+		std::copy(element->{{label}}.begin(), element->{{label}}.end(), std::back_inserter(BaseClass_list));
+		return !BaseClass_list.empty();
+	}
+	return false;
+}
+{{/is_list_attribute}}
+{{/is_used}}
 
+{{/attributes}}
 const char {{class_name}}::debugName[] = "{{class_name}}";
 const char* {{class_name}}::debugString() const
 {
