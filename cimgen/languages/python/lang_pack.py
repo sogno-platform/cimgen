@@ -25,7 +25,7 @@ def setup(output_path: str, cgmes_profile_details: list[dict], cim_namespace: st
 
 # These are the files that are used to generate the python files.
 class_template_file = {"filename": "cimpy_class_template.mustache", "ext": ".py"}
-profile_template_file = {"filename": "cimpy_cgmesProfile_template.mustache", "ext": ".py"}
+profile_template_file = {"filename": "cimpy_profile_template.mustache", "ext": ".py"}
 
 partials = {}
 

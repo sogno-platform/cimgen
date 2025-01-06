@@ -42,7 +42,7 @@ namespace CIMPP
 		lop >> EnumSymbol;
 
 		size_t pos = EnumSymbol.find_first_of('.');
-		if(EnumSymbol.substr(0, pos) != "{{class_name}}")
+		if (EnumSymbol.substr(0, pos) != "{{class_name}}")
 		{
 			lop.setstate(std::ios::failbit);
 			return lop;
@@ -51,7 +51,7 @@ namespace CIMPP
 		EnumSymbol = EnumSymbol.substr(pos + 1);
 
 {{#enum_instances}}
-		if(EnumSymbol == "{{label}}")
+		if (EnumSymbol == "{{label}}")
 		{
 			rop = {{class_name}}::{{label}};
 			return lop;

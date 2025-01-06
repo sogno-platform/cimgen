@@ -21,7 +21,7 @@ def setup(output_path: str, cgmes_profile_details: list[dict], cim_namespace: st
 # These are the files that are used to generate the javascript files.
 template_file = {"filename": "handlebars_template.mustache", "ext": ".js"}
 base_template_file = {"filename": "handlebars_baseclass_template.mustache", "ext": ".js"}
-profile_template_file = {"filename": "handlebars_cgmesProfile_template.mustache", "ext": ".js"}
+profile_template_file = {"filename": "handlebars_profile_template.mustache", "ext": ".js"}
 
 partials = {}
 

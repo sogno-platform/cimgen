@@ -4,16 +4,14 @@
 Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cimgen
 */
 
-#include <string>
 #include <istream>
 #include <ostream>
+#include <string>
 
 namespace CIMPP
 {
 {{#class_comment}}
-	/*
-	{{{class_comment}}}
-	*/
+	/** \brief {{{class_comment}}} */
 {{/class_comment}}
 	class {{class_name}}
 	{
@@ -21,7 +19,7 @@ namespace CIMPP
 		{{class_name}}() : initialized(false) {}
 		{{class_name}}(const std::string& value) : value(value), initialized(true) {}
 
-		{{class_name}}& operator=(const std::string &rop);
+		{{class_name}}& operator=(const std::string& rop);
 		operator std::string() const;
 
 		std::string value;
