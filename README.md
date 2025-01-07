@@ -129,3 +129,23 @@ Dinkelbach, J., Razik, L., Mirz, M., Benigni, A., Monti, A.: Template-based
 generation of programming language specific code for smart grid modelling
 compliant with CIM and CGMES.
 J. Eng. 2023, 1-13 (2022). [https://doi.org/10.1049/tje2.12208](https://doi.org/10.1049/tje2.12208)
+
+## Developer Installation
+
+```bash
+git clone https://github.com/sogno-platform/cimgen.git
+cd cimgen
+python3 -m pip install -e .[dev]
+```
+
+Run pre-commit checks manually:
+
+```bash
+pre-commit run --all-files
+```
+
+Install pre-commit hook to run it automatically:
+
+```bash
+pre-commit install
+```
