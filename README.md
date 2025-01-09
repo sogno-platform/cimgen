@@ -116,26 +116,14 @@ export BUILD_IN_DOCKER=true
 make modernpython
 ```
 
-## License
+## Development
 
-This project is released under the terms of the [Apache 2.0 license](./LICENSE).
-
-## Publications
-
-If you are using CIMgen for your research, please cite the following paper in
-your publications:
-
-Dinkelbach, J., Razik, L., Mirz, M., Benigni, A., Monti, A.: Template-based
-generation of programming language specific code for smart grid modelling
-compliant with CIM and CGMES.
-J. Eng. 2023, 1-13 (2022). [https://doi.org/10.1049/tje2.12208](https://doi.org/10.1049/tje2.12208)
-
-## Developer Installation
+### Developer Installation
 
 ```bash
 git clone https://github.com/sogno-platform/cimgen.git
 cd cimgen
-python3 -m pip install -e .[dev]
+pip install -e .[dev]
 ```
 
 Run pre-commit checks manually:
@@ -149,3 +137,17 @@ Install pre-commit hook to run it automatically:
 ```bash
 pre-commit install
 ```
+
+## License
+
+This project is released under the terms of the [Apache 2.0 license](./LICENSE).
+
+## Publications
+
+If you are using CIMgen for your research, please cite the following paper in
+your publications:
+
+Dinkelbach, J., Razik, L., Mirz, M., Benigni, A., Monti, A.: Template-based
+generation of programming language specific code for smart grid modelling
+compliant with CIM and CGMES.
+J. Eng. 2023, 1-13 (2022). [https://doi.org/10.1049/tje2.12208](https://doi.org/10.1049/tje2.12208)
