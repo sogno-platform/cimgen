@@ -1,4 +1,4 @@
-from typing import List, Optional, Union
+from typing import Optional, Union
 
 from pydantic import Field
 from pydantic.dataclasses import dataclass
@@ -15,8 +15,8 @@ from .profile import BaseProfile
 class Primitive:
     name: str = Field(frozen=True)
     type: object = Field(frozen=True)
+    profiles: list[BaseProfile] = Field(frozen=True)
     namespace: str = Field(frozen=True, default=NAMESPACES["cim"])
-    profiles: List[BaseProfile] = Field(frozen=True)
 
 
 @dataclass(config=cgmes_resource_config)
