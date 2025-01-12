@@ -23,7 +23,7 @@ class Base:
         A resource can be used by multiple profiles. This is the set of profiles
         where this element can be found.
         """
-        raise NotImplementedError("Method not implemented because not relevant in Base.")
+        return {self.recommended_profile}
 
     @cached_property
     def recommended_profile(self) -> BaseProfile:
