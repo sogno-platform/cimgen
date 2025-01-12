@@ -1,3 +1,4 @@
+from collections.abc import Iterable
 from dataclasses import fields
 from pathlib import Path
 
@@ -142,7 +143,7 @@ class ChevronWriter:
         return obj.recommended_profile
 
     @staticmethod
-    def get_class_profile_map(obj_list: list[Base]) -> dict[str, BaseProfile]:
+    def get_class_profile_map(obj_list: Iterable[Base]) -> dict[str, BaseProfile]:
         """Get the main profiles for a list of CIM objects.
 
         The result could be used as parameter for the functions: write and generate.
