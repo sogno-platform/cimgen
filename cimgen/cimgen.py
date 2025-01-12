@@ -602,7 +602,7 @@ def cim_generate(directory: str, output_path: str, version: str, lang_pack: Modu
             logger.info('Start of parsing file "%s"', file)
 
             file_path = os.path.join(directory, file)
-            xmlstring = open(file_path, encoding="utf8").read()
+            xmlstring = open(file_path, encoding="utf-8").read()
 
             # parse RDF files and create a dictionary from the RDF file
             parse_result = xmltodict.parse(xmlstring, attr_prefix="$", cdata_key="_", dict_constructor=dict)
