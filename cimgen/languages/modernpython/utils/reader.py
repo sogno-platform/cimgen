@@ -1,10 +1,11 @@
-from lxml import etree
 import importlib
 import logging
-from .profile import Profile
-from pydantic import BaseModel, Field
-from typing import Dict, Optional, Literal
+from typing import Literal
 
+from lxml import etree
+from pydantic import BaseModel, Field
+
+from .profile import Profile
 
 logger = logging.getLogger(__name__)
 
@@ -12,31 +13,28 @@ logger = logging.getLogger(__name__)
 class Reader(BaseModel):
     """Parses profiles to create the corresponding python objects
 
-    Args:
-        cgmes_version_path (str): Path to the cgmes resources folder containing the class definition
-        custom_namespaces (Optional[[str, str]]): {"namespace_prefix": "namespace_uri"}
-        custom_folder (Optional[str]): "path_to_custom_resources_folder"
+    :param cgmes_version_path:  Path to the cgmes resources folder containing the class definition
+    :param custom_namespaces:   {"namespace_prefix": "namespace_uri"}
+    :param custom_folder:       "path_to_custom_resources_folder"
     """
 
     cgmes_version_path: str
-    custom_namespaces: Optional[Dict[str, str]] = None
-    custom_folder: Optional[str] = None
-    logger_grouped: Dict[str, Dict[str, int]] = Field(default_factory=lambda: {"errors": {}, "info": {}})
-    import_result: Dict = Field(default_factory=lambda: {"meta_info": {}, "topology": {}})
+    custom_namespaces: dict[str, str] | None = None
+    custom_folder: str | None = None
+    logger_grouped: dict[str, dict[str, int]] = Field(default_factory=lambda: {"errors": {}, "info": {}})
+    import_result: dict = Field(default_factory=lambda: {"meta_info": {}, "topology": {}})
 
-    def parse_profiles(self, xml_files: list[str], start_dict: Optional[Dict] = None):
+    def parse_profiles(self, xml_files: list[str], start_dict: dict | None = None):
         """Parses all profiles contained in xml_files and returns a list containing
         all the objects defined in the profiles "mRID": Object\n
         Errors encounterd in the parsing can be recovered in Reader.logger_grouped
 
-        Args:
-            xml_files (list): list with the path to all the profiles to parse
-            start_dict (Optional[Dict]): To parse profiles on top of an existing list dict(meta_info, topology)
+        :param xml_files:   List of the path to all the profiles to parse
+        :param start_dict:  To parse profiles on top of an existing list dict(meta_info, topology)
 
-        Returns:
-            list: ["topology": dict of all the objects defined in the profiles {"mRID": Object}, "meta_info"]
+        :return:            ["topology": dict of all the objects defined in the profiles {"mRID": Object}, "meta_info"]
         """
-        if start_dict is not None:
+        if start_dict:
             self.import_result = start_dict
         self.import_result["meta_info"] = dict(namespaces=self._get_namespaces(xml_files[0]), urls={})
         namespace_rdf = self._get_rdf_namespace()
@@ -54,10 +52,9 @@ class Reader(BaseModel):
     def _instantiate_classes(self, xml_file: str, bases: tuple, namespace_rdf: str):
         """creates/updates the python objects with the information of xml_file
 
-        Args:
-            xml_file (str): Path to the profile
-            bases (tuple): contains the possible namespaces uris defining the classes, can be custom
-            namespace_rdf (str): rdf namespace uri
+        :param xml_file:        Path to the profile
+        :param bases:           Contains the possible namespaces uris defining the classes, can be custom
+        :param namespace_rdf:   rdf namespace uri
         """
         context = etree.iterparse(xml_file, ("start", "end"))
         level = 0
@@ -81,13 +78,11 @@ class Reader(BaseModel):
     def _extract_classname_uuid(elem, class_namespace: str, namespace_rdf: str) -> tuple:
         """Extracts class name and instance uuid ("mRID")
 
-        Args:
-            elem (etree.Element): description of the instance for the given profile
-            class_namespace (str): namespace uri defining the class
-            namespace_rdf (str): rdf namespace uri
+        :param elem: description of the instance for the given profile
+        :param class_namespace: namespace uri defining the class
+        :param namespace_rdf: rdf namespace uri
 
-        Returns:
-            tuple: (class_name: example "ACLineSgement", instance_uuid: "mRID")
+        :return:    class_name, uuid  (example "ACLineSgement", instance_uuid: "mRID")
         """
         class_name = elem.tag[len(class_namespace) :]
         uuid = elem.get("{%s}ID" % namespace_rdf)
@@ -101,10 +96,9 @@ class Reader(BaseModel):
         """Creates or updates (if an object with the same uuid exists)
         an instance of the class based on the fragment of the profile
 
-        Args:
-            class_name (str): Name of the class of the instance to create/update (example: ACLineSegment)
-            uuid (str): mRID
-            elem (etree.Element): description of the instance for the given profile
+        :param class_name:      Name of the class of the instance to create/update (example: ACLineSegment)
+        :param uuid:            mRID
+        :param elem:            description of the instance for the given profile
         """
         topology = self.import_result["topology"]
         elem_str = etree.tostring(elem, encoding="utf8")
@@ -142,19 +136,18 @@ class Reader(BaseModel):
 
     # Returns a map of class_namespace to namespace for the given XML file.
     @staticmethod
-    def _get_namespaces(source) -> Dict:
+    def _get_namespaces(source) -> dict:
+        """Recovers the namespaces defined at the beginning of the xml file without reading the complete file."""
         namespaces = {}
-        events = ("end", "start-ns", "end-ns")
+        events = ("end", "start-ns")
         for event, elem in etree.iterparse(source, events):
             if event == "start-ns":
+                # Corresponds to the attributes defined in <rdf:RDF ...>
                 class_namespace, ns = elem
                 namespaces[class_namespace] = ns
             elif event == "end":
+                # Stops once the first attribute that is not a namespace is read (</...>)
                 break
-
-        # Reset stream
-        if hasattr(source, "seek"):
-            source.seek(0)
 
         return namespaces
 

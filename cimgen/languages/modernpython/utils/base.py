@@ -1,10 +1,10 @@
 # Drop in dataclass replacement, allowing easier json dump and validation in the future.
 import importlib
-from lxml import etree
 from dataclasses import Field, fields
 from functools import cached_property
-from typing import Any, TypeAlias, TypedDict, Optional
+from typing import Any, TypeAlias, TypedDict
 
+from lxml import etree
 from pydantic.dataclasses import dataclass
 
 from .config import cgmes_resource_config
@@ -25,7 +25,7 @@ class Base:
         A resource can be used by multiple profiles. This is the set of profiles
         where this element can be found.
         """
-        raise NotImplementedError("Method not implemented because not relevant in Base.")
+        return {self.recommended_profile}
 
     @cached_property
     def recommended_profile(self) -> BaseProfile:
@@ -150,7 +150,7 @@ class Base:
         for parent in reversed(self.__class__.__mro__[:-1]):
             for f in fields(parent):
                 shortname = f.name
-                qualname = f"{parent.apparent_name()}.{shortname}"  # type: ignore
+                qualname = f"{parent.apparent_name()}.{shortname}"
                 infos = dict()
 
                 if f not in self.cgmes_attribute_names_in_profile(profile) or shortname in seen_attrs:
@@ -180,20 +180,18 @@ class Base:
 
                 infos["value"] = getattr(self, shortname)
 
-                qual_attrs[qualname] = CgmesAttribute(infos)
+                qual_attrs[qualname] = CgmesAttribute(infos)  # type: ignore
                 seen_attrs.add(shortname)
 
         return qual_attrs
 
-    def to_xml(self, profile_to_export: BaseProfile, id: Optional[str] = None) -> Optional[etree.Element]:
+    def to_xml(self, profile_to_export: BaseProfile, id: str | None = None) -> etree._Element | None:
         """Creates an etree element of self with all non-empty attributes of the profile_to_export
         that are not already defined in the recommanded profile
         This can then be used to generate the xml file of the profile_to_export
-        Args:
-            profile_to_export (Profile): Profile for which we want to obtain the xml tree (eg. Profile.EQ)
-            id (Optional[str], optional): "mRID", optional: some objects don't have mRID attribute. Defaults to None.
-        Returns:
-            Optional[etree.Element]: etree describing self for the profile_to_export, None if nothing to export
+        :param profile_to_export:       Profile for which we want to obtain the xml tree (eg. Profile.EQ)
+        :param id:                      "mRID" some objects don't have mRID attribute. Defaults to None.
+        :return:                        etree describing self for the profile_to_export, None if nothing to export
         """
         profile_attributes = self._get_attributes_to_export(profile_to_export)
 
@@ -239,7 +237,7 @@ class Base:
         return attributes
 
     @staticmethod
-    def _add_attribute_to_etree(attributes: dict, root: etree.Element, nsmap: dict) -> etree.Element:
+    def _add_attribute_to_etree(attributes: dict, root: etree._Element, nsmap: dict) -> etree._Element:
         rdf_namespace = f"""{{{nsmap["rdf"]}}}"""
         for field_name, attribute in attributes.items():
             # add all attributes relevant to the profile as SubElements
@@ -265,11 +263,8 @@ class Base:
     def _parse_xml_fragment(self, xml_fragment: str) -> dict:
         """parses an xml fragment into a dict defining the class attributes
 
-        Args:
-            xml_fragment (str): xml string defining an instance of the current class
-
-        Returns:
-            attribute_dict (dict): a dictionnary of attributes to create/update the class instance
+        :param xml_fragment:    xml string defining an instance of the current class
+        :return:                a dictionnary of attributes to create/update the class instance
         """
         attribute_dict = {}
         xml_tree = etree.fromstring(xml_fragment)
@@ -295,7 +290,7 @@ class Base:
 
         return attribute_dict
 
-    def _extract_mrid_from_etree(self, xml_tree: etree.Element) -> dict:
+    def _extract_mrid_from_etree(self, xml_tree: etree._Element) -> dict:
         """Parsing the mRID from etree attributes"""
         mrid_dict = {}
         for key, value in xml_tree.attrib.items():
@@ -306,7 +301,9 @@ class Base:
                     mrid_dict = {"mRID": value}
         return mrid_dict
 
-    def _extract_attr_value_from_etree(self, attr_name: str, class_attribute: dict, xml_attribute: etree.Element):
+    def _extract_attr_value_from_etree(
+        self, attr_name: str, class_attribute: "CgmesAttribute", xml_attribute: etree._Element
+    ):
         """Parsing the attribute value from etree attributes"""
         attr_value = None
         # class attributes are pointing to another class/instance defined in .attrib
@@ -382,3 +379,11 @@ class CgmesAttribute(TypedDict):
     # Custom attributes might have something different, given as metadata.
     # See readme for more information.
     namespace: str
+    attr_name: str
+    is_class_attribute: bool
+    is_enum_attribute: bool
+    is_list_attribute: bool
+    is_primitive_attribute: bool
+    is_datatype_attribute: bool
+    attribute_class: str
+    attribute_main_profile: BaseProfile
