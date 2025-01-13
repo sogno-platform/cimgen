@@ -1,6 +1,7 @@
 from collections.abc import Iterable
 from dataclasses import fields
 from pathlib import Path
+from typing import Any
 
 import chevron
 
@@ -106,7 +107,7 @@ class ChevronWriter:
                     value = attr_infos["value"]
                     attribute_profile = ChevronWriter.get_attribute_profile(obj, attr, class_profile)
                     if value and attr != "mRID" and attribute_profile == profile:
-                        if isinstance(value, (list, tuple)):
+                        if isinstance(value, list | tuple):
                             attributes.extend(attr_infos | {"value": v} for v in value)
                         else:
                             attributes.append(attr_infos)
@@ -190,7 +191,7 @@ class ChevronWriter:
                         infos = {
                             "attr_name": attr_name,
                             "namespace": extra.get("namespace", obj.namespace),
-                            "value": getattr(obj, attr),
+                            "value": ChevronWriter._get_xml_value(getattr(obj, attr)),
                             "is_class_attribute": extra.get("is_class_attribute"),
                             "is_datatype_attribute": extra.get("is_datatype_attribute"),
                             "is_enum_attribute": extra.get("is_enum_attribute"),
@@ -199,3 +200,9 @@ class ChevronWriter:
                         }
                         attr_infos_map[attr] = infos
         return attr_infos_map
+
+    @staticmethod
+    def _get_xml_value(value: Any) -> Any:
+        if isinstance(value, bool):
+            return "true" if value else "false"
+        return value
