@@ -251,6 +251,10 @@ class Base:
             elif attribute["is_enum_attribute"]:
                 element = etree.SubElement(root, element_name)
                 element.set(rdf_namespace + "resource", nsmap["cim"] + attribute["value"])
+            elif attribute["is_list_attribute"]:
+                for item in attribute["value"]:
+                    element = etree.SubElement(root, element_name)
+                    element.text = str(item)
             else:
                 element = etree.SubElement(root, element_name)
                 element.text = str(attribute["value"])
@@ -270,7 +274,7 @@ class Base:
         xml_tree = etree.fromstring(xml_fragment)
 
         # raise an error if the xml does not describe the expected class
-        if not xml_tree.tag.endswith(self.resource_name):
+        if not str(xml_tree.tag).endswith(self.resource_name):
             raise (KeyError(f"The fragment does not correspond to the class {self.resource_name}"))
 
         attribute_dict.update(self._extract_mrid_from_etree(xml_tree=xml_tree))
@@ -339,7 +343,7 @@ class Base:
         """
         attribute_dict = self._parse_xml_fragment(xml_fragment)
 
-        if attribute_dict["mRID"] == self.mRID:
+        if attribute_dict["mRID"] == self.mRID:  # type: ignore
             for key, value in attribute_dict.items():
                 attr = getattr(self, key)
                 if isinstance(attr, list):

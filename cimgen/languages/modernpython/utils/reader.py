@@ -1,5 +1,6 @@
-import importlib
 import logging
+from importlib import import_module
+from importlib.util import find_spec
 from typing import Literal
 
 from lxml import etree
@@ -18,7 +19,7 @@ class Reader(BaseModel):
     :param custom_folder:       "path_to_custom_resources_folder"
     """
 
-    cgmes_version_path: str
+    cgmes_version_path: str = "pycgmes.resources"
     custom_namespaces: dict[str, str] | None = None
     custom_folder: str | None = None
     logger_grouped: dict[str, dict[str, int]] = Field(default_factory=lambda: {"errors": {}, "info": {}})
@@ -65,7 +66,7 @@ class Reader(BaseModel):
             if event == "start":
                 level += 1
 
-            class_namespace = next((namespace for namespace in bases if elem.tag.startswith(namespace)), None)
+            class_namespace = next((namespace for namespace in bases if str(elem.tag).startswith(namespace)), None)
             if event == "start" and class_namespace is not None and level == 2:
                 class_name, uuid = self._extract_classname_uuid(elem, class_namespace, namespace_rdf)
                 if uuid is not None:
@@ -101,11 +102,11 @@ class Reader(BaseModel):
         :param elem:            description of the instance for the given profile
         """
         topology = self.import_result["topology"]
-        elem_str = etree.tostring(elem, encoding="utf8")
+        elem_str = etree.tostring(elem, encoding="utf-8")
         try:
             # Import the module for the CGMES object.
             module_name = self._get_path_to_module(class_name)
-            module = importlib.import_module(module_name)
+            module = import_module(module_name)
 
             klass = getattr(module, class_name)
             if uuid not in topology:
@@ -141,7 +142,7 @@ class Reader(BaseModel):
         namespaces = {}
         events = ("end", "start-ns")
         for event, elem in etree.iterparse(source, events):
-            if event == "start-ns":
+            if event == "start-ns" and elem is not None:
                 # Corresponds to the attributes defined in <rdf:RDF ...>
                 class_namespace, ns = elem
                 namespaces[class_namespace] = ns
@@ -161,7 +162,7 @@ class Reader(BaseModel):
         return namespace
 
     def _get_path_to_module(self, class_name: str) -> str:
-        if self.custom_folder and importlib.find_loader(self.custom_folder + "." + class_name):
+        if self.custom_folder and find_spec(self.custom_folder + "." + class_name):
             path_to_module = self.custom_folder + "." + class_name
         else:
             path_to_module = self.cgmes_version_path + "." + class_name

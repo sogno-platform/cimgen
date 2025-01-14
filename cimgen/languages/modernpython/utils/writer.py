@@ -13,13 +13,13 @@ class Writer(BaseModel):
     """
 
     objects: dict
-    writer_metadata: dict[str, str] = {}
+    writer_metadata: dict[str, str] = {"modelingAuthoritySet": "www.sogno.energy"}
 
     def write(
         self,
         outputfile: str,
         model_id: str,
-        custom_profiles: [BaseProfile] = [],
+        custom_profiles: list[BaseProfile] = [],
         custom_namespaces: dict[str, str] = {},
     ) -> dict[BaseProfile, str]:
         """Write CIM RDF/XML files.
@@ -42,7 +42,7 @@ class Writer(BaseModel):
             full_file_name = outputfile + "_" + profile.long_name + ".xml"
             output = self._generate(profile, model_id + "_" + profile_name, custom_namespaces)
             if output:
-                output.write(full_file_name, pretty_print=True, xml_declaration=True, encoding="UTF-8")
+                output.write(full_file_name, pretty_print=True, xml_declaration=True, encoding="utf-8")
                 profile_file_map[profile] = full_file_name
         return profile_file_map
 
@@ -59,14 +59,11 @@ class Writer(BaseModel):
 
         :return:                    etree of the profile
         """
-        writer_info = {"modelingAuthoritySet": "www.sogno.energy"}
-        writer_info.update(self.writer_metadata)
         fullmodel = {
             "id": model_id,
-            "Model": writer_info,
+            "Model": self.writer_metadata,
         }
-        for uri in profile.uris:
-            fullmodel["Model"].update({"profile": uri})
+        fullmodel["Model"].update({"profile": profile.uris})
 
         nsmap = NAMESPACES
         nsmap.update(custom_namespaces)
@@ -80,8 +77,13 @@ class Writer(BaseModel):
         model = etree.Element(md_namespace + "FullModel", nsmap=nsmap)
         model.set(rdf_namespace + "about", fullmodel["id"])
         for key, value in fullmodel["Model"].items():
-            element = etree.SubElement(model, md_namespace + "Model." + key)
-            element.text = value
+            if isinstance(value, list):
+                for item in value:
+                    element = etree.SubElement(model, md_namespace + "Model." + key)
+                    element.text = item
+            else:
+                element = etree.SubElement(model, md_namespace + "Model." + key)
+                element.text = value
         root.append(model)
 
         count = 0

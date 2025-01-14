@@ -1,5 +1,3 @@
-from typing import List, Optional, Union
-
 from pydantic import Field
 from pydantic.dataclasses import dataclass
 from .constants import NAMESPACES
@@ -15,13 +13,13 @@ from ..resources.types.Currency import Currency
 class Primitive:
     name: str = Field(frozen=True)
     type: object = Field(frozen=True)
+    profiles: list[BaseProfile] = Field(frozen=True)
     namespace: str = Field(frozen=True, default=NAMESPACES["cim"])
-    profiles: List[BaseProfile] = Field(frozen=True)
 
 
 @dataclass(config=cgmes_resource_config)
 class CIMDatatype(Primitive):
-    multiplier: Optional[UnitMultiplier] = Field(default=None, frozen=True)
-    unit: Optional[Union[UnitSymbol, Currency]] = Field(default=None, frozen=True)
-    denominatorMultiplier: Optional[UnitMultiplier] = Field(default=None, frozen=True)
-    denominatorUnit: Optional[UnitSymbol] = Field(default=None, frozen=True)
+    multiplier: UnitMultiplier | None = Field(default=None, frozen=True)
+    unit: UnitSymbol | Currency | None = Field(default=None, frozen=True)
+    denominatorMultiplier: UnitMultiplier | None = Field(default=None, frozen=True)
+    denominatorUnit: UnitSymbol | None = Field(default=None, frozen=True)
