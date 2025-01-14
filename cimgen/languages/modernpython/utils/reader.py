@@ -89,9 +89,9 @@ class Reader(BaseModel):
         uuid = elem.get("{%s}ID" % namespace_rdf)
         if uuid is None:
             uuid = elem.get("{%s}about" % namespace_rdf)
-            if uuid is not None:
-                uuid = uuid[1:]
-        if uuid.startswith("_"):
+        if uuid and uuid.startswith("#"):
+            uuid = uuid[1:]
+        if uuid and uuid.startswith("_"):
             uuid = uuid[1:]
         return class_name, uuid
 
