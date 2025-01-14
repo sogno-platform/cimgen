@@ -196,7 +196,7 @@ class Base:
         profile_attributes = self._get_attributes_to_export(profile_to_export)
 
         if "mRID" in self.to_dict():
-            obj_id = self.mRID
+            obj_id = self.mRID  # type: ignore
         else:
             obj_id = id
 
@@ -204,6 +204,7 @@ class Base:
         if profile_attributes == {} or obj_id is None:
             root = None
         else:
+            obj_id = "_" + obj_id
             # Create root element
             nsmap = NAMESPACES
             root = etree.Element("{" + self.namespace + "}" + self.resource_name, nsmap=nsmap)
@@ -247,7 +248,7 @@ class Base:
             if attribute["is_class_attribute"]:
                 # class_attributes are exported as rdf: resource #mRID_of_target
                 element = etree.SubElement(root, element_name)
-                element.set(rdf_namespace + "resource", "#" + attribute["value"])
+                element.set(rdf_namespace + "resource", "#_" + attribute["value"])
             elif attribute["is_enum_attribute"]:
                 element = etree.SubElement(root, element_name)
                 element.set(rdf_namespace + "resource", nsmap["cim"] + attribute["value"])
@@ -301,6 +302,8 @@ class Base:
             if key.endswith("ID") or key.endswith("about"):
                 if value.startswith("#"):
                     value = value[1:]
+                if value.startswith("_"):
+                    value = value[1:]
                 if hasattr(self, "mRID") and value is not None:
                     mrid_dict = {"mRID": value}
         return mrid_dict
@@ -314,6 +317,8 @@ class Base:
         if class_attribute["is_class_attribute"] and len(xml_attribute.keys()) == 1:
             attr_value = xml_attribute.values()[0]
             if attr_value.startswith("#"):
+                attr_value = attr_value[1:]
+            if attr_value.startswith("_"):
                 attr_value = attr_value[1:]
 
         # enum attributes are defined in .attrib and has a prefix ending in "#"

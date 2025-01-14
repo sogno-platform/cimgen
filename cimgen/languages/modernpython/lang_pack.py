@@ -52,7 +52,7 @@ def _get_type_and_default(text: str, render: Callable[[str], str]) -> tuple[str,
     attribute_txt = render(text)
     attribute_json = eval(attribute_txt)
     if attribute_json["is_class_attribute"]:
-        return ("Optional[str]", "default=None")
+        return ("str | None", "default=None")
     elif attribute_json["is_list_attribute"]:
         return ("list", "default_factory=list")
     elif attribute_json["is_datatype_attribute"]:

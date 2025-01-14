@@ -21,7 +21,7 @@ class RDFSEntry:
         json_object = {}
         if self.about():
             json_object["about"] = self.about()
-        if self.namespace() is not None:
+        if self.namespace():
             json_object["namespace"] = self.namespace()
         if self.comment():
             json_object["comment"] = self.comment()
@@ -54,9 +54,10 @@ class RDFSEntry:
         else:
             return ""
 
-    def namespace(self):
+    def namespace(self) -> str:
         if "$rdf:about" in self.json_definition:
-            return self.json_definition["$rdf:about"][: -len(self.about())]
+            about = RDFSEntry._get_about_or_resource(self.json_definition["$rdf:about"])
+            return about[: -len(self.about())]
         else:
             return ""
 

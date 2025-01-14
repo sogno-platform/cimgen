@@ -8,8 +8,8 @@ from .profile import BaseProfile, Profile
 class Writer(BaseModel):
     """Class for writing CIM RDF/XML files
 
-    :param objects:         Mapping {mRID: CIM object}
-    :param Model_metadata:  Any additional data to add in header (default: {"modelingAuthoritySet": "www.sogno.energy" })
+    :param objects:          Mapping {mRID: CIM object}
+    :param writer_metadata:  Any additional data in header (default: {"modelingAuthoritySet": "www.sogno.energy"})
     """
 
     objects: dict
