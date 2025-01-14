@@ -274,23 +274,20 @@ class Base:
         attribute_dict = {}
         xml_tree = etree.fromstring(xml_fragment)
 
-        # raise an error if the xml does not describe the expected class
-        if not str(xml_tree.tag).endswith(self.resource_name):
-            raise (KeyError(f"The fragment does not correspond to the class {self.resource_name}"))
-
         attribute_dict.update(self._extract_mrid_from_etree(xml_tree=xml_tree))
 
         # parsing attributes defined in class
         class_attributes = self.cgmes_attributes_in_profile(None)
         for key, class_attribute in class_attributes.items():
-            xml_attribute = xml_tree.findall(".//{*}" + key)
-            if len(xml_attribute) != 1:
+            xml_attributes = xml_tree.findall(".//{*}" + key)
+            if not xml_attributes:
                 continue
-            xml_attribute = xml_attribute[0]
+
             attr = key.rsplit(".")[-1]
 
-            attr_value = self._extract_attr_value_from_etree(attr, class_attribute, xml_attribute)
-            if hasattr(self, attr) and attr_value is not None:
+            attr_value = self._extract_attr_value_from_etree(attr, class_attribute, xml_attributes)
+
+            if hasattr(self, attr) and attr_value not in [None, []]:
                 attribute_dict[attr] = attr_value
 
         return attribute_dict
@@ -309,28 +306,28 @@ class Base:
         return mrid_dict
 
     def _extract_attr_value_from_etree(
-        self, attr_name: str, class_attribute: "CgmesAttribute", xml_attribute: etree._Element
+        self, attr_name: str, class_attribute: "CgmesAttribute", xml_attributes: list[etree._Element]
     ):
         """Parsing the attribute value from etree attributes"""
         attr_value = None
         # class attributes are pointing to another class/instance defined in .attrib
-        if class_attribute["is_class_attribute"] and len(xml_attribute.keys()) == 1:
-            attr_value = xml_attribute.values()[0]
-            if attr_value.startswith("#"):
-                attr_value = attr_value[1:]
-            if attr_value.startswith("_"):
-                attr_value = attr_value[1:]
+        if class_attribute["is_class_attribute"]:
+            attr_value = xml_attributes[0].values()[0]
+            attr_value = attr_value.lstrip("#_")
 
         # enum attributes are defined in .attrib and has a prefix ending in "#"
-        elif class_attribute["is_enum_attribute"] and len(xml_attribute.keys()) == 1:
-            attr_value = xml_attribute.values()[0]
-            if "#" in attr_value:
-                attr_value = attr_value.split("#")[-1]
+        elif class_attribute["is_enum_attribute"]:
+            attr_value = xml_attributes[0].values()[0]
+            attr_value = attr_value.split("#")[-1]
 
         elif class_attribute["is_list_attribute"]:
-            attr_value = eval(xml_attribute.text)
+            attr_value = []
+            for item in xml_attributes:
+                item_value = item.values()[0]
+                attr_value.append(item_value.split("#")[-1])
+
         elif class_attribute["is_primitive_attribute"] or class_attribute["is_datatype_attribute"]:
-            attr_value = xml_attribute.text
+            attr_value = xml_attributes[0].text
             if self.__dataclass_fields__[attr_name].type == bool:
                 attr_value = {"true": True, "false": False}.get(attr_value, None)
             else:
@@ -338,7 +335,7 @@ class Base:
                 attr_value = self.__dataclass_fields__[attr_name].type(attr_value)
         else:
             # other attributes types are defined in .text
-            attr_value = xml_attribute.text
+            attr_value = xml_attributes[0].text
         return attr_value
 
     def update_from_xml(self, xml_fragment: str):
