@@ -13,12 +13,14 @@ from .profile import BaseProfile, Profile
 class ChevronWriter:
     """Class for writing CIM RDF/XML files."""
 
-    def __init__(self, objects: dict[str, Base]):
+    def __init__(self, objects: dict[str, Base], custom_namespaces=None):
         """Constructor.
 
-        :param objects:  Mapping of rdfid to CIM object.
+        :param objects:            Mapping of rdfid to CIM object.
+        :param custom_namespaces:  Mapping of ns to url.
         """
         self.objects = objects
+        self.custom_namespaces = custom_namespaces or {}
 
     def write(
         self, outputfile: str, model_id: str, class_profile_map: dict[str, BaseProfile]
@@ -58,14 +60,14 @@ class ChevronWriter:
         :param class_profile_map:  Mapping of CIM type to profile.
         :return:                   Mapping of profile to outputfile.
         """
-        namespaces = [{"key": k, "url": NAMESPACES[k]} for k in ("rdf", "cim", "md")]
         model_description = {
             "id": model_id,
             "description": [{"attr_name": "modelingAuthoritySet", "value": "www.sogno.energy"}],
         }
         for uri in profile.uris:
             model_description["description"].append({"attr_name": "profile", "value": uri})
-        main, about = self.sort_attributes_to_profile(profile, class_profile_map)
+        main, about, namespaces = self.sort_attributes_to_profile(profile, class_profile_map)
+        namespaces = {"rdf": NAMESPACES["rdf"], "md": NAMESPACES["md"]} | namespaces
         output = ""
         if main or about:
             template_path = (Path(__file__).parent / "export_template.mustache").resolve()
@@ -75,7 +77,7 @@ class ChevronWriter:
                     {
                         "main": main,
                         "about": about,
-                        "namespaces": namespaces,
+                        "namespaces": [{"ns": ns, "url": url} for ns, url in namespaces.items()],
                         "model": [model_description],
                     },
                 )
@@ -96,11 +98,13 @@ class ChevronWriter:
         """
         main = []
         about = []
+        namespaces = {"rdf": NAMESPACES["rdf"], "md": NAMESPACES["md"]} | self.custom_namespaces
         for rdfid, obj in self.objects.items():
             typ = obj.apparent_name()
             if typ in class_profile_map and ChevronWriter.is_class_matching_profile(obj, profile):
                 class_profile = class_profile_map[typ]
                 main_entry_of_object = class_profile == profile
+                obj_ns = self._get_namespace_key(obj.namespace, namespaces)
 
                 attributes = []
                 for attr, attr_infos in ChevronWriter.get_attribute_infos(obj).items():
@@ -111,13 +115,15 @@ class ChevronWriter:
                             attributes.extend(attr_infos | {"value": v} for v in value)
                         else:
                             attributes.append(attr_infos)
+                        ns = self._get_namespace_key(str(attr_infos.get("namespace") or obj.namespace), namespaces)
+                        attr_infos["ns"] = ns
 
-                infos = {"id": rdfid, "type": typ, "attributes": attributes}
+                infos = {"id": rdfid, "ns": obj_ns, "type": typ, "attributes": attributes}
                 if main_entry_of_object:
                     main.append(infos)
                 elif attributes:
                     about.append(infos)
-        return main, about
+        return main, about, namespaces
 
     @staticmethod
     def is_class_matching_profile(obj: Base, profile: BaseProfile) -> bool:
@@ -206,3 +212,21 @@ class ChevronWriter:
         if isinstance(value, bool):
             return "true" if value else "false"
         return value
+
+    def _get_namespace_key(self, url: str, namespaces: dict[str, str]) -> str:
+        for ns, u in namespaces.items():
+            if u == url:
+                return ns
+        for ns, u in NAMESPACES.items():
+            if u == url:
+                namespaces[ns] = url
+                return ns
+        used = True
+        idx = 0
+        while used:
+            ns = f"ns{idx}"
+            if ns not in namespaces:
+                used = False
+            idx += 1
+        namespaces[ns] = url
+        return ns

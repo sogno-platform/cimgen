@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<rdf:RDF{{#namespaces}} xmlns:{{key}}="{{url}}"{{/namespaces}}>
+<rdf:RDF{{#namespaces}} xmlns:{{ns}}="{{url}}"{{/namespaces}}>
   {{#model}}
   <md:FullModel rdf:about="{{id}}">
     {{#description}}
@@ -8,45 +8,45 @@
   </md:FullModel>
   {{/model}}
   {{#main}}
-  <cim:{{type}} rdf:ID="{{id}}">
+  <{{ns}}:{{type}} rdf:ID="{{id}}">
     {{#attributes}}
     {{#is_class_attribute}}
-    <cim:{{attr_name}} rdf:resource="#{{value}}" />
+    <{{ns}}:{{attr_name}} rdf:resource="#{{value}}" />
     {{/is_class_attribute}}
     {{#is_datatype_attribute}}
-    <cim:{{attr_name}}>{{value}}</cim:{{attr_name}}>
+    <{{ns}}:{{attr_name}}>{{value}}</{{ns}}:{{attr_name}}>
     {{/is_datatype_attribute}}
     {{#is_enum_attribute}}
-    <cim:{{attr_name}} rdf:resource="{{namespace}}{{value}}" />
+    <{{ns}}:{{attr_name}} rdf:resource="{{namespace}}{{value}}" />
     {{/is_enum_attribute}}
     {{#is_list_attribute}}
-    <cim:{{attr_name}} rdf:resource="#{{value}}" />
+    <{{ns}}:{{attr_name}} rdf:resource="#{{value}}" />
     {{/is_list_attribute}}
     {{#is_primitive_attribute}}
-    <cim:{{attr_name}}>{{value}}</cim:{{attr_name}}>
+    <{{ns}}:{{attr_name}}>{{value}}</{{ns}}:{{attr_name}}>
     {{/is_primitive_attribute}}
     {{/attributes}}
-  </cim:{{type}}>
+  </{{ns}}:{{type}}>
   {{/main}}
   {{#about}}
-  <cim:{{type}} rdf:about="#{{id}}">
+  <{{ns}}:{{type}} rdf:about="#{{id}}">
     {{#attributes}}
     {{#is_class_attribute}}
-    <cim:{{attr_name}} rdf:resource="#{{value}}" />
+    <{{ns}}:{{attr_name}} rdf:resource="#{{value}}" />
     {{/is_class_attribute}}
     {{#is_datatype_attribute}}
-    <cim:{{attr_name}}>{{value}}</cim:{{attr_name}}>
+    <{{ns}}:{{attr_name}}>{{value}}</{{ns}}:{{attr_name}}>
     {{/is_datatype_attribute}}
     {{#is_enum_attribute}}
-    <cim:{{attr_name}} rdf:resource="{{namespace}}{{value}}" />
+    <{{ns}}:{{attr_name}} rdf:resource="{{namespace}}{{value}}" />
     {{/is_enum_attribute}}
     {{#is_list_attribute}}
-    <cim:{{attr_name}} rdf:resource="#{{value}}" />
+    <{{ns}}:{{attr_name}} rdf:resource="#{{value}}" />
     {{/is_list_attribute}}
     {{#is_primitive_attribute}}
-    <cim:{{attr_name}}>{{value}}</cim:{{attr_name}}>
+    <{{ns}}:{{attr_name}}>{{value}}</{{ns}}:{{attr_name}}>
     {{/is_primitive_attribute}}
     {{/attributes}}
-  </cim:{{type}}>
+  </{{ns}}:{{type}}>
   {{/about}}
 </rdf:RDF>
