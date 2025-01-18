@@ -125,6 +125,16 @@ def run_template(output_path: str, class_details: dict) -> None:
         class_details.update(_set_datatype_attributes(class_details["attributes"]))
     elif class_details["is_an_enum_class"]:
         template = enum_template_file
+        for instance in class_details["enum_instances"]:
+            if "comment" in instance:
+                if instance["label"] in ("cosPhi", "lPerl", "gPerg", "sPers", "HzPerHz", "VPerV", "APerA", "WPerW"):
+                    instance["comment"] += "  # noqa: E501, RUF003"
+                elif instance["label"] in ("l", "I"):
+                    instance["comment"] += "  # noqa: E501, E741"
+                elif instance["label"] == "count":
+                    instance["comment"] += "  # noqa: E501  # type: ignore"
+                else:
+                    instance["comment"] += "  # noqa: E501"
     else:
         template = class_template_file
         class_details["set_default"] = _set_default
