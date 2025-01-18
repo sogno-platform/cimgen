@@ -2,18 +2,23 @@ exclude: ^cgmes_schema
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v2.3.0
+    rev: v5.0.0
     hooks:
       - id: check-yaml
       - id: end-of-file-fixer
       - id: trailing-whitespace
 
   - repo: https://github.com/psf/black
-    rev: 22.10.0
+    rev: 24.10.0
     hooks:
       - id: black
 
   - repo: https://github.com/PyCQA/flake8
-    rev: 7.1.0
+    rev: 7.1.1
     hooks:
       - id: flake8
+
+  - repo: https://github.com/ComPWA/pyright-pre-commit
+    rev: v1.1.391
+    hooks:
+      - id: pyright

@@ -116,6 +116,28 @@ export BUILD_IN_DOCKER=true
 make modernpython
 ```
 
+## Development
+
+### Developer Installation
+
+```bash
+git clone https://github.com/sogno-platform/cimgen.git
+cd cimgen
+pip install -e .[dev]
+```
+
+Run pre-commit checks manually:
+
+```bash
+pre-commit run --all-files
+```
+
+Install pre-commit hook to run it automatically:
+
+```bash
+pre-commit install
+```
+
 ## License
 
 This project is released under the terms of the [Apache 2.0 license](./LICENSE).
