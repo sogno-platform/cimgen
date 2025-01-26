@@ -2,6 +2,7 @@ package cim4j.utils;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
+import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -10,6 +11,8 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+
+import javax.xml.stream.XMLOutputFactory;
 
 import cim4j.BaseClass;
 import cim4j.CimConstants;
@@ -51,87 +54,106 @@ public class RdfWriter {
 	}
 
 	/**
-	 * Convert the cim data to a string containing a rdf document.
-	 *
-	 * @return cim data as rdf string
-	 */
-	public String convertCimData() {
-		var usedNamespaces = getUsedNamespaces();
-
-		var rdfLines = new StringBuilder();
-		rdfLines.append("<?xml version='1.0' encoding='utf-8' ?>\n");
-		rdfLines.append("<rdf:RDF");
-		var nsList = new ArrayList<>(usedNamespaces.keySet());
-		Collections.sort(nsList);
-		for (var ns : nsList) {
-			var url = usedNamespaces.get(ns);
-			rdfLines.append(String.format(" xmlns:%s='%s'", ns, url));
-		}
-		rdfLines.append(">\n");
-
-		int count = 0;
-		for (String rdfid : cimData.keySet()) {
-			BaseClass cimObj = cimData.get(rdfid);
-			var nsObj = getNamespaceKey(cimObj.getClassNamespaceUrl());
-			if (nsObj != null && !cimObj.getClass().equals(IdentifiedObject.class)) {
-				String cimType = cimObj.debugString();
-				rdfLines.append(String.format("  <%s:%s rdf:ID='%s'>\n", nsObj, cimType, rdfid));
-				var attrNames = cimObj.getAttributeNames();
-				for (String attrName : attrNames) {
-					var namespaceUrl = cimObj.getAttributeNamespaceUrl(attrName);
-					var nsAttr = getNamespaceKey(namespaceUrl);
-					String attrFullName = cimObj.getAttributeFullName(attrName);
-					var attrObj = cimObj.getAttribute(attrName);
-					if (attrObj != null) {
-						if (attrObj.isPrimitive()) {
-							var value = attrObj.getValue();
-							if (value != null) {
-								rdfLines.append(String.format("    <%s:%s>%s</%s:%s>\n", nsAttr, attrFullName,
-										value, nsAttr, attrFullName));
-							} else {
-								LOG.error(String.format("No value for attribute %s of %s(%s)", attrFullName, cimType,
-										rdfid));
-							}
-						} else {
-							String attrRdfId = attrObj.getRdfid();
-							if (attrRdfId != null) {
-								if (attrRdfId.contains("#")) {
-									attrRdfId = namespaceUrl + attrRdfId.split("#")[1];
-								} else {
-									attrRdfId = "#" + attrRdfId;
-								}
-								rdfLines.append(String.format("    <%s:%s rdf:resource='%s' />\n",
-										nsAttr, attrFullName, attrRdfId));
-							} else {
-								LOG.error(String.format("No rdfid for attribute %s of %s(%s)", attrFullName, cimType,
-										rdfid));
-							}
-						}
-					}
-				}
-				rdfLines.append(String.format("  </%s:%s>\n", nsObj, cimType));
-				++count;
-			}
-		}
-		rdfLines.append("</rdf:RDF>\n");
-
-		LOG.info(String.format("Converted %d of %d CIM objects to RDF", count, cimData.size()));
-		return rdfLines.toString();
-	}
-
-	/**
-	 * Write the cim data to a rdf file.
+	 * Write the CIM data to a RDF file.
 	 *
 	 * @param path path of file to write
 	 */
-	public void writeCimData(String path) {
-		String rdf = convertCimData();
+	public void write(String path) {
 		try (var writer = new BufferedWriter(new FileWriter(path, StandardCharsets.UTF_8))) {
-			writer.write(rdf);
+			write(writer);
 		} catch (Exception ex) {
 			String txt = "Failed to write rdf file";
 			LOG.error(txt, ex);
 			throw new RuntimeException(txt, ex);
+		}
+	}
+
+	/**
+	 * Write the CIM data to a stream.
+	 *
+	 * @return cim data as rdf string
+	 */
+	public void write(Writer streamWriter) {
+		final String RDF = CimConstants.NAMESPACES_MAP.get("rdf");
+
+		try {
+			var factory = XMLOutputFactory.newInstance();
+			var writer = factory.createXMLStreamWriter(streamWriter);
+
+			writer.writeStartDocument("utf-8", "1.0");
+			writer.writeCharacters("\n");
+
+			var usedNamespaces = getUsedNamespaces();
+			var nsList = new ArrayList<>(usedNamespaces.keySet());
+			Collections.sort(nsList);
+
+			for (var ns : nsList) {
+				writer.setPrefix(ns, usedNamespaces.get(ns));
+			}
+
+			writer.writeStartElement(RDF, "RDF");
+
+			for (var ns : nsList) {
+				writer.writeNamespace(ns, usedNamespaces.get(ns));
+			}
+
+			int count = 0;
+			for (String rdfid : cimData.keySet()) {
+				BaseClass cimObj = cimData.get(rdfid);
+				if (!cimObj.getClass().equals(IdentifiedObject.class)) {
+					String cimType = cimObj.debugString();
+
+					writer.writeCharacters("\n  ");
+					writer.writeStartElement(cimObj.getClassNamespaceUrl(), cimType);
+					writer.writeAttribute(RDF, "ID", rdfid);
+
+					var attrNames = cimObj.getAttributeNames();
+					for (String attrName : attrNames) {
+						var namespaceUrl = cimObj.getAttributeNamespaceUrl(attrName);
+						String attrFullName = cimObj.getAttributeFullName(attrName);
+						var attrObj = cimObj.getAttribute(attrName);
+						if (attrObj != null) {
+							if (attrObj.isPrimitive()) {
+								var value = attrObj.getValue();
+								if (value != null) {
+									writer.writeCharacters("\n    ");
+									writer.writeStartElement(namespaceUrl, attrFullName);
+									writer.writeCharacters(value.toString());
+									writer.writeEndElement();
+								} else {
+									LOG.error(String.format("No value for attribute %s of %s(%s)", attrFullName,
+											cimType, rdfid));
+								}
+							} else {
+								String attrRdfId = attrObj.getRdfid();
+								if (attrRdfId != null) {
+									if (!attrRdfId.contains("#")) {
+										attrRdfId = "#" + attrRdfId;
+									}
+									writer.writeCharacters("\n    ");
+									writer.writeEmptyElement(namespaceUrl, attrFullName);
+									writer.writeAttribute(RDF, "resource", attrRdfId);
+								} else {
+									LOG.error(
+											String.format("No rdfid for attribute %s of %s(%s)", attrFullName, cimType,
+													rdfid));
+								}
+							}
+						}
+					}
+					writer.writeCharacters("\n  ");
+					writer.writeEndElement();
+					++count;
+				}
+			}
+			writer.writeCharacters("\n");
+			writer.writeEndDocument();
+			writer.writeCharacters("\n");
+			writer.close();
+
+			LOG.info(String.format("Written %d of %d CIM objects to RDF", count, cimData.size()));
+		} catch (Exception ex) {
+			throw new RuntimeException("Error while writing RDF/XML data", ex);
 		}
 	}
 

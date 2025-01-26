@@ -93,7 +93,7 @@ public final class Main {
 		try {
 			var writer = new RdfWriter();
 			writer.addCimData(cimData);
-			writer.writeCimData(outputFile);
+			writer.write(outputFile);
 		} catch (Exception ex) {
 			LOG.error("Failed to write CIM data to a RDF file", ex);
 			return;
