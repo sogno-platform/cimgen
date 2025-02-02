@@ -276,7 +276,7 @@ def _wrap_and_clean(txt: str, width: int = 120, initial_indent="", subsequent_in
 
 long_profile_names: dict[str, str] = {}
 package_listed_by_short_name: dict[str, list[str]] = {}
-cim_namespace: str = ""
+all_namespaces: dict[str, str] = {}
 
 
 def _rdfs_entry_types(rdfs_entry: RDFSEntry, version: str) -> list[str]:
@@ -357,9 +357,7 @@ def _parse_rdf(input_dic: dict, version: str) -> dict[str, dict[str, CIMComponen
     attributes: list[dict] = []
     enum_instances: list[dict] = []
 
-    global cim_namespace
-    if not cim_namespace:
-        cim_namespace = input_dic["rdf:RDF"].get("$xmlns:cim")
+    _parse_namespaces(input_dic["rdf:RDF"])
 
     # Generates list with dictionaries as elements
     descriptions: list[dict] = input_dic["rdf:RDF"]["rdf:Description"]
@@ -420,7 +418,7 @@ def _write_all_files(
 ) -> None:
 
     # Setup called only once: make output directory, create base class, create profile class, etc.
-    lang_pack.setup(output_path, _get_profile_details(package_listed_by_short_name), cim_namespace)
+    lang_pack.setup(output_path, _get_profile_details(package_listed_by_short_name), all_namespaces["cim"])
 
     recommended_class_profiles = _get_recommended_class_profiles(elem_dict)
 
@@ -770,7 +768,7 @@ def _get_attribute_type(attribute: dict, class_infos: CIMComponentDefinition) ->
 
 def _get_namespace(parsed_namespace: str) -> str:
     if parsed_namespace == "#":
-        namespace = cim_namespace
+        namespace = all_namespaces["cim"]
     else:
         namespace = parsed_namespace
     return namespace
@@ -807,3 +805,28 @@ def _is_class_attribute_with_inverse_list(attribute: dict, elem_dict: dict[str, 
                 attribute_type = _get_attribute_type(inverse_attribute, elem_dict[attribute_class])
                 return attribute_type == "list"
     return False
+
+
+def _parse_namespaces(namespace_dict: dict) -> None:
+    """Parse the namespaces of the rdf file and save these in the global dictionary all_namespaces.
+
+    If two rdf files contain the same namespace url with different keys only the first key is saved.
+    If two rdf files contain the same namespace key with different urls the second url is saved with key ns0, ns1, etc.
+
+    :param namespace_dict: Dictionary which contains the namespace urls with keys "$xmlns:<ns>".
+    """
+    global all_namespaces
+    for k, v in namespace_dict.items():
+        if k.startswith("$xmlns:"):
+            ns = k.split(":")[1]
+            url = v if v.endswith("#") else v + "#"
+            if url not in all_namespaces.values():
+                if ns in all_namespaces:
+                    used = True
+                    idx = 0
+                    while used:
+                        ns = f"ns{idx}"
+                        if ns not in all_namespaces:
+                            used = False
+                        idx += 1
+                all_namespaces[ns] = url
