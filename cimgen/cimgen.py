@@ -205,6 +205,7 @@ class CIMComponentDefinition:
         self.subclass_list: list[str] = []
         self.stereotype: str = rdfs_entry.stereotype()
         self.namespace: str = rdfs_entry.namespace()
+        _add_to_used_namespaces(self.namespace)
 
     def attributes(self) -> list[dict]:
         return self.attribute_list
@@ -277,6 +278,7 @@ def _wrap_and_clean(txt: str, width: int = 120, initial_indent="", subsequent_in
 long_profile_names: dict[str, str] = {}
 package_listed_by_short_name: dict[str, list[str]] = {}
 all_namespaces: dict[str, str] = {}
+used_namespaces: list[str] = []
 
 
 def _rdfs_entry_types(rdfs_entry: RDFSEntry, version: str) -> list[str]:
@@ -830,3 +832,13 @@ def _parse_namespaces(namespace_dict: dict) -> None:
                             used = False
                         idx += 1
                 all_namespaces[ns] = url
+
+
+def _add_to_used_namespaces(namespace_url: str) -> None:
+    """Add a namespace url to the global list used_namespaces.
+
+    :param namespace_url: URL to add to used_namespaces.
+    """
+    global used_namespaces
+    if namespace_url != "#" and namespace_url not in used_namespaces:
+        used_namespaces.append(namespace_url)
