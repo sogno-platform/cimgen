@@ -277,7 +277,7 @@ def _wrap_and_clean(txt: str, width: int = 120, initial_indent="", subsequent_in
 
 long_profile_names: dict[str, str] = {}
 package_listed_by_short_name: dict[str, list[str]] = {}
-all_namespaces: dict[str, str] = {}
+all_namespaces: dict[str, str] = {"md": "http://iec.ch/TC57/61970-552/ModelDescription/1#"}  # NOSONAR
 used_namespaces: list[str] = []
 
 
@@ -420,7 +420,7 @@ def _write_all_files(
 ) -> None:
 
     # Setup called only once: make output directory, create base class, create profile class, etc.
-    lang_pack.setup(output_path, _get_profile_details(package_listed_by_short_name), all_namespaces["cim"])
+    lang_pack.setup(output_path, _get_profile_details(package_listed_by_short_name), _get_used_namespaces())
 
     recommended_class_profiles = _get_recommended_class_profiles(elem_dict)
 
@@ -842,3 +842,28 @@ def _add_to_used_namespaces(namespace_url: str) -> None:
     global used_namespaces
     if namespace_url != "#" and namespace_url not in used_namespaces:
         used_namespaces.append(namespace_url)
+
+
+def _get_used_namespaces() -> dict[str, str]:
+    """Construct a dictionary with the namespaces of the global list used_namespaces using keys from all_namespaces.
+
+    If a namespace url is not found in all_namespaces it will be added to all_namespaces with key ns0, ns1, etc.
+
+    :return: Dictionary of used namespaces.
+    """
+    global all_namespaces
+    for url in used_namespaces:
+        if url not in all_namespaces.values():
+            used = True
+            idx = 0
+            while used:
+                ns = f"ns{idx}"
+                if ns not in all_namespaces:
+                    used = False
+                idx += 1
+            all_namespaces[ns] = url
+    namespaces = {}
+    for ns, url in all_namespaces.items():
+        if ns in ("rdf", "md", "cim") or url in used_namespaces:
+            namespaces[ns] = url
+    return namespaces

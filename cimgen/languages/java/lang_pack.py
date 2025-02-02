@@ -10,7 +10,7 @@ from typing import Callable
 # cgmes_profile_details contains index, names and uris for each profile.
 # We don't use that here because we aren't exporting into
 # separate profiles.
-def setup(output_path: str, cgmes_profile_details: list[dict], cim_namespace: str) -> None:  # NOSONAR
+def setup(output_path: str, cgmes_profile_details: list[dict], namespaces: dict[str, str]) -> None:  # NOSONAR
     source_dir = Path(__file__).parent
     dest_dir = Path(output_path)
     for file in dest_dir.glob("**/*.java"):

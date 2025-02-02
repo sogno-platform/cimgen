@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 # creates a couple of files the python implementation needs.
 # cgmes_profile_details contains index, names and uris for each profile.
 # We use that to create the header data for the profiles.
-def setup(output_path: str, cgmes_profile_details: list[dict], cim_namespace: str) -> None:
+def setup(output_path: str, cgmes_profile_details: list[dict], namespaces: dict[str, str]) -> None:
     source_dir = Path(__file__).parent
     dest_dir = Path(output_path)
     for file in dest_dir.glob("**/*.[mp]*"):
@@ -24,7 +24,7 @@ def setup(output_path: str, cgmes_profile_details: list[dict], cim_namespace: st
         dest_file = dest_dir / file.relative_to(source_dir)
         dest_file.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy(file, dest_file)
-    _create_constants(dest_dir, cim_namespace)
+    _create_constants(dest_dir, namespaces["cim"])
     _create_cgmes_profile(dest_dir, cgmes_profile_details)
 
 
