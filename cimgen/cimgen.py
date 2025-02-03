@@ -395,11 +395,8 @@ def _parse_rdf(input_dic: dict, version: str) -> dict[str, dict[str, CIMComponen
 
     # Add attributes to corresponding class
     for attribute in attributes:
-        clarse = attribute["domain"]
-        if clarse and classes_map[clarse]:
-            classes_map[clarse].add_attribute(attribute)
-        else:
-            logger.info("Class {} for attribute {} not found.".format(clarse, attribute))
+        if _check_attribute_for_class(classes_map, attribute):
+            classes_map[attribute["domain"]].add_attribute(attribute)
 
     # Add enum instances to corresponding class
     for instance in enum_instances:
@@ -870,3 +867,22 @@ def _get_used_namespaces() -> dict[str, str]:
         if ns in ("rdf", "md", "cim") or url in used_namespaces:
             namespaces[ns] = url
     return namespaces
+
+
+def _check_attribute_for_class(classes_map: dict[str, CIMComponentDefinition], attribute: dict) -> bool:
+    """Check if the attribute could be added to the corresponding class.
+
+    :param classes_map: Information about all classes.
+    :param attribute:   Dictionary with information about an attribute of a class.
+    :return:            Is the attribute okay?
+    """
+    about = attribute["about"]
+    domain = attribute["domain"]
+    label = attribute["label"]
+    if domain and classes_map.get(domain):
+        if about == domain + "." + label:
+            return True
+        logger.warning(f"Skip attribute '{about}' of domain '{domain}' because of wrong or missing class.")
+        return False
+    logger.error(f"Class '{domain}' for attribute '{about}' not found.")
+    return False
