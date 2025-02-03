@@ -443,6 +443,10 @@ def _write_all_files(
             "recommended_class_profile": recommended_class_profiles[class_name],
         }
 
+        # Exclude ModelDescription and DifferenceModel definitions
+        if class_details["class_namespace"] in (all_namespaces.get("md"), all_namespaces.get("dm")):
+            continue
+
         # extract comments
         if elem_dict[class_name].comment:
             class_details["class_comment"] = elem_dict[class_name].comment
