@@ -1,7 +1,7 @@
 import logging
-import os
 import textwrap
 import warnings
+from pathlib import Path
 from time import time
 from types import ModuleType
 
@@ -613,7 +613,7 @@ def _add_subclasses_of_subclasses(class_dict: dict[str, CIMComponentDefinition])
         class_dict[class_name].set_subclasses(sorted(subclasses_map.get(class_name, set())))
 
 
-def cim_generate(directory: str, output_path: str, version: str, lang_pack: ModuleType) -> None:
+def cim_generate(directory: Path, output_path: str, version: str, lang_pack: ModuleType) -> None:
     """Generates cgmes classes from cgmes ontology
 
     This function uses package xmltodict to parse the RDF files. The _parse_rdf function sorts the classes to
@@ -628,25 +628,24 @@ def cim_generate(directory: str, output_path: str, version: str, lang_pack: Modu
 
     :param directory: path to RDF files containing cgmes ontology,
                       e.g. directory = "./examples/cgmes_schema/cgmes_v2_4_15_schema"
-    :param output_path: CGMES version, e.g. version = "cgmes_v2_4_15"
+    :param output_path: The output directory
+    :param version:     CGMES version, e.g. version = "cgmes_v2_4_15"
     :param lang_pack:   python module containing language specific functions
     """
     profiles_array: list[dict[str, dict[str, CIMComponentDefinition]]] = []
 
     t0 = time()
 
-    # iterate over files in the directory and check if they are RDF files
-    for file in sorted(os.listdir(directory)):
-        if file.endswith(".rdf"):
-            logger.info('Start of parsing file "%s"', file)
+    # Iterate over RDF files: first in the main directory, than in subdirectories
+    for file in sorted(directory.glob("*.rdf")) + sorted(directory.glob("*/**/*.rdf")):
+        logger.info('Start of parsing file "%s"', file)
 
-            file_path = os.path.join(directory, file)
-            xmlstring = open(file_path, encoding="utf-8").read()
+        xmlstring = file.read_text(encoding="utf-8")
 
-            # parse RDF files and create a dictionary from the RDF file
-            parse_result = xmltodict.parse(xmlstring, attr_prefix="$", cdata_key="_", dict_constructor=dict)
-            parsed = _parse_rdf(parse_result, version)
-            profiles_array.append(parsed)
+        # parse RDF files and create a dictionary from the RDF file
+        parse_result = xmltodict.parse(xmlstring, attr_prefix="$", cdata_key="_", dict_constructor=dict)
+        parsed = _parse_rdf(parse_result, version)
+        profiles_array.append(parsed)
 
     # merge multiple profile definitions into one profile
     profiles_dict = _merge_profiles(profiles_array)
