@@ -1,5 +1,5 @@
-import shutil
 import chevron
+import shutil
 from pathlib import Path
 from importlib.resources import files
 from typing import Callable
@@ -20,6 +20,7 @@ def setup(output_path: str, cgmes_profile_details: list[dict], namespaces: dict[
         dest_file = dest_dir / file.relative_to(source_dir)
         dest_file.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy(file, dest_file)
+    _create_constants(dest_dir, namespaces)
 
 
 # These are the files that are used to generate the java files.
@@ -30,6 +31,7 @@ class_template_file = {"filename": "java_class.mustache", "ext": ".java"}
 float_template_file = {"filename": "java_float.mustache", "ext": ".java"}
 enum_template_file = {"filename": "java_enum.mustache", "ext": ".java"}
 string_template_file = {"filename": "java_string.mustache", "ext": ".java"}
+constants_template_file = {"filename": "java_constants.mustache", "ext": ".java"}
 
 partials = {
     "label": "{{#lang_pack.label}}{{label}}{{/lang_pack.label}}",
@@ -78,6 +80,13 @@ def _write_templated_file(class_file: Path, class_details: dict, template_filena
         file.write(output)
 
 
+def _create_constants(output_path: Path, namespaces: dict[str, str]) -> None:
+    class_file = output_path / ("CimConstants" + constants_template_file["ext"])
+    namespaces_list = [{"ns": ns, "uri": uri} for ns, uri in sorted(namespaces.items())]
+    class_details = {"namespaces": namespaces_list}
+    _write_templated_file(class_file, class_details, constants_template_file["filename"])
+
+
 # This function just allows us to avoid declaring a variable called 'switch',
 # which is in the definition of the ExcBBC class.
 def label(text: str, render: Callable[[str], str]) -> str:
@@ -97,6 +106,7 @@ class_blacklist = [
     "PrimitiveBuilder",
     "BaseClass",
     "CIMClassList",
+    "CimConstants",
     "Logging",
 ]
 
