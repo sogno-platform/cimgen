@@ -1,10 +1,10 @@
-# Overview of the CimGen language projects
+# Overview of the CIMgen language projects
 
-| Language                | cpp      | java     | javascript | modernpython | python    |
+| Project                 | cpp      | java     | javascript | modernpython | python    |
 |:------------------------|:--------:|:--------:|:----------:|:------------:|:---------:|
-| sogno-platform          | libcimpp | c4j      | pintura    | -            | cimpy     |
-| Other github            |          |          |    | alliander-opensource/pycgmes |   |
-| CimGen upgrade workflow | -        | -        | -          | -            | -         |
+| sogno-platform          | [libcimpp](https://github.com/sogno-platform/libcimpp) | [c4j](https://github.com/sogno-platform/cim4j) | [pintura](https://github.com/sogno-platform/pintura) | - | [cimpy](https://github.com/sogno-platform/cimpy) |
+| Other github            |          |          |            | [alliander-opensource/pycgmes](https://github.com/alliander-opensource/pycgmes) | |
+| CIMgen upgrade workflow | -        | -        | -          | -            | -         |
 | Check workflow          | -        | -        | -          | x            | x         |
 | Build workflow          | x        | -        | -          | x            | x         |
 | Test workflow           | -        | -        | -          | x            | x         |
