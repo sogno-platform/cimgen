@@ -8,6 +8,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import cim4j.BaseClass;
+import cim4j.CimConstants;
 import cim4j.IdentifiedObject;
 import cim4j.Logging;
 
@@ -51,10 +52,12 @@ public class RdfWriter {
 	 * @return cim data as rdf string
 	 */
 	public String convertCimData() {
+		final String RDF = CimConstants.NAMESPACES_MAP.get("rdf");
+		final String CIM = CimConstants.NAMESPACES_MAP.get("cim");
+
 		var rdfLines = new StringBuilder();
 		rdfLines.append("<?xml version='1.0' encoding='utf-8' ?>\n");
-		rdfLines.append("<rdf:RDF xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'\n");
-		rdfLines.append("         xmlns:cim='http://iec.ch/TC57/2012/CIM-schema-cim16#'>\n");
+		rdfLines.append("<rdf:RDF xmlns:rdf='" + RDF + "' xmlns:cim='" + CIM + "'>\n");
 
 		int count = 0;
 		for (String rdfid : cimData.keySet()) {

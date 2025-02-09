@@ -13,14 +13,14 @@ logger = logging.getLogger(__name__)
 # creates a couple of files the python implementation needs.
 # cgmes_profile_details contains index, names and uris for each profile.
 # We use that to create the header data for the profiles.
-def setup(output_path: str, cgmes_profile_details: list[dict], cim_namespace: str) -> None:
+def setup(output_path: str, cgmes_profile_details: list[dict], namespaces: dict[str, str]) -> None:
     if not os.path.exists(output_path):
         os.makedirs(output_path)
     else:
         for filename in os.listdir(output_path):
             os.remove(os.path.join(output_path, filename))
     _create_base(output_path)
-    _create_cgmes_profile(output_path, cgmes_profile_details, cim_namespace)
+    _create_cgmes_profile(output_path, cgmes_profile_details, namespaces["cim"])
 
 
 # These are the files that are used to generate the python files.

@@ -21,6 +21,8 @@ class RDFSEntry:
         json_object = {}
         if self.about():
             json_object["about"] = self.about()
+        if self.namespace():
+            json_object["namespace"] = self.namespace()
         if self.comment():
             json_object["comment"] = self.comment()
         if self.datatype():
@@ -49,6 +51,13 @@ class RDFSEntry:
     def about(self) -> str:
         if "$rdf:about" in self.json_definition:
             return _get_rid_of_hash(RDFSEntry._get_about_or_resource(self.json_definition["$rdf:about"]))
+        else:
+            return ""
+
+    def namespace(self) -> str:
+        if "$rdf:about" in self.json_definition:
+            about = RDFSEntry._get_about_or_resource(self.json_definition["$rdf:about"])
+            return about[: -len(self.about())]
         else:
             return ""
 
@@ -192,8 +201,11 @@ class CIMComponentDefinition:
         self.enum_instance_list: list[dict] = []
         self.origin_list: list[dict] = []
         self.superclass: str = rdfs_entry.subclass_of()
+        self.superclass_list: list[str] = []
         self.subclass_list: list[str] = []
         self.stereotype: str = rdfs_entry.stereotype()
+        self.namespace: str = rdfs_entry.namespace()
+        _add_to_used_namespaces(self.namespace)
 
     def attributes(self) -> list[dict]:
         return self.attribute_list
@@ -223,8 +235,11 @@ class CIMComponentDefinition:
     def set_subclass_of(self, name: str) -> None:
         self.superclass = name
 
-    def add_subclass(self, name: str) -> None:
-        self.subclass_list.append(name)
+    def superclasses(self) -> list[str]:
+        return self.superclass_list
+
+    def set_superclasses(self, classes: list[str]) -> None:
+        self.superclass_list = classes
 
     def subclasses(self) -> list[str]:
         return self.subclass_list
@@ -262,7 +277,8 @@ def _wrap_and_clean(txt: str, width: int = 120, initial_indent="", subsequent_in
 
 long_profile_names: dict[str, str] = {}
 package_listed_by_short_name: dict[str, list[str]] = {}
-cim_namespace: str = ""
+all_namespaces: dict[str, str] = {"md": "http://iec.ch/TC57/61970-552/ModelDescription/1#"}  # NOSONAR
+used_namespaces: list[str] = []
 
 
 def _rdfs_entry_types(rdfs_entry: RDFSEntry, version: str) -> list[str]:
@@ -343,9 +359,7 @@ def _parse_rdf(input_dic: dict, version: str) -> dict[str, dict[str, CIMComponen
     attributes: list[dict] = []
     enum_instances: list[dict] = []
 
-    global cim_namespace
-    if not cim_namespace:
-        cim_namespace = input_dic["rdf:RDF"].get("$xmlns:cim")
+    _parse_namespaces(input_dic["rdf:RDF"])
 
     # Generates list with dictionaries as elements
     descriptions: list[dict] = input_dic["rdf:RDF"]["rdf:Description"]
@@ -406,7 +420,7 @@ def _write_all_files(
 ) -> None:
 
     # Setup called only once: make output directory, create base class, create profile class, etc.
-    lang_pack.setup(output_path, _get_profile_details(package_listed_by_short_name), cim_namespace)
+    lang_pack.setup(output_path, _get_profile_details(package_listed_by_short_name), _get_used_namespaces())
 
     recommended_class_profiles = _get_recommended_class_profiles(elem_dict)
 
@@ -417,12 +431,14 @@ def _write_all_files(
             "class_location": lang_pack.get_class_location(class_name, elem_dict, version),
             "class_name": class_name,
             "class_origin": elem_dict[class_name].origins(),
+            "class_namespace": _get_namespace(elem_dict[class_name].namespace),
             "enum_instances": elem_dict[class_name].enum_instances(),
             "is_an_enum_class": elem_dict[class_name].is_an_enum_class(),
             "is_a_primitive_class": elem_dict[class_name].is_a_primitive_class(),
             "is_a_datatype_class": elem_dict[class_name].is_a_datatype_class(),
             "lang_pack": lang_pack,
             "subclass_of": elem_dict[class_name].subclass_of(),
+            "superclasses": elem_dict[class_name].superclasses(),
             "subclasses": elem_dict[class_name].subclasses(),
             "recommended_class_profile": recommended_class_profiles[class_name],
         }
@@ -455,6 +471,10 @@ def _write_all_files(
             attribute["is_primitive_attribute"] = _get_bool_string(attribute_type == "primitive")
             attribute["is_datatype_attribute"] = _get_bool_string(attribute_type == "datatype")
             attribute["attribute_class"] = attribute_class
+            attribute["attribute_namespace"] = _get_namespace(attribute["namespace"])
+            attribute["is_class_attribute_with_inverse_list"] = _get_bool_string(
+                _is_class_attribute_with_inverse_list(attribute, elem_dict)
+            )
 
         class_details["attributes"].sort(key=lambda d: d["label"])
         _write_files(class_details, output_path)
@@ -559,19 +579,38 @@ def _merge_classes(profiles_dict: dict[str, dict[str, CIMComponentDefinition]]) 
     return class_dict
 
 
-def _recursively_add_subclasses(class_dict: dict[str, CIMComponentDefinition], class_name: str) -> list[str]:
-    new_subclasses: list[str] = []
-    the_class = class_dict[class_name]
-    for name in the_class.subclasses():
-        new_subclasses.append(name)
-        new_new_subclasses = _recursively_add_subclasses(class_dict, name)
-        new_subclasses = new_subclasses + new_new_subclasses
-    return new_subclasses
+def _add_superclasses_of_superclasses(class_dict: dict[str, CIMComponentDefinition]) -> None:
+    """Set the list of superclasses for each class.
+
+    The algorithm searches superclasses of superclasses recursively. The resulting lists are set as attribute
+    superclasses in the class definition. They are sorted upwards according to the hierarchy.
+
+    :param class_dict:  Dictionary with all class definitions.
+    """
+    for class_name in class_dict:
+        superclass_list = []
+        superclass = class_dict[class_name].subclass_of()
+        while superclass:
+            superclass_list.append(superclass)
+            superclass = class_dict[superclass].subclass_of()
+        class_dict[class_name].set_superclasses(superclass_list)
 
 
 def _add_subclasses_of_subclasses(class_dict: dict[str, CIMComponentDefinition]) -> None:
+    """Set the list of subclasses for each class.
+
+    The algorithm searches subclasses of subclasses using the attribute superclasses of all classes. The superclasses
+    lists must therefore have been filled beforehand. The resulting lists are set as attribute subclasses in the class
+    definition. They are sorted alphabetically.
+
+    :param class_dict:  Dictionary with all class definitions.
+    """
+    subclasses_map: dict[str, set[str]] = {}
     for class_name in class_dict:
-        class_dict[class_name].set_subclasses(_recursively_add_subclasses(class_dict, class_name))
+        for superclass in class_dict[class_name].superclasses():
+            subclasses_map.setdefault(superclass, set()).add(class_name)
+    for class_name in class_dict:
+        class_dict[class_name].set_subclasses(sorted(subclasses_map.get(class_name, set())))
 
 
 def cim_generate(directory: str, output_path: str, version: str, lang_pack: ModuleType) -> None:
@@ -615,17 +654,8 @@ def cim_generate(directory: str, output_path: str, version: str, lang_pack: Modu
     # merge classes from different profiles into one class and track origin of the classes and their attributes
     class_dict_with_origins = _merge_classes(profiles_dict)
 
-    # work out the subclasses for each class by noting the reverse relationship
-    for class_name in class_dict_with_origins:
-        superclass_name = class_dict_with_origins[class_name].subclass_of()
-        if superclass_name:
-            if superclass_name in class_dict_with_origins:
-                superclass = class_dict_with_origins[superclass_name]
-                superclass.add_subclass(class_name)
-            else:
-                logger.error("No match for superclass in dict: %s", superclass_name)
-
-    # recursively add the subclasses of subclasses
+    # recursively add the superclasses of superclasses and the subclasses of subclasses
+    _add_superclasses_of_superclasses(class_dict_with_origins)
     _add_subclasses_of_subclasses(class_dict_with_origins)
 
     # get information for writing language specific files and write these files
@@ -738,6 +768,14 @@ def _get_attribute_type(attribute: dict, class_infos: CIMComponentDefinition) ->
     return attribute_type
 
 
+def _get_namespace(parsed_namespace: str) -> str:
+    if parsed_namespace == "#":
+        namespace = all_namespaces["cim"]
+    else:
+        namespace = parsed_namespace
+    return namespace
+
+
 def _get_bool_string(bool_value: bool) -> str:
     """Convert boolean value into a string which is usable in both Python and Json.
 
@@ -752,3 +790,80 @@ def _get_bool_string(bool_value: bool) -> str:
         return "true"
     else:
         return ""
+
+
+def _is_class_attribute_with_inverse_list(attribute: dict, elem_dict: dict[str, CIMComponentDefinition]) -> bool:
+    """Check if the inverse role of the attribute is a list.
+
+    :param attribute: Dictionary with information about an attribute of a class.
+    :param elem_dict: Information about all classes.
+    :return:          Is the inverse role of the attribute a list?
+    """
+    if "inverse_role" in attribute:
+        inverse_class, inverse_label = attribute["inverse_role"].split(".")
+        for inverse_attribute in elem_dict[inverse_class].attributes():
+            if inverse_attribute["label"] == inverse_label:
+                attribute_class = _get_attribute_class(inverse_attribute)
+                attribute_type = _get_attribute_type(inverse_attribute, elem_dict[attribute_class])
+                return attribute_type == "list"
+    return False
+
+
+def _parse_namespaces(namespace_dict: dict) -> None:
+    """Parse the namespaces of the rdf file and save these in the global dictionary all_namespaces.
+
+    If two rdf files contain the same namespace url with different keys only the first key is saved.
+    If two rdf files contain the same namespace key with different urls the second url is saved with key ns0, ns1, etc.
+
+    :param namespace_dict: Dictionary which contains the namespace urls with keys "$xmlns:<ns>".
+    """
+    global all_namespaces
+    for k, v in namespace_dict.items():
+        if k.startswith("$xmlns:"):
+            ns = k.split(":")[1]
+            url = v if v.endswith("#") else v + "#"
+            if url not in all_namespaces.values():
+                if ns in all_namespaces:
+                    used = True
+                    idx = 0
+                    while used:
+                        ns = f"ns{idx}"
+                        if ns not in all_namespaces:
+                            used = False
+                        idx += 1
+                all_namespaces[ns] = url
+
+
+def _add_to_used_namespaces(namespace_url: str) -> None:
+    """Add a namespace url to the global list used_namespaces.
+
+    :param namespace_url: URL to add to used_namespaces.
+    """
+    global used_namespaces
+    if namespace_url != "#" and namespace_url not in used_namespaces:
+        used_namespaces.append(namespace_url)
+
+
+def _get_used_namespaces() -> dict[str, str]:
+    """Construct a dictionary with the namespaces of the global list used_namespaces using keys from all_namespaces.
+
+    If a namespace url is not found in all_namespaces it will be added to all_namespaces with key ns0, ns1, etc.
+
+    :return: Dictionary of used namespaces.
+    """
+    global all_namespaces
+    for url in used_namespaces:
+        if url not in all_namespaces.values():
+            used = True
+            idx = 0
+            while used:
+                ns = f"ns{idx}"
+                if ns not in all_namespaces:
+                    used = False
+                idx += 1
+            all_namespaces[ns] = url
+    namespaces = {}
+    for ns, url in all_namespaces.items():
+        if ns in ("rdf", "md", "cim") or url in used_namespaces:
+            namespaces[ns] = url
+    return namespaces
