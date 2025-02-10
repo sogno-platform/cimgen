@@ -420,7 +420,7 @@ def _write_all_files(
 ) -> None:
 
     # Setup called only once: make output directory, create base class, create profile class, etc.
-    lang_pack.setup(output_path, _get_profile_details(package_listed_by_short_name), _get_used_namespaces())
+    lang_pack.setup(output_path, version, _get_profile_details(package_listed_by_short_name), _get_used_namespaces())
 
     recommended_class_profiles = _get_recommended_class_profiles(elem_dict)
 
