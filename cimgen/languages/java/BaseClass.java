@@ -69,4 +69,29 @@ public abstract class BaseClass implements BaseClassInterface, BaseClassBuilder,
 	public java.lang.String toString(boolean topClass) {
 		return "";
 	}
+
+	/**
+	 * Get the namespace URL of an object of this class.
+	 *
+	 * @return The namespace URL
+	 */
+	@Override
+	public java.lang.String getClassNamespaceUrl() {
+		return CimConstants.NAMESPACES_MAP.get("cim");
+	}
+
+	/**
+	 * Get the namespace URL of an attribute (also for inherited attributes).
+	 *
+	 * @return The namespace URL
+	 */
+	@Override
+	public java.lang.String getAttributeNamespaceUrl(java.lang.String attrName) {
+		return CimConstants.NAMESPACES_MAP.get("cim");
+	}
+
+	protected Map<java.lang.String, java.lang.String> allAttrNamespaceMap() {
+		Map<java.lang.String, java.lang.String> map = new LinkedHashMap<>();
+		return map;
+	}
 }

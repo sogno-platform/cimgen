@@ -9,4 +9,5 @@ public interface BaseClassInterface {
 	java.lang.String getRdfid();
 	java.lang.String toString(boolean topClass);
 	java.lang.String debugString();
+	java.lang.String getClassNamespaceUrl();
 }

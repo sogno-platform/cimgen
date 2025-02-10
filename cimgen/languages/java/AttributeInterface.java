@@ -8,4 +8,5 @@ public interface AttributeInterface {
 	BaseClass getAttribute(java.lang.String attrName);
 	Set<java.lang.String> getAttributeNames();
 	java.lang.String getAttributeFullName(java.lang.String attrName);
+	java.lang.String getAttributeNamespaceUrl(java.lang.String attrName);
 }
