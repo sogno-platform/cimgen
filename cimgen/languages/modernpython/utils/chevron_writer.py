@@ -23,7 +23,7 @@ class ChevronWriter:
     ) -> dict[BaseProfile, str]:
         """Write CIM RDF/XML files.
 
-        This function writes CIM objects into one or more RDF/XML files separated by profiles.
+        Writes CIM objects into one or more RDF/XML files separated by profiles.
 
         Each CIM object will be written to its corresponding profile file depending on class_profile_map.
         But some objects to more than one file if some attribute profiles are not the same as the class profile.
@@ -49,7 +49,7 @@ class ChevronWriter:
     def generate(self, profile: BaseProfile, model_id: str, class_profile_map: dict[str, BaseProfile]) -> str:
         """Write CIM objects as RDF/XML data to a string.
 
-        This function writes RDF/XML data corresponding to one profile into a string.
+        Writes RDF/XML data corresponding to one profile into a string.
 
         :param profile:            Only data for this profile should be written.
         :param model_id:           Stem of the model IDs, resulting IDs: <modelID>_<profileName>.
@@ -82,7 +82,7 @@ class ChevronWriter:
     def sort_attributes_to_profile(self, profile: BaseProfile, class_profile_map: dict[str, BaseProfile]):  # NOSONAR
         """Sort CIM objects and their attributes depending on whether the profile is the main profile of the class.
 
-        This function sorts a list of objects to two lists: main and about.
+        Sorts a list of objects to two lists: main and about.
         An object is sorted to main if the profile is the main profile of the class, otherwise to about.
         To each object the attribute infos are stored in the list.
         But it contains only attributes that belongs to the profile.
@@ -121,7 +121,7 @@ class ChevronWriter:
     def is_class_matching_profile(obj: Base, profile: BaseProfile) -> bool:
         """Check if this profile is a possible profile for this CIM object.
 
-        This function checks if the CIM type of an object contains data for a profile.
+        Checks if the CIM type of an object contains data for a profile.
         The profile could be the main profile of the type, or the type contains attributes for this profile.
 
         :param obj:      CIM object to get the CIM type from.
@@ -157,7 +157,7 @@ class ChevronWriter:
     def get_attribute_profile(obj: Base, attr: str, class_profile: BaseProfile) -> BaseProfile | None:
         """Get the profile for this attribute of the CIM object.
 
-        This function searches for the profile of an attribute for the CIM type of an object.
+        Searches for the profile of an attribute for the CIM type of an object.
         If the main profile of the type is a possible profile of the attribute it should be choosen.
         Otherwise, the first profile in the list of possible profiles ordered by profile number.
 

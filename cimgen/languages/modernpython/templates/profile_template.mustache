@@ -26,6 +26,12 @@ class BaseProfile(str, Enum):
         raise NotImplementedError("Method has to be implemented in subclass.")
 
     def __lt__(self, other):
+        """Provide a strict ordering of the enum values of this class and of all subclasses.
+
+        The enum values within a class are not sorted alphabetically, but in the order in which they were defined.
+        Enum values from different classes should not be mixed up. All values of one class come first, then all values
+        of the other class, whereby the order of the classes is alphabetical.
+        """
         if not isinstance(other, self.__class__):
             return str(self.__class__) < str(other.__class__)
         order = list(self.__class__)
