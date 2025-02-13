@@ -1,4 +1,3 @@
-# Drop in dataclass replacement, allowing easier json dump and validation in the future.
 import importlib
 from dataclasses import Field, fields
 from functools import cached_property
