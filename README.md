@@ -6,6 +6,8 @@ Python tool for code generation from CIM data model for several programming lang
 
 ![Overview CIMgen](documentation/images/CIMgen.svg)
 
+[Projects using CIMgen](documentation/CIMgenOverview.md)
+
 ## Usage example
 
 ### Generating C++ files
