@@ -1,4 +1,4 @@
-# Overview of the CIMgen language projects
+# Overview of projects based on CIMgen
 
 | Project                 | cpp      | java     | javascript | modernpython | python    |
 |:------------------------|:--------:|:--------:|:----------:|:------------:|:---------:|
