@@ -5,8 +5,7 @@
 | sogno-platform          | [libcimpp](https://github.com/sogno-platform/libcimpp) | [c4j](https://github.com/sogno-platform/cim4j) | [pintura](https://github.com/sogno-platform/pintura) | - | [cimpy](https://github.com/sogno-platform/cimpy) |
 | Other github            |          |          |            | [alliander-opensource/pycgmes](https://github.com/alliander-opensource/pycgmes) | |
 | Release packages        | deb, rpm | -        | docker     | pip          | pip       |
-| Repository              | -        | -        | Docker Hub | PyPI         | PyPI      |
-| Current release         | 2.2.0    | -        | 0.4.18     | 2.0.3        | 1.1.0     |
+| Current release         | [GitHub](https://github.com/sogno-platform/libcimpp/releases/latest) | - | [Docker Hub](https://hub.docker.com/r/sogno/pintura) | [PyPI](https://pypi.org/project/pycgmes) | [PyPI](https://pypi.org/project/cimpy) |
 | **Workflows**           |          |          |            |              |           |
 | CIMgen upgrade workflow | -        | -        | -          | -            | -         |
 | Check workflow          | -        | -        | -          | x            | x         |
