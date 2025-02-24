@@ -132,7 +132,7 @@ public class RdfReader extends DefaultHandler {
 
 	@Override
 	public void startElement(String namespaceUri, String localName, String qName, Attributes attributes) {
-		if (!qName.startsWith("cim")) {
+		if (qName.startsWith("rdf") || qName.startsWith("md")) {
 			return;
 		}
 
@@ -156,7 +156,7 @@ public class RdfReader extends DefaultHandler {
 					BaseClass object = createOrLinkObject(localName, rdfid);
 					objectStack.push(object);
 				} else {
-					LOG.debug(String.format("Possible class element: %s", qName));
+					LOG.debug(String.format("Possible class element: %s", localName));
 				}
 			}
 			if (qName.equals("rdf:resource")) {
