@@ -35,8 +35,6 @@ static const std::map<CGMESProfile, std::list<std::string>> ProfileURIs =
 {{/profiles}}
 };
 
-static const std::string CimNamespace = "{{cim_namespace}}";
-
 const std::list<CGMESProfile>&
 getProfileList()
 {
@@ -101,10 +99,4 @@ getProfileFromLongName(const std::string& name)
 		}
 	}
 	return UnknownProfile;
-}
-
-std::string
-getCimNamespace()
-{
-	return CimNamespace;
 }
