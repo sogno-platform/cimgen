@@ -220,6 +220,7 @@ class_blacklist = [
     "CIMClassList",
     "CIMFactory",
     "CIMNamespaces",
+    "CimConstants",
     "Factory",
     "Folders",
     "IEC61970",
@@ -227,7 +228,7 @@ class_blacklist = [
     "UnknownType",
 ]
 
-iec61970_blacklist = ["CIMClassList", "CIMNamespaces", "Folders", "Task", "IEC61970"]
+iec61970_blacklist = ["CIMClassList", "CIMNamespaces", "CimConstants", "Folders", "Task", "IEC61970"]
 
 
 def _is_primitive_or_enum_class(file: Path) -> bool:

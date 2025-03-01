@@ -107,7 +107,7 @@ class_blacklist = [
     "BaseClassBuilder",
     "PrimitiveBuilder",
     "BaseClass",
-    "CIMClassList",
+    "CIMClassMap",
     "CimConstants",
     "Logging",
 ]
