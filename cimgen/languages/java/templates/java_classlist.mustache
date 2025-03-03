@@ -1,0 +1,60 @@
+/*
+Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cimgen
+*/
+
+package cim4j;
+
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.function.Supplier;
+
+public final class CimClassMap {
+
+    /**
+     * Checks if the class name is known as CIM class.
+     *
+     * @param className The class name to check.
+     * @return          Is this a CIM class?
+     */
+    public static boolean isCimClass(java.lang.String className) {
+        return CREATE_MAP.containsKey(className);
+    }
+
+    /**
+     * Creates a new CIM object.
+     *
+     * @param className The class name of the new CIM object.
+     * @return          The new CIM object.
+     */
+    public static BaseClass createCimObject(java.lang.String className) {
+        var createFunction = CREATE_MAP.get(className);
+        return createFunction.get();
+    }
+
+    /**
+     * Creates a new CIM object (as object of the correct class).
+     *
+     * @param clazz The class of the new CIM object.
+     * @return      The new CIM object.
+     */
+    @SuppressWarnings("unchecked")
+    public static <T extends BaseClass> T createCimObject(Class<T> clazz) {
+        var className = clazz.getSimpleName();
+        return (T) createCimObject(className);
+    }
+
+    /**
+     * Map of CIM class name to supplier function which creates a new CIM object.
+     */
+    private static final Map<java.lang.String, Supplier<BaseClass>> CREATE_MAP;
+    static {
+        var map = new LinkedHashMap<java.lang.String, Supplier<BaseClass>>();
+
+{{#classes}}
+        map.put("{{.}}", () -> new {{.}}());
+{{/classes}}
+
+        CREATE_MAP = Collections.unmodifiableMap(map);
+    }
+}

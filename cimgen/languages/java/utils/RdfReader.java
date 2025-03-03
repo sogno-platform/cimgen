@@ -8,7 +8,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import cim4j.BaseClass;
-import cim4j.CIMClassMap;
+import cim4j.CimClassMap;
 import cim4j.Logging;
 
 /**
@@ -54,7 +54,7 @@ public final class RdfReader {
     private static void createCimObject(RdfParser.Element element) {
         var className = element.name.getLocalPart();
         if (element.id != null) {
-            if (CIMClassMap.isCIMClass(className)) {
+            if (CimClassMap.isCimClass(className)) {
                 BaseClass object = model.get(element.id);
                 if (object == null) {
                     object = createNewObject(className, element.id);
@@ -74,14 +74,10 @@ public final class RdfReader {
     }
 
     private static BaseClass createNewObject(String className, String rdfid) {
-        final BaseClass template = CIMClassMap.classMap.get(className);
-        if (template != null) {
-            BaseClass object = template.construct();
-            object.setRdfid(rdfid);
-            LOG.debug(String.format("Created object of type: %s with rdf:ID: %s", className, rdfid));
-            return object;
-        }
-        return null;
+        BaseClass object = CimClassMap.createCimObject(className);
+        object.setRdfid(rdfid);
+        LOG.debug(String.format("Created object of type: %s with rdf:ID: %s", className, rdfid));
+        return object;
     }
 
     private static void setAttribute(BaseClass object, RdfParser.Attribute attribute) {
