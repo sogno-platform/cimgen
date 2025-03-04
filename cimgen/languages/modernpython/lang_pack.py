@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 # creates a couple of files the python implementation needs.
 # cgmes_profile_details contains index, names and uris for each profile.
 # We use that to create the header data for the profiles.
-def setup(output_path: str, cgmes_profile_details: list[dict], namespaces: dict[str, str]) -> None:
+def setup(output_path: str, version: str, cgmes_profile_details: list[dict], namespaces: dict[str, str]) -> None:
     source_dir = Path(__file__).parent
     dest_dir = Path(output_path)
     for file in dest_dir.glob("**/*.[mp]*"):
@@ -24,7 +24,7 @@ def setup(output_path: str, cgmes_profile_details: list[dict], namespaces: dict[
         dest_file = dest_dir / file.relative_to(source_dir)
         dest_file.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy(file, dest_file)
-    _create_constants(dest_dir, namespaces)
+    _create_constants(dest_dir, version, namespaces)
     _create_cgmes_profile(dest_dir, cgmes_profile_details)
 
 
@@ -88,14 +88,6 @@ def _get_python_type(datatype: str) -> str:
         return "float"
 
 
-def _set_imports(attributes: list[dict]) -> list[str]:
-    import_set = set()
-    for attribute in attributes:
-        if attribute["is_datatype_attribute"] or attribute["is_primitive_attribute"]:
-            import_set.add(attribute["attribute_class"])
-    return sorted(import_set)
-
-
 def _set_datatype_attributes(attributes: list[dict]) -> dict:
     datatype_attributes = {}
     datatype_attributes["python_type"] = "None"
@@ -133,11 +125,20 @@ def run_template(output_path: str, class_details: dict) -> None:
         class_details.update(_set_datatype_attributes(class_details["attributes"]))
     elif class_details["is_an_enum_class"]:
         template = enum_template_file
+        for instance in class_details["enum_instances"]:
+            if "comment" in instance:
+                if instance["label"] in ("cosPhi", "lPerl", "gPerg", "sPers", "HzPerHz", "VPerV", "APerA", "WPerW"):
+                    instance["comment"] += "  # noqa: E501, RUF003"
+                elif instance["label"] in ("l", "I"):
+                    instance["comment"] += "  # noqa: E501, E741"
+                elif instance["label"] == "count":
+                    instance["comment"] += "  # noqa: E501  # type: ignore"
+                else:
+                    instance["comment"] += "  # noqa: E501"
     else:
         template = class_template_file
         class_details["set_default"] = _set_default
         class_details["set_type"] = _set_type
-        class_details["imports"] = _set_imports(class_details["attributes"])
     resource_file = _create_file(output_path, class_details, template)
     _write_templated_file(resource_file, class_details, template["filename"])
 
@@ -161,10 +162,10 @@ def _write_templated_file(class_file: Path, class_details: dict, template_filena
         file.write(output)
 
 
-def _create_constants(output_path: Path, namespaces: dict[str, str]) -> None:
+def _create_constants(output_path: Path, version: str, namespaces: dict[str, str]) -> None:
     class_file = output_path / "utils" / ("constants" + constants_template_file["ext"])
     namespaces_list = [{"ns": ns, "uri": uri} for ns, uri in sorted(namespaces.items())]
-    class_details = {"namespaces": namespaces_list}
+    class_details = {"version": version, "namespaces": namespaces_list}
     _write_templated_file(class_file, class_details, constants_template_file["filename"])
 
 

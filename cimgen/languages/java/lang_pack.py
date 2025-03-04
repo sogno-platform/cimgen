@@ -10,7 +10,9 @@ from typing import Callable
 # cgmes_profile_details contains index, names and uris for each profile.
 # We don't use that here because we aren't exporting into
 # separate profiles.
-def setup(output_path: str, cgmes_profile_details: list[dict], namespaces: dict[str, str]) -> None:  # NOSONAR
+def setup(
+    output_path: str, version: str, cgmes_profile_details: list[dict], namespaces: dict[str, str]
+) -> None:  # NOSONAR
     source_dir = Path(__file__).parent
     dest_dir = Path(output_path)
     for file in dest_dir.glob("**/*.java"):
@@ -20,7 +22,7 @@ def setup(output_path: str, cgmes_profile_details: list[dict], namespaces: dict[
         dest_file = dest_dir / file.relative_to(source_dir)
         dest_file.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy(file, dest_file)
-    _create_constants(dest_dir, namespaces)
+    _create_constants(dest_dir, version, namespaces)
 
 
 # These are the files that are used to generate the java files.
@@ -80,10 +82,10 @@ def _write_templated_file(class_file: Path, class_details: dict, template_filena
         file.write(output)
 
 
-def _create_constants(output_path: Path, namespaces: dict[str, str]) -> None:
+def _create_constants(output_path: Path, version: str, namespaces: dict[str, str]) -> None:
     class_file = output_path / ("CimConstants" + constants_template_file["ext"])
     namespaces_list = [{"ns": ns, "uri": uri} for ns, uri in sorted(namespaces.items())]
-    class_details = {"namespaces": namespaces_list}
+    class_details = {"version": version, "namespaces": namespaces_list}
     _write_templated_file(class_file, class_details, constants_template_file["filename"])
 
 

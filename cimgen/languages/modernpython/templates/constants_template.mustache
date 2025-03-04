@@ -2,7 +2,10 @@
 Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cimgen
 """
 
-# Default namespaces used by CGMES.
+#: CIM version string.
+CIM_VERSION: str = "{{version}}"
+
+#: Default namespaces used by CGMES. Map of namespace key to URL.
 NAMESPACES: dict[str, str] = {  # Those are strings, not real addresses, hence the NOSONAR.
 {{#namespaces}}
     "{{ns}}": "{{uri}}",  # NOSONAR

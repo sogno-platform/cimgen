@@ -8,7 +8,9 @@ from importlib.resources import files
 # This function makes sure we have somewhere to write the classes.
 # cgmes_profile_details contains index, names and uris for each profile.
 # We use that to create the header data for the profiles.
-def setup(output_path: str, cgmes_profile_details: list[dict], namespaces: dict[str, str]) -> None:
+def setup(
+    output_path: str, version: str, cgmes_profile_details: list[dict], namespaces: dict[str, str]
+) -> None:  # NOSONAR
     if not os.path.exists(output_path):
         os.makedirs(output_path)
     else:
