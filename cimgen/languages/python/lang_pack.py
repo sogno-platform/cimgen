@@ -13,20 +13,20 @@ logger = logging.getLogger(__name__)
 # creates a couple of files the python implementation needs.
 # cgmes_profile_details contains index, names and uris for each profile.
 # We use that to create the header data for the profiles.
-def setup(
-    output_path: str, version: str, cgmes_profile_details: list[dict], namespaces: dict[str, str]
-) -> None:  # NOSONAR
+def setup(output_path: str, version: str, cgmes_profile_details: list[dict], namespaces: dict[str, str]) -> None:
     if not os.path.exists(output_path):
         os.makedirs(output_path)
     else:
         for filename in os.listdir(output_path):
             os.remove(os.path.join(output_path, filename))
     _create_base(output_path)
-    _create_cgmes_profile(output_path, cgmes_profile_details, namespaces["cim"])
+    _create_constants(output_path, version, namespaces)
+    _create_cgmes_profile(output_path, cgmes_profile_details)
 
 
 # These are the files that are used to generate the python files.
 class_template_file = {"filename": "cimpy_class_template.mustache", "ext": ".py"}
+constants_template_file = {"filename": "cimpy_constants_template.mustache", "ext": ".py"}
 profile_template_file = {"filename": "cimpy_profile_template.mustache", "ext": ".py"}
 
 partials = {}
@@ -106,16 +106,20 @@ def _create_base(path: str) -> None:
             f.write(line)
 
 
-def _create_cgmes_profile(output_path: str, profile_details: list[dict], cim_namespace: str) -> None:
+def _create_constants(output_path: str, version: str, namespaces: dict[str, str]) -> None:
+    class_file = os.path.join(output_path, "CimConstants" + constants_template_file["ext"])
+    namespaces_list = [{"ns": ns, "uri": uri} for ns, uri in sorted(namespaces.items())]
+    class_details = {"version": version, "namespaces": namespaces_list}
+    _write_templated_file(class_file, class_details, constants_template_file["filename"])
+
+
+def _create_cgmes_profile(output_path: str, profile_details: list[dict]) -> None:
     class_file = os.path.join(output_path, "CGMESProfile" + profile_template_file["ext"])
-    class_details = {
-        "profiles": profile_details,
-        "cim_namespace": cim_namespace,
-    }
+    class_details = {"profiles": profile_details}
     _write_templated_file(class_file, class_details, profile_template_file["filename"])
 
 
-class_blacklist = ["CGMESProfile"]
+class_blacklist = ["CGMESProfile", "CimConstants"]
 
 
 def resolve_headers(path: str, version: str) -> None:  # NOSONAR

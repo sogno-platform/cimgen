@@ -213,4 +213,43 @@ public class {{class_name}} extends {{subclass_of}} {
 	public java.lang.String debugString() {
 		return debugName;
 	}
+
+	/**
+	 * Get the namespace URL of an object of this class.
+	 *
+	 * @return The namespace URL
+	 */
+	@Override
+	public java.lang.String getClassNamespaceUrl() {
+		return "{{class_namespace}}";
+	}
+
+	/**
+	 * Get the namespace URL of an attribute (also for inherited attributes).
+	 *
+	 * @return The namespace URL
+	 */
+	@Override
+	public java.lang.String getAttributeNamespaceUrl(java.lang.String attrName) {
+		return ATTR_NAMESPACE_MAP.get(attrName);
+	}
+
+	private static final Map<java.lang.String, java.lang.String> ATTR_NAMESPACE_MAP;
+	static {
+		ATTR_NAMESPACE_MAP = new {{class_name}}().allAttrNamespaceMap();
+	}
+
+	@Override
+	protected Map<java.lang.String, java.lang.String> allAttrNamespaceMap() {
+		Map<java.lang.String, java.lang.String> map = new LinkedHashMap<>(classAttrNamespaceMap);
+		map.putAll(super.allAttrNamespaceMap());
+		map.remove("LAST_ATTRIBUTE");
+		return map;
+	}
+
+	private Map<java.lang.String, java.lang.String> classAttrNamespaceMap = Map.ofEntries(
+{{#attributes}}
+			Map.entry("{{> label}}", "{{attribute_namespace}}"),
+{{/attributes}}
+			Map.entry("LAST_ATTRIBUTE", ""));
 }

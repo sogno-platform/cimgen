@@ -1,3 +1,7 @@
+"""
+Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cimgen
+"""
+
 from enum import Enum
 
 
@@ -39,6 +43,3 @@ class Profile(Enum):
     @classmethod
     def from_long_name(cls, long_name):
         return cls[short_profile_name[long_name]]
-
-
-cim_namespace = "{{cim_namespace}}"  # NOSONAR

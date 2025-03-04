@@ -1,0 +1,18 @@
+/*
+Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cimgen
+*/
+
+class CimConstants {
+
+    // CIM version string.
+    static const cimVersion = "{{version}}";
+
+    // Default namespaces used by CGMES. Map of namespace key to URL.
+    static namespaces = {  // Those are strings, not real addresses, hence the NOSONAR.
+{{#namespaces}}
+        "{{ns}}": {{uri}},  // NOSONAR
+{{/namespaces}}
+    };
+}
+
+export default CimConstants

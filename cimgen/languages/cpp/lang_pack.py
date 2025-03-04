@@ -9,9 +9,7 @@ from typing import Callable
 # This just makes sure we have somewhere to write the classes.
 # cgmes_profile_details contains index, names and uris for each profile.
 # We use that to create the header data for the profiles.
-def setup(
-    output_path: str, version: str, cgmes_profile_details: list[dict], namespaces: dict[str, str]
-) -> None:  # NOSONAR
+def setup(output_path: str, version: str, cgmes_profile_details: list[dict], namespaces: dict[str, str]) -> None:
     source_dir = Path(__file__).parent
     dest_dir = Path(output_path)
     for file in dest_dir.glob("**/*.[ch]*"):
@@ -21,7 +19,8 @@ def setup(
         dest_file = dest_dir / file.relative_to(source_dir)
         dest_file.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy(file, dest_file)
-    _create_cgmes_profile(dest_dir, cgmes_profile_details, namespaces["cim"])
+    _create_constants(dest_dir, version, namespaces)
+    _create_cgmes_profile(dest_dir, cgmes_profile_details)
 
 
 # These are the files that are used to generate the header and object files.
@@ -43,6 +42,10 @@ enum_template_files = [
 string_template_files = [
     {"filename": "cpp_string_header_template.mustache", "ext": ".hpp"},
     {"filename": "cpp_string_object_template.mustache", "ext": ".cpp"},
+]
+constants_template_files = [
+    {"filename": "cpp_constants_header_template.mustache", "ext": ".hpp"},
+    {"filename": "cpp_constants_object_template.mustache", "ext": ".cpp"},
 ]
 profile_template_files = [
     {"filename": "cpp_profile_header_template.mustache", "ext": ".hpp"},
@@ -113,13 +116,18 @@ def _write_templated_file(class_file: Path, class_details: dict, template_filena
         file.write(output)
 
 
-def _create_cgmes_profile(output_path: Path, profile_details: list[dict], cim_namespace: str) -> None:
+def _create_constants(output_path: Path, version: str, namespaces: dict[str, str]) -> None:
+    for template_info in constants_template_files:
+        class_file = output_path / ("CimConstants" + template_info["ext"])
+        namespaces_list = [{"ns": ns, "uri": uri} for ns, uri in sorted(namespaces.items())]
+        class_details = {"version": version, "namespaces": namespaces_list}
+        _write_templated_file(class_file, class_details, template_info["filename"])
+
+
+def _create_cgmes_profile(output_path: Path, profile_details: list[dict]) -> None:
     for template_info in profile_template_files:
         class_file = output_path / ("CGMESProfile" + template_info["ext"])
-        class_details = {
-            "profiles": profile_details,
-            "cim_namespace": cim_namespace,
-        }
+        class_details = {"profiles": profile_details}
         _write_templated_file(class_file, class_details, template_info["filename"])
 
 
@@ -212,6 +220,7 @@ class_blacklist = [
     "CIMClassList",
     "CIMFactory",
     "CIMNamespaces",
+    "CimConstants",
     "Factory",
     "Folders",
     "IEC61970",
@@ -219,7 +228,7 @@ class_blacklist = [
     "UnknownType",
 ]
 
-iec61970_blacklist = ["CIMClassList", "CIMNamespaces", "Folders", "Task", "IEC61970"]
+iec61970_blacklist = ["CIMClassList", "CIMNamespaces", "CimConstants", "Folders", "Task", "IEC61970"]
 
 
 def _is_primitive_or_enum_class(file: Path) -> bool:
