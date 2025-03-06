@@ -19,6 +19,7 @@ import cim4j.CimConstants;
 public final class RdfParser {
 
     private static final String RDF = CimConstants.NAMESPACES_MAP.get("rdf");
+    private static final String MD = CimConstants.NAMESPACES_MAP.get("md"); // ModelDescription
 
     /**
      * Parse the CIM data from a stream.
@@ -43,7 +44,7 @@ public final class RdfParser {
             // Parse over all elements
             while (parser.hasNext()) {
                 int eventType = parser.next();
-                if (eventType == XMLStreamConstants.START_ELEMENT) {
+                if (eventType == XMLStreamConstants.START_ELEMENT && !parser.getName().getNamespaceURI().equals(MD)) {
                     var element = new Element();
                     element.name = parser.getName();
                     element.id = getIdOrAbout(parser);
