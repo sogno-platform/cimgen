@@ -1,0 +1,18 @@
+{
+    "$schema": "http://json-schema.org/schema#",
+    "$id": "schema:{{class_name}}",
+    "$ref": "schema:{{subclass_of}}",
+    "$schemaVersion": "0.0.1",
+    "modelTags": "",
+    "title": "{{class_name}}",
+    "description": "{{class_comment}}",
+    "type": "object",
+    "properties": {
+{{#attributes}}
+        "{{label}}": {
+            "description": "{{comment}} Default: {{#set_default}}{{datatype}}{{/set_default}}",
+            "type": "{{datatype}}"
+        },
+{{/attributes}}
+    }
+}
