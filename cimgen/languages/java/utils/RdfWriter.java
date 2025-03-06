@@ -129,6 +129,9 @@ public class RdfWriter {
                                 if (attrRdfId != null) {
                                     if (!attrRdfId.contains("#")) {
                                         attrRdfId = "#" + attrRdfId;
+                                    } else if (attrRdfId.indexOf("#") != 0) {
+                                        String[] parts = attrRdfId.split("#");
+                                        attrRdfId = namespaceUrl + parts[1];
                                     }
                                     writer.writeCharacters("\n    ");
                                     writer.writeEmptyElement(namespaceUrl, attrFullName);
