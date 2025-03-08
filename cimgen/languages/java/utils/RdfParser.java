@@ -1,9 +1,9 @@
 package cim4j.utils;
 
 import java.io.InputStream;
-import java.util.function.Consumer;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.LinkedList;
+import java.util.function.Consumer;
 
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLInputFactory;
@@ -62,7 +62,7 @@ public final class RdfParser {
     }
 
     private static List<Attribute> parseAttributes(XMLStreamReader parser, QName outerName) throws XMLStreamException {
-        var attributeList = new LinkedList<Attribute>();
+        var attributeList = new ArrayList<Attribute>();
         var attribute = new Attribute();
 
         // Parse over all attributes

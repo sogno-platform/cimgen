@@ -1,10 +1,11 @@
 package cim4j.utils;
 
+import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
-import java.io.InputStream;
-import java.util.List;
-import java.util.LinkedList;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import cim4j.BaseClass;
@@ -22,31 +23,45 @@ public final class RdfReader {
     private static Map<String, List<SetAttribute>> setAttributeMap = new LinkedHashMap<>();
 
     /**
-     * Read the CIM data from a RDF file.
+     * Read the CIM data from a list of RDF files.
      *
-     * @param path Path of file to read
+     * @param pathList List of files to read
      * @return CIM data as map of rdfid to CIM object
      */
-    public static Map<String, BaseClass> read(String path) {
-        try (var stream = new FileInputStream(path)) {
-            return read(stream);
-        } catch (Exception ex) {
-            String txt = "Error while reading rdf file: " + path;
-            LOG.error(txt, ex);
-            throw new RuntimeException(txt, ex);
+    public static Map<String, BaseClass> read(List<String> pathList) {
+        model.clear();
+        setAttributeMap.clear();
+        for (String path : pathList) {
+            try (var stream = new FileInputStream(path)) {
+                RdfParser.parse(stream, RdfReader::createCimObject);
+            } catch (Exception ex) {
+                String txt = "Error while reading rdf file: " + path;
+                LOG.error(txt, ex);
+                throw new RuntimeException(txt, ex);
+            }
         }
+        setRemainingAttributes();
+        return model;
     }
 
     /**
-     * Read the CIM data from a stream.
+     * Read the CIM data from a list of strings with XML content.
      *
-     * @param stream Input stream to read
+     * @param xmlList Input strings to read
      * @return CIM data as map of rdfid to CIM object
      */
-    public static Map<String, BaseClass> read(InputStream stream) {
+    public static Map<String, BaseClass> readFromStrings(List<String> xmlList) {
         model.clear();
         setAttributeMap.clear();
-        RdfParser.parse(stream, RdfReader::createCimObject);
+        for (String xml : xmlList) {
+            try (var stream = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8))) {
+                RdfParser.parse(stream, RdfReader::createCimObject);
+            } catch (Exception ex) {
+                String txt = "Error while reading xml data";
+                LOG.error(txt, ex);
+                throw new RuntimeException(txt, ex);
+            }
+        }
         setRemainingAttributes();
         return model;
     }
@@ -92,7 +107,7 @@ public final class RdfReader {
             } else {
                 // Set attribute later in setRemainingAttributes
                 var setAttribute = new SetAttribute(attributeName, object);
-                setAttributeMap.computeIfAbsent(attribute.resource, k -> new LinkedList<>()).add(setAttribute);
+                setAttributeMap.computeIfAbsent(attribute.resource, k -> new ArrayList<>()).add(setAttribute);
             }
         } else {
             object.setAttribute(attributeName, attribute.value);

@@ -1,7 +1,6 @@
 package cim4j.main;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -69,18 +68,12 @@ public final class Main {
      * @return cim data as map of rdfid to cim object
      */
     public static Map<String, BaseClass> readRdf(List<String> inputFiles) {
-        var allCimData = new LinkedHashMap<String, BaseClass>();
         try {
-            for (String rdfFile : inputFiles) {
-                LOG.info("Read RDF file: " + rdfFile);
-                var cimData = RdfReader.read(rdfFile);
-                allCimData.putAll(cimData);
-            }
+            return RdfReader.read(inputFiles);
         } catch (Exception ex) {
             LOG.error("Failed to convert RDF files to CIM", ex);
             return null;
         }
-        return allCimData;
     }
 
     /**
