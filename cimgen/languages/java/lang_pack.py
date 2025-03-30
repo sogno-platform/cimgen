@@ -34,6 +34,7 @@ float_template_file = {"filename": "java_float.mustache", "ext": ".java"}
 enum_template_file = {"filename": "java_enum.mustache", "ext": ".java"}
 string_template_file = {"filename": "java_string.mustache", "ext": ".java"}
 constants_template_file = {"filename": "java_constants.mustache", "ext": ".java"}
+classlist_template = {"filename": "java_classlist.mustache", "ext": ".java"}
 
 partials = {
     "label": "{{#lang_pack.label}}{{label}}{{/lang_pack.label}}",
@@ -99,7 +100,7 @@ def label(text: str, render: Callable[[str], str]) -> str:
         return result
 
 
-# The code below this line is used after the main cim_generate phase to generate CIMClassMap.java.
+# The code below this line is used after the main cim_generate phase to generate CimClassMap.java.
 
 class_blacklist = [
     "AttributeInterface",
@@ -107,57 +108,18 @@ class_blacklist = [
     "BaseClassBuilder",
     "PrimitiveBuilder",
     "BaseClass",
-    "CIMClassMap",
+    "CimClassMap",
     "CimConstants",
     "Logging",
 ]
 
 
-def _create_header_include_file(
-    directory: Path,
-    header_include_filename: str,
-    header: list[str],
-    footer: list[str],
-    before: str,
-    after: str,
-    blacklist: list[str],
-) -> None:
-    lines = []
-    for file in sorted(directory.glob("*.java"), key=lambda f: f.stem):
-        basename = file.stem
-        if basename not in blacklist:
-            lines.append(before + 'Map.entry("' + basename + '", new cim4j.' + basename + after + "),\n")
-    lines[-1] = lines[-1].replace("),", ")")
-    for line in lines:
-        header.append(line)
-    for line in footer:
-        header.append(line)
-    header_include_filepath = directory / header_include_filename
-    with header_include_filepath.open("w", encoding="utf-8") as f:
-        f.writelines(header)
-
-
 def resolve_headers(path: str, version: str) -> None:  # NOSONAR
-    class_list_header = [
-        "/*\n",
-        "Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cimgen\n",
-        "*/\n",
-        "package cim4j;\n",
-        "import java.util.Map;\n",
-        "public class CIMClassMap {\n",
-        "	public static boolean isCIMClass(java.lang.String key) {\n",
-        "		return classMap.containsKey(key);\n",
-        "	}\n",
-        "	public static Map<java.lang.String, BaseClass> classMap = Map.ofEntries(\n",
-    ]
-    class_list_footer = ["	);\n", "}\n"]
-
-    _create_header_include_file(
-        Path(path),
-        "CIMClassMap.java",
-        class_list_header,
-        class_list_footer,
-        "		",
-        "()",
-        class_blacklist,
-    )
+    directory = Path(path)
+    classlist_file = directory / ("CimClassMap" + classlist_template["ext"])
+    classes = []
+    for file in sorted(directory.glob("*.java"), key=lambda f: f.stem):
+        class_name = file.stem
+        if class_name not in class_blacklist:
+            classes.append(class_name)
+    _write_templated_file(classlist_file, {"classes": classes}, classlist_template["filename"])
