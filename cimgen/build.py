@@ -1,6 +1,6 @@
 import argparse
 import importlib
-import os
+from pathlib import Path
 from types import ModuleType
 
 from cimgen import cimgen
@@ -21,7 +21,7 @@ def build() -> None:
     args = parser.parse_args()
 
     lang_pack: ModuleType = importlib.import_module(f"cimgen.languages.{args.langdir}.lang_pack")
-    schema_path = os.path.join(os.getcwd(), args.schemadir)
+    schema_path = Path.cwd() / args.schemadir
     cimgen.cim_generate(schema_path, args.outdir, args.cgmes_version, lang_pack)
 
 

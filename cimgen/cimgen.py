@@ -1,7 +1,7 @@
 import logging
-import os
 import textwrap
 import warnings
+from pathlib import Path
 from time import time
 from types import ModuleType
 
@@ -395,11 +395,8 @@ def _parse_rdf(input_dic: dict, version: str) -> dict[str, dict[str, CIMComponen
 
     # Add attributes to corresponding class
     for attribute in attributes:
-        clarse = attribute["domain"]
-        if clarse and classes_map[clarse]:
-            classes_map[clarse].add_attribute(attribute)
-        else:
-            logger.info("Class {} for attribute {} not found.".format(clarse, attribute))
+        if _check_attribute_for_class(classes_map, attribute):
+            classes_map[attribute["domain"]].add_attribute(attribute)
 
     # Add enum instances to corresponding class
     for instance in enum_instances:
@@ -442,6 +439,10 @@ def _write_all_files(
             "subclasses": elem_dict[class_name].subclasses(),
             "recommended_class_profile": recommended_class_profiles[class_name],
         }
+
+        # Exclude ModelDescription and DifferenceModel definitions
+        if class_details["class_namespace"] in (all_namespaces.get("md"), all_namespaces.get("dm")):
+            continue
 
         # extract comments
         if elem_dict[class_name].comment:
@@ -613,7 +614,7 @@ def _add_subclasses_of_subclasses(class_dict: dict[str, CIMComponentDefinition])
         class_dict[class_name].set_subclasses(sorted(subclasses_map.get(class_name, set())))
 
 
-def cim_generate(directory: str, output_path: str, version: str, lang_pack: ModuleType) -> None:
+def cim_generate(directory: Path, output_path: str, version: str, lang_pack: ModuleType) -> None:
     """Generates cgmes classes from cgmes ontology
 
     This function uses package xmltodict to parse the RDF files. The _parse_rdf function sorts the classes to
@@ -628,25 +629,24 @@ def cim_generate(directory: str, output_path: str, version: str, lang_pack: Modu
 
     :param directory: path to RDF files containing cgmes ontology,
                       e.g. directory = "./examples/cgmes_schema/cgmes_v2_4_15_schema"
-    :param output_path: CGMES version, e.g. version = "cgmes_v2_4_15"
+    :param output_path: The output directory
+    :param version:     CGMES version, e.g. version = "cgmes_v2_4_15"
     :param lang_pack:   python module containing language specific functions
     """
     profiles_array: list[dict[str, dict[str, CIMComponentDefinition]]] = []
 
     t0 = time()
 
-    # iterate over files in the directory and check if they are RDF files
-    for file in sorted(os.listdir(directory)):
-        if file.endswith(".rdf"):
-            logger.info('Start of parsing file "%s"', file)
+    # Iterate over RDF files: first in the main directory, than in subdirectories
+    for file in sorted(directory.glob("*.rdf")) + sorted(directory.glob("*/**/*.rdf")):
+        logger.info('Start of parsing file "%s"', file)
 
-            file_path = os.path.join(directory, file)
-            xmlstring = open(file_path, encoding="utf-8").read()
+        xmlstring = file.read_text(encoding="utf-8")
 
-            # parse RDF files and create a dictionary from the RDF file
-            parse_result = xmltodict.parse(xmlstring, attr_prefix="$", cdata_key="_", dict_constructor=dict)
-            parsed = _parse_rdf(parse_result, version)
-            profiles_array.append(parsed)
+        # parse RDF files and create a dictionary from the RDF file
+        parse_result = xmltodict.parse(xmlstring, attr_prefix="$", cdata_key="_", dict_constructor=dict)
+        parsed = _parse_rdf(parse_result, version)
+        profiles_array.append(parsed)
 
     # merge multiple profile definitions into one profile
     profiles_dict = _merge_profiles(profiles_array)
@@ -867,3 +867,22 @@ def _get_used_namespaces() -> dict[str, str]:
         if ns in ("rdf", "md", "cim") or url in used_namespaces:
             namespaces[ns] = url
     return namespaces
+
+
+def _check_attribute_for_class(classes_map: dict[str, CIMComponentDefinition], attribute: dict) -> bool:
+    """Check if the attribute could be added to the corresponding class.
+
+    :param classes_map: Information about all classes.
+    :param attribute:   Dictionary with information about an attribute of a class.
+    :return:            Is the attribute okay?
+    """
+    about = attribute["about"]
+    domain = attribute["domain"]
+    label = attribute["label"]
+    if domain and classes_map.get(domain):
+        if about == domain + "." + label:
+            return True
+        logger.warning(f"Skip attribute '{about}' of domain '{domain}' because of wrong or missing class.")
+        return False
+    logger.error(f"Class '{domain}' for attribute '{about}' not found.")
+    return False
