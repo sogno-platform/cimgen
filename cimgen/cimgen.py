@@ -335,6 +335,9 @@ def _add_class(classes_map: dict[str, CIMComponentDefinition], rdfs_entry: RDFSE
     """
     Add class component to classes map
     """
+    # Exclude DifferenceModel definitions
+    if rdfs_entry.namespace() == all_namespaces.get("dm"):
+        return
     if rdfs_entry.label() in classes_map:
         logger.error("Class {} already exists".format(rdfs_entry.label()))
     classes_map[rdfs_entry.label()] = CIMComponentDefinition(rdfs_entry)
@@ -876,6 +879,9 @@ def _check_attribute_for_class(classes_map: dict[str, CIMComponentDefinition], a
     :param attribute:   Dictionary with information about an attribute of a class.
     :return:            Is the attribute okay?
     """
+    # Exclude ModelDescription and DifferenceModel definitions
+    if attribute["namespace"] in (all_namespaces.get("md"), all_namespaces.get("dm")):
+        return False
     about = attribute["about"]
     domain = attribute["domain"]
     label = attribute["label"]
