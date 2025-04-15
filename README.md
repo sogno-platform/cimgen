@@ -118,6 +118,19 @@ export BUILD_IN_DOCKER=true
 make modernpython
 ```
 
+## Custom Profiles
+
+To generate files for custom profiles,
+you have to copy the profile files to a subdirectory of the schema directory.
+All profiles in the schema directory and its subdirectories are read,
+but the profiles in the main directory are read first.
+
+```bash
+mkdir cgmes_schema/<schemadir>/<customdir>/
+cp <custom_profile>.rdf ... cgmes_schema/<schemadir>/<customdir>/
+cimgen --outdir=output/ --schemadir=cgmes_schema/<schemadir> --langdir=<lang> --cgmes_version=<version>
+```
+
 ## Development
 
 ### Developer Installation
