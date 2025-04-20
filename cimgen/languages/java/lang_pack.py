@@ -8,11 +8,8 @@ from typing import Callable
 # Setup called only once: make output directory, create base class, create profile class, etc.
 # This just makes sure we have somewhere to write the classes.
 # cgmes_profile_details contains index, names and uris for each profile.
-# We don't use that here because we aren't exporting into
-# separate profiles.
-def setup(
-    output_path: str, version: str, cgmes_profile_details: list[dict], namespaces: dict[str, str]
-) -> None:  # NOSONAR
+# We use that to create the header data for the profiles.
+def setup(output_path: str, version: str, cgmes_profile_details: list[dict], namespaces: dict[str, str]) -> None:
     source_dir = Path(__file__).parent
     dest_dir = Path(output_path)
     for file in dest_dir.glob("**/*.java"):
@@ -23,6 +20,7 @@ def setup(
         dest_file.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy(file, dest_file)
     _create_constants(dest_dir, version, namespaces)
+    _create_cgmes_profile(dest_dir, cgmes_profile_details)
 
 
 # These are the files that are used to generate the java files.
@@ -34,7 +32,8 @@ float_template_file = {"filename": "java_float.mustache", "ext": ".java"}
 enum_template_file = {"filename": "java_enum.mustache", "ext": ".java"}
 string_template_file = {"filename": "java_string.mustache", "ext": ".java"}
 constants_template_file = {"filename": "java_constants.mustache", "ext": ".java"}
-classlist_template = {"filename": "java_classlist.mustache", "ext": ".java"}
+profile_template_file = {"filename": "java_profile.mustache", "ext": ".java"}
+classlist_template_file = {"filename": "java_classlist.mustache", "ext": ".java"}
 
 partials = {
     "label": "{{#lang_pack.label}}{{label}}{{/lang_pack.label}}",
@@ -90,6 +89,12 @@ def _create_constants(output_path: Path, version: str, namespaces: dict[str, str
     _write_templated_file(class_file, class_details, constants_template_file["filename"])
 
 
+def _create_cgmes_profile(output_path: Path, profile_details: list[dict]) -> None:
+    class_file = output_path / ("CGMESProfile" + profile_template_file["ext"])
+    class_details = {"profiles": profile_details}
+    _write_templated_file(class_file, class_details, profile_template_file["filename"])
+
+
 # This function just allows us to avoid declaring a variable called 'switch',
 # which is in the definition of the ExcBBC class.
 def label(text: str, render: Callable[[str], str]) -> str:
@@ -108,6 +113,7 @@ class_blacklist = [
     "BaseClassBuilder",
     "PrimitiveBuilder",
     "BaseClass",
+    "CGMESProfile",
     "CimClassMap",
     "CimConstants",
     "Logging",
@@ -116,10 +122,10 @@ class_blacklist = [
 
 def resolve_headers(path: str, version: str) -> None:  # NOSONAR
     directory = Path(path)
-    classlist_file = directory / ("CimClassMap" + classlist_template["ext"])
+    classlist_file = directory / ("CimClassMap" + classlist_template_file["ext"])
     classes = []
     for file in sorted(directory.glob("*.java"), key=lambda f: f.stem):
         class_name = file.stem
         if class_name not in class_blacklist:
             classes.append(class_name)
-    _write_templated_file(classlist_file, {"classes": classes}, classlist_template["filename"])
+    _write_templated_file(classlist_file, {"classes": classes}, classlist_template_file["filename"])
