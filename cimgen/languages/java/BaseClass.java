@@ -1,7 +1,5 @@
 package cim4j;
 
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -50,24 +48,22 @@ public abstract class BaseClass implements BaseClassInterface, BaseClassBuilder,
     }
 
     protected Map<java.lang.String, java.lang.String> getAttributeNamesMap() {
-        Map<java.lang.String, java.lang.String> namesMap = new LinkedHashMap<>();
-        return namesMap;
+        return Map.of();
     }
 
     @Override
     public Set<java.lang.String> getAttributeNames() {
-        LinkedHashSet<java.lang.String> attrNames = new LinkedHashSet<>();
-        return attrNames;
+        throw new RuntimeException("Method not implemented.");
     }
 
     @Override
     public java.lang.String getAttributeFullName(java.lang.String attrName) {
-        return null;
+        throw new RuntimeException("Method not implemented.");
     }
 
     @Override
     public java.lang.String toString(boolean topClass) {
-        return "";
+        throw new RuntimeException("Method not implemented.");
     }
 
     /**
@@ -77,7 +73,7 @@ public abstract class BaseClass implements BaseClassInterface, BaseClassBuilder,
      */
     @Override
     public java.lang.String getClassNamespaceUrl() {
-        return CimConstants.NAMESPACES_MAP.get("cim");
+        throw new RuntimeException("Method not implemented.");
     }
 
     /**
@@ -87,11 +83,69 @@ public abstract class BaseClass implements BaseClassInterface, BaseClassBuilder,
      */
     @Override
     public java.lang.String getAttributeNamespaceUrl(java.lang.String attrName) {
-        return CimConstants.NAMESPACES_MAP.get("cim");
+        throw new RuntimeException("Method not implemented.");
     }
 
-    protected Map<java.lang.String, java.lang.String> allAttrNamespaceMap() {
-        Map<java.lang.String, java.lang.String> map = new LinkedHashMap<>();
-        return map;
+    protected Map<java.lang.String, AttrDetails> allAttrDetailsMap() {
+        return Map.of();
+    }
+
+    /**
+     * A resource can be used by multiple profiles. This is the set of profiles
+     * where this element can be found.
+     *
+     * @return All possible profiles for an object of this class
+     */
+    @Override
+    public Set<CGMESProfile> getPossibleProfiles() {
+        throw new RuntimeException("Method not implemented.");
+    }
+
+    /**
+     * This is the profile with most of the attributes.
+     * It should be used to write the data to as few as possible files.
+     *
+     * @return The recommended profiles for an object of this class
+     */
+    @Override
+    public CGMESProfile getRecommendedProfile() {
+        throw new RuntimeException("Method not implemented.");
+    }
+
+    /**
+     * Get the possible profiles of an attribute (also for inherited attributes).
+     *
+     * @return All possible profiles for an attribute
+     */
+    @Override
+    public Set<CGMESProfile> getPossibleAttributeProfiles(java.lang.String attrName) {
+        throw new RuntimeException("Method not implemented.");
+    }
+
+    /**
+     * Get the possible profiles for an object of this class including the possible
+     * profiles of all direct or inherited attributes.
+     *
+     * A resource can be used by multiple profiles. This is the set of profiles
+     * where this element or an attribute of this element can be found.
+     *
+     * @return All possible profiles for an object of this class and its attributes
+     */
+    @Override
+    public Set<CGMESProfile> getPossibleProfilesIncludingAttributes() {
+        throw new RuntimeException("Method not implemented.");
+    }
+
+    /**
+     * Nested helper class.
+     */
+    protected static class AttrDetails {
+        public AttrDetails(java.lang.String n, Set<CGMESProfile> c) {
+            nameSpace = n;
+            profiles = c;
+        }
+
+        public java.lang.String nameSpace;
+        public Set<CGMESProfile> profiles;
     }
 }
