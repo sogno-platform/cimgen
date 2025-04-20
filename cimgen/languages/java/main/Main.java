@@ -24,8 +24,8 @@ public final class Main {
         if (!aError.isEmpty()) {
             System.out.println("\nError: " + aError);
         }
-        System.out.println("\nRead rdf files and write the data to one rdf file.\n");
-        System.out.println("Usage: java -jar cim4j.jar <rdf_file>  [<rdf_file>  ...] <rdf_file>");
+        System.out.println("\nRead RDF files and write the data to RDF files separated by profiles.\n");
+        System.out.println("Usage: java -jar cim4j.jar <rdf_file>  [<rdf_file>  ...] <output_path_stem>");
         System.exit(2);
     }
 
@@ -43,7 +43,7 @@ public final class Main {
         }
         String outputFile = aArgs[aArgs.length - 1];
 
-        checkArgs(inputFiles, outputFile);
+        checkArgs(inputFiles);
 
         readRdfWriteRdf(inputFiles, outputFile);
     }
@@ -77,30 +77,33 @@ public final class Main {
     }
 
     /**
-     * Write cim data to a rdf file.
+     * Write the CIM data to RDF files separated by profiles.
      *
-     * @param outputFile path of file to write
-     * @param cimData    cim data as map of rdfid to cim object
+     * @param pathStem Stem of the output files
+     *                 (also used as stem of the model IDs)
+     * @param cimData  CIM data as map of rdfid to CIM object
      */
-    public static void writeRdf(String outputFile, Map<String, BaseClass> cimData) {
+    public static void writeRdf(String pathStem, Map<String, BaseClass> cimData) {
         try {
             var writer = new RdfWriter();
             writer.addCimData(cimData);
-            writer.write(outputFile);
+            var profileFileMap = writer.write(pathStem, pathStem, writer.getClassProfileMap());
+            int count = 0;
+            for (var profile : profileFileMap.keySet()) {
+                ++count;
+                LOG.info(String.format("CIM outputfile %d: %s", count, profileFileMap.get(profile)));
+            }
         } catch (Exception ex) {
             LOG.error("Failed to write CIM data to a RDF file", ex);
             return;
         }
     }
 
-    private static void checkArgs(List<String> inputFiles, String outputFile) {
+    private static void checkArgs(List<String> inputFiles) {
         for (String inputFile : inputFiles) {
             if (!isRdfFile(inputFile)) {
                 printUsageAndExit(inputFile + " is not a rdf file");
             }
-        }
-        if (!isRdfFile(outputFile)) {
-            printUsageAndExit(outputFile + " is not a rdf file");
         }
     }
 
