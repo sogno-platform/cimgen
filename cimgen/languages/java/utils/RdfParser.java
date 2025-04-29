@@ -33,6 +33,7 @@ public final class RdfParser {
     public static void parse(InputStream stream, Consumer<Element> createCimObjectFunction) {
         try {
             var factory = XMLInputFactory.newInstance();
+            factory.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, false);
             var parser = factory.createXMLStreamReader(stream);
 
             // Check if root element has RDF namespace
@@ -73,10 +74,15 @@ public final class RdfParser {
                 // Start of an attribute
                 attribute.name = parser.getName();
                 attribute.resource = getResource(parser);
+                attribute.value = new String();
 
-            } else if (eventType == XMLStreamConstants.CHARACTERS && !parser.isWhiteSpace()) {
-                // Value of the attribute
-                attribute.value = parser.getText();
+            } else if (eventType == XMLStreamConstants.CHARACTERS) {
+                // Part of the attribute value (i.e. normal text or replaced entity references, e.g. &lt; -> <)
+                attribute.value += parser.getText();
+
+            } else if (eventType == XMLStreamConstants.ENTITY_REFERENCE) {
+                // Part of the attribute value (not replaced entity references, e.g. &nbsp;)
+                attribute.value += "&" + parser.getLocalName() + ";";
 
             } else if (eventType == XMLStreamConstants.END_ELEMENT) {
                 if (parser.getName().equals(attribute.name)) {
@@ -135,6 +141,6 @@ public final class RdfParser {
     public static class Attribute {
         public QName name;
         public String resource;
-        public String value;
+        public String value = new String();
     }
 }
