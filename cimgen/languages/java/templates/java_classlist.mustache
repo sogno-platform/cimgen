@@ -17,7 +17,7 @@ public final class CimClassMap {
      * @param className The class name to check.
      * @return          Is this a CIM class?
      */
-    public static boolean isCimClass(java.lang.String className) {
+    public static boolean isCimClass(String className) {
         return CREATE_MAP.containsKey(className);
     }
 
@@ -27,7 +27,7 @@ public final class CimClassMap {
      * @param className The class name of the new CIM object.
      * @return          The new CIM object.
      */
-    public static BaseClass createCimObject(java.lang.String className) {
+    public static BaseClass createCimObject(String className) {
         var createFunction = CREATE_MAP.get(className);
         return createFunction.get();
     }
@@ -47,9 +47,9 @@ public final class CimClassMap {
     /**
      * Map of CIM class name to supplier function which creates a new CIM object.
      */
-    private static final Map<java.lang.String, Supplier<BaseClass>> CREATE_MAP;
+    private static final Map<String, Supplier<BaseClass>> CREATE_MAP;
     static {
-        var map = new LinkedHashMap<java.lang.String, Supplier<BaseClass>>();
+        var map = new LinkedHashMap<String, Supplier<BaseClass>>();
 
 {{#classes}}
         map.put("{{.}}", () -> new {{.}}());
