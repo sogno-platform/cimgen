@@ -381,7 +381,7 @@ public class RdfWriter {
         if (profiles != null && profiles.contains(classProfile)) {
             return classProfile;
         }
-        if (!profiles.isEmpty()) {
+        if (profiles != null && !profiles.isEmpty()) {
             var list = new ArrayList<CGMESProfile>(profiles);
             Collections.sort(list);
             return list.get(0);
