@@ -2,89 +2,49 @@
 Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cimgen
 */
 
-package cim4j;
+package cim4j.types;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 {{#class_comment}}
 /**
  * {{{class_comment}}}
  */
 {{/class_comment}}
-public class {{class_name}} extends BaseClass {
-
-    private static final Logging LOG = Logging.getLogger({{class_name}}.class);
-
-    private enum {{class_name}}_ENUM {
+public enum {{class_name}} {
 {{#enum_instances}}
 {{#comment}}
-        /**
-         * {{comment}}
-         */
+    /**
+     * {{comment}}
+     */
 {{/comment}}
-        {{label}},
+    _{{label}}("{{label}}"),
 {{/enum_instances}}
-        MAX_{{class_name}}_ENUM
-    }
+    ;
 
-    private {{class_name}}_ENUM value;
+    private final String value;
 
-    private boolean initialized = false;
-
-    public {{class_name}}() {
-    }
-
-    public {{class_name}}(java.lang.String s) {
-        setValue(s);
+    private {{class_name}}(String value) {
+        this.value = value;
     }
 
     @Override
-    public BaseClass construct() {
-        return new {{class_name}}();
+    public String toString() {
+        return value;
     }
 
-    @Override
-    public boolean isPrimitive() {
-        return true;
+    public static {{class_name}} fromString(String value) {
+        return ENUM_MAP.get(value);
     }
 
-    @Override
-    public boolean isInitialized() {
-        return initialized;
-    }
-
-    @Override
-    public void setValue(java.lang.String s) {
-        try {
-            value = {{class_name}}_ENUM.valueOf(s.trim());
-            initialized = true;
-        } catch (IllegalArgumentException iae) {
-            LOG.error("IllegalArgumentException: " + iae.getMessage());
+    private static final Map<String, {{class_name}}> ENUM_MAP;
+    static {
+        var map = new HashMap<String, {{class_name}}>();
+        for ({{class_name}} instance : {{class_name}}.values()) {
+            map.put(instance.value, instance);
         }
-    }
-
-    @Override
-    public Object getValue() {
-        return value.toString();
-    }
-
-    @Override
-    public void setAttribute(java.lang.String attrName, BaseClass value) {
-        throw new IllegalArgumentException("ENUM cannot set attribute: " + attrName);
-    }
-
-    @Override
-    public void setAttribute(java.lang.String attrName, java.lang.String value) {
-        throw new IllegalArgumentException("ENUM cannot set attribute: " + attrName);
-    }
-
-    @Override
-    public java.lang.String toString(boolean topClass) {
-        return "Enum (" + value.toString() + ")";
-    }
-
-    private final java.lang.String debugName = "{{class_name}}";
-
-    @Override
-    public java.lang.String debugString() {
-        return debugName;
+        ENUM_MAP = Collections.unmodifiableMap(map);
     }
 }
