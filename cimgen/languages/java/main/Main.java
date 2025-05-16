@@ -69,7 +69,8 @@ public final class Main {
      */
     public static Map<String, BaseClass> readRdf(List<String> inputFiles) {
         try {
-            return RdfReader.read(inputFiles);
+            var rdfReader = new RdfReader();
+            return rdfReader.read(inputFiles);
         } catch (Exception ex) {
             LOG.error("Failed to convert RDF files to CIM", ex);
             return null;

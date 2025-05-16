@@ -205,15 +205,15 @@ public class RdfWriter {
                 BaseClass cimObj = cimData.get(rdfid);
                 if (!cimObj.getClass().equals(IdentifiedObject.class)
                         && (profile == null || isClassMatchingProfile(cimObj, profile))) {
-                    String cimType = cimObj.debugString();
+                    String cimType = cimObj.getCimType();
                     var classProfile = profile != null ? classProfileMap.get(cimType) : null;
                     boolean mainEntryOfObject = Objects.equals(classProfile, profile);
 
                     var attrNames = cimObj.getAttributeNames();
                     boolean noAttrFound = true;
                     for (String attrName : attrNames) {
-                        var attrObj = cimObj.getAttribute(attrName);
-                        if (attrObj != null && (profile == null
+                        String attr = cimObj.getAttribute(attrName);
+                        if (attr != null && cimObj.isUsedAttribute(attrName) && (profile == null
                                 || getAttributeProfile(cimObj, attrName, classProfile) == profile)) {
                             noAttrFound = false;
                             break;
@@ -234,36 +234,29 @@ public class RdfWriter {
                     for (String attrName : attrNames) {
                         var namespaceUrl = cimObj.getAttributeNamespaceUrl(attrName);
                         String attrFullName = cimObj.getAttributeFullName(attrName);
-                        var attrObj = cimObj.getAttribute(attrName);
-                        if (attrObj != null && (profile == null
+                        String attr = cimObj.getAttribute(attrName);
+                        if (attr != null && cimObj.isUsedAttribute(attrName) && (profile == null
                                 || getAttributeProfile(cimObj, attrName, classProfile) == profile)) {
-                            if (attrObj.isPrimitive()) {
-                                var value = attrObj.getValue();
-                                if (value != null) {
-                                    writer.writeCharacters("\n    ");
-                                    writer.writeStartElement(namespaceUrl, attrFullName);
-                                    writer.writeCharacters(value.toString());
-                                    writer.writeEndElement();
-                                } else {
-                                    LOG.error(String.format("No value for attribute %s of %s(%s)", attrFullName,
-                                            cimType, rdfid));
+                            if (cimObj.isPrimitiveAttribute(attrName)) {
+                                writer.writeCharacters("\n    ");
+                                writer.writeStartElement(namespaceUrl, attrFullName);
+                                writer.writeCharacters(attr);
+                                writer.writeEndElement();
+                            } else if (cimObj.isEnumAttribute(attrName)) {
+                                if (!attr.contains("#")) {
+                                    attr = "#" + attr;
+                                } else if (attr.indexOf("#") != 0) {
+                                    String[] parts = attr.split("#");
+                                    attr = namespaceUrl + parts[1];
                                 }
+                                writer.writeCharacters("\n    ");
+                                writer.writeEmptyElement(namespaceUrl, attrFullName);
+                                writer.writeAttribute(RDF, "resource", attr);
                             } else {
-                                String attrRdfId = attrObj.getRdfid();
-                                if (attrRdfId != null) {
-                                    if (!attrRdfId.contains("#")) {
-                                        attrRdfId = "#" + attrRdfId;
-                                    } else if (attrRdfId.indexOf("#") != 0) {
-                                        String[] parts = attrRdfId.split("#");
-                                        attrRdfId = namespaceUrl + parts[1];
-                                    }
+                                for (var reference : attr.split(" ")) {
                                     writer.writeCharacters("\n    ");
                                     writer.writeEmptyElement(namespaceUrl, attrFullName);
-                                    writer.writeAttribute(RDF, "resource", attrRdfId);
-                                } else {
-                                    LOG.error(
-                                            String.format("No rdfid for attribute %s of %s(%s)", attrFullName, cimType,
-                                                    rdfid));
+                                    writer.writeAttribute(RDF, "resource", "#" + reference);
                                 }
                             }
                         }
@@ -345,7 +338,7 @@ public class RdfWriter {
     public static final Map<String, CGMESProfile> getClassProfileMap(Iterable<BaseClass> objList) {
         Map<String, CGMESProfile> profileMap = new LinkedHashMap<>();
         for (BaseClass cimObj : objList) {
-            String type = cimObj.debugString();
+            String type = cimObj.getCimType();
             if (!profileMap.containsKey(type)) {
                 profileMap.put(type, getClassProfile(cimObj));
             }
@@ -397,8 +390,8 @@ public class RdfWriter {
             urls.add(cimObj.getClassNamespaceUrl());
             var attrNames = cimObj.getAttributeNames();
             for (String attrName : attrNames) {
-                var attrObj = cimObj.getAttribute(attrName);
-                if (attrObj != null) {
+                String attr = cimObj.getAttribute(attrName);
+                if (attr != null && cimObj.isUsedAttribute(attrName)) {
                     urls.add(cimObj.getAttributeNamespaceUrl(attrName));
                 }
             }

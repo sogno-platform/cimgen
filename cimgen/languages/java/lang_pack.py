@@ -1,8 +1,10 @@
 import chevron
+import logging
 import shutil
 from pathlib import Path
 from importlib.resources import files
-from typing import Callable
+
+logger = logging.getLogger(__name__)
 
 
 # Setup called only once: make output directory, create base class, create profile class, etc.
@@ -24,20 +26,11 @@ def setup(output_path: str, version: str, cgmes_profile_details: list[dict], nam
 
 
 # These are the files that are used to generate the java files.
-# There is a template set for the large number of classes that are floats. They
-# have unit, multiplier and value attributes in the schema, but only appear in
-# the file as a float string.
 class_template_file = {"filename": "java_class.mustache", "ext": ".java"}
-float_template_file = {"filename": "java_float.mustache", "ext": ".java"}
 enum_template_file = {"filename": "java_enum.mustache", "ext": ".java"}
-string_template_file = {"filename": "java_string.mustache", "ext": ".java"}
 constants_template_file = {"filename": "java_constants.mustache", "ext": ".java"}
 profile_template_file = {"filename": "java_profile.mustache", "ext": ".java"}
 classlist_template_file = {"filename": "java_classlist.mustache", "ext": ".java"}
-
-partials = {
-    "label": "{{#lang_pack.label}}{{label}}{{/lang_pack.label}}",
-}
 
 
 def get_base_class() -> str:
@@ -51,32 +44,46 @@ def get_class_location(class_name: str, class_map: dict, version: str) -> str:  
 # This is the function that runs the template.
 def run_template(output_path: str, class_details: dict) -> None:
 
-    if class_details["is_a_datatype_class"] or class_details["class_name"] in ("Float", "Decimal"):
-        template = float_template_file
-    elif class_details["is_an_enum_class"]:
+    # Add some attribute infos
+    for attribute in class_details["attributes"]:
+        attribute["is_primitive_string"] = "true" if _attribute_is_primitive_string(attribute) else ""
+        if attribute["is_primitive_attribute"]:
+            if _attribute_is_primitive_string(attribute):
+                attribute["primitive_java_type"] = "String"
+            elif attribute["attribute_class"] == "Decimal":
+                attribute["primitive_java_type"] = "Float"
+            else:
+                attribute["primitive_java_type"] = attribute["attribute_class"]
+        attribute["variable_name"] = _variable_name(attribute["label"])
+        attribute["getter_name"] = _getter_setter_name("get", attribute["label"])
+        attribute["setter_name"] = _getter_setter_name("set", attribute["label"])
+        if attribute["is_class_attribute"] or attribute["is_list_attribute"]:
+            if "inverse_role" in attribute:
+                inverse_label = attribute["inverse_role"].split(".")[1]
+                attribute["inverse_setter"] = [_getter_setter_name("set", inverse_label)]
+            else:
+                attribute["inverse_setter"] = []
+
+    if class_details["is_a_primitive_class"] or class_details["is_a_datatype_class"]:
+        return
+    if class_details["is_an_enum_class"]:
         template = enum_template_file
-    elif class_details["is_a_primitive_class"]:
-        template = string_template_file
+        class_category = "types"
     else:
         template = class_template_file
-
-    if class_details["class_name"] in ("Integer", "Boolean"):
-        # These classes are defined already
-        # We have to implement operators for them
-        return
-
-    class_file = Path(output_path) / (class_details["class_name"] + template["ext"])
+        class_category = ""
+    class_file = Path(output_path) / class_category / (class_details["class_name"] + template["ext"])
     _write_templated_file(class_file, class_details, template["filename"])
 
 
 def _write_templated_file(class_file: Path, class_details: dict, template_filename: str) -> None:
+    class_file.parent.mkdir(parents=True, exist_ok=True)
     with class_file.open("w", encoding="utf-8") as file:
         templates = files("cimgen.languages.java.templates")
         with templates.joinpath(template_filename).open(encoding="utf-8") as f:
             args = {
                 "data": class_details,
                 "template": f,
-                "partials_dict": partials,
             }
             output = chevron.render(**args)
         file.write(output)
@@ -95,23 +102,50 @@ def _create_cgmes_profile(output_path: Path, profile_details: list[dict]) -> Non
     _write_templated_file(class_file, class_details, profile_template_file["filename"])
 
 
-# This function just allows us to avoid declaring a variable called 'switch',
-# which is in the definition of the ExcBBC class.
-def label(text: str, render: Callable[[str], str]) -> str:
-    result = render(text)
-    if result == "switch":
-        return "_switch"
-    else:
-        return result
+def _variable_name(label: str) -> str:
+    """Get the name of the label used as variable name.
+
+    Some label names are not allowed as name of a variable.
+
+    :param label:  Original label
+    :return:       Variable name
+    """
+    if label == "switch":
+        label += "_"
+    return label
+
+
+def _getter_setter_name(prefix: str, label: str) -> str:
+    """Get the name of the getter/setter function for a label.
+
+    Add "get"/"set" as prefix and change the first character of the label to upper case.
+    Prevent collision of "Name" with "name" in IdentifiedObject, NameType, NamingAuthority.
+
+    :param prefix:  "get"/"set"
+    :param label:   Original label
+    :return:        Name of the getter/setter function
+    """
+    if label[0].islower():
+        label = label[0].upper() + label[1:]
+    elif label == "Name":
+        label = "_" + label
+    return prefix + label
+
+
+def _attribute_is_primitive_string(attribute: dict) -> bool:
+    """Check if the attribute is a primitive attribute that is used like a string (Date, MonthDay etc).
+
+    :param attribute: Dictionary with information about an attribute.
+    :return:          Attribute is a primitive string?
+    """
+    return attribute["is_primitive_attribute"] and (
+        attribute["attribute_class"] not in ("Float", "Decimal", "Integer", "Boolean")
+    )
 
 
 # The code below this line is used after the main cim_generate phase to generate CimClassMap.java.
 
 class_blacklist = [
-    "AttributeInterface",
-    "BaseClassInterface",
-    "BaseClassBuilder",
-    "PrimitiveBuilder",
     "BaseClass",
     "CGMESProfile",
     "CimClassMap",
