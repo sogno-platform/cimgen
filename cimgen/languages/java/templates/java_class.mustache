@@ -61,6 +61,14 @@ public class {{class_name}} extends {{subclass_of}} {
     public String {{label}}ToString() {
         return {{variable_name}} != null ? {{variable_name}}.toString() : null;
     }
+
+    private static void {{setter_name}}(BaseClass _this_, String _value_) {
+        (({{class_name}}) _this_).{{setter_name}}(_value_);
+    }
+
+    private static String {{label}}ToString(BaseClass _this_) {
+        return (({{class_name}}) _this_).{{label}}ToString();
+    }
 {{/is_primitive_attribute}}
 {{#is_datatype_attribute}}
     private Double {{variable_name}}; // {{attribute_class}}
@@ -80,6 +88,14 @@ public class {{class_name}} extends {{subclass_of}} {
     public String {{label}}ToString() {
         return {{variable_name}} != null ? {{variable_name}}.toString() : null;
     }
+
+    private static void {{setter_name}}(BaseClass _this_, String _value_) {
+        (({{class_name}}) _this_).{{setter_name}}(_value_);
+    }
+
+    private static String {{label}}ToString(BaseClass _this_) {
+        return (({{class_name}}) _this_).{{label}}ToString();
+    }
 {{/is_datatype_attribute}}
 {{#is_enum_attribute}}
     private String {{variable_name}}; // {{attribute_class}}
@@ -94,6 +110,14 @@ public class {{class_name}} extends {{subclass_of}} {
 
     public String {{label}}ToString() {
         return {{variable_name}};
+    }
+
+    private static void {{setter_name}}(BaseClass _this_, String _value_) {
+        (({{class_name}}) _this_).{{setter_name}}(_value_);
+    }
+
+    private static String {{label}}ToString(BaseClass _this_) {
+        return (({{class_name}}) _this_).{{label}}ToString();
     }
 {{/is_enum_attribute}}
 {{#is_class_attribute}}
@@ -123,6 +147,14 @@ public class {{class_name}} extends {{subclass_of}} {
     public String {{label}}ToString() {
         return {{variable_name}} != null ? {{variable_name}}.getRdfid() : null;
     }
+
+    private static void {{setter_name}}(BaseClass _this_, BaseClass _object_) {
+        (({{class_name}}) _this_).{{setter_name}}(_object_);
+    }
+
+    private static String {{label}}ToString(BaseClass _this_) {
+        return (({{class_name}}) _this_).{{label}}ToString();
+    }
 {{/is_class_attribute}}
 {{#is_list_attribute}}
     private Set<{{attribute_class}}> {{variable_name}} = new HashSet<>(); // OneToMany
@@ -145,6 +177,14 @@ public class {{class_name}} extends {{subclass_of}} {
 
     public String {{label}}ToString() {
         return getStringFromSet({{variable_name}});
+    }
+
+    private static void {{setter_name}}(BaseClass _this_, BaseClass _object_) {
+        (({{class_name}}) _this_).{{setter_name}}(_object_);
+    }
+
+    private static String {{label}}ToString(BaseClass _this_) {
+        return (({{class_name}}) _this_).{{label}}ToString();
     }
 {{/is_list_attribute}}
 {{/attributes}}
@@ -190,16 +230,12 @@ public class {{class_name}} extends {{subclass_of}} {
      */
     @Override
     public String getAttribute(String attrName) {
-        return getAttribute("{{class_name}}", attrName);
-    }
-
-    @Override
-    protected String getAttribute(String className, String attrName) {
-        if (classGetterSetterMap.containsKey(attrName)) {
-            var getterFunction = classGetterSetterMap.get(attrName).getter;
-            return getterFunction.get();
+        if (ATTR_DETAILS_MAP.containsKey(attrName)) {
+            var getterFunction = ATTR_DETAILS_MAP.get(attrName).getter;
+            return getterFunction.apply(this);
         }
-        return super.getAttribute(className, attrName);
+        LOG.error(String.format("No-one knows an attribute %s.%s", "{{class_name}}", attrName));
+        return "";
     }
 
     /**
@@ -210,16 +246,12 @@ public class {{class_name}} extends {{subclass_of}} {
      */
     @Override
     public void setAttribute(String attrName, BaseClass objectValue) {
-        setAttribute("{{class_name}}", attrName, objectValue);
-    }
-
-    @Override
-    protected void setAttribute(String className, String attrName, BaseClass objectValue) {
-        if (classGetterSetterMap.containsKey(attrName)) {
-            var setterFunction = classGetterSetterMap.get(attrName).objectSetter;
-            setterFunction.accept(objectValue);
+        if (ATTR_DETAILS_MAP.containsKey(attrName)) {
+            var setterFunction = ATTR_DETAILS_MAP.get(attrName).objectSetter;
+            setterFunction.accept(this, objectValue);
         } else {
-            super.setAttribute(className, attrName, objectValue);
+            LOG.error(String.format("No-one knows what to do with attribute %s.%s and value %s",
+                "{{class_name}}", attrName, objectValue));
         }
     }
 
@@ -231,16 +263,12 @@ public class {{class_name}} extends {{subclass_of}} {
      */
     @Override
     public void setAttribute(String attrName, String stringValue) {
-        setAttribute("{{class_name}}", attrName, stringValue);
-    }
-
-    @Override
-    protected void setAttribute(String className, String attrName, String stringValue) {
-        if (classGetterSetterMap.containsKey(attrName)) {
-            var setterFunction = classGetterSetterMap.get(attrName).stringSetter;
-            setterFunction.accept(stringValue);
+        if (ATTR_DETAILS_MAP.containsKey(attrName)) {
+            var setterFunction = ATTR_DETAILS_MAP.get(attrName).stringSetter;
+            setterFunction.accept(this, stringValue);
         } else {
-            super.setAttribute(className, attrName, stringValue);
+            LOG.error(String.format("No-one knows what to do with attribute %s.%s and value %s",
+                "{{class_name}}", attrName, stringValue));
         }
     }
 
@@ -368,28 +396,28 @@ public class {{class_name}} extends {{subclass_of}} {
             profiles.add(CGMESProfile.{{origin}});
 {{/attr_origin}}
 {{#is_primitive_attribute}}
-            map.put("{{label}}", new AttrDetails("{{class_name}}.{{label}}", true, "{{attribute_namespace}}", profiles, true, false));
+            map.put("{{label}}", new AttrDetails("{{class_name}}.{{label}}", true, "{{attribute_namespace}}", profiles, true, false, {{class_name}}::{{label}}ToString, null, {{class_name}}::{{setter_name}}));
 {{/is_primitive_attribute}}
 {{#is_datatype_attribute}}
-            map.put("{{label}}", new AttrDetails("{{class_name}}.{{label}}", true, "{{attribute_namespace}}", profiles, true, false));
+            map.put("{{label}}", new AttrDetails("{{class_name}}.{{label}}", true, "{{attribute_namespace}}", profiles, true, false, {{class_name}}::{{label}}ToString, null, {{class_name}}::{{setter_name}}));
 {{/is_datatype_attribute}}
 {{#is_enum_attribute}}
-            map.put("{{label}}", new AttrDetails("{{class_name}}.{{label}}", true, "{{attribute_namespace}}", profiles, false, true));
+            map.put("{{label}}", new AttrDetails("{{class_name}}.{{label}}", true, "{{attribute_namespace}}", profiles, false, true, {{class_name}}::{{label}}ToString, null, {{class_name}}::{{setter_name}}));
 {{/is_enum_attribute}}
 {{#is_class_attribute}}
 {{#is_used}}
-            map.put("{{label}}", new AttrDetails("{{class_name}}.{{label}}", true, "{{attribute_namespace}}", profiles, false, false));
+            map.put("{{label}}", new AttrDetails("{{class_name}}.{{label}}", true, "{{attribute_namespace}}", profiles, false, false, {{class_name}}::{{label}}ToString, {{class_name}}::{{setter_name}}, null));
 {{/is_used}}
 {{^is_used}}
-            map.put("{{label}}", new AttrDetails("{{class_name}}.{{label}}", false, "{{attribute_namespace}}", profiles, false, false));
+            map.put("{{label}}", new AttrDetails("{{class_name}}.{{label}}", false, "{{attribute_namespace}}", profiles, false, false, {{class_name}}::{{label}}ToString, {{class_name}}::{{setter_name}}, null));
 {{/is_used}}
 {{/is_class_attribute}}
 {{#is_list_attribute}}
 {{#is_used}}
-            map.put("{{label}}", new AttrDetails("{{class_name}}.{{label}}", true, "{{attribute_namespace}}", profiles, false, false));
+            map.put("{{label}}", new AttrDetails("{{class_name}}.{{label}}", true, "{{attribute_namespace}}", profiles, false, false, {{class_name}}::{{label}}ToString, {{class_name}}::{{setter_name}}, null));
 {{/is_used}}
 {{^is_used}}
-            map.put("{{label}}", new AttrDetails("{{class_name}}.{{label}}", false, "{{attribute_namespace}}", profiles, false, false));
+            map.put("{{label}}", new AttrDetails("{{class_name}}.{{label}}", false, "{{attribute_namespace}}", profiles, false, false, {{class_name}}::{{label}}ToString, {{class_name}}::{{setter_name}}, null));
 {{/is_used}}
 {{/is_list_attribute}}
         }
@@ -397,29 +425,6 @@ public class {{class_name}} extends {{subclass_of}} {
         CLASS_ATTR_DETAILS_MAP = map;
         ATTR_DETAILS_MAP = Collections.unmodifiableMap(new {{class_name}}().allAttrDetailsMap());
         ATTR_NAMES_LIST = new ArrayList<>(ATTR_DETAILS_MAP.keySet());
-    }
-
-    private final Map<String, GetterSetter> classGetterSetterMap = fillGetterSetterMap();
-    private final Map<String, GetterSetter> fillGetterSetterMap() {
-        Map<String, GetterSetter> map = new LinkedHashMap<>();
-{{#attributes}}
-{{#is_primitive_attribute}}
-        map.put("{{label}}", new GetterSetter(this::{{label}}ToString, null, this::{{setter_name}}));
-{{/is_primitive_attribute}}
-{{#is_datatype_attribute}}
-        map.put("{{label}}", new GetterSetter(this::{{label}}ToString, null, this::{{setter_name}}));
-{{/is_datatype_attribute}}
-{{#is_enum_attribute}}
-        map.put("{{label}}", new GetterSetter(this::{{label}}ToString, null, this::{{setter_name}}));
-{{/is_enum_attribute}}
-{{#is_class_attribute}}
-        map.put("{{label}}", new GetterSetter(this::{{label}}ToString, this::{{setter_name}}, null));
-{{/is_class_attribute}}
-{{#is_list_attribute}}
-        map.put("{{label}}", new GetterSetter(this::{{label}}ToString, this::{{setter_name}}, null));
-{{/is_list_attribute}}
-{{/attributes}}
-        return map;
     }
 
     private static final Set<CGMESProfile> POSSIBLE_PROFILES;

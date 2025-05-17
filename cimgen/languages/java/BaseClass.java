@@ -3,8 +3,8 @@ package cim4j;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 
 /**
  * Base class of the CIM type hierarchy - all not primitive CIM classes inherit
@@ -110,11 +110,6 @@ public abstract class BaseClass {
      */
     public abstract String getAttribute(String attrName);
 
-    protected String getAttribute(String className, String attrName) {
-        LOG.error(String.format("No-one knows an attribute %s.%s", className, attrName));
-        return "";
-    }
-
     /**
      * Set an attribute value as object (for class and list attributes).
      *
@@ -123,11 +118,6 @@ public abstract class BaseClass {
      */
     public abstract void setAttribute(String attrName, BaseClass objectValue);
 
-    protected void setAttribute(String className, String attrName, BaseClass objectValue) {
-        LOG.error(String.format("No-one knows what to do with attribute %s.%s and value %s", className, attrName,
-                objectValue));
-    }
-
     /**
      * Set an attribute value as string (for primitive (including datatype) and enum attributes).
      *
@@ -135,11 +125,6 @@ public abstract class BaseClass {
      * @param stringValue The attribute value as string
      */
     public abstract void setAttribute(String attrName, String stringValue);
-
-    protected void setAttribute(String className, String attrName, String stringValue) {
-        LOG.error(String.format("No-one knows what to do with attribute %s.%s and value %s", className, attrName,
-                stringValue));
-    }
 
     /**
      * Check if the attribute is a primitive attribute.
@@ -271,13 +256,17 @@ public abstract class BaseClass {
      */
 
     protected static class AttrDetails {
-        public AttrDetails(String f, boolean u, String n, Set<CGMESProfile> c, boolean p, boolean e) {
+        public AttrDetails(String f, boolean u, String n, Set<CGMESProfile> c, boolean p, boolean e,
+                Function<BaseClass, String> g, BiConsumer<BaseClass, BaseClass> o, BiConsumer<BaseClass, String> s) {
             fullName = f;
             isUsed = u;
             nameSpace = n;
             profiles = c;
             isPrimitive = p;
             isEnum = e;
+            getter = g;
+            objectSetter = o;
+            stringSetter = s;
         }
 
         public String fullName;
@@ -286,17 +275,8 @@ public abstract class BaseClass {
         public Set<CGMESProfile> profiles;
         public Boolean isPrimitive;
         public Boolean isEnum;
-    }
-
-    protected static class GetterSetter {
-        public GetterSetter(Supplier<String> g, Consumer<BaseClass> o, Consumer<String> s) {
-            getter = g;
-            objectSetter = o;
-            stringSetter = s;
-        }
-
-        public Supplier<String> getter;
-        public Consumer<BaseClass> objectSetter;
-        public Consumer<String> stringSetter;
+        public Function<BaseClass, String> getter;
+        public BiConsumer<BaseClass, BaseClass> objectSetter;
+        public BiConsumer<BaseClass, String> stringSetter;
     }
 }
