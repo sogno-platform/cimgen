@@ -25,10 +25,17 @@ public class {{class_name}} extends {{subclass_of}} {
     private static final Logging LOG = Logging.getLogger({{class_name}}.class);
 
     /**
-     * Default constructor.
+     * Constructor.
      */
-    public {{class_name}}() {
-        setCimType("{{class_name}}");
+    public {{class_name}}(String rdfid) {
+        super("{{class_name}}", rdfid);
+    }
+
+    /**
+     * Constructor for subclasses.
+     */
+    protected {{class_name}}(String cimType, String rdfid) {
+        super(cimType, rdfid);
     }
 {{#attributes}}
 
@@ -423,7 +430,7 @@ public class {{class_name}} extends {{subclass_of}} {
         }
 {{/attributes}}
         CLASS_ATTR_DETAILS_MAP = map;
-        ATTR_DETAILS_MAP = Collections.unmodifiableMap(new {{class_name}}().allAttrDetailsMap());
+        ATTR_DETAILS_MAP = Collections.unmodifiableMap(new {{class_name}}(null).allAttrDetailsMap());
         ATTR_NAMES_LIST = new ArrayList<>(ATTR_DETAILS_MAP.keySet());
     }
 

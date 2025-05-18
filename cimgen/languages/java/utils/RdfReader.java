@@ -89,8 +89,7 @@ public class RdfReader {
     }
 
     private BaseClass createNewObject(String className, String rdfid) {
-        BaseClass object = CimClassMap.createCimObject(className);
-        object.setRdfid(rdfid);
+        BaseClass object = CimClassMap.createCimObject(className, rdfid);
         LOG.debug(String.format("Created object of type: %s with rdf:ID: %s", className, rdfid));
         return object;
     }
