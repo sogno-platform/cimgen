@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import cim4j.BaseClass;
 import cim4j.CimClassMap;
@@ -21,6 +22,7 @@ public class RdfReader {
 
     private final Map<String, BaseClass> model = new LinkedHashMap<>();
     private final Map<String, List<SetAttribute>> setAttributeMap = new LinkedHashMap<>();
+    private final Map<String, BaseClass> replaceMap = new LinkedHashMap<>();
 
     /**
      * Read the CIM data from a list of RDF files.
@@ -74,6 +76,15 @@ public class RdfReader {
                 if (object == null) {
                     object = createNewObject(className, element.id);
                     model.put(element.id, object);
+                } else if (!object.getCimType().equals(className)) {
+                    BaseClass newObject = retypeObject(object, className, element.id);
+                    if (newObject != null) {
+                        object = newObject;
+                        model.put(element.id, object);
+                    } else {
+                        LOG.debug(String.format("Found %s (instead of %s) with rdf:ID: %s in map", object.getCimType(),
+                                className, element.id));
+                    }
                 }
 
                 // Set attributes of new object
@@ -92,6 +103,48 @@ public class RdfReader {
         BaseClass object = CimClassMap.createCimObject(className, rdfid);
         LOG.debug(String.format("Created object of type: %s with rdf:ID: %s", className, rdfid));
         return object;
+    }
+
+    private BaseClass retypeObject(BaseClass oldObject, String className, String rdfid) {
+        BaseClass newObject = createNewObject(className, rdfid);
+        var oldType = oldObject.getClass();
+        var newType = newObject.getClass();
+        if (oldType.isAssignableFrom(newType)) {
+            LOG.debug(String.format("Retyping object with rdf:ID: %s from type: %s to type: %s", rdfid,
+                    oldObject.getCimType(), className));
+
+            // Copy attributes from old object to the new object
+            for (String attrName : oldObject.getAttributeNames()) {
+                Object attr = oldObject.getAttribute(attrName);
+                if (attr != null) {
+                    if (oldObject.isPrimitiveAttribute(attrName) || oldObject.isEnumAttribute(attrName)) {
+                        newObject.setAttribute(attrName, attr);
+                    } else if (attr instanceof BaseClass) {
+                        newObject.setAttribute(attrName, attr);
+                        removeObjectInAttributeObject((BaseClass) attr, oldObject);
+                    } else if (attr instanceof Set<?>) {
+                        for (var attrObject : ((Set<?>) attr)) {
+                            newObject.setAttribute(attrName, attrObject);
+                        }
+                    }
+                }
+            }
+
+            // for use in setRemainingAttributes
+            replaceMap.put(oldObject.getRdfid(), newObject);
+
+            return newObject;
+        }
+        return null;
+    }
+
+    private void removeObjectInAttributeObject(BaseClass attrObject, BaseClass oldObject) {
+        for (String attrName : attrObject.getAttributeNames()) {
+            Object attr = attrObject.getAttribute(attrName);
+            if (attr instanceof Set<?> && ((Set<?>) attr).contains(oldObject)) {
+                ((Set<?>) attr).remove(oldObject);
+            }
+        }
     }
 
     private void setAttribute(BaseClass object, RdfParser.Attribute attribute) {
@@ -126,7 +179,11 @@ public class RdfReader {
             BaseClass attributeObject = model.get(resource);
             if (attributeObject != null) {
                 for (var setAttribute : setAttributeList) {
-                    setAttribute.object.setAttribute(setAttribute.name, attributeObject);
+                    var object = setAttribute.object;
+                    if (replaceMap.containsKey(object.getRdfid())) {
+                        object = replaceMap.get(object.getRdfid());
+                    }
+                    object.setAttribute(setAttribute.name, attributeObject);
                 }
             } else {
                 LOG.warn(String.format("Cannot find object with rdf:ID: %s", resource));

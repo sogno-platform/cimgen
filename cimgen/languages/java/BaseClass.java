@@ -107,28 +107,20 @@ public abstract class BaseClass {
     public abstract String getAttributeFullName(String attrName);
 
     /**
-     * Get an attribute value as string.
+     * Get an attribute value.
      *
      * @param attrName The attribute name
      * @return         The attribute value
      */
-    public abstract String getAttribute(String attrName);
+    public abstract Object getAttribute(String attrName);
 
     /**
-     * Set an attribute value as object (for class and list attributes).
+     * Set an attribute value.
      *
-     * @param attrName    The attribute name
-     * @param objectValue The attribute value as object
+     * @param attrName The attribute name
+     * @param value    The attribute value
      */
-    public abstract void setAttribute(String attrName, BaseClass objectValue);
-
-    /**
-     * Set an attribute value as string (for primitive (including datatype) and enum attributes).
-     *
-     * @param attrName    The attribute name
-     * @param stringValue The attribute value as string
-     */
-    public abstract void setAttribute(String attrName, String stringValue);
+    public abstract void setAttribute(String attrName, Object value);
 
     /**
      * Check if the attribute is a primitive attribute.
@@ -213,11 +205,11 @@ public abstract class BaseClass {
      * Helper functions.
      */
 
-    protected Boolean getBooleanFromString(String stringValue) {
+    protected static Boolean getBooleanFromString(String stringValue) {
         return stringValue.toLowerCase().equals("true");
     }
 
-    protected Double getDoubleFromString(String stringValue) {
+    protected static Double getDoubleFromString(String stringValue) {
         try {
             return Double.valueOf(stringValue);
         } catch (NumberFormatException ex) {
@@ -226,7 +218,7 @@ public abstract class BaseClass {
         }
     }
 
-    protected Float getFloatFromString(String stringValue) {
+    protected static Float getFloatFromString(String stringValue) {
         try {
             return Float.valueOf(stringValue);
         } catch (NumberFormatException ex) {
@@ -235,7 +227,7 @@ public abstract class BaseClass {
         }
     }
 
-    protected Integer getIntegerFromString(String stringValue) {
+    protected static Integer getIntegerFromString(String stringValue) {
         try {
             return Integer.parseInt(stringValue.trim());
         } catch (NumberFormatException ex) {
@@ -244,24 +236,13 @@ public abstract class BaseClass {
         }
     }
 
-    protected String getStringFromSet(Set<? extends BaseClass> set) {
-        if (!set.isEmpty()) {
-            String references = "";
-            for (var obj : set) {
-                references += obj.getRdfid() + " ";
-            }
-            return references.trim();
-        }
-        return null;
-    }
-
     /**
      * Nested helper classes.
      */
 
     protected static class AttrDetails {
         public AttrDetails(String f, boolean u, String n, Set<CGMESProfile> c, boolean p, boolean e,
-                Function<BaseClass, String> g, BiConsumer<BaseClass, BaseClass> o, BiConsumer<BaseClass, String> s) {
+                Function<BaseClass, Object> g, BiConsumer<BaseClass, Object> s) {
             fullName = f;
             isUsed = u;
             nameSpace = n;
@@ -269,8 +250,7 @@ public abstract class BaseClass {
             isPrimitive = p;
             isEnum = e;
             getter = g;
-            objectSetter = o;
-            stringSetter = s;
+            setter = s;
         }
 
         public String fullName;
@@ -279,8 +259,7 @@ public abstract class BaseClass {
         public Set<CGMESProfile> profiles;
         public Boolean isPrimitive;
         public Boolean isEnum;
-        public Function<BaseClass, String> getter;
-        public BiConsumer<BaseClass, BaseClass> objectSetter;
-        public BiConsumer<BaseClass, String> stringSetter;
+        public Function<BaseClass, Object> getter;
+        public BiConsumer<BaseClass, Object> setter;
     }
 }
