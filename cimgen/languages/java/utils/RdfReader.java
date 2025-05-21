@@ -153,7 +153,10 @@ public class RdfReader {
             attributeName = attributeName.substring(attributeName.lastIndexOf('.') + 1);
         }
         if (attribute.resource != null) {
-            if (!object.isEnumAttribute(attributeName)) {
+            if (!object.getAttributeNames().contains(attributeName)) {
+                LOG.error(String.format("Unknown attribute %s with resource %s", attribute.name.getLocalPart(),
+                        attribute.resource));
+            } else if (!object.isEnumAttribute(attributeName)) {
                 if (model.containsKey(attribute.resource)) {
                     // Set class attribute as link to an already existng object
                     BaseClass attributeObject = model.get(attribute.resource);
@@ -186,7 +189,7 @@ public class RdfReader {
                     object.setAttribute(setAttribute.name, attributeObject);
                 }
             } else {
-                LOG.warn(String.format("Cannot find object with rdf:ID: %s", resource));
+                LOG.error(String.format("Cannot find object with rdf:ID: %s", resource));
             }
         }
     }
