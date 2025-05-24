@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,7 +22,8 @@ public class RdfReader {
     private static final Logging LOG = Logging.getLogger(RdfReader.class);
 
     private final Map<String, BaseClass> model = new LinkedHashMap<>();
-    private final Map<String, List<SetAttribute>> setAttributeMap = new LinkedHashMap<>();
+    private final List<SetAttribute> setAttributeList = new ArrayList<>();
+    private final Map<BaseClass, Set<String>> allowOverrideMap = new LinkedHashMap<>();
     private final Map<String, BaseClass> replaceMap = new LinkedHashMap<>();
 
     /**
@@ -32,7 +34,9 @@ public class RdfReader {
      */
     public Map<String, BaseClass> read(List<String> pathList) {
         model.clear();
-        setAttributeMap.clear();
+        setAttributeList.clear();
+        allowOverrideMap.clear();
+        replaceMap.clear();
         for (String path : pathList) {
             try (var stream = new FileInputStream(path)) {
                 RdfParser.parse(stream, this::createCimObject);
@@ -54,7 +58,9 @@ public class RdfReader {
      */
     public Map<String, BaseClass> readFromStrings(List<String> xmlList) {
         model.clear();
-        setAttributeMap.clear();
+        setAttributeList.clear();
+        allowOverrideMap.clear();
+        replaceMap.clear();
         for (String xml : xmlList) {
             try (var stream = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8))) {
                 RdfParser.parse(stream, this::createCimObject);
@@ -163,8 +169,12 @@ public class RdfReader {
                     object.setAttribute(attributeName, attributeObject);
                 } else {
                     // Set attribute later in setRemainingAttributes
-                    var setAttribute = new SetAttribute(attributeName, object);
-                    setAttributeMap.computeIfAbsent(attribute.resource, k -> new ArrayList<>()).add(setAttribute);
+                    var setAttribute = new SetAttribute(object, attributeName, attribute.resource);
+                    setAttributeList.add(setAttribute);
+                    // Allow override of class attribute in setRemainingAttributes
+                    if (object.getAttribute(attributeName) instanceof BaseClass) {
+                        allowOverrideMap.computeIfAbsent(object, k -> new HashSet<>()).add(attributeName);
+                    }
                 }
             } else {
                 // Set enum attributes
@@ -177,30 +187,47 @@ public class RdfReader {
     }
 
     private void setRemainingAttributes() {
-        for (var resource : setAttributeMap.keySet()) {
-            var setAttributeList = setAttributeMap.get(resource);
-            BaseClass attributeObject = model.get(resource);
+        Map<BaseClass, Map<String, BaseClass>> classAttributeMap = new LinkedHashMap<>();
+        for (var setAttribute : setAttributeList) {
+            BaseClass attributeObject = model.get(setAttribute.resource);
             if (attributeObject != null) {
-                for (var setAttribute : setAttributeList) {
-                    var object = setAttribute.object;
-                    if (replaceMap.containsKey(object.getRdfid())) {
-                        object = replaceMap.get(object.getRdfid());
-                    }
+                var object = setAttribute.object;
+                if (replaceMap.containsKey(object.getRdfid())) {
+                    object = replaceMap.get(object.getRdfid());
+                }
+                var attr = object.getAttribute(setAttribute.name);
+                if (attr instanceof Set<?>) {
+                    // For list attributes all found links should be set.
                     object.setAttribute(setAttribute.name, attributeObject);
+                } else if (!(attr instanceof BaseClass) || (allowOverrideMap.containsKey(object)
+                        && allowOverrideMap.get(object).contains(setAttribute.name))) {
+                    // For class attributes only the last found link should be set.
+                    // But only if the link is not set before setRemainingAttributes.
+                    classAttributeMap.computeIfAbsent(object, k -> new LinkedHashMap<>()).put(setAttribute.name,
+                            attributeObject);
                 }
             } else {
-                LOG.error(String.format("Cannot find object with rdf:ID: %s", resource));
+                LOG.error(String.format("Cannot find object with rdf:ID: %s", setAttribute.resource));
+            }
+        }
+        for (var object : classAttributeMap.keySet()) {
+            for (var entry : classAttributeMap.get(object).entrySet()) {
+                var attributeName = entry.getKey();
+                var attributeObject = entry.getValue();
+                object.setAttribute(attributeName, attributeObject);
             }
         }
     }
 
     public static class SetAttribute {
-        public SetAttribute(String n, BaseClass o) {
-            name = n;
+        public SetAttribute(BaseClass o, String n, String r) {
             object = o;
+            name = n;
+            resource = r;
         }
 
-        public String name;
         public BaseClass object;
+        public String name;
+        public String resource;
     }
 }
