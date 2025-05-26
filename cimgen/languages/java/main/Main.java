@@ -67,6 +67,9 @@ public final class Main {
         checkArgs(inputFiles);
 
         readRdfWriteRdf(inputFiles, outputFile);
+
+        LOG.info(String.format("Total allocated memory: %d of %d MByte",
+                Runtime.getRuntime().totalMemory() / (1024 * 1024), Runtime.getRuntime().maxMemory() / (1024 * 1024)));
     }
 
     /**

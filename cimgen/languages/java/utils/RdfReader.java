@@ -38,6 +38,8 @@ public class RdfReader {
         allowOverrideMap.clear();
         replaceMap.clear();
         for (String path : pathList) {
+            int count = model.size();
+            long memory = getUsedMemory();
             try (var stream = new FileInputStream(path)) {
                 RdfParser.parse(stream, this::createCimObject);
             } catch (Exception ex) {
@@ -45,8 +47,15 @@ public class RdfReader {
                 LOG.error(txt, ex);
                 throw new RuntimeException(txt, ex);
             }
+            memory = getUsedMemory() - memory;
+            LOG.info(String.format("Read %d CIM objects from %s using %d MByte (%d)", model.size() - count,
+                    path, memory / (1024 * 1024), memory));
         }
+        long memory = getUsedMemory();
         setRemainingAttributes();
+        memory = getUsedMemory() - memory;
+        LOG.info(String.format("Set remaining %d attributes using %d MByte (%d)", setAttributeList.size(),
+                memory / (1024 * 1024), memory));
         return model;
     }
 
@@ -62,6 +71,8 @@ public class RdfReader {
         allowOverrideMap.clear();
         replaceMap.clear();
         for (String xml : xmlList) {
+            int count = model.size();
+            long memory = getUsedMemory();
             try (var stream = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8))) {
                 RdfParser.parse(stream, this::createCimObject);
             } catch (Exception ex) {
@@ -69,8 +80,14 @@ public class RdfReader {
                 LOG.error(txt, ex);
                 throw new RuntimeException(txt, ex);
             }
+            memory = getUsedMemory() - memory;
+            LOG.info(String.format("Read %d CIM objects using %d MByte (%d)", model.size() - count,
+                    memory / (1024 * 1024), memory));
         }
+        long memory = getUsedMemory();
         setRemainingAttributes();
+        memory = getUsedMemory() - memory;
+        LOG.info(String.format("Set remaining attributes using %d MByte (%d)", memory / (1024 * 1024), memory));
         return model;
     }
 
@@ -217,6 +234,11 @@ public class RdfReader {
                 object.setAttribute(attributeName, attributeObject);
             }
         }
+    }
+
+    private long getUsedMemory() {
+        Runtime.getRuntime().gc();
+        return Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
     }
 
     public static class SetAttribute {
