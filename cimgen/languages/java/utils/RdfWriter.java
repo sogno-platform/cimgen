@@ -212,9 +212,9 @@ public class RdfWriter {
                     var attrNames = cimObj.getAttributeNames();
                     boolean noAttrFound = true;
                     for (String attrName : attrNames) {
-                        Object attr = cimObj.getAttribute(attrName);
-                        if (attr != null && cimObj.isUsedAttribute(attrName) && (profile == null
-                                || getAttributeProfile(cimObj, attrName, classProfile) == profile)) {
+                        if (cimObj.isUsedAttribute(attrName) && cimObj.getAttribute(attrName) != null
+                                && (profile == null
+                                        || getAttributeProfile(cimObj, attrName, classProfile) == profile)) {
                             noAttrFound = false;
                             break;
                         }
@@ -232,38 +232,40 @@ public class RdfWriter {
                     }
 
                     for (String attrName : attrNames) {
-                        var namespaceUrl = cimObj.getAttributeNamespaceUrl(attrName);
-                        String attrFullName = cimObj.getAttributeFullName(attrName);
-                        Object attr = cimObj.getAttribute(attrName);
-                        if (attr != null && cimObj.isUsedAttribute(attrName) && (profile == null
+                        if (cimObj.isUsedAttribute(attrName) && (profile == null
                                 || getAttributeProfile(cimObj, attrName, classProfile) == profile)) {
-                            if (cimObj.isPrimitiveAttribute(attrName)) {
-                                writer.writeCharacters("\n    ");
-                                writer.writeStartElement(namespaceUrl, attrFullName);
-                                writer.writeCharacters(attr.toString());
-                                writer.writeEndElement();
-                            } else if (cimObj.isEnumAttribute(attrName)) {
-                                String resource = attr.toString();
-                                if (!resource.contains("#")) {
-                                    resource = "#" + resource;
-                                } else if (resource.indexOf("#") != 0) {
-                                    String[] parts = resource.split("#");
-                                    resource = namespaceUrl + parts[1];
-                                }
-                                writer.writeCharacters("\n    ");
-                                writer.writeEmptyElement(namespaceUrl, attrFullName);
-                                writer.writeAttribute(RDF, "resource", resource);
-                            } else if (attr instanceof BaseClass) {
-                                String resource = "#" + ((BaseClass) attr).getRdfid();
-                                writer.writeCharacters("\n    ");
-                                writer.writeEmptyElement(namespaceUrl, attrFullName);
-                                writer.writeAttribute(RDF, "resource", resource);
-                            } else if (attr instanceof Set<?>) {
-                                for (var attrObject : ((Set<?>) attr)) {
-                                    String resource = "#" + ((BaseClass) attrObject).getRdfid();
+                            Object attr = cimObj.getAttribute(attrName);
+                            if (attr != null) {
+                                var namespaceUrl = cimObj.getAttributeNamespaceUrl(attrName);
+                                String attrFullName = cimObj.getAttributeFullName(attrName);
+                                if (cimObj.isPrimitiveAttribute(attrName)) {
+                                    writer.writeCharacters("\n    ");
+                                    writer.writeStartElement(namespaceUrl, attrFullName);
+                                    writer.writeCharacters(attr.toString());
+                                    writer.writeEndElement();
+                                } else if (cimObj.isEnumAttribute(attrName)) {
+                                    String resource = attr.toString();
+                                    if (!resource.contains("#")) {
+                                        resource = "#" + resource;
+                                    } else if (resource.indexOf("#") != 0) {
+                                        String[] parts = resource.split("#");
+                                        resource = namespaceUrl + parts[1];
+                                    }
                                     writer.writeCharacters("\n    ");
                                     writer.writeEmptyElement(namespaceUrl, attrFullName);
                                     writer.writeAttribute(RDF, "resource", resource);
+                                } else if (attr instanceof BaseClass) {
+                                    String resource = "#" + ((BaseClass) attr).getRdfid();
+                                    writer.writeCharacters("\n    ");
+                                    writer.writeEmptyElement(namespaceUrl, attrFullName);
+                                    writer.writeAttribute(RDF, "resource", resource);
+                                } else if (attr instanceof Set<?>) {
+                                    for (var attrObject : ((Set<?>) attr)) {
+                                        String resource = "#" + ((BaseClass) attrObject).getRdfid();
+                                        writer.writeCharacters("\n    ");
+                                        writer.writeEmptyElement(namespaceUrl, attrFullName);
+                                        writer.writeAttribute(RDF, "resource", resource);
+                                    }
                                 }
                             }
                         }
@@ -397,8 +399,7 @@ public class RdfWriter {
             urls.add(cimObj.getClassNamespaceUrl());
             var attrNames = cimObj.getAttributeNames();
             for (String attrName : attrNames) {
-                Object attr = cimObj.getAttribute(attrName);
-                if (attr != null && cimObj.isUsedAttribute(attrName)) {
+                if (cimObj.isUsedAttribute(attrName) && cimObj.getAttribute(attrName) != null) {
                     urls.add(cimObj.getAttributeNamespaceUrl(attrName));
                 }
             }
