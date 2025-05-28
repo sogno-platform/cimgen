@@ -54,7 +54,7 @@ def run_template(output_path: str, class_details: dict) -> None:
                 attribute["primitive_java_type"] = "Float"
             else:
                 attribute["primitive_java_type"] = attribute["attribute_class"]
-        attribute["variable_name"] = _variable_name(attribute["label"])
+        attribute["variable_name"] = _variable_name(attribute["label"], class_details["class_name"])
         attribute["getter_name"] = _getter_setter_name("get", attribute["label"])
         attribute["setter_name"] = _getter_setter_name("set", attribute["label"])
         if attribute["is_class_attribute"] or attribute["is_list_attribute"]:
@@ -102,15 +102,17 @@ def _create_cgmes_profile(output_path: Path, profile_details: list[dict]) -> Non
     _write_templated_file(class_file, class_details, profile_template_file["filename"])
 
 
-def _variable_name(label: str) -> str:
+def _variable_name(label: str, class_name: str) -> str:
     """Get the name of the label used as variable name.
 
     Some label names are not allowed as name of a variable.
+    Prevent collision of label and class_name (e.g. AvailabilitySchedule in profile AvailabilitySchedule).
 
-    :param label:  Original label
-    :return:       Variable name
+    :param label:       Original label
+    :param class_name:  Original class name
+    :return:            Variable name
     """
-    if label == "switch":
+    if label == "switch" or label == class_name:
         label += "_"
     return label
 
