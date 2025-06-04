@@ -25,7 +25,8 @@ public class Logging {
     private Level level;
     private String className;
     // private Logger log4jLogger;
-    private static boolean log4jEnabled = true;
+    // private static boolean log4jEnabled = true;
+    private static boolean log4jEnabled = false;
     private static boolean printlnEnabled = true;
 
     private Logging(final Class<?> clazz, Level logLevel) {
@@ -77,7 +78,7 @@ public class Logging {
      * @param enabled logging enabled
      */
     public static void setEnabled(boolean enabled) {
-        log4jEnabled = enabled;
+        // log4jEnabled = enabled;
         printlnEnabled = enabled;
     }
 
