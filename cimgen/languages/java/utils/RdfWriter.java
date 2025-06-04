@@ -283,7 +283,9 @@ public class RdfWriter {
             LOG.info(String.format("Written %d of %d CIM objects to RDF", count, cimData.size()));
             return count != 0;
         } catch (Exception ex) {
-            throw new RuntimeException("Error while writing RDF/XML data", ex);
+            String txt = "Error while writing RDF/XML data";
+            LOG.error(txt, ex);
+            throw new RuntimeException(txt, ex);
         }
     }
 

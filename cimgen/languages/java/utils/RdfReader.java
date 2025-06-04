@@ -180,11 +180,19 @@ public class RdfReader {
                 LOG.error(String.format("Unknown attribute %s with resource %s", attribute.name.getLocalPart(),
                         attribute.resource));
             } else if (!object.isEnumAttribute(attributeName)) {
+                boolean setLater = false;
                 if (model.containsKey(attribute.resource)) {
-                    // Set class attribute as link to an already existng object
+                    // Set class or list attribute as link to an already existing object
                     BaseClass attributeObject = model.get(attribute.resource);
-                    object.setAttribute(attributeName, attributeObject);
+                    try {
+                        object.setAttribute(attributeName, attributeObject);
+                    } catch (IllegalArgumentException ex) {
+                        setLater = true;
+                    }
                 } else {
+                    setLater = true;
+                }
+                if (setLater) {
                     // Set attribute later in setRemainingAttributes
                     var setAttribute = new SetAttribute(object, attributeName, attribute.resource);
                     setAttributeList.add(setAttribute);
@@ -231,7 +239,12 @@ public class RdfReader {
             for (var entry : classAttributeMap.get(object).entrySet()) {
                 var attributeName = entry.getKey();
                 var attributeObject = entry.getValue();
-                object.setAttribute(attributeName, attributeObject);
+                try {
+                    object.setAttribute(attributeName, attributeObject);
+                } catch (IllegalArgumentException ex) {
+                    LOG.error(String.format("Cannot set attribute %s with object: %s", attributeName, attributeObject),
+                            ex);
+                }
             }
         }
     }
