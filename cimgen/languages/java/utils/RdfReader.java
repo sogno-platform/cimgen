@@ -4,7 +4,6 @@ import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,9 +21,7 @@ public class RdfReader {
     private static final Logging LOG = Logging.getLogger(RdfReader.class);
 
     private final Map<String, BaseClass> model = new LinkedHashMap<>();
-    private final List<SetAttribute> setAttributeList = new ArrayList<>();
-    private final Map<BaseClass, Set<String>> allowOverrideMap = new LinkedHashMap<>();
-    private final Map<String, BaseClass> replaceMap = new LinkedHashMap<>();
+    private final HandleSetLater handleSetLater = new HandleSetLater();
 
     /**
      * Read the CIM data from a list of RDF files.
@@ -34,9 +31,7 @@ public class RdfReader {
      */
     public Map<String, BaseClass> read(List<String> pathList) {
         model.clear();
-        setAttributeList.clear();
-        allowOverrideMap.clear();
-        replaceMap.clear();
+        handleSetLater.clear();
         for (String path : pathList) {
             int count = model.size();
             long memory = getUsedMemory();
@@ -51,11 +46,7 @@ public class RdfReader {
             LOG.info(String.format("Read %d CIM objects from %s using %d MByte (%d)", model.size() - count,
                     path, memory / (1024 * 1024), memory));
         }
-        long memory = getUsedMemory();
-        setRemainingAttributes();
-        memory = getUsedMemory() - memory;
-        LOG.info(String.format("Set remaining %d attributes using %d MByte (%d)", setAttributeList.size(),
-                memory / (1024 * 1024), memory));
+        logRemainingResources();
         return model;
     }
 
@@ -67,9 +58,7 @@ public class RdfReader {
      */
     public Map<String, BaseClass> readFromStrings(List<String> xmlList) {
         model.clear();
-        setAttributeList.clear();
-        allowOverrideMap.clear();
-        replaceMap.clear();
+        handleSetLater.clear();
         for (String xml : xmlList) {
             int count = model.size();
             long memory = getUsedMemory();
@@ -84,10 +73,7 @@ public class RdfReader {
             LOG.info(String.format("Read %d CIM objects using %d MByte (%d)", model.size() - count,
                     memory / (1024 * 1024), memory));
         }
-        long memory = getUsedMemory();
-        setRemainingAttributes();
-        memory = getUsedMemory() - memory;
-        LOG.info(String.format("Set remaining attributes using %d MByte (%d)", memory / (1024 * 1024), memory));
+        logRemainingResources();
         return model;
     }
 
@@ -114,6 +100,9 @@ public class RdfReader {
                 for (RdfParser.Attribute attribute : element.attributes) {
                     setAttribute(object, attribute);
                 }
+
+                // Set object as link in other objects previously found
+                handleSetLater.execute(object);
             } else {
                 LOG.warn(String.format("Unknown CIM class: %s (rdf:ID: %s)", className, element.id));
             }
@@ -153,9 +142,7 @@ public class RdfReader {
                 }
             }
 
-            // for use in setRemainingAttributes
-            replaceMap.put(oldObject.getRdfid(), newObject);
-
+            handleSetLater.replace(oldObject, newObject);
             return newObject;
         }
         return null;
@@ -186,6 +173,10 @@ public class RdfReader {
                     BaseClass attributeObject = model.get(attribute.resource);
                     try {
                         object.setAttribute(attributeName, attributeObject);
+                        // Prevent to set the class attribute later
+                        if (!(object.getAttribute(attributeName) instanceof Set<?>)) {
+                            handleSetLater.remove(object, attributeName);
+                        }
                     } catch (IllegalArgumentException ex) {
                         setLater = true;
                     }
@@ -193,13 +184,8 @@ public class RdfReader {
                     setLater = true;
                 }
                 if (setLater) {
-                    // Set attribute later in setRemainingAttributes
-                    var setAttribute = new SetAttribute(object, attributeName, attribute.resource);
-                    setAttributeList.add(setAttribute);
-                    // Allow override of class attribute in setRemainingAttributes
-                    if (object.getAttribute(attributeName) instanceof BaseClass) {
-                        allowOverrideMap.computeIfAbsent(object, k -> new HashSet<>()).add(attributeName);
-                    }
+                    // Set class or list attribute later
+                    handleSetLater.add(object, attributeName, attribute.resource);
                 }
             } else {
                 // Set enum attributes
@@ -211,40 +197,13 @@ public class RdfReader {
         }
     }
 
-    private void setRemainingAttributes() {
-        Map<BaseClass, Map<String, BaseClass>> classAttributeMap = new LinkedHashMap<>();
-        for (var setAttribute : setAttributeList) {
-            BaseClass attributeObject = model.get(setAttribute.resource);
-            if (attributeObject != null) {
-                var object = setAttribute.object;
-                if (replaceMap.containsKey(object.getRdfid())) {
-                    object = replaceMap.get(object.getRdfid());
-                }
-                var attr = object.getAttribute(setAttribute.name);
-                if (attr instanceof Set<?>) {
-                    // For list attributes all found links should be set.
-                    object.setAttribute(setAttribute.name, attributeObject);
-                } else if (!(attr instanceof BaseClass) || (allowOverrideMap.containsKey(object)
-                        && allowOverrideMap.get(object).contains(setAttribute.name))) {
-                    // For class attributes only the last found link should be set.
-                    // But only if the link is not set before setRemainingAttributes.
-                    classAttributeMap.computeIfAbsent(object, k -> new LinkedHashMap<>()).put(setAttribute.name,
-                            attributeObject);
-                }
+    private void logRemainingResources() {
+        for (var resource : handleSetLater.getResources()) {
+            BaseClass object = model.get(resource);
+            if (object == null) {
+                LOG.error(String.format("Cannot find object with rdf:ID: %s", resource));
             } else {
-                LOG.error(String.format("Cannot find object with rdf:ID: %s", setAttribute.resource));
-            }
-        }
-        for (var object : classAttributeMap.keySet()) {
-            for (var entry : classAttributeMap.get(object).entrySet()) {
-                var attributeName = entry.getKey();
-                var attributeObject = entry.getValue();
-                try {
-                    object.setAttribute(attributeName, attributeObject);
-                } catch (IllegalArgumentException ex) {
-                    LOG.error(String.format("Cannot set attribute %s with object: %s", attributeName, attributeObject),
-                            ex);
-                }
+                LOG.error(String.format("Cannot set attributes with attribute object: %s", object));
             }
         }
     }
@@ -254,15 +213,103 @@ public class RdfReader {
         return Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
     }
 
-    public static class SetAttribute {
-        public SetAttribute(BaseClass o, String n, String r) {
-            object = o;
-            name = n;
-            resource = r;
+    private static class HandleSetLater {
+        private final Map<String, Map<String, List<BaseClass>>> resourceNameObjectMap = new LinkedHashMap<>();
+        private final Map<BaseClass, Map<String, List<String>>> objectNameResourceMap = new LinkedHashMap<>();
+
+        public void clear() {
+            resourceNameObjectMap.clear();
+            objectNameResourceMap.clear();
         }
 
-        public BaseClass object;
-        public String name;
-        public String resource;
+        public void add(BaseClass object, String attrName, String resource) {
+            // If its a class attribute remove previously set resources
+            if (!(object.getAttribute(attrName) instanceof Set<?>)) {
+                remove(object, attrName);
+            }
+
+            var nameObjectMap = resourceNameObjectMap.computeIfAbsent(resource, k -> new LinkedHashMap<>());
+            nameObjectMap.computeIfAbsent(attrName, k -> new ArrayList<>()).add(object);
+
+            var nameResourceMap = objectNameResourceMap.computeIfAbsent(object, k -> new LinkedHashMap<>());
+            nameResourceMap.computeIfAbsent(attrName, k -> new ArrayList<>()).add(resource);
+        }
+
+        public void execute(BaseClass object) {
+            var resource = object.getRdfid();
+            if (resourceNameObjectMap.containsKey(resource)) {
+                var removeNameObjectMap = new LinkedHashMap<String, List<BaseClass>>();
+                for (var nameAndObjects : resourceNameObjectMap.get(resource).entrySet()) {
+                    var attrName = nameAndObjects.getKey();
+                    for (var otherObject : nameAndObjects.getValue()) {
+                        boolean success = true;
+                        try {
+                            otherObject.setAttribute(attrName, object);
+                        } catch (IllegalArgumentException ex) {
+                            success = false;
+                        }
+                        if (success) {
+                            removeNameObjectMap.computeIfAbsent(attrName, k -> new ArrayList<>()).add(otherObject);
+                        }
+                    }
+                }
+                for (var attrName : removeNameObjectMap.keySet()) {
+                    for (var otherObject : removeNameObjectMap.get(attrName)) {
+                        remove(otherObject, attrName, resource);
+                    }
+                }
+            }
+        }
+
+        public void remove(BaseClass object, String attrName) {
+            var nameResourceMap = objectNameResourceMap.get(object);
+            if (nameResourceMap != null && nameResourceMap.containsKey(attrName)) {
+                var removeResources = new ArrayList<>(nameResourceMap.get(attrName));
+                for (var resource : removeResources) {
+                    remove(object, attrName, resource);
+                }
+            }
+        }
+
+        public void replace(BaseClass oldObject, BaseClass newObject) {
+            var nameResourceMap = objectNameResourceMap.get(oldObject);
+            if (nameResourceMap != null) {
+                for (var attrName : nameResourceMap.keySet()) {
+                    for (var resource : nameResourceMap.get(attrName)) {
+                        var objects = resourceNameObjectMap.get(resource).get(attrName);
+                        objects.set(objects.indexOf(oldObject), newObject);
+                    }
+                }
+                objectNameResourceMap.remove(oldObject);
+                objectNameResourceMap.put(newObject, nameResourceMap);
+            }
+        }
+
+        public Set<String> getResources() {
+            return resourceNameObjectMap.keySet();
+        }
+
+        private void remove(BaseClass object, String attrName, String resource) {
+            var nameObjectMap = resourceNameObjectMap.get(resource);
+            if (nameObjectMap != null && nameObjectMap.containsKey(attrName)) {
+                nameObjectMap.get(attrName).remove(object);
+                if (nameObjectMap.get(attrName).isEmpty()) {
+                    nameObjectMap.remove(attrName);
+                }
+                if (nameObjectMap.isEmpty()) {
+                    resourceNameObjectMap.remove(resource);
+                }
+            }
+            var nameResourceMap = objectNameResourceMap.get(object);
+            if (nameResourceMap != null && nameResourceMap.containsKey(attrName)) {
+                nameResourceMap.get(attrName).remove(resource);
+                if (nameResourceMap.get(attrName).isEmpty()) {
+                    nameResourceMap.remove(attrName);
+                }
+                if (nameResourceMap.isEmpty()) {
+                    objectNameResourceMap.remove(object);
+                }
+            }
+        }
     }
 }
