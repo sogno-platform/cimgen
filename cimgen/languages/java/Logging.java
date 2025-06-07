@@ -1,5 +1,7 @@
 package cim4j;
 
+import java.time.LocalDateTime;
+
 // import org.apache.logging.log4j.LogManager;
 // import org.apache.logging.log4j.Logger;
 
@@ -19,10 +21,12 @@ public class Logging {
         trace
     }
 
+    private static Level defaultLevel = Level.error;
     private Level level;
     private String className;
     // private Logger log4jLogger;
-    private static boolean log4jEnabled = true;
+    // private static boolean log4jEnabled = true;
+    private static boolean log4jEnabled = false;
     private static boolean printlnEnabled = true;
 
     private Logging(final Class<?> clazz, Level logLevel) {
@@ -33,7 +37,7 @@ public class Logging {
 
     private void log(Level logLevel, String message) {
         if (printlnEnabled && logLevel.compareTo(level) <= 0) {
-            System.out.println(className + " " + logLevel + ": " + message);
+            System.out.println(LocalDateTime.now() + " " + className + " " + logLevel + ": " + message);
         }
     }
 
@@ -44,7 +48,7 @@ public class Logging {
      * @param clazz The Class whose name should be used as the Logger name.
      */
     public static Logging getLogger(final Class<?> clazz) {
-        return new Logging(clazz, Level.error);
+        return new Logging(clazz, defaultLevel);
     }
 
     /**
@@ -74,8 +78,26 @@ public class Logging {
      * @param enabled logging enabled
      */
     public static void setEnabled(boolean enabled) {
-        log4jEnabled = enabled;
+        // log4jEnabled = enabled;
         printlnEnabled = enabled;
+    }
+
+    /**
+     * Returns the default log level.
+     *
+     * @return default log level
+     */
+    public static Level getDefaultLogLevel() {
+        return defaultLevel;
+    }
+
+    /**
+     * Sets the default log level.
+     *
+     * @param level Log level.
+     */
+    public static void setDefaultLogLevel(Level level) {
+        defaultLevel = level;
     }
 
     /**

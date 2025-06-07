@@ -12,11 +12,14 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
 import cim4j.CimConstants;
+import cim4j.Logging;
 
 /**
  * Read RDF files into a map of rdfid to CIM object.
  */
 public final class RdfParser {
+
+    private static final Logging LOG = Logging.getLogger(RdfParser.class);
 
     private static final String RDF = CimConstants.NAMESPACES_MAP.get("rdf");
     private static final String MD = CimConstants.NAMESPACES_MAP.get("md"); // ModelDescription
@@ -58,7 +61,9 @@ public final class RdfParser {
                 }
             }
         } catch (Exception ex) {
-            throw new RuntimeException("Error while parsing RDF/XML data", ex);
+            String txt = "Error while parsing RDF/XML data";
+            LOG.error(txt, ex);
+            throw new RuntimeException(txt, ex);
         }
     }
 

@@ -3,7 +3,6 @@ package cim4j.utils;
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,7 +19,6 @@ public class RdfReader {
     private static final Logging LOG = Logging.getLogger(RdfReader.class);
 
     private final Map<String, BaseClass> model = new LinkedHashMap<>();
-    private final Map<String, List<SetAttribute>> setAttributeMap = new LinkedHashMap<>();
 
     /**
      * Read the CIM data from a list of RDF files.
@@ -30,8 +28,9 @@ public class RdfReader {
      */
     public Map<String, BaseClass> read(List<String> pathList) {
         model.clear();
-        setAttributeMap.clear();
         for (String path : pathList) {
+            int count = model.size();
+            long memory = getUsedMemory();
             try (var stream = new FileInputStream(path)) {
                 RdfParser.parse(stream, this::createCimObject);
             } catch (Exception ex) {
@@ -39,8 +38,24 @@ public class RdfReader {
                 LOG.error(txt, ex);
                 throw new RuntimeException(txt, ex);
             }
+            memory = getUsedMemory() - memory;
+            LOG.info(String.format("Read %d CIM objects from %s using %d MByte (%d)", model.size() - count,
+                    path, memory / (1024 * 1024), memory));
         }
-        setRemainingAttributes();
+        for (String path : pathList) {
+            int count = model.size();
+            long memory = getUsedMemory();
+            try (var stream = new FileInputStream(path)) {
+                RdfParser.parse(stream, this::addAttributes);
+            } catch (Exception ex) {
+                String txt = "Error while adding attributes read from rdf file: " + path;
+                LOG.error(txt, ex);
+                throw new RuntimeException(txt, ex);
+            }
+            memory = getUsedMemory() - memory;
+            LOG.info(String.format("Fill %d CIM objects from %s using %d MByte (%d)", model.size() - count,
+                    path, memory / (1024 * 1024), memory));
+        }
         return model;
     }
 
@@ -52,8 +67,9 @@ public class RdfReader {
      */
     public Map<String, BaseClass> readFromStrings(List<String> xmlList) {
         model.clear();
-        setAttributeMap.clear();
         for (String xml : xmlList) {
+            int count = model.size();
+            long memory = getUsedMemory();
             try (var stream = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8))) {
                 RdfParser.parse(stream, this::createCimObject);
             } catch (Exception ex) {
@@ -61,8 +77,24 @@ public class RdfReader {
                 LOG.error(txt, ex);
                 throw new RuntimeException(txt, ex);
             }
+            memory = getUsedMemory() - memory;
+            LOG.info(String.format("Read %d CIM objects using %d MByte (%d)", model.size() - count,
+                    memory / (1024 * 1024), memory));
         }
-        setRemainingAttributes();
+        for (String xml : xmlList) {
+            int count = model.size();
+            long memory = getUsedMemory();
+            try (var stream = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8))) {
+                RdfParser.parse(stream, this::addAttributes);
+            } catch (Exception ex) {
+                String txt = "Error while adding attributes";
+                LOG.error(txt, ex);
+                throw new RuntimeException(txt, ex);
+            }
+            memory = getUsedMemory() - memory;
+            LOG.info(String.format("Fill %d CIM objects using %d MByte (%d)", model.size() - count,
+                    memory / (1024 * 1024), memory));
+        }
         return model;
     }
 
@@ -74,11 +106,18 @@ public class RdfReader {
                 if (object == null) {
                     object = createNewObject(className, element.id);
                     model.put(element.id, object);
-                }
-
-                // Set attributes of new object
-                for (RdfParser.Attribute attribute : element.attributes) {
-                    setAttribute(object, attribute);
+                } else if (!object.getCimType().equals(className)) {
+                    BaseClass newObject = createNewObject(className, element.id);
+                    var oldType = object.getClass();
+                    var newType = newObject.getClass();
+                    if (oldType.isAssignableFrom(newType)) {
+                        LOG.debug(String.format("Retyping object with rdf:ID: %s from type: %s to type: %s",
+                                element.id, object.getCimType(), className));
+                        model.put(element.id, newObject);
+                    } else {
+                        LOG.debug(String.format("Found %s (instead of %s) with rdf:ID: %s in map", object.getCimType(),
+                                className, element.id));
+                    }
                 }
             } else {
                 LOG.warn(String.format("Unknown CIM class: %s (rdf:ID: %s)", className, element.id));
@@ -88,9 +127,19 @@ public class RdfReader {
         }
     }
 
+    private void addAttributes(RdfParser.Element element) {
+        if (element.id != null && model.containsKey(element.id)) {
+            BaseClass object = model.get(element.id);
+
+            // Set attributes of new object
+            for (RdfParser.Attribute attribute : element.attributes) {
+                setAttribute(object, attribute);
+            }
+        }
+    }
+
     private BaseClass createNewObject(String className, String rdfid) {
-        BaseClass object = CimClassMap.createCimObject(className);
-        object.setRdfid(rdfid);
+        BaseClass object = CimClassMap.createCimObject(className, rdfid);
         LOG.debug(String.format("Created object of type: %s with rdf:ID: %s", className, rdfid));
         return object;
     }
@@ -101,15 +150,21 @@ public class RdfReader {
             attributeName = attributeName.substring(attributeName.lastIndexOf('.') + 1);
         }
         if (attribute.resource != null) {
-            if (!object.isEnumAttribute(attributeName)) {
+            if (!object.getAttributeNames().contains(attributeName)) {
+                LOG.error(String.format("Unknown attribute %s with resource %s", attribute.name.getLocalPart(),
+                        attribute.resource));
+            } else if (!object.isEnumAttribute(attributeName)) {
                 if (model.containsKey(attribute.resource)) {
-                    // Set class attribute as link to an already existng object
+                    // Set class or list attribute as link to an already existing object
                     BaseClass attributeObject = model.get(attribute.resource);
-                    object.setAttribute(attributeName, attributeObject);
+                    try {
+                        object.setAttribute(attributeName, attributeObject);
+                    } catch (IllegalArgumentException ex) {
+                        LOG.error(String.format("Cannot set attribute %s with attribute object: %s", attributeName,
+                                attributeObject), ex);
+                    }
                 } else {
-                    // Set attribute later in setRemainingAttributes
-                    var setAttribute = new SetAttribute(attributeName, object);
-                    setAttributeMap.computeIfAbsent(attribute.resource, k -> new ArrayList<>()).add(setAttribute);
+                    LOG.error(String.format("Cannot find object with rdf:ID: %s", attribute.resource));
                 }
             } else {
                 // Set enum attributes
@@ -121,27 +176,8 @@ public class RdfReader {
         }
     }
 
-    private void setRemainingAttributes() {
-        for (var resource : setAttributeMap.keySet()) {
-            var setAttributeList = setAttributeMap.get(resource);
-            BaseClass attributeObject = model.get(resource);
-            if (attributeObject != null) {
-                for (var setAttribute : setAttributeList) {
-                    setAttribute.object.setAttribute(setAttribute.name, attributeObject);
-                }
-            } else {
-                LOG.warn(String.format("Cannot find object with rdf:ID: %s", resource));
-            }
-        }
-    }
-
-    public static class SetAttribute {
-        public SetAttribute(String n, BaseClass o) {
-            name = n;
-            object = o;
-        }
-
-        public String name;
-        public BaseClass object;
+    private long getUsedMemory() {
+        Runtime.getRuntime().gc();
+        return Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
     }
 }
