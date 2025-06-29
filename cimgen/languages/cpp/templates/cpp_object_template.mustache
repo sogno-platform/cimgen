@@ -27,7 +27,7 @@ static const std::list<CGMESProfile> PossibleProfilesForClass =
 static const std::map<std::string, std::list<CGMESProfile>> PossibleProfilesForAttributes =
 {
 {{#attributes}}
-	{ "cim:{{about}}", { {{#attr_origin}}CGMESProfile::{{origin}}, {{/attr_origin}}} },
+	{ "{{domain}}.{{label}}", { {{#attr_origin}}CGMESProfile::{{origin}}, {{/attr_origin}}} },
 {{/attributes}}
 };
 
@@ -257,20 +257,20 @@ const char* {{class_name}}::debugString() const
 
 void {{class_name}}::addConstructToMap(std::unordered_map<std::string, BaseClass* (*)()>& factory_map)
 {
-	factory_map.emplace("cim:{{class_name}}", &{{class_name}}_factory);
+	factory_map.emplace("{{class_name}}", &{{class_name}}_factory);
 }
 
 void {{class_name}}::addPrimitiveAssignFnsToMap(std::unordered_map<std::string, assign_function>& assign_map)
 {
 {{#attributes}}
 {{#is_primitive_attribute}}
-	assign_map.emplace("cim:{{domain}}.{{label}}", &assign_{{domain}}_{{label}});
+	assign_map.emplace("{{domain}}.{{label}}", &assign_{{domain}}_{{label}});
 {{/is_primitive_attribute}}
 {{#is_datatype_attribute}}
-	assign_map.emplace("cim:{{domain}}.{{label}}", &assign_{{domain}}_{{label}});
+	assign_map.emplace("{{domain}}.{{label}}", &assign_{{domain}}_{{label}});
 {{/is_datatype_attribute}}
 {{#is_enum_attribute}}
-	assign_map.emplace("cim:{{domain}}.{{label}}", &assign_{{domain}}_{{label}});
+	assign_map.emplace("{{domain}}.{{label}}", &assign_{{domain}}_{{label}});
 {{/is_enum_attribute}}
 {{/attributes}}
 }
@@ -279,10 +279,10 @@ void {{class_name}}::addClassAssignFnsToMap(std::unordered_map<std::string, clas
 {
 {{#attributes}}
 {{#is_class_attribute}}
-	assign_map.emplace("cim:{{domain}}.{{label}}", &assign_{{domain}}_{{label}});
+	assign_map.emplace("{{domain}}.{{label}}", &assign_{{domain}}_{{label}});
 {{/is_class_attribute}}
 {{#is_list_attribute}}
-	assign_map.emplace("cim:{{domain}}.{{label}}", &assign_{{domain}}_{{label}});
+	assign_map.emplace("{{domain}}.{{label}}", &assign_{{domain}}_{{label}});
 {{/is_list_attribute}}
 {{/attributes}}
 }
@@ -292,10 +292,10 @@ void {{class_name}}::addPrimitiveGetFnsToMap(std::map<std::string, get_function>
 	{{subclass_of}}::addPrimitiveGetFnsToMap(get_map);
 {{#attributes}}
 {{#is_primitive_attribute}}
-	get_map.emplace("cim:{{domain}}.{{label}}", &get_{{domain}}_{{label}});
+	get_map.emplace("{{domain}}.{{label}}", &get_{{domain}}_{{label}});
 {{/is_primitive_attribute}}
 {{#is_datatype_attribute}}
-	get_map.emplace("cim:{{domain}}.{{label}}", &get_{{domain}}_{{label}});
+	get_map.emplace("{{domain}}.{{label}}", &get_{{domain}}_{{label}});
 {{/is_datatype_attribute}}
 {{/attributes}}
 }
@@ -306,10 +306,10 @@ void {{class_name}}::addClassGetFnsToMap(std::map<std::string, class_get_functio
 {{#attributes}}
 {{#is_used}}
 {{#is_class_attribute}}
-	get_map.emplace("cim:{{domain}}.{{label}}", &get_{{domain}}_{{label}});
+	get_map.emplace("{{domain}}.{{label}}", &get_{{domain}}_{{label}});
 {{/is_class_attribute}}
 {{#is_list_attribute}}
-	get_map.emplace("cim:{{domain}}.{{label}}", &get_{{domain}}_{{label}});
+	get_map.emplace("{{domain}}.{{label}}", &get_{{domain}}_{{label}});
 {{/is_list_attribute}}
 {{/is_used}}
 {{/attributes}}
@@ -320,7 +320,7 @@ void {{class_name}}::addEnumGetFnsToMap(std::map<std::string, get_function>& get
 	{{subclass_of}}::addEnumGetFnsToMap(get_map);
 {{#attributes}}
 {{#is_enum_attribute}}
-	get_map.emplace("cim:{{domain}}.{{label}}", &get_{{domain}}_{{label}});
+	get_map.emplace("{{domain}}.{{label}}", &get_{{domain}}_{{label}});
 {{/is_enum_attribute}}
 {{/attributes}}
 }
