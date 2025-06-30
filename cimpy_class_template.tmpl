@@ -1,0 +1,40 @@
+from .{{.SuperType}} import {{.SuperType}}
+from .CGMESProfile import Profile
+
+class {{.Id}}({{.SuperType}}):
+    """
+    {{.Comment}}
+    {{range .Attributes}}
+    :{{.Label}}: {{.Comment}}
+    {{- end}}
+    """
+
+    possibleProfileList = {
+        "class": [{{range .Origins}}Profile.{{.}}.value, {{end}}],
+{{- range .Attributes}}
+        "{{.Label}}": [{{if .Origin}}Profile.{{.Origin}}.value, {{end}}],
+{{- end}}
+    }
+
+    serializationProfile = {}
+
+    recommendedClassProfile = Profile.{{.Origin}}.value
+{{if .SuperType}}
+    __doc__ += "\nDocumentation of parent class {{.SuperType}}:\n" + {{.SuperType}}.__doc__
+{{end}}
+    def __init__(self{{range .Attributes}}, {{.Label}} = {{.DefaultValue}}{{end}}{{if .SuperType}}, *args, **kw_args{{end}}):
+{{- if .SuperType}}
+        super().__init__(*args, **kw_args)
+{{end}}
+{{- range .Attributes}}
+        self.{{.Label}} = {{.Label}}
+{{- else}}
+        pass
+{{- end}}
+
+    def __str__(self):
+        str = "class={{.Id}}\n"
+        attributes = self.__dict__
+        for key in attributes.keys():
+            str = str + key + "={}\n".format(repr(attributes[key]))
+        return str
