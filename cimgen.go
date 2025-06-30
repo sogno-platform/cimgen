@@ -6,11 +6,10 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-	"testing"
 	"text/template"
 )
 
-func TestGenerate(t *testing.T) {
+func main() {
 
 	var logLevel = new(slog.LevelVar)
 	logLevel.Set(slog.LevelInfo)
@@ -46,15 +45,27 @@ func TestGenerate(t *testing.T) {
 		panic(err)
 	}
 
-	var f *os.File
-	f, err = os.Create("cim_write_lang_files_test.py")
-	if err != nil {
-		panic(err)
+	// create output/golang folder if it does not exist
+	outputDir := "output/golang"
+	if _, err := os.Stat(outputDir); os.IsNotExist(err) {
+		err = os.MkdirAll(outputDir, 0755)
+		if err != nil {
+			panic(err)
+		}
 	}
-	defer f.Close()
 
-	err = tmpl.Execute(f, cimSpec.Types["ACDCTerminal"])
-	if err != nil {
-		panic(err)
+	// loop through all types in the specification and generate a file for each type
+	for _, t := range cimSpec.Types {
+		var f *os.File
+		f, err = os.Create(filepath.Join(outputDir, t.Id+".py"))
+		if err != nil {
+			panic(err)
+		}
+		defer f.Close()
+
+		err = tmpl.Execute(f, t)
+		if err != nil {
+			panic(err)
+		}
 	}
 }
