@@ -1,4 +1,4 @@
-package cimgen
+package main
 
 import (
 	"encoding/xml"
