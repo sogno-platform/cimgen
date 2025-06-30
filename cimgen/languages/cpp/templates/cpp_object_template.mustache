@@ -14,36 +14,68 @@ Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cim
 
 using namespace CIMPP;
 
+static const CimClassDetails& getCimClassDetails()
+{
+	static const CimClassDetails ClassDetails = CimClassDetails(
+		{{class_name}}(),
+		"{{class_namespace}}",
+		{
+{{#class_origin}}
+			CGMESProfile::{{origin}},
+{{/class_origin}}
+		},
+		CGMESProfile::{{recommended_class_profile}}
+	);
+	return ClassDetails;
+}
+
+static const std::map<std::string, AttrDetails>& getClassAttrDetailsMap()
+{
+	static const std::map<std::string, AttrDetails> ClassAttrDetailsMap =
+	{
+{{#attributes}}
+		{ "{{domain}}.{{label}}", { "{{attribute_namespace}}", { {{#attr_origin}}CGMESProfile::{{origin}}, {{/attr_origin}}} } },
+{{/attributes}}
+	};
+    return ClassAttrDetailsMap;
+}
+
 {{class_name}}::{{class_name}}(){{nullptr_assigns}} {}
 {{class_name}}::~{{class_name}}() {}
 
-static const std::list<CGMESProfile> PossibleProfilesForClass =
+const std::list<std::string>& {{class_name}}::getAttributeNames() const
 {
-{{#class_origin}}
-	CGMESProfile::{{origin}},
-{{/class_origin}}
-};
-
-static const std::map<std::string, std::list<CGMESProfile>> PossibleProfilesForAttributes =
-{
-{{#attributes}}
-	{ "{{domain}}.{{label}}", { {{#attr_origin}}CGMESProfile::{{origin}}, {{/attr_origin}}} },
-{{/attributes}}
-};
-
-std::list<CGMESProfile>
-{{class_name}}::getPossibleProfilesForClass() const
-{
-	return PossibleProfilesForClass;
+	return getCimClassDetails().AttrNamesList;
 }
 
-std::map<std::string, std::list<CGMESProfile>>
-{{class_name}}::getPossibleProfilesForAttributes() const
+const std::string& {{class_name}}::getClassNamespaceUrl() const
 {
-	auto map = PossibleProfilesForAttributes;
-	auto&& parent_map = {{subclass_of}}::getPossibleProfilesForAttributes();
-	map.insert(parent_map.begin(), parent_map.end());
-	return map;
+	return getCimClassDetails().ClassNamespace;
+}
+
+const std::string& {{class_name}}::getAttributeNamespaceUrl(const std::string& attrName) const
+{
+	return getCimClassDetails().getAttributeNamespaceUrl(attrName);
+}
+
+const std::list<CGMESProfile>& {{class_name}}::getPossibleProfiles() const
+{
+	return getCimClassDetails().PossibleProfiles;
+}
+
+const CGMESProfile& {{class_name}}::getRecommendedProfile() const
+{
+	return getCimClassDetails().RecommendedProfile;
+}
+
+const std::list<CGMESProfile>& {{class_name}}::getPossibleAttributeProfiles(const std::string& attrName) const
+{
+	return getCimClassDetails().getPossibleAttributeProfiles(attrName);
+}
+
+const std::list<CGMESProfile>& {{class_name}}::getPossibleProfilesIncludingAttributes() const
+{
+	return getCimClassDetails().PossibleProfilesIncludingAttributes;
 }
 
 {{#attributes}}
@@ -328,6 +360,14 @@ void {{class_name}}::addEnumGetFnsToMap(std::map<std::string, get_function>& get
 const BaseClassDefiner {{class_name}}::declare()
 {
 	return BaseClassDefiner({{class_name}}::addConstructToMap, {{class_name}}::addPrimitiveAssignFnsToMap, {{class_name}}::addClassAssignFnsToMap, {{class_name}}::debugName);
+}
+
+std::map<std::string, AttrDetails> {{class_name}}::allAttrDetailsMap() const
+{
+	auto map = getClassAttrDetailsMap();
+	const auto& parent_map = {{subclass_of}}::allAttrDetailsMap();
+	map.insert(parent_map.begin(), parent_map.end());
+	return map;
 }
 
 namespace CIMPP
