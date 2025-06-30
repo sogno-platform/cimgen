@@ -2,15 +2,15 @@ package cimgen
 
 import (
 	"bytes"
-	"fmt"
 	"log/slog"
 	"os"
 	"path/filepath"
 	"sort"
 	"testing"
+	"text/template"
 )
 
-func TestSchemaImport(t *testing.T) {
+func TestGenerate(t *testing.T) {
 
 	var logLevel = new(slog.LevelVar)
 	logLevel.Set(slog.LevelInfo)
@@ -21,15 +21,6 @@ func TestSchemaImport(t *testing.T) {
 		panic(err)
 	}
 	sort.Strings(entries)
-	fmt.Println("Read schema from files:", entries)
-
-	output := "cim_schema_test.log"
-	fmt.Println("Write imported schema to file:", output)
-	f, err := os.Create(output)
-	if err != nil {
-		slog.Any("error", err)
-	}
-	defer f.Close()
 
 	cimSpec := newCIMSpecification()
 
@@ -49,9 +40,21 @@ func TestSchemaImport(t *testing.T) {
 
 	cimSpec.postprocess()
 
-	cimSpec.printSpecification(f)
+	var tmplFile = "cimpy_class_template.tmpl"
+	tmpl, err := template.New(tmplFile).ParseFiles(tmplFile)
+	if err != nil {
+		panic(err)
+	}
 
-	if cimSpec.Ontologies["DL"].Keyword != "DL" {
-		t.Error("cim schema test failed, expected Ontology DL")
+	var f *os.File
+	f, err = os.Create("cim_write_lang_files_test.py")
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+
+	err = tmpl.Execute(f, cimSpec.Types["ACDCTerminal"])
+	if err != nil {
+		panic(err)
 	}
 }
