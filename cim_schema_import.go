@@ -16,18 +16,18 @@ var (
 
 // enum to determine primitve types
 const (
-	PrimitiveTypeString   = "String"
-	PrimitiveTypeInteger  = "Integer"
-	PrimitiveTypeBoolean  = "Boolean"
-	PrimitiveTypeFloat    = "Float"
-	PrimitiveTypeDate     = "Date"
-	PrimitiveTypeTime     = "Time"
-	PrimitiveTypeDateTime = "DateTime"
-	PrimitiveTypeBinary   = "Binary"
-	PrimitiveTypeEnum     = "Enum"
-	PrimitiveTypeObject   = "Object"
-	PrimitiveTypeList     = "List"
-	PrimitiveTypeUnknown  = "Unknown"
+	DataTypeString   = "String"
+	DataTypeInteger  = "Integer"
+	DataTypeBoolean  = "Boolean"
+	DataTypeFloat    = "Float"
+	DataTypeDate     = "Date"
+	DataTypeTime     = "Time"
+	DataTypeDateTime = "DateTime"
+	DataTypeBinary   = "Binary"
+	DataTypeEnum     = "Enum"
+	DataTypeObject   = "Object"
+	DataTypeList     = "List"
+	DataTypeUnknown  = "Unknown"
 )
 
 type CIMAttribute struct {
@@ -43,11 +43,10 @@ type CIMAttribute struct {
 	Stereotype      string
 	Origin          string
 	Origins         []string
-	RDFRange        string
-	RDFDataType     string
+	Range           string
+	DataType        string
 	RDFDomain       string
 	RDFType         string
-	PrimitiveType   string
 	DefaultValue    string
 }
 
@@ -187,8 +186,8 @@ func processProperty(classMap map[string]interface{}) CIMAttribute {
 	comment := extractText(classMap, "rdfs:comment")
 	stereotype := extractStringOrResource(classMap["cims:stereotype"])
 	label := extractText(classMap, "rdfs:label")
-	domain := extractResource(classMap, "rdfs:domain")
-	dataType := extractResource(classMap, "cims:dataType")
+	rdfDomain := extractResource(classMap, "rdfs:domain")
+	cimDataType := extractResource(classMap, "cims:dataType")
 	rdfRange := extractResource(classMap, "rdfs:range")
 	inverseRoleName := extractResource(classMap, "cims:inverseRoleName")
 
@@ -211,9 +210,9 @@ func processProperty(classMap map[string]interface{}) CIMAttribute {
 		Stereotype:      extractURIEnd(stereotype),
 		Namespace:       extractURIPath(attrId),
 		Label:           label,
-		RDFDomain:       extractURIEnd(domain),
-		RDFDataType:     extractURIEnd(dataType),
-		RDFRange:        extractURIEnd(rdfRange),
+		RDFDomain:       extractURIEnd(rdfDomain),
+		DataType:        extractURIEnd(cimDataType),
+		Range:           extractURIEnd(rdfRange),
 		RDFType:         extractURIEnd(rdfType),
 		AssociationUsed: associationUsed,
 		InverseRole:     extractURIEnd(inverseRoleName),
@@ -525,24 +524,24 @@ func (cimSpec *CIMSpecification) sortAttributes() {
 	}
 }
 
-func (cimSpec *CIMSpecification) determinePrimitiveTypes() {
+func (cimSpec *CIMSpecification) determineDataTypes() {
 	for _, t := range cimSpec.Types {
 		for _, attr := range t.Attributes {
-			if isPrimitiveType(attr.RDFDataType) {
-				attr.PrimitiveType = attr.RDFDataType
-			} else if attr.RDFDataType == "" {
-				attr.PrimitiveType = PrimitiveTypeObject
+			if isDataType(attr.DataType) {
+				attr.DataType = attr.DataType
+			} else if attr.DataType == "" {
+				attr.DataType = DataTypeObject
 			}
 		}
 	}
 }
 
-// isPrimitiveType checks if the given type string is a known primitive type.
-func isPrimitiveType(typeStr string) bool {
+// isDataType checks if the given type string is a known data type.
+func isDataType(typeStr string) bool {
 	switch typeStr {
-	case PrimitiveTypeString, PrimitiveTypeInteger, PrimitiveTypeBoolean,
-		PrimitiveTypeFloat, PrimitiveTypeDate, PrimitiveTypeTime,
-		PrimitiveTypeDateTime, PrimitiveTypeBinary:
+	case DataTypeString, DataTypeInteger, DataTypeBoolean,
+		DataTypeFloat, DataTypeDate, DataTypeTime,
+		DataTypeDateTime, DataTypeBinary:
 		return true
 	default:
 		return false
@@ -554,15 +553,15 @@ func (cimSpec *CIMSpecification) setDefaultValuesPython() {
 		for _, attr := range t.Attributes {
 			if attr.IsList {
 				attr.DefaultValue = "[]" // Set default value for list attributes
-			} else if attr.PrimitiveType == PrimitiveTypeString {
+			} else if attr.DataType == DataTypeString {
 				attr.DefaultValue = "''" // Set default value for string attributes
-			} else if attr.PrimitiveType == PrimitiveTypeInteger {
+			} else if attr.DataType == DataTypeInteger {
 				attr.DefaultValue = "0" // Set default value for integer attributes
-			} else if attr.PrimitiveType == PrimitiveTypeBoolean {
+			} else if attr.DataType == DataTypeBoolean {
 				attr.DefaultValue = "False" // Set default value for boolean attributes
-			} else if attr.PrimitiveType == PrimitiveTypeFloat {
+			} else if attr.DataType == DataTypeFloat {
 				attr.DefaultValue = "0.0" // Set default value for float attributes
-			} else if attr.PrimitiveType == PrimitiveTypeObject {
+			} else if attr.DataType == DataTypeObject {
 				attr.DefaultValue = "None" // Set default value for object attributes
 			}
 		}
@@ -572,7 +571,7 @@ func (cimSpec *CIMSpecification) setDefaultValuesPython() {
 func (cimSpec *CIMSpecification) postprocess() {
 	cimSpec.pickMainOrigin()
 	cimSpec.sortAttributes()
-	cimSpec.determinePrimitiveTypes()
+	cimSpec.determineDataTypes()
 	cimSpec.setDefaultValuesPython()
 }
 
