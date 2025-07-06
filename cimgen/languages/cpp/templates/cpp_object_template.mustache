@@ -357,6 +357,12 @@ void {{class_name}}::addEnumGetFnsToMap(std::map<std::string, get_function>& get
 {{/attributes}}
 }
 
+bool {{class_name}}::isAssignableFrom(BaseClass* otherObject) const
+{
+	return std::string(debugString()) == "{{class_name}}" &&
+		dynamic_cast<{{class_name}}*>(otherObject) != nullptr;
+}
+
 const BaseClassDefiner {{class_name}}::declare()
 {
 	return BaseClassDefiner({{class_name}}::addConstructToMap, {{class_name}}::addPrimitiveAssignFnsToMap, {{class_name}}::addClassAssignFnsToMap, {{class_name}}::debugName);

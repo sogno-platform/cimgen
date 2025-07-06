@@ -71,6 +71,8 @@ namespace CIMPP
 		void addPrimitiveGetFnsToMap(std::map<std::string, get_function>& get_map) const override;
 		void addClassGetFnsToMap(std::map<std::string, class_get_function>& get_map) const override;
 		void addEnumGetFnsToMap(std::map<std::string, get_function>& get_map) const override;
+
+		bool isAssignableFrom(BaseClass* otherObject) const override;
 		static const BaseClassDefiner declare();
 
 	protected:

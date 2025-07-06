@@ -46,6 +46,8 @@ public:
 	virtual void addPrimitiveGetFnsToMap(std::map<std::string, get_function>& get_map) const;
 	virtual void addClassGetFnsToMap(std::map<std::string, class_get_function>& get_map) const;
 	virtual void addEnumGetFnsToMap(std::map<std::string, get_function>& get_map) const;
+
+	virtual bool isAssignableFrom(BaseClass* otherObject) const { return false; }
 	static const CIMPP::BaseClassDefiner declare();
 
 protected:
