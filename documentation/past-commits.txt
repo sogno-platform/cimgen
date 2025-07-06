@@ -1,3 +1,15 @@
+I, Jan Dinkelbach hereby sign-off-by all of my past commits to this repo subject to the Developer Certificate of Origin (DCO), Version 1.1. In the past I have used emails: 40394289+dinkelbachjan@users.noreply.github.com
+
+a0ee682c65d572bf1e98c4a8d62e6d938fc73051 Update README.md
+6f2b437d6d0b4e51482c25ddbd67bd01017b25e4 update readme and images
+ed84f80a76aeb93e48014ddf95f018b7315c17a1 add first logo
+f54c7995b86b42db6bff1cf2f3ad14ffc118ce04 add subset of rdf files belonging to cgmes v2.4.15
+05d8a6de4cf5e7d60be2d75edf41dd245bb8ea21 replace png with svg
+ccab8bdc22e4628e10a36a7e0d63beecd105f940 move generator code from cimpy to here
+6485154b793b8030f50fca63382192c40ac66bc6 Update README.md
+cda34632cd7285482dccc9605ba7755b22268eda add concept overview figure
+b618fc22489d4ee4d2d103f673bf9bc043ae7a6f Add README.md
+
 I, Richard Marston hereby sign-off-by all of my past commits to this repo subject to the Developer Certificate of Origin (DCO), Version 1.1. In the past I have used emails: rmarston@eonerc.rwth-aachen.de
 
 e1a4296 Add pointer initialisations to cpp template
