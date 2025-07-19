@@ -45,6 +45,7 @@ type CIMAttribute struct {
 	Origins         []string
 	Range           string
 	DataType        string
+	IsPrimitive     bool
 	RDFDomain       string
 	RDFType         string
 	DefaultValue    string
@@ -413,9 +414,6 @@ func FindCIMEnumValueById(vals []*CIMEnumValue, id string) int {
 // Only the attributes are considered that have more than one entry in the Origins field.
 func (cimSpec *CIMSpecification) pickMainOrigin() {
 	for _, t := range cimSpec.Types {
-		if len(t.Attributes) == 0 {
-			continue
-		}
 
 		originCount := make(map[string]int)
 		tmpType := t
@@ -424,7 +422,10 @@ func (cimSpec *CIMSpecification) pickMainOrigin() {
 			for _, attr := range tmpType.Attributes {
 				if len(attr.Origins) > 1 {
 					for _, origin := range attr.Origins {
-						originCount[origin]++
+						if contains(t.Origins, origin) {
+							originCount[origin]++
+						}
+
 					}
 				}
 			}
@@ -442,36 +443,30 @@ func (cimSpec *CIMSpecification) pickMainOrigin() {
 		}
 		//fmt.Println("Origin count map:", originCount, "for type", t.Id)
 
-		var mainOrigin string
-		maxCount := 0
-		// If EQ is in the origin count, we set it as the main origin if no other origin has a higher count.
-		if v, ok := originCount["EQ"]; ok {
-			maxCount = v
-			mainOrigin = "EQ"
-		}
-
-		for origin, count := range originCount {
-			if count > maxCount || (count == maxCount && mainOrigin == "") {
-				mainOrigin = origin
-				maxCount = count
+		filteredOrigins := make([]string, 0, len(t.Origins))
+		if len(originCount) > 0 {
+			maxCount := 0
+			for _, count := range originCount {
+				if count > maxCount {
+					maxCount = count
+				}
 			}
-		}
 
-		if mainOrigin != "" {
-			t.Origin = mainOrigin
+			for origin, count := range originCount {
+				if count == maxCount {
+					filteredOrigins = append(filteredOrigins, origin)
+				}
+			}
 		} else {
-			// If no main origin was found, we can set the origin to the first one
-			// in the list of Origins of the type ordered in alphabetical order.
-			sort.Strings(t.Origins)
-			if len(t.Origins) > 0 {
-				t.Origin = t.Origins[0]
-			}
-			// If EQ is in the list of Origins of type t, we can set it as the origin.
-			if contains(t.Origins, "EQ") {
-				t.Origin = "EQ"
-			}
+			filteredOrigins = t.Origins
 		}
 
+		if contains(filteredOrigins, "EQ") {
+			t.Origin = "EQ"
+		} else {
+			sort.Strings(filteredOrigins)
+			t.Origin = filteredOrigins[0]
+		}
 	}
 }
 
@@ -482,20 +477,6 @@ func contains(slice []string, str string) bool {
 		}
 	}
 	return false
-}
-
-func findDuplicateAttributes(types map[string]*CIMType) {
-	for k := range types {
-		if t, ok := types[k]; ok {
-			for i, attr := range t.Attributes {
-				for j, attrsec := range t.Attributes {
-					if attrsec.Id == attr.Id && i != j {
-						fmt.Println("Duplicate attribute", attrsec.Id, "in type", t.Id)
-					}
-				}
-			}
-		}
-	}
 }
 
 func newCIMSpecification() *CIMSpecification {
@@ -528,9 +509,10 @@ func (cimSpec *CIMSpecification) determineDataTypes() {
 	for _, t := range cimSpec.Types {
 		for _, attr := range t.Attributes {
 			if isDataType(attr.DataType) {
-				attr.DataType = attr.DataType
+				attr.IsPrimitive = true
 			} else if attr.DataType == "" {
 				attr.DataType = DataTypeObject
+				attr.IsPrimitive = false
 			}
 		}
 	}
