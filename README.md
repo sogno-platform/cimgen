@@ -106,6 +106,7 @@ Options for `langdir` (required):
 - modernpython, i.e. PyDantic based dataclasses
 - javascript
 - java
+- javadb
 
 Options for `cgmes_version`:
 
