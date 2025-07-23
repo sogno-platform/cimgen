@@ -8,7 +8,7 @@ Python tool for code generation from CIM data model for several programming lang
 
 [Projects using CIMgen](documentation/CIMgenOverview.md)
 
-## Usage example
+## Usage
 
 ### Generating C++ files
 
@@ -118,6 +118,12 @@ export BUILD_IN_DOCKER=true
 make modernpython
 ```
 
+### Generate with Golang toolchain
+
+```bash
+go run cimgen
+```
+
 ## Custom Profiles
 
 To generate files for custom profiles,
@@ -138,6 +144,11 @@ cimgen --outdir=output/ --schemadir=cgmes_schema/<schemadir> --langdir=<lang> --
 ```bash
 git clone https://github.com/sogno-platform/cimgen.git
 cd cimgen
+```
+
+For the python toolchain, install the package in dev mode:
+
+```bash
 pip install -e .[dev]
 ```
 
