@@ -140,6 +140,8 @@ public class {{class_name}} extends {{subclass_of}} {
     private {{attribute_class}} {{variable_name}}; // OneToOne
 {{/is_class_attribute_with_inverse_list}}
 
+    private String {{variable_name}}Id;
+
     public {{attribute_class}} {{getter_name}}() {
         return {{variable_name}};
     }
@@ -148,17 +150,25 @@ public class {{class_name}} extends {{subclass_of}} {
         if ({{variable_name}} != _object_) {
             {{variable_name}} = _object_;
 {{#inverse_setter}}
-            {{variable_name}}.{{.}}(this);
+            _object_.{{.}}(this);
 {{/inverse_setter}}
+            {{variable_name}}Id = _object_.getRdfid();
         }
     }
 
     private static Object {{getter_name}}(BaseClass _this_) {
-        return (({{class_name}}) _this_).{{getter_name}}();
+        var obj = (({{class_name}}) _this_).{{getter_name}}();
+        var id = (({{class_name}}) _this_).{{variable_name}}Id;
+        if (obj == null && id != null) {
+            return id;
+        }
+        return obj;
     }
 
     private static void {{setter_name}}(BaseClass _this_, Object _value_) {
-        if (_value_ instanceof {{attribute_class}}) {
+        if (_value_ instanceof String) {
+            (({{class_name}}) _this_).{{variable_name}}Id = (String) _value_;
+        } else if (_value_ instanceof {{attribute_class}}) {
             (({{class_name}}) _this_).{{setter_name}}(({{attribute_class}}) _value_);
         } else {
             throw new IllegalArgumentException("Object is not {{attribute_class}}");
@@ -167,6 +177,8 @@ public class {{class_name}} extends {{subclass_of}} {
 {{/is_class_attribute}}
 {{#is_list_attribute}}
     private Set<{{attribute_class}}> {{variable_name}} = new HashSet<>(); // OneToMany
+
+    private Set<String> {{variable_name}}IdSet = new HashSet<>();
 
     public Set<{{attribute_class}}> {{getter_name}}() {
         return {{variable_name}};
@@ -178,15 +190,23 @@ public class {{class_name}} extends {{subclass_of}} {
 {{#inverse_setter}}
             _object_.{{.}}(this);
 {{/inverse_setter}}
+            {{variable_name}}IdSet.add(_object_.getRdfid());
         }
     }
 
     private static Object {{getter_name}}(BaseClass _this_) {
-        return (({{class_name}}) _this_).{{getter_name}}();
+        var objs = (({{class_name}}) _this_).{{getter_name}}();
+        var ids = (({{class_name}}) _this_).{{variable_name}}IdSet;
+        if (objs.size() < ids.size()) {
+            return ids;
+        }
+        return objs;
     }
 
     private static void {{setter_name}}(BaseClass _this_, Object _value_) {
-        if (_value_ instanceof {{attribute_class}}) {
+        if (_value_ instanceof String) {
+            (({{class_name}}) _this_).{{variable_name}}IdSet.add((String) _value_);
+        } else if (_value_ instanceof {{attribute_class}}) {
             (({{class_name}}) _this_).{{setter_name}}(({{attribute_class}}) _value_);
         } else {
             throw new IllegalArgumentException("Object is not {{attribute_class}}");
