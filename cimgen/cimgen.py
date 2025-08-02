@@ -476,8 +476,8 @@ def _write_all_files(
             attribute["is_datatype_attribute"] = _get_bool_string(attribute_type == "datatype")
             attribute["attribute_class"] = attribute_class
             attribute["attribute_namespace"] = _get_namespace(attribute["namespace"])
-            attribute["is_class_attribute_with_inverse_list"] = _get_bool_string(
-                _is_class_attribute_with_inverse_list(attribute, elem_dict)
+            attribute["is_attribute_with_inverse_list"] = _get_bool_string(
+                _is_attribute_with_inverse_list(attribute, elem_dict)
             )
 
         class_details["attributes"].sort(key=lambda d: d["label"])
@@ -795,7 +795,7 @@ def _get_bool_string(bool_value: bool) -> str:
         return ""
 
 
-def _is_class_attribute_with_inverse_list(attribute: dict, elem_dict: dict[str, CIMComponentDefinition]) -> bool:
+def _is_attribute_with_inverse_list(attribute: dict, elem_dict: dict[str, CIMComponentDefinition]) -> bool:
     """Check if the inverse role of the attribute is a list.
 
     :param attribute: Dictionary with information about an attribute of a class.
