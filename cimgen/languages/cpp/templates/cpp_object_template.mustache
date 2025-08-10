@@ -130,7 +130,7 @@ bool assign_{{domain}}_{{label}}(std::stringstream& buffer, BaseClass* BaseClass
 }
 {{/is_enum_attribute}}
 {{#is_class_attribute}}
-{{#inverse_role}}
+{{#inverse_role_name}}
 bool assign_{{.}}(BaseClass*, BaseClass*);
 bool assign_{{domain}}_{{label}}(BaseClass* BaseClass_ptr1, BaseClass* BaseClass_ptr2)
 {
@@ -147,8 +147,8 @@ bool assign_{{domain}}_{{label}}(BaseClass* BaseClass_ptr1, BaseClass* BaseClass
 	}
 	return false;
 }
-{{/inverse_role}}
-{{^inverse_role}}
+{{/inverse_role_name}}
+{{^inverse_role_name}}
 bool assign_{{domain}}_{{label}}(BaseClass* BaseClass_ptr1, BaseClass* BaseClass_ptr2)
 {
 	{{domain}}* element = dynamic_cast<{{domain}}*>(BaseClass_ptr1);
@@ -162,10 +162,10 @@ bool assign_{{domain}}_{{label}}(BaseClass* BaseClass_ptr1, BaseClass* BaseClass
 	}
 	return false;
 }
-{{/inverse_role}}
+{{/inverse_role_name}}
 {{/is_class_attribute}}
 {{#is_list_attribute}}
-{{#inverse_role}}
+{{#inverse_role_name}}
 bool assign_{{.}}(BaseClass*, BaseClass*);
 bool assign_{{domain}}_{{label}}(BaseClass* BaseClass_ptr1, BaseClass* BaseClass_ptr2)
 {
@@ -182,8 +182,8 @@ bool assign_{{domain}}_{{label}}(BaseClass* BaseClass_ptr1, BaseClass* BaseClass
 	}
 	return false;
 }
-{{/inverse_role}}
-{{^inverse_role}}
+{{/inverse_role_name}}
+{{^inverse_role_name}}
 bool assign_{{domain}}_{{label}}(BaseClass* BaseClass_ptr1, BaseClass* BaseClass_ptr2)
 {
 	{{domain}}* element = dynamic_cast<{{domain}}*>(BaseClass_ptr1);
@@ -197,7 +197,7 @@ bool assign_{{domain}}_{{label}}(BaseClass* BaseClass_ptr1, BaseClass* BaseClass
 	}
 	return false;
 }
-{{/inverse_role}}
+{{/inverse_role_name}}
 {{/is_list_attribute}}
 
 {{/attributes}}

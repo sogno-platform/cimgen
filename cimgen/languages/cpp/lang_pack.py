@@ -80,9 +80,7 @@ def run_template(output_path: str, class_details: dict) -> None:
     for attribute in class_details["attributes"]:
         attribute["attribute_is_primitive_string"] = _attribute_is_primitive_string(attribute) and "true" or ""
         if "inverse_role" in attribute:
-            attribute["inverse_role"] = [attribute["inverse_role"].replace(".", "_")]
-        else:
-            attribute["inverse_role"] = []
+            attribute["inverse_role_name"] = attribute["inverse_role"].replace(".", "_")
 
     if class_details["is_a_datatype_class"] or class_details["class_name"] in ("Float", "Decimal"):
         templates = float_template_files

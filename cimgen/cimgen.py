@@ -539,6 +539,12 @@ def _merge_profiles(
                                 break
                         else:
                             class_infos.add_attribute(new_attr)
+                    for new_enum in new_class_infos.enum_instances():
+                        for enum in class_infos.enum_instances():
+                            if new_enum["label"] == enum["label"]:
+                                break
+                        else:
+                            class_infos.add_enum_instance(new_enum)
                 else:
                     class_dict[class_key] = new_class_infos
     return profiles_dict
@@ -574,6 +580,12 @@ def _merge_classes(profiles_dict: dict[str, dict[str, CIMComponentDefinition]]) 
                         # new attribute
                         new_attr["attr_origin"] = [origin]
                         class_infos.add_attribute(new_attr)
+                for new_enum in new_class_infos.enum_instances():
+                    for enum in class_infos.enum_instances():
+                        if new_enum["label"] == enum["label"]:
+                            break
+                    else:
+                        class_infos.add_enum_instance(new_enum)
             else:
                 # store new class and origin
                 new_class_infos.add_origin(origin)
