@@ -13,6 +13,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeSet;
 
 import javax.xml.stream.XMLOutputFactory;
 
@@ -258,16 +259,18 @@ public class RdfWriter {
                                     writer.writeEmptyElement(namespaceUrl, attrFullName);
                                     writer.writeAttribute(RDF, "resource", resource);
                                 } else if (attr instanceof Set<?>) {
+                                    var resources = new TreeSet<String>(); // automatically sorted
                                     for (var attrItem : ((Set<?>) attr)) {
-                                        String resource = "#";
                                         if (attrItem instanceof BaseClass) {
-                                            resource += ((BaseClass) attrItem).getRdfid();
+                                            resources.add(((BaseClass) attrItem).getRdfid());
                                         } else {
-                                            resource += (String) attrItem;
+                                            resources.add((String) attrItem);
                                         }
+                                    }
+                                    for (String resource : resources) {
                                         writer.writeCharacters("\n    ");
                                         writer.writeEmptyElement(namespaceUrl, attrFullName);
-                                        writer.writeAttribute(RDF, "resource", resource);
+                                        writer.writeAttribute(RDF, "resource", "#" + resource);
                                     }
                                 } else if (attr instanceof String) {
                                     writer.writeCharacters("\n    ");

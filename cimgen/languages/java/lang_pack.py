@@ -50,8 +50,8 @@ def run_template(output_path: str, class_details: dict) -> None:
         if attribute["is_primitive_attribute"]:
             if _attribute_is_primitive_string(attribute):
                 attribute["primitive_java_type"] = "String"
-            elif attribute["attribute_class"] == "Decimal":
-                attribute["primitive_java_type"] = "Float"
+            elif attribute["attribute_class"] in ("Decimal", "Float"):
+                attribute["primitive_java_type"] = "Double"
             else:
                 attribute["primitive_java_type"] = attribute["attribute_class"]
         attribute["variable_name"] = _variable_name(attribute["label"], class_details["class_name"])

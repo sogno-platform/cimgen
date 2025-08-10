@@ -228,15 +228,6 @@ public abstract class BaseClass {
         }
     }
 
-    protected static Float getFloatFromString(String stringValue) {
-        try {
-            return Float.valueOf(stringValue);
-        } catch (NumberFormatException ex) {
-            LOG.error("Error getting Float from String", ex);
-            return null;
-        }
-    }
-
     protected static Integer getIntegerFromString(String stringValue) {
         try {
             return Integer.parseInt(stringValue.trim());
