@@ -479,6 +479,7 @@ def _write_all_files(
             attribute["is_attribute_with_inverse_list"] = _get_bool_string(
                 _is_attribute_with_inverse_list(attribute, elem_dict)
             )
+            _check_inverse_role(attribute, elem_dict)
 
         class_details["attributes"].sort(key=lambda d: d["label"])
         _write_files(class_details, output_path)
@@ -904,3 +905,35 @@ def _check_attribute_for_class(classes_map: dict[str, CIMComponentDefinition], a
         return False
     logger.error(f"Class '{domain}' for attribute '{about}' not found.")
     return False
+
+
+def _check_inverse_role(attribute: dict, elem_dict: dict[str, CIMComponentDefinition]) -> bool:
+    """Check if exactly one side of attribute and inverse role is used.
+
+    :param attribute: Dictionary with information about an attribute of a class.
+    :param elem_dict: Information about all classes.
+    :return:          Is the attribute and inverse role okay?
+    """
+    ok = True
+    about = attribute["about"]
+    if "inverse_role" in attribute:
+        inverse_role = attribute["inverse_role"]
+        inverse_class, inverse_label = inverse_role.split(".")
+        for inverse_attribute in elem_dict[inverse_class].attributes():
+            if inverse_attribute["label"] == inverse_label:
+                if attribute["is_used"] and inverse_attribute["is_used"]:
+                    logger.warning(f"Both sides used for attribute '{about}' with inverse role '{inverse_role}'.")
+                    ok = False
+                elif not attribute["is_used"] and not inverse_attribute["is_used"]:
+                    logger.error(f"No side used for attribute '{about}' with inverse role '{inverse_role}'.")
+                    ok = False
+                inverse_inverse_role = inverse_attribute.get("inverse_role", "")
+                if inverse_inverse_role != about:
+                    logger.error(
+                        f"Wrong inverse role of inverse role for attribute '{about}': '{inverse_inverse_role}'."
+                    )
+                    ok = False
+    elif not attribute["is_used"]:
+        logger.error(f"Attribute '{about}' not used, but has no inverse role.")
+        ok = False
+    return ok
