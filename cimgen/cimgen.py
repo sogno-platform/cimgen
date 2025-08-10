@@ -289,9 +289,12 @@ def _rdfs_entry_types(rdfs_entry: RDFSEntry, version: str) -> list[str]:
     if rdfs_entry.type():
         if rdfs_entry.type() == "http://www.w3.org/2000/01/rdf-schema#Class":  # NOSONAR
             entry_types.append("class")
-        if rdfs_entry.type() == "http://www.w3.org/1999/02/22-rdf-syntax-ns#Property":  # NOSONAR
+        elif rdfs_entry.type() == "http://www.w3.org/1999/02/22-rdf-syntax-ns#Property":  # NOSONAR
             entry_types.append("property")
-        if rdfs_entry.type() != "http://iec.ch/TC57/1999/rdf-schema-extensions-19990926#ClassCategory":  # NOSONAR
+        elif rdfs_entry.type() not in (
+            "http://iec.ch/TC57/1999/rdf-schema-extensions-19990926#ClassCategory",  # NOSONAR
+            "http://www.w3.org/2002/07/owl#Ontology",  # NOSONAR
+        ):
             entry_types.append("rest_non_class_category")
 
     if version == "cgmes_v2_4_13" or version == "cgmes_v2_4_15":
@@ -339,7 +342,7 @@ def _add_class(classes_map: dict[str, CIMComponentDefinition], rdfs_entry: RDFSE
     if rdfs_entry.namespace() == all_namespaces.get("dm"):
         return
     if rdfs_entry.label() in classes_map:
-        logger.error("Class {} already exists".format(rdfs_entry.label()))
+        logger.error(f"Class {rdfs_entry.label()} already exists.")
     classes_map[rdfs_entry.label()] = CIMComponentDefinition(rdfs_entry)
 
 
@@ -407,7 +410,7 @@ def _parse_rdf(input_dic: dict, version: str) -> dict[str, dict[str, CIMComponen
         if clarse and clarse in classes_map:
             classes_map[clarse].add_enum_instance(instance)
         else:
-            logger.info("Class {} for enum instance {} not found.".format(clarse, instance))
+            logger.error(f"Class '{clarse}' for enum instance {instance} not found.")
 
     return {short_profile_name: classes_map}
 
@@ -655,7 +658,7 @@ def cim_generate(directory: Path, output_path: str, version: str, lang_pack: Mod
 
     # Iterate over RDF files: first in the main directory, than in subdirectories
     for file in sorted(directory.glob("*.rdf")) + sorted(directory.glob("*/**/*.rdf")):
-        logger.info('Start of parsing file "%s"', file)
+        logger.info(f"Start of parsing file '{file}'.")
 
         xmlstring = file.read_text(encoding="utf-8")
 
@@ -679,7 +682,7 @@ def cim_generate(directory: Path, output_path: str, version: str, lang_pack: Mod
 
     lang_pack.resolve_headers(output_path, version)
 
-    logger.info("Elapsed Time: {}s\n\n".format(time() - t0))
+    logger.info(f"Elapsed Time: {time() - t0}s")
 
 
 def _get_profile_details(cgmes_profile_uris: dict[str, list[str]]) -> list[dict]:
