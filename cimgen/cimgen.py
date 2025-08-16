@@ -433,7 +433,9 @@ def _write_all_files(
             "attributes": elem_dict[class_name].attributes(),
             "class_location": lang_pack.get_class_location(class_name, elem_dict, version),
             "class_name": class_name,
-            "class_origin": elem_dict[class_name].origins(),
+            "class_origin": [
+                {"origin": p} for p in _get_sorted_profile_keys([o["origin"] for o in elem_dict[class_name].origins()])
+            ],
             "class_namespace": _get_namespace(elem_dict[class_name].namespace),
             "enum_instances": elem_dict[class_name].enum_instances(),
             "is_an_enum_class": elem_dict[class_name].is_an_enum_class(),
@@ -482,6 +484,9 @@ def _write_all_files(
             attribute["is_attribute_with_inverse_list"] = _get_bool_string(
                 _is_attribute_with_inverse_list(attribute, elem_dict)
             )
+            attribute["attr_origin"] = [
+                {"origin": p} for p in _get_sorted_profile_keys([o["origin"] for o in attribute["attr_origin"]])
+            ]
             _check_inverse_role(attribute, elem_dict)
 
         class_details["attributes"].sort(key=lambda d: d["label"])
@@ -708,7 +713,7 @@ def _get_sorted_profile_keys(profile_key_list: list[str]) -> list[str]:
     :param profile_key_list: List of short profile names.
     :return:                 Sorted list of short profile names.
     """
-    return sorted(profile_key_list, key=lambda x: x == "EQ" and "0" or x)
+    return sorted(profile_key_list, key=lambda p: "0" if p == "EQ" else p)
 
 
 def _get_recommended_class_profiles(elem_dict: dict[str, CIMComponentDefinition]) -> dict[str, str]:
