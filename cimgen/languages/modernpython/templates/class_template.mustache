@@ -28,7 +28,7 @@ class {{class_name}}({{subclass_of}}):
         json_schema_extra={
             "in_profiles": [
                 {{#attr_origin}}
-                Profile.{{origin}},
+                Profile.{{.}},
                 {{/attr_origin}}
             ],
             "is_used": {{#is_used}}True{{/is_used}}{{^is_used}}False{{/is_used}},
@@ -60,7 +60,7 @@ class {{class_name}}({{subclass_of}}):
         """
         return {
             {{#class_origin}}
-            Profile.{{origin}},
+            Profile.{{.}},
             {{/class_origin}}
         }
 
