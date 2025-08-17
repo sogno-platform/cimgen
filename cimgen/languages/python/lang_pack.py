@@ -102,8 +102,6 @@ def _default_value(attribute: dict) -> str:
     :param attribute:  Dictionary with information about an attribute of a class.
     :return:           Default value
     """
-    if attribute["attribute_class"] in ("MonthDay", "Status", "StreetAddress", "StreetDetail", "TownDetail"):
-        return "0.0"
     if attribute["is_datatype_attribute"]:
         return "0.0"
     if attribute["is_enum_attribute"]:
@@ -120,7 +118,7 @@ def _default_value(attribute: dict) -> str:
     if attribute["attribute_class"] in ("Float", "Decimal"):
         return "0.0"
     # primitive string attribute
-    return "''"
+    return '""'
 
 
 class_blacklist = ["CGMESProfile", "CimConstants"]

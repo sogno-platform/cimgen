@@ -175,16 +175,14 @@ def _default_value(attribute: dict) -> str:
     :param attribute:  Dictionary with information about an attribute of a class.
     :return:           Default value
     """
-    if attribute["attribute_class"] in ("MonthDay", "Status", "StreetAddress", "StreetDetail", "TownDetail"):
-        return "nullptr"
     if attribute["is_datatype_attribute"]:
-        return "nullptr"
+        return "0.0"
     if attribute["is_enum_attribute"]:
         return "0"
     if attribute["is_class_attribute"]:
-        return "0"
+        return "nullptr"
     if attribute["is_list_attribute"]:
-        return "0"
+        return "{}"
     # primitive attribute
     if attribute["attribute_class"] == "Integer":
         return "0"
@@ -193,7 +191,7 @@ def _default_value(attribute: dict) -> str:
     if attribute["attribute_class"] in ("Float", "Decimal"):
         return "0.0"
     # primitive string attribute
-    return "''"
+    return '""'
 
 
 def _attribute_is_primitive_or_datatype_or_enum(attribute: dict) -> bool:
