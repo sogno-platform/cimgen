@@ -138,7 +138,7 @@ def _variable_name(label: str, class_name: str) -> str:
     :return:            Variable name
     """
     if label == "switch" or label == class_name:
-        label = "_" + label
+        label += "_"
     return label
 
 
