@@ -2,7 +2,6 @@ import chevron
 import shutil
 from pathlib import Path
 from importlib.resources import files
-from typing import Callable
 
 
 # Setup called only once: make output directory, create base class, create profile class, etc.
@@ -54,10 +53,7 @@ profile_template_files = [
 classlist_template = {"filename": "cpp_classlist_template.mustache", "ext": ".hpp"}
 iec61970_template = {"filename": "cpp_iec61970_template.mustache", "ext": ".hpp"}
 
-partials = {
-    "label_without_keyword": "{{#lang_pack.label_without_keyword}}{{label}}{{/lang_pack.label_without_keyword}}",
-    "set_default": "{{#lang_pack.set_default}}{{datatype}}{{/lang_pack.set_default}}",
-}
+partials = {}
 
 
 def get_base_class() -> str:
@@ -78,9 +74,11 @@ def run_template(output_path: str, class_details: dict) -> None:
 
     # Add some attribute infos
     for attribute in class_details["attributes"]:
-        attribute["attribute_is_primitive_string"] = _attribute_is_primitive_string(attribute) and "true" or ""
+        attribute["is_primitive_string"] = _attribute_is_primitive_string(attribute) and "true" or ""
         if "inverse_role" in attribute:
             attribute["inverse_role_name"] = attribute["inverse_role"].replace(".", "_")
+        attribute["variable_name"] = _variable_name(attribute["label"], class_details["class_name"])
+        attribute["default_value"] = _default_value(attribute)
 
     if class_details["is_a_datatype_class"] or class_details["class_name"] in ("Float", "Decimal"):
         templates = float_template_files
@@ -129,16 +127,18 @@ def _create_cgmes_profile(output_path: Path, profile_details: list[dict]) -> Non
         _write_templated_file(class_file, class_details, template_info["filename"])
 
 
-# This function just allows us to avoid declaring a variable called 'switch',
-# which is in the definition of the ExcBBC class.
-def label_without_keyword(text: str, render: Callable[[str], str]) -> str:
-    label = render(text)
-    return _get_label_without_keyword(label)
+def _variable_name(label: str, class_name: str) -> str:
+    """Get the name of the label used as variable name.
 
+    Some label names are not allowed as name of a variable.
+    Prevent collision of label and class_name (e.g. AvailabilitySchedule in profile AvailabilitySchedule).
 
-def _get_label_without_keyword(label: str) -> str:
-    if label == "switch":
-        return "_switch"
+    :param label:       Original label
+    :param class_name:  Original class name
+    :return:            Variable name
+    """
+    if label == "switch" or label == class_name:
+        label = "_" + label
     return label
 
 
@@ -169,30 +169,31 @@ def _get_attribute_class_declarations(attributes: list[dict]) -> list[str]:
     return list(sorted(class_set))
 
 
-def set_default(text: str, render: Callable[[str], str]) -> str:
-    result = render(text)
-    return _set_default(result)
+def _default_value(attribute: dict) -> str:
+    """Get the default value of the attribute.
 
-
-def _set_default(datatype: str) -> str:
-    # the field {{datatype}} either contains the multiplicity of an attribute if it is a reference or otherwise the
-    # datatype of the attribute. If no datatype is set and there is also no multiplicity entry for an attribute, the
-    # default value is set to None. The multiplicity is set for all attributes, but the datatype is only set for basic
-    # data types. If the data type entry for an attribute is missing, the attribute contains a reference and therefore
-    # the default value is either None or [] depending on the multiplicity. See also _write_files in cimgen.py.
-    if datatype in ["M:1", "M:0..1", "M:1..1", "M:0..n", "M:1..n", ""] or "M:" in datatype:
-        return "0"
-    datatype = datatype.split("#")[1]
-    if datatype in ["integer", "Integer"]:
-        return "0"
-    elif datatype in ["String", "DateTime", "Date"]:
-        return "''"
-    elif datatype == "Boolean":
-        return "false"
-    elif datatype == "Float":
-        return "0.0"
-    else:
+    :param attribute:  Dictionary with information about an attribute of a class.
+    :return:           Default value
+    """
+    if attribute["attribute_class"] in ("MonthDay", "Status", "StreetAddress", "StreetDetail", "TownDetail"):
         return "nullptr"
+    if attribute["is_datatype_attribute"]:
+        return "nullptr"
+    if attribute["is_enum_attribute"]:
+        return "0"
+    if attribute["is_class_attribute"]:
+        return "0"
+    if attribute["is_list_attribute"]:
+        return "0"
+    # primitive attribute
+    if attribute["attribute_class"] == "Integer":
+        return "0"
+    if attribute["attribute_class"] == "Boolean":
+        return "false"
+    if attribute["attribute_class"] in ("Float", "Decimal"):
+        return "0.0"
+    # primitive string attribute
+    return "''"
 
 
 def _attribute_is_primitive_or_datatype_or_enum(attribute: dict) -> bool:
@@ -200,6 +201,11 @@ def _attribute_is_primitive_or_datatype_or_enum(attribute: dict) -> bool:
 
 
 def _attribute_is_primitive_string(attribute: dict) -> bool:
+    """Check if the attribute is a primitive attribute that is used like a string (Date, MonthDay etc).
+
+    :param attribute: Dictionary with information about an attribute.
+    :return:          Attribute is a primitive string?
+    """
     return attribute["is_primitive_attribute"] and (
         attribute["attribute_class"] not in ("Float", "Decimal", "Integer", "Boolean")
     )

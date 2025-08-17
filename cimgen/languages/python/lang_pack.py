@@ -3,7 +3,6 @@ import chevron
 import logging
 import glob
 from importlib.resources import files
-from typing import Callable
 
 logger = logging.getLogger(__name__)
 
@@ -32,32 +31,6 @@ profile_template_file = {"filename": "cimpy_profile_template.mustache", "ext": "
 partials = {}
 
 
-# called by chevron, text contains the label {{datatype}}, which is evaluated by the renderer (see class template)
-def _set_default(text: str, render: Callable[[str], str]) -> str:
-    result = render(text)
-
-    # the field {{datatype}} either contains the multiplicity of an attribute if it is a reference or otherwise the
-    # datatype of the attribute. If no datatype is set and there is also no multiplicity entry for an attribute, the
-    # default value is set to None. The multiplicity is set for all attributes, but the datatype is only set for basic
-    # data types. If the data type entry for an attribute is missing, the attribute contains a reference and therefore
-    # the default value is either None or [] depending on the multiplicity. See also write_python_files
-    if result in ["M:1", "M:0..1", "M:1..1", ""]:
-        return "None"
-    elif result in ["M:0..n", "M:1..n"] or "M:" in result:
-        return '"list"'
-
-    result = result.split("#")[1]
-    if result in ["integer", "Integer"]:
-        return "0"
-    elif result in ["String", "DateTime", "Date"]:
-        return "''"
-    elif result == "Boolean":
-        return "False"
-    else:
-        # everything else should be a float
-        return "0.0"
-
-
 def get_base_class() -> str:
     return "Base"
 
@@ -70,6 +43,11 @@ def get_class_location(class_name: str, class_map: dict, version: str) -> str:
 
 
 def run_template(output_path: str, class_details: dict) -> None:
+
+    # Add some attribute infos
+    for attribute in class_details["attributes"]:
+        attribute["default_value"] = _default_value(attribute)
+
     if class_details["class_name"] == "String":
         return
     class_file = os.path.join(output_path, class_details["class_name"] + class_template_file["ext"])
@@ -78,7 +56,6 @@ def run_template(output_path: str, class_details: dict) -> None:
 
 def _write_templated_file(class_file: str, class_details: dict, template_filename: str) -> None:
     with open(class_file, "w", encoding="utf-8") as file:
-        class_details["set_default"] = _set_default
         templates = files("cimgen.languages.python.templates")
         with templates.joinpath(template_filename).open(encoding="utf-8") as f:
             args = {
@@ -117,6 +94,33 @@ def _create_cgmes_profile(output_path: str, profile_details: list[dict]) -> None
     class_file = os.path.join(output_path, "CGMESProfile" + profile_template_file["ext"])
     class_details = {"profiles": profile_details}
     _write_templated_file(class_file, class_details, profile_template_file["filename"])
+
+
+def _default_value(attribute: dict) -> str:
+    """Get the default value of the attribute.
+
+    :param attribute:  Dictionary with information about an attribute of a class.
+    :return:           Default value
+    """
+    if attribute["attribute_class"] in ("MonthDay", "Status", "StreetAddress", "StreetDetail", "TownDetail"):
+        return "0.0"
+    if attribute["is_datatype_attribute"]:
+        return "0.0"
+    if attribute["is_enum_attribute"]:
+        return "None"
+    if attribute["is_class_attribute"]:
+        return "None"
+    if attribute["is_list_attribute"]:
+        return '"list"'
+    # primitive attribute
+    if attribute["attribute_class"] == "Integer":
+        return "0"
+    if attribute["attribute_class"] == "Boolean":
+        return "False"
+    if attribute["attribute_class"] in ("Float", "Decimal"):
+        return "0.0"
+    # primitive string attribute
+    return "''"
 
 
 class_blacklist = ["CGMESProfile", "CimConstants"]
