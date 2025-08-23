@@ -23,8 +23,8 @@ class {{class_name}}({{subclass_of}}):
     """
 
     {{#attributes}}
-    {{label}}: {{#set_type}}{{.}}{{/set_type}} = Field(
-        {{#set_default}}{{.}}{{/set_default}},
+    {{label}}: {{python_type}} = Field(
+        {{{default_value}}},
         json_schema_extra={
             "in_profiles": [
                 {{#attr_origin}}

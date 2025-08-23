@@ -509,15 +509,6 @@ def _write_files(class_details: dict, output_path: str) -> None:
         # If class is a subclass a super().__init__() is needed
         class_details["super_init"] = True
 
-    # The entry datatype for an attribute is only set for basic data types. If the entry is not set here, the attribute
-    # is a reference to another class and therefore the entry datatype is generated and set to the multiplicity
-    for i in range(len(class_details["attributes"])):
-        if (
-            "datatype" not in class_details["attributes"][i].keys()
-            and "multiplicity" in class_details["attributes"][i].keys()
-        ):
-            class_details["attributes"][i]["datatype"] = class_details["attributes"][i]["multiplicity"]
-
     class_details["lang_pack"].run_template(output_path, class_details)
 
 
