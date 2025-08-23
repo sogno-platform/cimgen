@@ -46,8 +46,8 @@ class {{class_name}} extends {{subclass_of}} {
         return attributeEntries;
     }
 
-    static possibleProfileList = {'class': [{{#class_origin}}CGMESProfile.shortNames.{{origin}}, {{/class_origin}}],
-						{{#attributes}}'{{label}}': [{{#attr_origin}}CGMESProfile.shortNames.{{origin}}, {{/attr_origin}}],
+    static possibleProfileList = {'class': [{{#class_origin}}CGMESProfile.shortNames.{{.}}, {{/class_origin}}],
+						{{#attributes}}'{{label}}': [{{#attr_origin}}CGMESProfile.shortNames.{{.}}, {{/attr_origin}}],
 						{{/attributes}} }
 
     static isMemberAttribute(attribute) {

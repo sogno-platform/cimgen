@@ -199,7 +199,7 @@ class CIMComponentDefinition:
         self.attribute_list: list[dict] = []
         self.comment: str = rdfs_entry.comment()
         self.enum_instance_list: list[dict] = []
-        self.origin_list: list[dict] = []
+        self.origin_list: list[str] = []
         self.superclass: str = rdfs_entry.subclass_of()
         self.superclass_list: list[str] = []
         self.subclass_list: list[str] = []
@@ -223,10 +223,10 @@ class CIMComponentDefinition:
         instance["index"] = len(self.enum_instance_list)
         self.enum_instance_list.append(instance)
 
-    def origins(self) -> list[dict]:
+    def origins(self) -> list[str]:
         return self.origin_list
 
-    def add_origin(self, origin: dict) -> None:
+    def add_origin(self, origin: str) -> None:
         self.origin_list.append(origin)
 
     def subclass_of(self) -> str:
@@ -289,9 +289,12 @@ def _rdfs_entry_types(rdfs_entry: RDFSEntry, version: str) -> list[str]:
     if rdfs_entry.type():
         if rdfs_entry.type() == "http://www.w3.org/2000/01/rdf-schema#Class":  # NOSONAR
             entry_types.append("class")
-        if rdfs_entry.type() == "http://www.w3.org/1999/02/22-rdf-syntax-ns#Property":  # NOSONAR
+        elif rdfs_entry.type() == "http://www.w3.org/1999/02/22-rdf-syntax-ns#Property":  # NOSONAR
             entry_types.append("property")
-        if rdfs_entry.type() != "http://iec.ch/TC57/1999/rdf-schema-extensions-19990926#ClassCategory":  # NOSONAR
+        elif rdfs_entry.type() not in (
+            "http://iec.ch/TC57/1999/rdf-schema-extensions-19990926#ClassCategory",  # NOSONAR
+            "http://www.w3.org/2002/07/owl#Ontology",  # NOSONAR
+        ):
             entry_types.append("rest_non_class_category")
 
     if version == "cgmes_v2_4_13" or version == "cgmes_v2_4_15":
@@ -339,7 +342,7 @@ def _add_class(classes_map: dict[str, CIMComponentDefinition], rdfs_entry: RDFSE
     if rdfs_entry.namespace() == all_namespaces.get("dm"):
         return
     if rdfs_entry.label() in classes_map:
-        logger.error("Class {} already exists".format(rdfs_entry.label()))
+        logger.error(f"Class {rdfs_entry.label()} already exists.")
     classes_map[rdfs_entry.label()] = CIMComponentDefinition(rdfs_entry)
 
 
@@ -407,7 +410,7 @@ def _parse_rdf(input_dic: dict, version: str) -> dict[str, dict[str, CIMComponen
         if clarse and clarse in classes_map:
             classes_map[clarse].add_enum_instance(instance)
         else:
-            logger.info("Class {} for enum instance {} not found.".format(clarse, instance))
+            logger.error(f"Class '{clarse}' for enum instance {instance} not found.")
 
     return {short_profile_name: classes_map}
 
@@ -430,7 +433,7 @@ def _write_all_files(
             "attributes": elem_dict[class_name].attributes(),
             "class_location": lang_pack.get_class_location(class_name, elem_dict, version),
             "class_name": class_name,
-            "class_origin": elem_dict[class_name].origins(),
+            "class_origin": _get_sorted_profile_keys(elem_dict[class_name].origins()),
             "class_namespace": _get_namespace(elem_dict[class_name].namespace),
             "enum_instances": elem_dict[class_name].enum_instances(),
             "is_an_enum_class": elem_dict[class_name].is_an_enum_class(),
@@ -479,6 +482,8 @@ def _write_all_files(
             attribute["is_attribute_with_inverse_list"] = _get_bool_string(
                 _is_attribute_with_inverse_list(attribute, elem_dict)
             )
+            attribute["attr_origin"] = _get_sorted_profile_keys(attribute["attr_origin"])
+            _check_inverse_role(attribute, elem_dict)
 
         class_details["attributes"].sort(key=lambda d: d["label"])
         _write_files(class_details, output_path)
@@ -516,71 +521,78 @@ def _write_files(class_details: dict, output_path: str) -> None:
     class_details["lang_pack"].run_template(output_path, class_details)
 
 
-# If multiple CGMES schema files for one profile are read, e.g. Equipment Core and Equipment Core Short Circuit
-# this function merges these into one profile, e.g. Equipment, after this function only one dictionary entry for each
-# profile exists. The profiles_array contains one entry for each CGMES schema file which was read.
-def _merge_profiles(
+def _merge_profiles_and_classes(
     profiles_array: list[dict[str, dict[str, CIMComponentDefinition]]]
-) -> dict[str, dict[str, CIMComponentDefinition]]:
-    profiles_dict: dict[str, dict[str, CIMComponentDefinition]] = {}
+) -> dict[str, CIMComponentDefinition]:
+    """Merge class infos of all profiles.
+
+    This function merges the classes defined in more than one profile file into one class
+    with all attributes defined in any profile.
+    The origin of the class definitions and the origin of the attributes of a class are tracked
+    and used to generate the possible profile list used for the serialization.
+
+    :param profiles_array: List of profiles containing class infos.
+    :return:               Map of class name to class info.
+    """
+    class_dict: dict[str, CIMComponentDefinition] = {}
     # Iterate through array elements
     for elem_dict in profiles_array:
         # Iterate over profile names
-        for profile_key, new_class_dict in elem_dict.items():
-            class_dict = profiles_dict.setdefault(profile_key, {})
+        for origin, new_class_dict in elem_dict.items():
             # Iterate over classes and check for multiple class definitions
             for class_key, new_class_infos in new_class_dict.items():
                 if class_key in class_dict:
-                    class_infos = class_dict[class_key]
-                    for new_attr in new_class_infos.attributes():
-                        # Iterate over attributes and check for multiple attribute definitions
-                        for attr in class_infos.attributes():
-                            if new_attr["label"] == attr["label"]:
-                                break
-                        else:
-                            class_infos.add_attribute(new_attr)
+                    _merge_class_infos(class_dict[class_key], new_class_infos, origin)
                 else:
+                    # store new class and origin
+                    new_class_infos.add_origin(origin)
+                    for attr in new_class_infos.attributes():
+                        attr["attr_origin"] = [origin]
                     class_dict[class_key] = new_class_infos
-    return profiles_dict
-
-
-# This function merges the classes defined in all profiles into one class with all attributes defined in any profile.
-# The origin of the class definitions and the origin of the attributes of a class are tracked and used to generate
-# the possibleProfileList used for the serialization.
-def _merge_classes(profiles_dict: dict[str, dict[str, CIMComponentDefinition]]) -> dict[str, CIMComponentDefinition]:
-    class_dict: dict[str, CIMComponentDefinition] = {}
-    # Iterate over profiles
-    for profile_key, new_class_dict in profiles_dict.items():
-        origin = {"origin": profile_key}
-        # iterate over classes in the current profile
-        for class_key, new_class_infos in new_class_dict.items():
-            if class_key in class_dict:
-                class_infos = class_dict[class_key]
-                # some inheritance information is stored only in one of the packages. Therefore it has to be checked
-                # if the subclass_of attribute is set. See for example TopologicalNode definitions in SV and TP.
-                if not class_infos.subclass_of():
-                    class_infos.set_subclass_of(new_class_infos.subclass_of())
-                if origin not in class_infos.origins():
-                    class_infos.add_origin(origin)
-                for new_attr in new_class_infos.attributes():
-                    for attr in class_infos.attributes():
-                        if attr["label"] == new_attr["label"]:
-                            # attribute already in attributes list, check if origin is new
-                            origin_list = attr["attr_origin"]
-                            if origin not in origin_list:
-                                origin_list.append(origin)
-                            break
-                    else:
-                        # new attribute
-                        new_attr["attr_origin"] = [origin]
-                        class_infos.add_attribute(new_attr)
-            else:
-                # store new class and origin
-                new_class_infos.add_origin(origin)
-                for attr in new_class_infos.attributes():
-                    attr["attr_origin"] = [origin]
-                class_dict[class_key] = new_class_infos
     return class_dict
+
+
+def _merge_class_infos(
+    class_infos: CIMComponentDefinition, new_class_infos: CIMComponentDefinition, origin: str
+) -> None:
+    """Merge infos of a class with class infos from another profile file.
+
+    Some information is missing in one of the profile files (e.g. comment), i.e.
+    if the information is missing in class_infos it is taken from new_class_infos.
+    The merged results are written to class_infos.
+
+    :param class_infos:     Information about a class.
+    :param new_class_infos: Information about a class from another profile file.
+    """
+    # some inheritance information is stored only in one of the packages. Therefore it has to be checked
+    # if the subclass_of attribute is set. See for example TopologicalNode definitions in SV and TP.
+    if not class_infos.subclass_of():
+        class_infos.set_subclass_of(new_class_infos.subclass_of())
+    if not class_infos.comment:
+        class_infos.comment = new_class_infos.comment
+    if origin not in class_infos.origins():
+        class_infos.add_origin(origin)
+    _check_merge_class(class_infos, new_class_infos)
+    for new_attr in new_class_infos.attributes():
+        for attr in class_infos.attributes():
+            if attr["label"] == new_attr["label"]:
+                # attribute already in attributes list, check if origin is new
+                origin_list = attr["attr_origin"]
+                if origin not in origin_list:
+                    origin_list.append(origin)
+                _check_merge_attribute(class_infos.about, attr, new_attr)
+                break
+        else:
+            # new attribute
+            new_attr["attr_origin"] = [origin]
+            class_infos.add_attribute(new_attr)
+    for new_enum in new_class_infos.enum_instances():
+        for enum in class_infos.enum_instances():
+            if new_enum["label"] == enum["label"]:
+                _check_merge_enum(class_infos.about, enum, new_enum)
+                break
+        else:
+            class_infos.add_enum_instance(new_enum)
 
 
 def _add_superclasses_of_superclasses(class_dict: dict[str, CIMComponentDefinition]) -> None:
@@ -642,7 +654,7 @@ def cim_generate(directory: Path, output_path: str, version: str, lang_pack: Mod
 
     # Iterate over RDF files: first in the main directory, than in subdirectories
     for file in sorted(directory.glob("*.rdf")) + sorted(directory.glob("*/**/*.rdf")):
-        logger.info('Start of parsing file "%s"', file)
+        logger.info(f"Start of parsing file '{file}'.")
 
         xmlstring = file.read_text(encoding="utf-8")
 
@@ -651,11 +663,8 @@ def cim_generate(directory: Path, output_path: str, version: str, lang_pack: Mod
         parsed = _parse_rdf(parse_result, version)
         profiles_array.append(parsed)
 
-    # merge multiple profile definitions into one profile
-    profiles_dict = _merge_profiles(profiles_array)
-
     # merge classes from different profiles into one class and track origin of the classes and their attributes
-    class_dict_with_origins = _merge_classes(profiles_dict)
+    class_dict_with_origins = _merge_profiles_and_classes(profiles_array)
 
     # recursively add the superclasses of superclasses and the subclasses of subclasses
     _add_superclasses_of_superclasses(class_dict_with_origins)
@@ -666,7 +675,7 @@ def cim_generate(directory: Path, output_path: str, version: str, lang_pack: Mod
 
     lang_pack.resolve_headers(output_path, version)
 
-    logger.info("Elapsed Time: {}s\n\n".format(time() - t0))
+    logger.info(f"Elapsed Time: {time() - t0}s")
 
 
 def _get_profile_details(cgmes_profile_uris: dict[str, list[str]]) -> list[dict]:
@@ -692,7 +701,7 @@ def _get_sorted_profile_keys(profile_key_list: list[str]) -> list[str]:
     :param profile_key_list: List of short profile names.
     :return:                 Sorted list of short profile names.
     """
-    return sorted(profile_key_list, key=lambda x: x == "EQ" and "0" or x)
+    return sorted(profile_key_list, key=lambda p: "0" if p == "EQ" else p)
 
 
 def _get_recommended_class_profiles(elem_dict: dict[str, CIMComponentDefinition]) -> dict[str, str]:
@@ -713,8 +722,7 @@ def _get_recommended_class_profiles(elem_dict: dict[str, CIMComponentDefinition]
     """
     recommended_class_profiles: dict[str, str] = {}
     for class_name in elem_dict.keys():
-        class_origin = elem_dict[class_name].origins()
-        class_profiles = [origin["origin"] for origin in class_origin]
+        class_profiles = elem_dict[class_name].origins()
         if len(class_profiles) == 1:
             recommended_class_profiles[class_name] = class_profiles[0]
             continue
@@ -724,7 +732,7 @@ def _get_recommended_class_profiles(elem_dict: dict[str, CIMComponentDefinition]
         name = class_name
         while name:
             for attribute in elem_dict[name].attributes():
-                profiles = [origin["origin"] for origin in attribute["attr_origin"]]
+                profiles = attribute["attr_origin"]
                 ambiguous_profile = len(profiles) > 1
                 for profile in profiles:
                     # Use condition attribute["is_used"]? For CGMES 2.4.13/2.4.15/3.0.0 the results wouldn't change!
@@ -892,3 +900,98 @@ def _check_attribute_for_class(classes_map: dict[str, CIMComponentDefinition], a
         return False
     logger.error(f"Class '{domain}' for attribute '{about}' not found.")
     return False
+
+
+def _check_inverse_role(attribute: dict, elem_dict: dict[str, CIMComponentDefinition]) -> bool:
+    """Check if exactly one side of attribute and inverse role is used.
+
+    :param attribute: Dictionary with information about an attribute of a class.
+    :param elem_dict: Information about all classes.
+    :return:          Is the attribute and inverse role okay?
+    """
+    ok = True
+    about = attribute["about"]
+    if "inverse_role" in attribute:
+        inverse_role = attribute["inverse_role"]
+        inverse_class, inverse_label = inverse_role.split(".")
+        for inverse_attribute in elem_dict[inverse_class].attributes():
+            if inverse_attribute["label"] == inverse_label:
+                if attribute["is_used"] and inverse_attribute["is_used"]:
+                    logger.warning(f"Both sides used for attribute '{about}' with inverse role '{inverse_role}'.")
+                    ok = False
+                elif not attribute["is_used"] and not inverse_attribute["is_used"]:
+                    logger.error(f"No side used for attribute '{about}' with inverse role '{inverse_role}'.")
+                    ok = False
+                inverse_inverse_role = inverse_attribute.get("inverse_role", "")
+                if inverse_inverse_role != about:
+                    logger.error(
+                        f"Wrong inverse role of inverse role for attribute '{about}': '{inverse_inverse_role}'."
+                    )
+                    ok = False
+    elif not attribute["is_used"]:
+        logger.error(f"Attribute '{about}' not used, but has no inverse role.")
+        ok = False
+    return ok
+
+
+def _check_merge_class(class_infos: CIMComponentDefinition, new_class_infos: CIMComponentDefinition) -> None:
+    """Check if there are differences after merging class infos.
+
+    :param class_infos:     Information about a class.
+    :param new_class_infos: Merged information about a class.
+    """
+    if class_infos.superclass != new_class_infos.superclass and new_class_infos.superclass:
+        logger.error(
+            "Different superclass for class"
+            + f" '{class_infos.about}': '{class_infos.superclass}' != '{new_class_infos.superclass}'."
+        )
+    if _get_namespace(class_infos.namespace) != _get_namespace(new_class_infos.namespace):
+        logger.error(
+            "Different namespace for class"
+            + f" '{class_infos.about}': '{class_infos.namespace}' != '{new_class_infos.namespace}'."
+        )
+    if class_infos.comment != new_class_infos.comment and new_class_infos.comment:
+        logger.warning(
+            "Different comment for class"
+            + f" '{class_infos.about}': '{class_infos.comment}' != '{new_class_infos.comment}'."
+        )
+    if (
+        class_infos.is_a_primitive_class() != new_class_infos.is_a_primitive_class()
+        or class_infos.is_a_datatype_class() != new_class_infos.is_a_datatype_class()
+    ):
+        logger.warning(
+            "Different stereotype for class"
+            + f" '{class_infos.about}': '{class_infos.stereotype}' != '{new_class_infos.stereotype}'."
+        )
+
+
+def _check_merge_attribute(class_name: str, attr: dict, new_attr: dict) -> None:
+    """Check if there are differences after merging attribute infos.
+
+    :param class_name: Name of the class.
+    :param attr:       Dictionary with information about an attribute.
+    :param new_attr:   Merged dictionary with information about an attribute.
+    """
+    name = attr["label"]
+    for k, v in attr.items():
+        if k in ("attr_origin", "stereotype"):
+            continue
+        v_new = new_attr.get(k)
+        if v != v_new:
+            logger.warning(f"Different {k} for attribute '{name}' of class '{class_name}': '{v}' != '{v_new}'.")
+
+
+def _check_merge_enum(class_name: str, enum: dict, new_enum: dict) -> None:
+    """Check if there are differences after merging enum value infos.
+
+    :param class_name: Name of the class.
+    :param enum:       Dictionary with information about an enum value.
+    :param new_enum:   Merged dictionary with information about an enum value.
+    """
+    name = enum["label"]
+    for k, v in enum.items():
+        if k == "index":
+            continue
+        v_new = new_enum.get(k)
+        if v != v_new:
+            logger.warning(f"Different {k} for enum '{name}' of class '{class_name}': '{v}' != '{v_new}'.")

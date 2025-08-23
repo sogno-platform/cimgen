@@ -12,9 +12,9 @@ class {{class_name}}({{subclass_of}}):
     """
 
     possibleProfileList = {
-        "class": [{{#class_origin}}Profile.{{origin}}.value, {{/class_origin}}],
+        "class": [{{#class_origin}}Profile.{{.}}.value, {{/class_origin}}],
 {{#attributes}}
-        "{{label}}": [{{#attr_origin}}Profile.{{origin}}.value, {{/attr_origin}}],
+        "{{label}}": [{{#attr_origin}}Profile.{{.}}.value, {{/attr_origin}}],
 {{/attributes}}
     }
 

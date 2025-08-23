@@ -10,7 +10,7 @@ from ..utils.profile import Profile
     name="{{class_name}}",
     type={{python_type}},
     profiles=[{{#class_origin}}
-        Profile.{{origin}},{{/class_origin}}
+        Profile.{{.}},{{/class_origin}}
     ],
 )
 

@@ -407,7 +407,7 @@ public class {{class_name}} extends {{subclass_of}} {
         {
             Set<CGMESProfile> profiles = new LinkedHashSet<>();
 {{#attr_origin}}
-            profiles.add(CGMESProfile.{{origin}});
+            profiles.add(CGMESProfile.{{.}});
 {{/attr_origin}}
 {{#is_primitive_attribute}}
             map.put("{{label}}", new AttrDetails("{{class_name}}.{{label}}", true, "{{attribute_namespace}}", profiles, true, false, {{class_name}}::{{getter_name}}, {{class_name}}::{{setter_name}}));
@@ -445,7 +445,7 @@ public class {{class_name}} extends {{subclass_of}} {
     static {
         Set<CGMESProfile> profiles = new LinkedHashSet<>();
 {{#class_origin}}
-        profiles.add(CGMESProfile.{{origin}});
+        profiles.add(CGMESProfile.{{.}});
 {{/class_origin}}
         POSSIBLE_PROFILES = Collections.unmodifiableSet(profiles);
     }
