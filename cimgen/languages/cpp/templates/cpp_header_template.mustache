@@ -34,7 +34,7 @@ namespace CIMPP
 		~{{class_name}}() override;
 {{#attributes}}
 
-		/** \brief {{comment}} Default: {{{default_value}}} */
+		/** \brief {{{comment}}} Default: {{{default_value}}} */
 {{#is_primitive_attribute}}
 		CIMPP::{{attribute_class}} {{variable_name}};
 {{/is_primitive_attribute}}
