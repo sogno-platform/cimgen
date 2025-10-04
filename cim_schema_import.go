@@ -1,11 +1,13 @@
-package main
+package cimgen
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"html/template"
 	"io"
+	"os"
 	"sort"
 	"strings"
 )
@@ -479,7 +481,7 @@ func contains(slice []string, str string) bool {
 	return false
 }
 
-func newCIMSpecification() *CIMSpecification {
+func NewCIMSpecification() *CIMSpecification {
 	return &CIMSpecification{
 		Types:      make(map[string]*CIMType, 0),
 		Enums:      make(map[string]*CIMEnum, 0),
@@ -580,4 +582,22 @@ func (cimSpec *CIMSpecification) printSpecification(w io.Writer) {
 	}
 	w.Write(jsonb)
 	fmt.Fprint(w, "\n")
+}
+
+func (cimSpec *CIMSpecification) ImportCIMSchemaFiles(entries []string) {
+	for _, entry := range entries {
+		b, err := os.ReadFile(entry)
+		if err != nil {
+			panic(err)
+		}
+
+		resultMap, err := DecodeToMap(bytes.NewReader(b))
+		if err != nil {
+			panic(err)
+		}
+
+		cimSpec.addRDFMap(resultMap)
+	}
+
+	cimSpec.postprocess()
 }

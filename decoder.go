@@ -1,11 +1,11 @@
-package main
+package cimgen
 
 import (
 	"encoding/xml"
 	"errors"
 	"io"
-	"log/slog"
 	"strings"
+	// "log/slog" // Removed to avoid import cycle
 )
 
 const (
@@ -42,7 +42,7 @@ func DecodeToMap(r io.Reader) (map[string]interface{}, error) {
 		}
 
 		if err == io.EOF {
-			slog.Debug("Reached end of file")
+			// slog.Debug("Reached end of file")
 			return n.Value, nil
 		}
 
@@ -61,7 +61,7 @@ func DecodeToMap(r io.Reader) (map[string]interface{}, error) {
 
 		case xml.CharData:
 			if str := strings.TrimSpace(string(t)); len(str) > 0 {
-				slog.Debug("Found", "CharData", str)
+				// slog.Debug("Found", "CharData", str)
 
 				if len(stack) > 0 {
 					stack[len(stack)-1].Text = str
@@ -70,11 +70,11 @@ func DecodeToMap(r io.Reader) (map[string]interface{}, error) {
 				}
 			}
 		case xml.Comment:
-			slog.Debug("Found", "Comment", string(t))
+			// slog.Debug("Found", "Comment", string(t))
 		case xml.Directive:
-			slog.Debug("Found", "Directive", string(t))
+			// slog.Debug("Found", "Directive", string(t))
 		case xml.ProcInst:
-			slog.Debug("Found", "ProcInst target", t.Target, "ProcInst inst", string(t.Inst))
+			// slog.Debug("Found", "ProcInst target", t.Target, "ProcInst inst", string(t.Inst))
 		}
 	}
 }
@@ -84,14 +84,13 @@ func processStartElement(tok *xml.StartElement, n **node, stack *[]*node) {
 	labelParts := strings.Split(tok.Name.Local, ".")
 	labelEnd := labelParts[len(labelParts)-1]
 	spacedLabel := tok.Name.Space + ":" + labelEnd
+	// slog.Debug("Found", "StartElement", spacedLabel)
 
-	slog.Debug("Found", "StartElement", spacedLabel)
-
-	if len(tok.Attr) > 0 {
-		for _, attr := range tok.Attr {
-			slog.Debug("Found", "attributeName", attr.Name.Local, "attributeValue", attr.Value)
-		}
-	}
+	// if len(tok.Attr) > 0 {
+	// 	for _, attr := range tok.Attr {
+	// 		slog.Debug("Found", "attributeName", attr.Name.Local, "attributeValue", attr.Value)
+	// 	}
+	// }
 
 	*n = &node{
 		Label:  spacedLabel,
@@ -111,16 +110,15 @@ func processStartElement(tok *xml.StartElement, n **node, stack *[]*node) {
 
 func processEndElement(tok *xml.EndElement, stack *[]*node) (n *node) {
 	// remove parent classes introduced by CIM class hierarchy
-	labelParts := strings.Split(tok.Name.Local, ".")
-	labelEnd := labelParts[len(labelParts)-1]
-	spacedLabel := tok.Name.Space + ":" + labelEnd
-
-	slog.Debug("Found", "EndElement", spacedLabel)
+	// labelParts := strings.Split(tok.Name.Local, ".")
+	// labelEnd := labelParts[len(labelParts)-1]
+	// spacedLabel := tok.Name.Space + ":" + labelEnd
+	// slog.Debug("Found", "EndElement", spacedLabel)
 
 	length := len(*stack)
 	*stack, n = (*stack)[:length-1], (*stack)[length-1]
 
-	// NOTE: mixed content is not supported!
+	// NOTE: mixed XML content is not supported!
 	if !n.HasElements && n.Text != "" {
 		if len(n.Attrs) > 0 {
 			m := n.Value[n.Label].(map[string]interface{})

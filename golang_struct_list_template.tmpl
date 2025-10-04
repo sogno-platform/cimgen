@@ -1,0 +1,9 @@
+package cimgo
+
+var structMap = map[string]func() interface{}{
+{{- range .Types}}
+    "{{.Id}}": func() interface{} {
+        return &{{.Id}}{}
+    },
+{{- end}}
+}

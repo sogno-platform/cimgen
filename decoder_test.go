@@ -1,27 +1,22 @@
-package main
+package cimgen
 
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"log"
-	"log/slog"
 	"os"
 	"path/filepath"
 	"testing"
 )
 
 func TestDecode(t *testing.T) {
-
-	var logLevel = new(slog.LevelVar)
-	logLevel.Set(slog.LevelInfo)
-	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: logLevel})))
+	t.Log("Start XML decoder test")
 
 	entries, err := filepath.Glob("cgmes_schema/CGMES_3.0.0/IEC61970-600-2_CGMES_3_0_0_RDFS2020_TP.rdf")
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("Read files:", entries)
+	t.Log("Read files:", entries)
 
 	for _, entry := range entries {
 
@@ -41,7 +36,7 @@ func TestDecode(t *testing.T) {
 		}
 
 		output := "decoder_test.log"
-		fmt.Println("Write map to file:", output)
+		t.Log("Write map to file:", output)
 		err = os.WriteFile(output, jsonb, 0644)
 		if err != nil {
 			panic(err)
