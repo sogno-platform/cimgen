@@ -1,7 +1,7 @@
-from .{{.SuperType}} import {{.SuperType}}
+{{if .SuperType}}from .{{.SuperType}} import {{.SuperType}}{{else}}from .Base import Base{{end}}
 from .CGMESProfile import Profile
 
-class {{.Id}}({{.SuperType}}):
+class {{.Id}}({{if .SuperType}}{{.SuperType}}{{else}}Base{{end}}):
     """
 {{- if .Comment}}
     {{.Comment}}
