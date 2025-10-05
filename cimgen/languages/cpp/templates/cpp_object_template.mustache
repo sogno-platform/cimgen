@@ -85,12 +85,12 @@ bool assign_{{domain}}_{{label}}(std::stringstream& buffer, BaseClass* BaseClass
 	{{domain}}* element = dynamic_cast<{{domain}}*>(BaseClass_ptr1);
 	if (element != nullptr)
 	{
-{{#attribute_is_primitive_string}}
-		element->{{> label_without_keyword}} = buffer.str();
-{{/attribute_is_primitive_string}}
-{{^attribute_is_primitive_string}}
-		buffer >> element->{{> label_without_keyword}};
-{{/attribute_is_primitive_string}}
+{{#is_primitive_string}}
+		element->{{variable_name}} = buffer.str();
+{{/is_primitive_string}}
+{{^is_primitive_string}}
+		buffer >> element->{{variable_name}};
+{{/is_primitive_string}}
 		if (!buffer.fail())
 		{
 			return true;
@@ -105,7 +105,7 @@ bool assign_{{domain}}_{{label}}(std::stringstream& buffer, BaseClass* BaseClass
 	{{domain}}* element = dynamic_cast<{{domain}}*>(BaseClass_ptr1);
 	if (element != nullptr)
 	{
-		buffer >> element->{{label}};
+		buffer >> element->{{variable_name}};
 		if (!buffer.fail())
 		{
 			return true;
@@ -120,7 +120,7 @@ bool assign_{{domain}}_{{label}}(std::stringstream& buffer, BaseClass* BaseClass
 	{{domain}}* element = dynamic_cast<{{domain}}*>(BaseClass_ptr1);
 	if (element != nullptr)
 	{
-		buffer >> element->{{label}};
+		buffer >> element->{{variable_name}};
 		if (!buffer.fail())
 		{
 			return true;
@@ -138,9 +138,9 @@ bool assign_{{domain}}_{{label}}(BaseClass* BaseClass_ptr1, BaseClass* BaseClass
 	{{attribute_class}}* element2 = dynamic_cast<{{attribute_class}}*>(BaseClass_ptr2);
 	if (element != nullptr && element2 != nullptr)
 	{
-		if (element->{{label}} != element2)
+		if (element->{{variable_name}} != element2)
 		{
-			element->{{label}} = element2;
+			element->{{variable_name}} = element2;
 			return assign_{{.}}(BaseClass_ptr2, BaseClass_ptr1);
 		}
 		return true;
@@ -154,8 +154,8 @@ bool assign_{{domain}}_{{label}}(BaseClass* BaseClass_ptr1, BaseClass* BaseClass
 	{{domain}}* element = dynamic_cast<{{domain}}*>(BaseClass_ptr1);
 	if (element != nullptr)
 	{
-		element->{{label}} = dynamic_cast<{{attribute_class}}*>(BaseClass_ptr2);
-		if (element->{{label}} != nullptr)
+		element->{{variable_name}} = dynamic_cast<{{attribute_class}}*>(BaseClass_ptr2);
+		if (element->{{variable_name}} != nullptr)
 		{
 			return true;
 		}
@@ -173,9 +173,9 @@ bool assign_{{domain}}_{{label}}(BaseClass* BaseClass_ptr1, BaseClass* BaseClass
 	{{attribute_class}}* element2 = dynamic_cast<{{attribute_class}}*>(BaseClass_ptr2);
 	if (element != nullptr && element2 != nullptr)
 	{
-		if (std::find(element->{{label}}.begin(), element->{{label}}.end(), element2) == element->{{label}}.end())
+		if (std::find(element->{{variable_name}}.begin(), element->{{variable_name}}.end(), element2) == element->{{variable_name}}.end())
 		{
-			element->{{label}}.push_back(element2);
+			element->{{variable_name}}.push_back(element2);
 			return assign_{{.}}(BaseClass_ptr2, BaseClass_ptr1);
 		}
 		return true;
@@ -191,7 +191,7 @@ bool assign_{{domain}}_{{label}}(BaseClass* BaseClass_ptr1, BaseClass* BaseClass
 	{
 		if (dynamic_cast<{{attribute_class}}*>(BaseClass_ptr2) != nullptr)
 		{
-			element->{{label}}.push_back(dynamic_cast<{{attribute_class}}*>(BaseClass_ptr2));
+			element->{{variable_name}}.push_back(dynamic_cast<{{attribute_class}}*>(BaseClass_ptr2));
 			return true;
 		}
 	}
@@ -209,7 +209,7 @@ bool get_{{domain}}_{{label}}(const BaseClass* BaseClass_ptr1, std::stringstream
 	const {{domain}}* element = dynamic_cast<const {{domain}}*>(BaseClass_ptr1);
 	if (element != nullptr)
 	{
-		buffer << element->{{> label_without_keyword}};
+		buffer << element->{{variable_name}};
 		if (!buffer.str().empty())
 		{
 			return true;
@@ -225,7 +225,7 @@ bool get_{{domain}}_{{label}}(const BaseClass* BaseClass_ptr1, std::stringstream
 	const {{domain}}* element = dynamic_cast<const {{domain}}*>(BaseClass_ptr1);
 	if (element != nullptr)
 	{
-		buffer << element->{{label}};
+		buffer << element->{{variable_name}};
 		if (!buffer.str().empty())
 		{
 			return true;
@@ -241,7 +241,7 @@ bool get_{{domain}}_{{label}}(const BaseClass* BaseClass_ptr1, std::stringstream
 	const {{domain}}* element = dynamic_cast<const {{domain}}*>(BaseClass_ptr1);
 	if (element != nullptr)
 	{
-		buffer << element->{{label}};
+		buffer << element->{{variable_name}};
 		if (!buffer.str().empty())
 		{
 			return true;
@@ -257,9 +257,9 @@ bool get_{{domain}}_{{label}}(const BaseClass* BaseClass_ptr1, std::list<const B
 	const {{domain}}* element = dynamic_cast<const {{domain}}*>(BaseClass_ptr1);
 	if (element != nullptr)
 	{
-		if (element->{{label}} != 0)
+		if (element->{{variable_name}} != 0)
 		{
-			BaseClass_list.push_back(element->{{label}});
+			BaseClass_list.push_back(element->{{variable_name}});
 			return true;
 		}
 	}
@@ -272,7 +272,7 @@ bool get_{{domain}}_{{label}}(const BaseClass* BaseClass_ptr1, std::list<const B
 	const {{domain}}* element = dynamic_cast<const {{domain}}*>(BaseClass_ptr1);
 	if (element != nullptr)
 	{
-		std::copy(element->{{label}}.begin(), element->{{label}}.end(), std::back_inserter(BaseClass_list));
+		std::copy(element->{{variable_name}}.begin(), element->{{variable_name}}.end(), std::back_inserter(BaseClass_list));
 		return !BaseClass_list.empty();
 	}
 	return false;

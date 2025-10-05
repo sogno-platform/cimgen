@@ -34,21 +34,21 @@ namespace CIMPP
 		~{{class_name}}() override;
 {{#attributes}}
 
-		/** \brief {{comment}} Default: {{> set_default}} */
+		/** \brief {{{comment}}} Default: {{{default_value}}} */
 {{#is_primitive_attribute}}
-		CIMPP::{{attribute_class}} {{> label_without_keyword}};
+		CIMPP::{{attribute_class}} {{variable_name}};
 {{/is_primitive_attribute}}
 {{#is_datatype_attribute}}
-		CIMPP::{{attribute_class}} {{label}};
+		CIMPP::{{attribute_class}} {{variable_name}};
 {{/is_datatype_attribute}}
 {{#is_enum_attribute}}
-		CIMPP::{{attribute_class}} {{label}};
+		CIMPP::{{attribute_class}} {{variable_name}};
 {{/is_enum_attribute}}
 {{#is_class_attribute}}
-		CIMPP::{{attribute_class}}* {{label}};
+		CIMPP::{{attribute_class}}* {{variable_name}};
 {{/is_class_attribute}}
 {{#is_list_attribute}}
-		std::list<CIMPP::{{attribute_class}}*> {{label}};
+		std::list<CIMPP::{{attribute_class}}*> {{variable_name}};
 {{/is_list_attribute}}
 {{/attributes}}
 

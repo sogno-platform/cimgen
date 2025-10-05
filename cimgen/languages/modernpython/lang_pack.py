@@ -4,7 +4,6 @@ import re
 import shutil
 from pathlib import Path
 from importlib.resources import files
-from typing import Callable
 
 logger = logging.getLogger(__name__)
 
@@ -37,35 +36,6 @@ primitive_template_file = {"filename": "primitive_template.mustache", "ext": ".p
 datatype_template_file = {"filename": "datatype_template.mustache", "ext": ".py"}
 
 partials = {}
-
-
-# called by chevron, text contains the attribute infos, which are evaluated by the renderer (see class template)
-def _set_default(text: str, render: Callable[[str], str]) -> str:
-    return _get_type_and_default(text, render)[1]
-
-
-def _set_type(text: str, render: Callable[[str], str]) -> str:
-    return _get_type_and_default(text, render)[0]
-
-
-def _get_type_and_default(text: str, render: Callable[[str], str]) -> tuple[str, str]:
-    attribute_txt = render(text)
-    attribute_json = eval(attribute_txt)
-    if attribute_json["is_class_attribute"]:
-        return ("Optional[str]", "default=None")
-    elif attribute_json["is_list_attribute"]:
-        return ("list", "default_factory=list")
-    elif attribute_json["is_datatype_attribute"]:
-        return ("float", "default=0.0")
-    elif attribute_json["attribute_class"] in ("Float", "Decimal"):
-        return ("float", "default=0.0")
-    elif attribute_json["attribute_class"] == "Integer":
-        return ("int", "default=0")
-    elif attribute_json["attribute_class"] == "Boolean":
-        return ("bool", "default=False")
-    else:
-        # everything else should be a string
-        return ("str", 'default=""')
 
 
 def _get_python_type(datatype: str) -> str:
@@ -113,6 +83,11 @@ def get_class_location(class_name: str, class_map: dict, version: str) -> str:  
 
 
 def run_template(output_path: str, class_details: dict) -> None:
+
+    # Add some attribute infos
+    for attribute in class_details["attributes"]:
+        attribute["python_type"], attribute["default_value"] = _python_type_and_default_value(attribute)
+
     if class_details["is_a_primitive_class"]:
         # Primitives are never used in the in memory representation but only for
         # the schema
@@ -137,8 +112,6 @@ def run_template(output_path: str, class_details: dict) -> None:
                     instance["comment"] += "  # noqa: E501"
     else:
         template = class_template_file
-        class_details["set_default"] = _set_default
-        class_details["set_type"] = _set_type
     resource_file = _create_file(output_path, class_details, template)
     _write_templated_file(resource_file, class_details, template["filename"])
 
@@ -173,6 +146,31 @@ def _create_cgmes_profile(output_path: Path, profile_details: list[dict]) -> Non
     class_file = output_path / "utils" / ("profile" + profile_template_file["ext"])
     class_details = {"profiles": profile_details}
     _write_templated_file(class_file, class_details, profile_template_file["filename"])
+
+
+def _python_type_and_default_value(attribute: dict) -> tuple[str, str]:
+    """Get the python type and the default value of the attribute.
+
+    :param attribute:  Dictionary with information about an attribute of a class.
+    :return:           Tuple containing python type and default value
+    """
+    if attribute["is_datatype_attribute"]:
+        return ("float", "default=0.0")
+    if attribute["is_enum_attribute"]:
+        return ("str", 'default=""')
+    if attribute["is_class_attribute"]:
+        return ("Optional[str]", "default=None")
+    if attribute["is_list_attribute"]:
+        return ("list", "default_factory=list")
+    # primitive attribute
+    if attribute["attribute_class"] == "Integer":
+        return ("int", "default=0")
+    if attribute["attribute_class"] == "Boolean":
+        return ("bool", "default=False")
+    if attribute["attribute_class"] in ("Float", "Decimal"):
+        return ("float", "default=0.0")
+    # primitive string attribute
+    return ("str", 'default=""')
 
 
 def resolve_headers(path: str, version: str) -> None:
