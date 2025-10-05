@@ -3,10 +3,12 @@ from .CGMESProfile import Profile
 
 class {{.Id}}({{.SuperType}}):
     """
+{{- if .Comment}}
     {{.Comment}}
-    {{range .Attributes}}
-    :{{.Label}}: {{.Comment}}
-    {{- end}}
+{{end}}
+{{- range .Attributes}}
+    :{{.Label}}: {{.Comment}} Default: {{.DefaultValue}}
+{{- end}}
     """
 
     possibleProfileList = {
