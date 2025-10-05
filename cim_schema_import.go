@@ -8,6 +8,7 @@ import (
 	"html/template"
 	"io"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 )
@@ -584,7 +585,13 @@ func (cimSpec *CIMSpecification) printSpecification(w io.Writer) {
 	fmt.Fprint(w, "\n")
 }
 
-func (cimSpec *CIMSpecification) ImportCIMSchemaFiles(entries []string) {
+func (cimSpec *CIMSpecification) ImportCIMSchemaFiles(schemaFiles string) {
+	entries, err := filepath.Glob(schemaFiles)
+	if err != nil {
+		panic(err)
+	}
+	sort.Strings(entries)
+
 	for _, entry := range entries {
 		b, err := os.ReadFile(entry)
 		if err != nil {
