@@ -52,6 +52,7 @@ type CIMAttribute struct {
 	RDFDomain       string
 	RDFType         string
 	DefaultValue    string
+	IsUsed          bool
 }
 
 type CIMType struct {
@@ -553,11 +554,65 @@ func (cimSpec *CIMSpecification) setDefaultValuesPython() {
 	}
 }
 
+func (cimSpec *CIMSpecification) fixMissingMRIDs() {
+	for _, t := range cimSpec.Types {
+		if (t.Stereotype == "concrete" || t.Stereotype == "") && t.SuperType == "" && t.Id != "IdentifiedObject" {
+			t.Attributes = append(t.Attributes, &CIMAttribute{
+				Id:              "MRID",
+				Label:           "mRID",
+				Namespace:       "",
+				Comment:         "Master resource identifier issued by a model authority. The mRID is unique within an exchange context. Global uniqueness is easily achieved by using a UUID, as specified in RFC 4122, for the mRID. The use of UUID is strongly recommended. For CIMXML data files in RDF syntax conforming to IEC 61970-552, the mRID is mapped to rdf:ID or rdf:about attributes that identify CIM object elements.",
+				IsList:          false,
+				AssociationUsed: false,
+				IsFixed:         false,
+				InverseRole:     "",
+				Stereotype:      "attribute",
+				Range:           "",
+				DataType:        "String",
+				IsPrimitive:     true,
+				RDFDomain:       "",
+				RDFType:         "Property",
+				DefaultValue:    "''",
+			})
+		}
+	}
+}
+
+func (cimSpec *CIMSpecification) markUnusedAttributesAndAssociations() {
+	for _, t := range cimSpec.Types {
+		for _, attr := range t.Attributes {
+			attr.IsUsed = true
+			if !attr.AssociationUsed {
+				if attr.DataType == DataTypeObject {
+					if attr.IsList {
+						attr.IsUsed = false
+					}
+				} else {
+					attr.IsPrimitive = true
+				}
+			}
+		}
+	}
+}
+
+func (cimSpec *CIMSpecification) removeIdentifiedObjectAttributes() {
+	for _, t := range cimSpec.Types {
+		for _, attr := range t.Attributes {
+			if attr.Label == "IdentifiedObject" {
+				attr.Label = t.Label + "IdentifiedObject"
+			}
+		}
+	}
+}
+
 func (cimSpec *CIMSpecification) postprocess() {
 	cimSpec.pickMainOrigin()
 	cimSpec.sortAttributes()
 	cimSpec.determineDataTypes()
 	cimSpec.setDefaultValuesPython()
+	cimSpec.fixMissingMRIDs()
+	cimSpec.markUnusedAttributesAndAssociations()
+	cimSpec.removeIdentifiedObjectAttributes()
 }
 
 func (cimSpec *CIMSpecification) printSpecification(w io.Writer) {
