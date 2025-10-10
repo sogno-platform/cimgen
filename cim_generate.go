@@ -23,10 +23,32 @@ func Lower(s string) string {
 	return cases.Lower(language.English).String(s)
 }
 
+func MapDataTypeGo(s string) string {
+	if len(s) == 0 {
+		return s
+	}
+	switch s {
+	case DataTypeString:
+		return "string"
+	case DataTypeBoolean:
+		return "bool"
+	case DataTypeInteger:
+		return "int"
+	case DataTypeFloat:
+		return "float64"
+	case DataTypeDateTime:
+		return "string" // TODO: time.Time
+	default:
+		return s // assume it's a struct type
+	}
+}
+
 type CIMGenerator struct {
-	cimSpec      *CIMSpecification
-	tmplType     *template.Template
-	tmplTypeList *template.Template
+	cimSpec       *CIMSpecification
+	tmplType      *template.Template
+	tmplTypeList  *template.Template
+	tmplDataset   *template.Template
+	tmplTypeAlias *template.Template
 }
 
 func NewCIMGeneratorPython(spec *CIMSpecification) *CIMGenerator {
@@ -49,6 +71,7 @@ func NewCIMGeneratorGo(spec *CIMSpecification) *CIMGenerator {
 	funcMap := template.FuncMap{
 		"capitalizefirstletter": CapitalizeFirstLetter,
 		"lower":                 Lower,
+		"mapDataTypeGo":         MapDataTypeGo,
 	}
 
 	// Since ParseFile does not work well with files in subdirectories, we read the file manually
@@ -70,10 +93,30 @@ func NewCIMGeneratorGo(spec *CIMSpecification) *CIMGenerator {
 		panic(err)
 	}
 
+	data, err = os.ReadFile("lang-templates/go_cim_dataset_template.tmpl")
+	if err != nil {
+		panic(err)
+	}
+	tmplDataset, err := template.New("go_cim_dataset_template").Funcs(funcMap).Parse(string(data))
+	if err != nil {
+		panic(err)
+	}
+
+	data, err = os.ReadFile("lang-templates/go_type_alias_template.tmpl")
+	if err != nil {
+		panic(err)
+	}
+	tmplTypeAlias, err := template.New("go_type_alias_template").Funcs(funcMap).Parse(string(data))
+	if err != nil {
+		panic(err)
+	}
+
 	return &CIMGenerator{
-		cimSpec:      spec,
-		tmplType:     tmplType,
-		tmplTypeList: tmplTypeList,
+		cimSpec:       spec,
+		tmplType:      tmplType,
+		tmplTypeList:  tmplTypeList,
+		tmplDataset:   tmplDataset,
+		tmplTypeAlias: tmplTypeAlias,
 	}
 }
 
@@ -106,9 +149,17 @@ func (gen *CIMGenerator) GenerateAllGo(outputDir string) {
 		}
 		defer f.Close()
 
-		err = gen.tmplType.Execute(f, gen.cimSpec.Types[typeName])
-		if err != nil {
-			panic(err)
+		// generate type alias if needed
+		if gen.cimSpec.Types[typeName].Stereotype == "CIMDatatype" {
+			err = gen.tmplTypeAlias.Execute(f, gen.cimSpec.Types[typeName])
+			if err != nil {
+				panic(err)
+			}
+		} else {
+			err = gen.tmplType.Execute(f, gen.cimSpec.Types[typeName])
+			if err != nil {
+				panic(err)
+			}
 		}
 	}
 
@@ -121,6 +172,18 @@ func (gen *CIMGenerator) GenerateAllGo(outputDir string) {
 	defer f.Close()
 
 	err = gen.tmplTypeList.Execute(f, gen.cimSpec)
+	if err != nil {
+		panic(err)
+	}
+
+	// generate CIMDataset
+	f, err = os.Create(filepath.Join(outputDir, "cim_dataset.go"))
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+
+	err = gen.tmplDataset.Execute(f, gen.cimSpec)
 	if err != nil {
 		panic(err)
 	}

@@ -1,9 +1,11 @@
 package cimgo
 
-var structMap = map[string]func() interface{}{
+var StructMap = map[string]func() interface{}{
 {{- range .Types}}
+    {{- if eq .Stereotype "concrete"}}
     "{{.Id}}": func() interface{} {
         return &{{.Id}}{}
     },
+    {{- end}}
 {{- end}}
 }

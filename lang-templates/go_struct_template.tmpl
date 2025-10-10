@@ -4,14 +4,16 @@ type {{.Id}} struct {
     {{.SuperType}}
 
 {{- range .Attributes}}
+{{- if .IsUsed}}
 {{- if eq .Label "mRID"}}
     MRID string `xml:"ID,attr"`
 {{- else if .IsPrimitive}}
-    {{capitalizefirstletter .Label}} {{lower .DataType}} `xml:"{{.Id}}"`
+    {{capitalizefirstletter .Label}} {{mapDataTypeGo .DataType}} `xml:"{{.Id}}"`
 {{- else}}
     {{capitalizefirstletter .Label}} struct {
         MRID string `xml:"resource,attr"`
     } `xml:"{{.Id}}"`
+{{- end}}
 {{- end}}
 {{- end}}
 }

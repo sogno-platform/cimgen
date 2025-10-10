@@ -1,0 +1,34 @@
+package cimgo
+
+import "fmt"
+
+type CIMDataset struct {
+{{- range .Types}}
+    {{- if eq .Stereotype "concrete"}}
+    {{.Id}}s map[string]*{{.Id}}
+    {{- end}}
+{{- end}}
+}
+
+func NewCIMDataset() *CIMDataset {
+	return &CIMDataset{
+		{{- range .Types}}
+        {{- if eq .Stereotype "concrete"}}
+		{{.Id}}s: make(map[string]*{{.Id}}),
+        {{- end}}
+		{{- end}}
+	}
+}
+
+func (ds *CIMDataset) AddElement(element interface{}) {
+    switch e := element.(type) {
+	{{- range .Types}}
+    {{- if eq .Stereotype "concrete"}}
+	case *{{.Id}}:
+		ds.{{.Id}}s[e.MRID] = e
+    {{- end}}
+	{{- end}}
+	default:
+		fmt.Printf("Unknown type: %T\n", e)
+	}
+}
