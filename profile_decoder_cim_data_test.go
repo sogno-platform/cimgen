@@ -11,7 +11,7 @@ import (
 func TestDecodeCIMData(t *testing.T) {
 	t.Log("Start CIM-Data decoding test")
 
-	entries, err := filepath.Glob("ieee-9bus.xml")
+	entries, err := filepath.Glob("FullGrid_EQ.xml")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -24,11 +24,11 @@ func TestDecodeCIMData(t *testing.T) {
 			panic(err)
 		}
 
-		cimData, err := DecodeProfile(bytes.NewReader(b))
+		_, err = DecodeProfile(bytes.NewReader(b))
 		if err != nil {
 			panic(err)
 		}
 
-		t.Log("Decoded CIM data:", cimData)
+		//t.Log("Decoded CIM data:", cimData)
 	}
 }
