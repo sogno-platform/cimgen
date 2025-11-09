@@ -8,9 +8,13 @@ type {{.Id}} struct {
 {{- if eq .Label "mRID"}}
     MRID string `xml:"ID,attr"`
 {{- else if .IsPrimitive}}
-    {{capitalizefirstletter .Label}} {{mapDataTypeGo .DataType}} `xml:"{{.Id}}"`
+    {{capitalizefirstletter .Label}} {{mapDataTypeGo .DataType}} `xml:"{{.Id}},omitempty"`
+{{- else if .IsEnumValue}}
+    {{capitalizefirstletter .Label}} *struct {
+        URI string `xml:"resource,attr"`
+    } `xml:"{{.Id}}"`
 {{- else}}
-    {{capitalizefirstletter .Label}} struct {
+    {{capitalizefirstletter .Label}} *struct {
         MRID string `xml:"resource,attr"`
     } `xml:"{{.Id}}"`
 {{- end}}

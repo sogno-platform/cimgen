@@ -3,6 +3,7 @@ package cimgo
 import "fmt"
 
 type CIMDataset struct {
+	Elements map[string]interface{}
 {{- range .Types}}
     {{- if eq .Stereotype "concrete"}}
     {{.Id}}s map[string]*{{.Id}}
@@ -12,6 +13,7 @@ type CIMDataset struct {
 
 func NewCIMDataset() *CIMDataset {
 	return &CIMDataset{
+		Elements: make(map[string]interface{}),
 		{{- range .Types}}
         {{- if eq .Stereotype "concrete"}}
 		{{.Id}}s: make(map[string]*{{.Id}}),
@@ -26,6 +28,7 @@ func (ds *CIMDataset) AddElement(element interface{}) {
     {{- if eq .Stereotype "concrete"}}
 	case *{{.Id}}:
 		ds.{{.Id}}s[e.MRID] = e
+		ds.Elements[e.MRID] = e
     {{- end}}
 	{{- end}}
 	default:

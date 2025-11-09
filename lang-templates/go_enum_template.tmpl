@@ -1,0 +1,7 @@
+package cimgo
+
+const (
+{{- range $index, $element := .Values}}
+    {{.RDFType}}{{.Label}} = "http://iec.ch/TC57/CIM100#{{.Id}}"
+{{- end}}
+)

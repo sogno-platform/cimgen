@@ -49,6 +49,7 @@ type CIMGenerator struct {
 	tmplTypeList  *template.Template
 	tmplDataset   *template.Template
 	tmplTypeAlias *template.Template
+	tmplEnum      *template.Template
 }
 
 func NewCIMGeneratorPython(spec *CIMSpecification) *CIMGenerator {
@@ -111,12 +112,22 @@ func NewCIMGeneratorGo(spec *CIMSpecification) *CIMGenerator {
 		panic(err)
 	}
 
+	data, err = os.ReadFile("lang-templates/go_enum_template.tmpl")
+	if err != nil {
+		panic(err)
+	}
+	tmplEnum, err := template.New("go_enum_template").Funcs(funcMap).Parse(string(data))
+	if err != nil {
+		panic(err)
+	}
+
 	return &CIMGenerator{
 		cimSpec:       spec,
 		tmplType:      tmplType,
 		tmplTypeList:  tmplTypeList,
 		tmplDataset:   tmplDataset,
 		tmplTypeAlias: tmplTypeAlias,
+		tmplEnum:      tmplEnum,
 	}
 }
 
@@ -187,4 +198,19 @@ func (gen *CIMGenerator) GenerateAllGo(outputDir string) {
 	if err != nil {
 		panic(err)
 	}
+
+	// generate enums
+	for typeName := range gen.cimSpec.Enums {
+		f, err := os.Create(filepath.Join(outputDir, typeName+".go"))
+		if err != nil {
+			panic(err)
+		}
+		defer f.Close()
+
+		err = gen.tmplEnum.Execute(f, gen.cimSpec.Enums[typeName])
+		if err != nil {
+			panic(err)
+		}
+	}
+
 }

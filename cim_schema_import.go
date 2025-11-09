@@ -53,6 +53,7 @@ type CIMAttribute struct {
 	RDFType         string
 	DefaultValue    string
 	IsUsed          bool
+	IsEnumValue     bool
 }
 
 type CIMType struct {
@@ -574,6 +575,7 @@ func (cimSpec *CIMSpecification) fixMissingMRIDs() {
 				RDFType:         "Property",
 				DefaultValue:    "''",
 			})
+			fmt.Println("Added missing MRID to type", t.Id)
 		}
 	}
 }
@@ -586,9 +588,11 @@ func (cimSpec *CIMSpecification) markUnusedAttributesAndAssociations() {
 				if attr.DataType == DataTypeObject {
 					if attr.IsList {
 						attr.IsUsed = false
+						fmt.Println("Marked unused list association", t.Id+"."+attr.Id, "of type", attr.Range)
 					}
 				} else {
 					attr.IsPrimitive = true
+					fmt.Println("Replaced association with primitive", t.Id+"."+attr.Id, "of type", attr.DataType)
 				}
 			}
 		}
@@ -600,6 +604,17 @@ func (cimSpec *CIMSpecification) removeIdentifiedObjectAttributes() {
 		for _, attr := range t.Attributes {
 			if attr.Label == "IdentifiedObject" {
 				attr.Label = t.Label + "IdentifiedObject"
+				fmt.Println("Renamed IdentifiedObject attribute to", attr.Label, "in type", t.Id)
+			}
+		}
+	}
+}
+
+func (cimSpec *CIMSpecification) findEnumAttributes() {
+	for _, t := range cimSpec.Types {
+		for _, attr := range t.Attributes {
+			if _, ok := cimSpec.Enums[attr.Range]; ok {
+				attr.IsEnumValue = true
 			}
 		}
 	}
@@ -613,6 +628,7 @@ func (cimSpec *CIMSpecification) postprocess() {
 	cimSpec.fixMissingMRIDs()
 	cimSpec.markUnusedAttributesAndAssociations()
 	cimSpec.removeIdentifiedObjectAttributes()
+	cimSpec.findEnumAttributes()
 }
 
 func (cimSpec *CIMSpecification) printSpecification(w io.Writer) {
