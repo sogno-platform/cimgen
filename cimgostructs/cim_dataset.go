@@ -1,6 +1,7 @@
 package cimgo
 
 type CIMDataset struct {
+	Elements map[string]interface{}
 }
 
 func NewCIMDataset() *CIMDataset {
