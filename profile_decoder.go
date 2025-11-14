@@ -6,7 +6,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/sogno-platform/cimgen/cimgo-structs"
+	cimgo "github.com/sogno-platform/cimgen/cimgostructs"
 )
 
 func DecodeProfile(r io.Reader) (*cimgo.CIMDataset, error) {
@@ -28,9 +28,9 @@ func DecodeProfile(r io.Reader) (*cimgo.CIMDataset, error) {
 		case xml.StartElement:
 			labelParts := strings.Split(t.Name.Local, ".")
 			labelEnd := labelParts[len(labelParts)-1]
-			//spacedLabel := t.Name.Space + ":" + labelEnd
+			spacedLabel := t.Name.Space + ":" + t.Name.Local
 
-			// slog.Debug("Found", "StartElement", labelEnd)
+			fmt.Println("Found", "StartElement", spacedLabel)
 
 			fmt.Println("Decode", labelEnd)
 
