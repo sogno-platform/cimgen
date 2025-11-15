@@ -2,7 +2,7 @@ package cimgo
 
 import "fmt"
 
-type CIMDataset struct {
+type CIMElementList struct {
 	Elements map[string]interface{}
 {{- range .Types}}
     {{- if eq .Stereotype "concrete"}}
@@ -11,8 +11,8 @@ type CIMDataset struct {
 {{- end}}
 }
 
-func NewCIMDataset() *CIMDataset {
-	return &CIMDataset{
+func NewCIMElementList() *CIMElementList {
+	return &CIMElementList{
 		Elements: make(map[string]interface{}),
 		{{- range .Types}}
         {{- if eq .Stereotype "concrete"}}
@@ -22,7 +22,7 @@ func NewCIMDataset() *CIMDataset {
 	}
 }
 
-func (ds *CIMDataset) AddElement(element interface{}) {
+func (ds *CIMElementList) AddElement(element interface{}) {
     switch e := element.(type) {
 	{{- range .Types}}
     {{- if eq .Stereotype "concrete"}}
@@ -34,4 +34,14 @@ func (ds *CIMDataset) AddElement(element interface{}) {
 	default:
 		fmt.Printf("Unknown type: %T\n", e)
 	}
+}
+
+var StructMap = map[string]func() interface{}{
+{{- range .Types}}
+    {{- if eq .Stereotype "concrete"}}
+    "{{.Id}}": func() interface{} {
+        return &{{.Id}}{}
+    },
+    {{- end}}
+{{- end}}
 }

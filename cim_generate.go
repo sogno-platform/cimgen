@@ -174,21 +174,8 @@ func (gen *CIMGenerator) GenerateAllGo(outputDir string) {
 		}
 	}
 
-	// generate struct list
-	var f *os.File
-	f, err := os.Create(filepath.Join(outputDir, "struct_list.go"))
-	if err != nil {
-		panic(err)
-	}
-	defer f.Close()
-
-	err = gen.tmplTypeList.Execute(f, gen.cimSpec)
-	if err != nil {
-		panic(err)
-	}
-
-	// generate CIMDataset
-	f, err = os.Create(filepath.Join(outputDir, "cim_dataset.go"))
+	// generate CIM struct lists
+	f, err := os.Create(filepath.Join(outputDir, "cim_struct_lists.go"))
 	if err != nil {
 		panic(err)
 	}
