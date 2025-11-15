@@ -54,11 +54,11 @@ type CIMGenerator struct {
 
 func NewCIMGeneratorPython(spec *CIMSpecification) *CIMGenerator {
 	// Since ParseFile does not work well with files in subdirectories, we read the file manually
-	data, err := os.ReadFile("lang-templates/python_class_template.tmpl")
+	data, err := os.ReadFile("lang-templates/python_class.tmpl")
 	if err != nil {
 		panic(err)
 	}
-	tmplType, err := template.New("python_class_template").Parse(string(data))
+	tmplType, err := template.New("python_class").Parse(string(data))
 	if err != nil {
 		panic(err)
 	}
@@ -76,47 +76,38 @@ func NewCIMGeneratorGo(spec *CIMSpecification) *CIMGenerator {
 	}
 
 	// Since ParseFile does not work well with files in subdirectories, we read the file manually
-	data, err := os.ReadFile("lang-templates/go_struct_template.tmpl")
+	data, err := os.ReadFile("lang-templates/go_struct.tmpl")
 	if err != nil {
 		panic(err)
 	}
-	tmplType, err := template.New("go_struct_template").Funcs(funcMap).Parse(string(data))
-	if err != nil {
-		panic(err)
-	}
-
-	data, err = os.ReadFile("lang-templates/go_struct_list_template.tmpl")
-	if err != nil {
-		panic(err)
-	}
-	tmplTypeList, err := template.New("go_struct_list_template").Funcs(funcMap).Parse(string(data))
+	tmplType, err := template.New("go_struct").Funcs(funcMap).Parse(string(data))
 	if err != nil {
 		panic(err)
 	}
 
-	data, err = os.ReadFile("lang-templates/go_cim_dataset_template.tmpl")
+	data, err = os.ReadFile("lang-templates/go_struct_lists.tmpl")
 	if err != nil {
 		panic(err)
 	}
-	tmplDataset, err := template.New("go_cim_dataset_template").Funcs(funcMap).Parse(string(data))
-	if err != nil {
-		panic(err)
-	}
-
-	data, err = os.ReadFile("lang-templates/go_type_alias_template.tmpl")
-	if err != nil {
-		panic(err)
-	}
-	tmplTypeAlias, err := template.New("go_type_alias_template").Funcs(funcMap).Parse(string(data))
+	tmplTypeList, err := template.New("go_struct_lists").Funcs(funcMap).Parse(string(data))
 	if err != nil {
 		panic(err)
 	}
 
-	data, err = os.ReadFile("lang-templates/go_enum_template.tmpl")
+	data, err = os.ReadFile("lang-templates/go_type_alias.tmpl")
 	if err != nil {
 		panic(err)
 	}
-	tmplEnum, err := template.New("go_enum_template").Funcs(funcMap).Parse(string(data))
+	tmplTypeAlias, err := template.New("go_type_alias").Funcs(funcMap).Parse(string(data))
+	if err != nil {
+		panic(err)
+	}
+
+	data, err = os.ReadFile("lang-templates/go_enum.tmpl")
+	if err != nil {
+		panic(err)
+	}
+	tmplEnum, err := template.New("go_enum").Funcs(funcMap).Parse(string(data))
 	if err != nil {
 		panic(err)
 	}
@@ -125,7 +116,6 @@ func NewCIMGeneratorGo(spec *CIMSpecification) *CIMGenerator {
 		cimSpec:       spec,
 		tmplType:      tmplType,
 		tmplTypeList:  tmplTypeList,
-		tmplDataset:   tmplDataset,
 		tmplTypeAlias: tmplTypeAlias,
 		tmplEnum:      tmplEnum,
 	}
@@ -181,7 +171,7 @@ func (gen *CIMGenerator) GenerateAllGo(outputDir string) {
 	}
 	defer f.Close()
 
-	err = gen.tmplDataset.Execute(f, gen.cimSpec)
+	err = gen.tmplTypeList.Execute(f, gen.cimSpec)
 	if err != nil {
 		panic(err)
 	}
