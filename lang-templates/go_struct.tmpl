@@ -22,7 +22,7 @@ type {{.Id}} struct {
 {{- end}}
 }
 
-var info{{.Id}} = cimgo.CIMTypeInfo{
+var info{{.Id}} = CIMTypeInfo{
     Id: "{{.Id}}",
     Label: "{{.Label}}",
     Namespace: "{{.Namespace}}",
@@ -31,7 +31,7 @@ var info{{.Id}} = cimgo.CIMTypeInfo{
     Origin: "{{.Origin}}",
     Origins: []string{ {{- range .Origins}}
         "{{.}}",{{- end}} },
-    Attributes: map[string]cimgo.CIMAttributeInfo{
+    Attributes: map[string]CIMAttributeInfo{
 {{- range .Attributes}}
 {{- if .IsUsed}}
         "{{.Id}}": {

@@ -1,12 +1,27 @@
 # <img src="documentation/images/cimgen_logo.png" alt="CIMgen" width=120 />
 
-Python tool for code generation from CIM data model for several programming languages
+# CIMgen Go
 
-## Concept overview
+Rewrite of CIMgen in golang to generate code from the CIM data model for several programming languages.
 
 ![Overview CIMgen](documentation/images/CIMgen.svg)
 
 [Projects using CIMgen](documentation/CIMgenOverview.md)
+
+## Usage
+
+Ensure that GOPATH is set and included in your PATH. Then install the cimgen binary:
+
+    go install ./...
+
+Alternatively, you can run binaries directly:
+
+    gi run cmd/cimgen/main.go
+
+
+# CIMgen Python
+
+Python tool for code generation from CIM data model for several programming languages
 
 ## Usage
 
@@ -116,12 +131,6 @@ alternatively, you can leverage `Makefile`:
 export BUILD_IN_DOCKER=true
 #export SCHEMA=CGMES_3.0.0 to use CGMES 3.0.0
 make modernpython
-```
-
-### Generate with Golang toolchain
-
-```bash
-go run cimgen
 ```
 
 ## Custom Profiles
