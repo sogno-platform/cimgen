@@ -1,4 +1,4 @@
-package cimgo
+package cimgostructs
 
 type {{.Id}} struct {
     {{.SuperType}}
@@ -12,12 +12,33 @@ type {{.Id}} struct {
 {{- else if .IsEnumValue}}
     {{capitalizefirstletter .Label}} *struct {
         URI string `xml:"resource,attr"`
-    } `xml:"{{.Id}}"`
+    } `xml:"{{.Id}},omitempty"`
 {{- else}}
     {{capitalizefirstletter .Label}} *struct {
         MRID string `xml:"resource,attr"`
-    } `xml:"{{.Id}}"`
+    } `xml:"{{.Id}},omitempty"`
 {{- end}}
 {{- end}}
 {{- end}}
+}
+
+var info{{.Id}} = cimgo.CIMTypeInfo{
+    Id: "{{.Id}}",
+    Label: "{{.Label}}",
+    Namespace: "{{.Namespace}}",
+    Comment: "{{.Comment}}",
+    SuperType: "{{.SuperType}}",
+    Origin: "{{.Origin}}",
+    Origins: []string{ {{- range .Origins}}
+        "{{.}}",{{- end}} },
+    Attributes: map[string]cimgo.CIMAttributeInfo{
+{{- range .Attributes}}
+{{- if .IsUsed}}
+        "{{.Id}}": {
+            Label: "{{.Label}}",
+            IsList: {{.IsList}},
+        },
+{{- end}}
+{{- end}}
+    },
 }

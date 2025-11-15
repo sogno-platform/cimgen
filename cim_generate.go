@@ -47,7 +47,6 @@ type CIMGenerator struct {
 	cimSpec       *CIMSpecification
 	tmplType      *template.Template
 	tmplTypeList  *template.Template
-	tmplDataset   *template.Template
 	tmplTypeAlias *template.Template
 	tmplEnum      *template.Template
 }

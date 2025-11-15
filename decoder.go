@@ -5,9 +5,9 @@ import (
 	"errors"
 	"io"
 	"strings"
-	// "log/slog" // Removed to avoid import cycle
 )
 
+// Prefixes for attribute and text keys in the resulting map
 const (
 	attrPrefix = "@"
 	textPrefix = "_"
@@ -18,6 +18,7 @@ var (
 	ErrInvalidRoot     = errors.New("invalid root element")
 )
 
+// node represents an XML node during decoding.
 type node struct {
 	Parent      *node
 	Value       map[string]interface{}
@@ -30,6 +31,15 @@ type node struct {
 
 // DecodeToMap creates a map from an XML document.
 // It does not support mixed XML content.
+// Attributes are prefixed with "@" and text content with "_".
+// For example, an element <Tag attr="value">text</Tag> becomes:
+//
+//	{
+//	  "Tag": {
+//	    "@attr": "value",
+//	    "_": "text"
+//	  }
+//	}
 func DecodeToMap(r io.Reader) (map[string]interface{}, error) {
 	dec := xml.NewDecoder(r)
 	n := &node{}
@@ -79,18 +89,12 @@ func DecodeToMap(r io.Reader) (map[string]interface{}, error) {
 	}
 }
 
+// processStartElement processes an XML start element token.
 func processStartElement(tok *xml.StartElement, n **node, stack *[]*node) {
 	// remove parent classes introduced by CIM class hierarchy
 	labelParts := strings.Split(tok.Name.Local, ".")
 	labelEnd := labelParts[len(labelParts)-1]
 	spacedLabel := tok.Name.Space + ":" + labelEnd
-	// slog.Debug("Found", "StartElement", spacedLabel)
-
-	// if len(tok.Attr) > 0 {
-	// 	for _, attr := range tok.Attr {
-	// 		slog.Debug("Found", "attributeName", attr.Name.Local, "attributeValue", attr.Value)
-	// 	}
-	// }
 
 	*n = &node{
 		Label:  spacedLabel,
@@ -108,13 +112,8 @@ func processStartElement(tok *xml.StartElement, n **node, stack *[]*node) {
 	}
 }
 
+// processEndElement processes an XML end element token.
 func processEndElement(tok *xml.EndElement, stack *[]*node) (n *node) {
-	// remove parent classes introduced by CIM class hierarchy
-	// labelParts := strings.Split(tok.Name.Local, ".")
-	// labelEnd := labelParts[len(labelParts)-1]
-	// spacedLabel := tok.Name.Space + ":" + labelEnd
-	// slog.Debug("Found", "EndElement", spacedLabel)
-
 	length := len(*stack)
 	*stack, n = (*stack)[:length-1], (*stack)[length-1]
 
@@ -127,10 +126,12 @@ func processEndElement(tok *xml.EndElement, stack *[]*node) (n *node) {
 			n.Value[n.Label] = n.Text
 		}
 	}
-
 	return n
 }
 
+// setNodeValue sets the value of the current node in its parent node's map.
+// It handles cases where the same label appears multiple times, converting
+// single values to slices as needed.
 func setNodeValue(n *node) {
 	if parentValue, ok := n.Parent.Value[n.Parent.Label]; ok {
 		parentValueMap := parentValue.(map[string]interface{})
@@ -199,6 +200,7 @@ func setNodeValue(n *node) {
 	}
 }
 
+// getMap retrieves the map value of the current node.
 func getMap(node *node) map[string]interface{} {
 	if v, ok := node.Value[node.Label]; ok {
 		switch v.(type) {
@@ -212,6 +214,7 @@ func getMap(node *node) map[string]interface{} {
 	return nil
 }
 
+// setAttributes sets the attributes of the current node in its value map.
 func setAttributes(n *node, tok *xml.StartElement, attrPrefix string) {
 	if len(tok.Attr) > 0 {
 		m := make(map[string]interface{})

@@ -1,4 +1,4 @@
-package cimgen
+package cimgo
 
 import (
 	"encoding/xml"
@@ -9,9 +9,27 @@ import (
 	cimgo "github.com/sogno-platform/cimgen/cimgostructs"
 )
 
-func DecodeProfile(r io.Reader) (*cimgo.CIMDataset, error) {
+type CIMProfile struct {
+	ModelId          string `xml:"rdf:about,attr"`
+	ModelDependentOn *struct {
+		MRID string `xml:"resource,attr"`
+	} `xml:"Model.DependentOn,omitempty"`
+	ModelCreated              string `xml:"Model.created"`
+	ModelDescription          string `xml:"Model.description"`
+	ModelModelingAuthoritySet string `xml:"Model.modelingAuthoritySet"`
+	ModelProfile              string `xml:"Model.profile"`
+	ModelScenarioTime         string `xml:"Model.scenarioTime"`
+	ModelVersion              int    `xml:"Model.version"`
+}
+
+type CIMDataset struct {
+	Profiles []*CIMProfile
+	Elements cimgo.CIMElementList
+}
+
+func DecodeProfile(r io.Reader) (*cimgo.CIMElementList, error) {
 	dec := xml.NewDecoder(r)
-	cimData := cimgo.NewCIMDataset()
+	cimData := cimgo.NewCIMElementList()
 
 	for {
 		token, err := dec.Token()

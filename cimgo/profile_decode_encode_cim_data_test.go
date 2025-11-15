@@ -1,4 +1,4 @@
-package cimgen
+package cimgo
 
 import (
 	"bytes"

@@ -1,4 +1,4 @@
-package cimgen
+package cimgo
 
 import (
 	"fmt"
@@ -9,7 +9,7 @@ import (
 	"github.com/sogno-platform/cimgen/cimgoxml"
 )
 
-func EncodeProfile(w io.Writer, cimData *cimgo.CIMDataset) error {
+func EncodeProfile(w io.Writer, cimData *cimgo.CIMElementList) error {
 	enc := cimgoxml.NewEncoder(w)
 	enc.Indent("", "  ")
 

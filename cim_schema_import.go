@@ -3,7 +3,6 @@ package cimgen
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"html/template"
 	"io"
@@ -11,10 +10,6 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
-)
-
-var (
-	ErrValueNotFound = errors.New("value not found")
 )
 
 // enum to determine primitve types
@@ -33,6 +28,7 @@ const (
 	DataTypeUnknown  = "Unknown"
 )
 
+// CIMAttribute represents a CIM attribute with its properties.
 type CIMAttribute struct {
 	Id              string
 	Label           string
@@ -56,6 +52,7 @@ type CIMAttribute struct {
 	IsEnumValue     bool
 }
 
+// CIMType represents a CIM class/type with its properties and attributes.
 type CIMType struct {
 	Id            string
 	Label         string
@@ -73,6 +70,7 @@ type CIMType struct {
 	Attributes    []*CIMAttribute
 }
 
+// CIMEnum represents a CIM enumeration with its values.
 type CIMEnum struct {
 	Id         string
 	Label      string
@@ -85,6 +83,7 @@ type CIMEnum struct {
 	Values     []*CIMEnumValue
 }
 
+// CIMEnumValue represents a value of a CIM enumeration.
 type CIMEnumValue struct {
 	Id         string
 	Label      string
@@ -93,6 +92,7 @@ type CIMEnumValue struct {
 	RDFType    string
 }
 
+// CIMOntology represents a CIM ontology with its properties.
 type CIMOntology struct {
 	Id          string
 	Namespace   string
@@ -102,6 +102,7 @@ type CIMOntology struct {
 	RDFType     string
 }
 
+// CIMSpecification represents the entire CIM specification with types, enums, and ontologies.
 type CIMSpecification struct {
 	Types      map[string]*CIMType
 	Enums      map[string]*CIMEnum
@@ -119,6 +120,9 @@ func extractResource(obj map[string]interface{}, key string) string {
 	return ""
 }
 
+// extractStringOrResource extracts a string value or a resource URI from an interface{}.
+// It handles cases where the input is a string, a map with a resource, or a slice of maps.
+// It returns an empty string if no valid value is found.
 func extractStringOrResource(obj interface{}) string {
 	switch item := obj.(type) {
 	case string:
@@ -135,6 +139,8 @@ func extractStringOrResource(obj interface{}) string {
 	return ""
 }
 
+// extractText extracts the text value from a map object using the specified key.
+// It returns an empty string if the key does not exist or the value is not a map.
 func extractText(obj map[string]interface{}, key string) string {
 	if v, ok := obj[key]; ok {
 		if m, ok := v.(map[string]interface{}); ok {
@@ -144,6 +150,8 @@ func extractText(obj map[string]interface{}, key string) string {
 	return ""
 }
 
+// extractValue extracts a string value from a map object using the specified key.
+// It returns an empty string if the key does not exist.
 func extractValue(obj map[string]interface{}, key string) string {
 	if t, ok := obj[key]; ok {
 		return t.(string)
@@ -151,16 +159,19 @@ func extractValue(obj map[string]interface{}, key string) string {
 	return ""
 }
 
+// extractURIEnd extracts the fragment identifier from a URI (the part after the '#').
 func extractURIEnd(uri string) string {
 	l := strings.Split(uri, "#")
 	return l[len(l)-1]
 }
 
+// extractURIPath extracts the path part of a URI (the part before the '#').
 func extractURIPath(uri string) string {
 	l := strings.Split(uri, "#")
 	return l[0]
 }
 
+// processClass processes a map representing a CIM class and returns a CIMType struct.
 func processClass(classMap map[string]interface{}) CIMType {
 
 	typeId := extractValue(classMap, "@rdf:about")
@@ -186,6 +197,7 @@ func processClass(classMap map[string]interface{}) CIMType {
 	}
 }
 
+// processProperty processes a map representing a CIM property and returns a CIMAttribute struct.
 func processProperty(classMap map[string]interface{}) CIMAttribute {
 	attrId := extractValue(classMap, "@rdf:about")
 	rdfType := extractResource(classMap, "rdf:type")
@@ -226,6 +238,7 @@ func processProperty(classMap map[string]interface{}) CIMAttribute {
 	}
 }
 
+// processEnum processes a map representing a CIM enumeration and returns a CIMEnum struct.
 func processEnum(classMap map[string]interface{}) CIMEnum {
 
 	typeId := extractValue(classMap, "@rdf:about")
@@ -244,6 +257,7 @@ func processEnum(classMap map[string]interface{}) CIMEnum {
 	}
 }
 
+// processEnumValue processes a map representing a CIM enumeration value and returns a CIMEnumValue struct.
 func processEnumValue(classMap map[string]interface{}) CIMEnumValue {
 
 	typeId := extractValue(classMap, "@rdf:about")
@@ -261,6 +275,7 @@ func processEnumValue(classMap map[string]interface{}) CIMEnumValue {
 	}
 }
 
+// processOntology processes a map representing a CIM ontology and returns a CIMOntology struct.
 func processOntology(classMap map[string]interface{}) CIMOntology {
 
 	typeId := extractValue(classMap, "@rdf:about")
@@ -279,6 +294,7 @@ func processOntology(classMap map[string]interface{}) CIMOntology {
 	}
 }
 
+// processRDFMap processes the RDF map and extracts CIM types, enums, and ontology.
 func processRDFMap(inputMap map[string]interface{}) (map[string]*CIMType, map[string]*CIMEnum, CIMOntology) {
 	rdfMap := inputMap["rdf:RDF"].(map[string]interface{})
 	descriptions := rdfMap["rdf:Description"].([]map[string]interface{})
@@ -318,22 +334,33 @@ func processRDFMap(inputMap map[string]interface{}) (map[string]*CIMType, map[st
 		}
 	}
 
+	assignAttributesToTypes(cimTypes, cimAttributes)
+
+	assignEnumValuesToEnums(cimEnums, cimEnumValues)
+
+	return cimTypes, cimEnums, cimOntology
+}
+
+// assignAttributesToTypes assigns attributes to their corresponding CIM types based on RDFDomain.
+func assignAttributesToTypes(cimTypes map[string]*CIMType, cimAttributes []*CIMAttribute) {
 	for _, attr := range cimAttributes {
 		if v, ok := cimTypes[attr.RDFDomain]; ok {
 			attr.Categories = v.Categories
 			v.Attributes = append(v.Attributes, attr)
 		}
 	}
+}
 
+// assignEnumValuesToEnums assigns enum values to their corresponding CIM enums based on RDFType.
+func assignEnumValuesToEnums(cimEnums map[string]*CIMEnum, cimEnumValues []*CIMEnumValue) {
 	for _, val := range cimEnumValues {
 		if enum, ok := cimEnums[val.RDFType]; ok {
 			enum.Values = append(enum.Values, val)
 		}
 	}
-
-	return cimTypes, cimEnums, cimOntology
 }
 
+// mergeCimTypes merges two maps of CIM types, combining attributes and origins for types with the same Id.
 func mergeCimTypes(typesMerged map[string]*CIMType, types map[string]*CIMType) map[string]*CIMType {
 	for k := range types {
 		if v, ok := typesMerged[k]; ok {
@@ -380,6 +407,7 @@ func FindCIMAttributeById(attrs []*CIMAttribute, id string) int {
 	return -1
 }
 
+// mergeCimEnums merges two maps of CIM enums, combining values and origins for enums with the same Id.
 func mergeCimEnums(typesMerged map[string]*CIMEnum, types map[string]*CIMEnum) map[string]*CIMEnum {
 	for k := range types {
 		if v, ok := typesMerged[k]; ok {
@@ -417,6 +445,9 @@ func FindCIMEnumValueById(vals []*CIMEnumValue, id string) int {
 // The origin that appears most frequently in the Origins field of the attributes is selected as the main origin.
 // If there is a tie, the first origin in the list is selected.
 // Only the attributes are considered that have more than one entry in the Origins field.
+// If "EQ" is among the most frequent origins, it is selected as the main origin.
+// Otherwise, the first origin in alphabetical order is selected.
+// This function updates the Origin field of each CIMType accordingly.
 func (cimSpec *CIMSpecification) pickMainOrigin() {
 	for _, t := range cimSpec.Types {
 
@@ -475,6 +506,7 @@ func (cimSpec *CIMSpecification) pickMainOrigin() {
 	}
 }
 
+// contains checks if a string slice contains a specific string.
 func contains(slice []string, str string) bool {
 	for _, v := range slice {
 		if v == str {
@@ -484,6 +516,7 @@ func contains(slice []string, str string) bool {
 	return false
 }
 
+// NewCIMSpecification creates and returns a new CIMSpecification instance.
 func NewCIMSpecification() *CIMSpecification {
 	return &CIMSpecification{
 		Types:      make(map[string]*CIMType, 0),
@@ -492,6 +525,7 @@ func NewCIMSpecification() *CIMSpecification {
 	}
 }
 
+// addRDFMap adds the CIM types, enums, and ontology from the input map to the CIMSpecification.
 func (cimSpec *CIMSpecification) addRDFMap(inputMap map[string]interface{}) {
 	cimTypes, cimEnums, cimOntology := processRDFMap(inputMap)
 	cimSpec.Types = mergeCimTypes(cimSpec.Types, cimTypes)
@@ -499,17 +533,16 @@ func (cimSpec *CIMSpecification) addRDFMap(inputMap map[string]interface{}) {
 	cimSpec.Ontologies[cimOntology.Keyword] = &cimOntology
 }
 
+// sortAttributes sorts the attributes of each CIMType by their Id.
 func (cimSpec *CIMSpecification) sortAttributes() {
 	for _, t := range cimSpec.Types {
 		sort.Slice(t.Attributes, func(i, j int) bool {
 			return t.Attributes[i].Id < t.Attributes[j].Id
 		})
-		//slices.SortFunc(t.Attributes, func(a, b *CIMAttribute) int {
-		//	return strings.Compare(a.Id, b.Id)
-		//})
 	}
 }
 
+// determineDataTypes determines the data types of attributes and marks them as primitive if applicable.
 func (cimSpec *CIMSpecification) determineDataTypes() {
 	for _, t := range cimSpec.Types {
 		for _, attr := range t.Attributes {
@@ -535,6 +568,7 @@ func isDataType(typeStr string) bool {
 	}
 }
 
+// setDefaultValuesPython sets default values for attributes based on their data types for Python code generation.
 func (cimSpec *CIMSpecification) setDefaultValuesPython() {
 	for _, t := range cimSpec.Types {
 		for _, attr := range t.Attributes {
@@ -555,6 +589,7 @@ func (cimSpec *CIMSpecification) setDefaultValuesPython() {
 	}
 }
 
+// fixMissingMRIDs adds missing MRID attributes to types that should have them.
 func (cimSpec *CIMSpecification) fixMissingMRIDs() {
 	for _, t := range cimSpec.Types {
 		if (t.Stereotype == "concrete" || t.Stereotype == "") && t.SuperType == "" && t.Id != "IdentifiedObject" {
@@ -580,6 +615,7 @@ func (cimSpec *CIMSpecification) fixMissingMRIDs() {
 	}
 }
 
+// markUnusedAttributesAndAssociations marks attributes and associations as unused if they are not used.
 func (cimSpec *CIMSpecification) markUnusedAttributesAndAssociations() {
 	for _, t := range cimSpec.Types {
 		for _, attr := range t.Attributes {
@@ -599,6 +635,7 @@ func (cimSpec *CIMSpecification) markUnusedAttributesAndAssociations() {
 	}
 }
 
+// removeIdentifiedObjectAttributes renames attributes named "IdentifiedObject" to avoid conflicts.
 func (cimSpec *CIMSpecification) removeIdentifiedObjectAttributes() {
 	for _, t := range cimSpec.Types {
 		for _, attr := range t.Attributes {
@@ -610,6 +647,7 @@ func (cimSpec *CIMSpecification) removeIdentifiedObjectAttributes() {
 	}
 }
 
+// findEnumAttributes marks attributes as enum values if their range corresponds to a known enumeration.
 func (cimSpec *CIMSpecification) findEnumAttributes() {
 	for _, t := range cimSpec.Types {
 		for _, attr := range t.Attributes {
@@ -620,6 +658,7 @@ func (cimSpec *CIMSpecification) findEnumAttributes() {
 	}
 }
 
+// postprocess performs various post-processing steps on the CIMSpecification.
 func (cimSpec *CIMSpecification) postprocess() {
 	cimSpec.pickMainOrigin()
 	cimSpec.sortAttributes()
@@ -631,9 +670,8 @@ func (cimSpec *CIMSpecification) postprocess() {
 	cimSpec.findEnumAttributes()
 }
 
+// printSpecification prints the CIMSpecification to the provided writer in JSON format.
 func (cimSpec *CIMSpecification) printSpecification(w io.Writer) {
-	fmt.Fprintln(w, "CIM Specification:")
-
 	jsonb, err := json.MarshalIndent(cimSpec.Ontologies, "", "  ")
 	if err != nil {
 		panic(err)
@@ -656,6 +694,7 @@ func (cimSpec *CIMSpecification) printSpecification(w io.Writer) {
 	fmt.Fprint(w, "\n")
 }
 
+// ImportCIMSchemaFiles imports CIM schema files matching the given glob pattern into the CIMSpecification.
 func (cimSpec *CIMSpecification) ImportCIMSchemaFiles(schemaFiles string) {
 	entries, err := filepath.Glob(schemaFiles)
 	if err != nil {
