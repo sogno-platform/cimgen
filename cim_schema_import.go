@@ -4,12 +4,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"html/template"
 	"io"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"golang.org/x/net/html"
 )
 
 // enum to determine primitve types
@@ -26,6 +27,34 @@ const (
 	DataTypeObject   = "Object"
 	DataTypeList     = "List"
 	DataTypeUnknown  = "Unknown"
+
+	DataTypeActivePower               = "ActivePower"
+	DataTypeActivePowerPerCurrentFlow = "ActivePowerPerCurrentFlow"
+	DataTypeActivePowerPerFrequency   = "ActivePowerPerFrequency"
+	DataTypeAngleDegrees              = "AngleDegrees"
+	DataTypeAngleRadians              = "AngleRadians"
+	DataTypeApparentPower             = "ApparentPower"
+	DataTypeArea                      = "Area"
+	DataTypeCapacitance               = "Capacitance"
+	DataTypeConductance               = "Conductance"
+	DataTypeCurrentFlow               = "CurrentFlow"
+	DataTypeFrequency                 = "Frequency"
+	DataTypeInductance                = "Inductance"
+	DataTypeLength                    = "Length"
+	DataTypeMoney                     = "Money"
+	DataTypePerCent                   = "PerCent"
+	DataTypePU                        = "PU"
+	DataTypeReactance                 = "Reactance"
+	DataTypeReactivePower             = "ReactivePower"
+	DataTypeRealEnergy                = "RealEnergy"
+	DataTypeResistance                = "Resistance"
+	DataTypeRotationSpeed             = "RotationSpeed"
+	DataTypeSeconds                   = "Seconds"
+	DataTypeSusceptance               = "Susceptance"
+	DataTypeTemperature               = "Temperature"
+	DataTypeVoltage                   = "Voltage"
+	DataTypeVoltagePerReactivePower   = "VoltagePerReactivePower"
+	DataTypeVolumeFlowRate            = "VolumeFlowRate"
 )
 
 // CIMAttribute represents a CIM attribute with its properties.
@@ -182,7 +211,8 @@ func processClass(classMap map[string]interface{}) CIMType {
 	category := extractResource(classMap, "cims:belongsToCategory")
 	rdfType := extractResource(classMap, "rdf:type")
 
-	comment = strings.Join(strings.Fields(template.HTMLEscapeString(comment)), " ")
+	//comment = strings.Join(strings.Fields(template.HTMLEscapeString(comment)), " ")
+	comment = cleanText(comment)
 
 	return CIMType{
 		Id:         extractURIEnd(typeId),
@@ -209,7 +239,8 @@ func processProperty(classMap map[string]interface{}) CIMAttribute {
 	rdfRange := extractResource(classMap, "rdfs:range")
 	inverseRoleName := extractResource(classMap, "cims:inverseRoleName")
 
-	comment = strings.Join(strings.Fields(template.HTMLEscapeString(comment)), " ")
+	//comment = strings.Join(strings.Fields(template.HTMLEscapeString(comment)), " ")
+	comment = cleanText(comment)
 
 	associationUsed := false
 	if extractStringOrResource(classMap["cims:AssociationUsed"]) == "Yes" {
@@ -235,6 +266,63 @@ func processProperty(classMap map[string]interface{}) CIMAttribute {
 		AssociationUsed: associationUsed,
 		InverseRole:     extractURIEnd(inverseRoleName),
 		IsList:          isList,
+	}
+}
+
+func cleanText(htmlString string) string {
+	plainText, err := stripTagsManual(htmlString)
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		return ""
+	}
+
+	// Replace ’ with `
+	plainText = strings.ReplaceAll(plainText, "’", "'")
+	// Replace ' with `
+	plainText = strings.ReplaceAll(plainText, "'", "'")
+	// Replace “ with `
+	plainText = strings.ReplaceAll(plainText, "“", "'")
+	// Replace ” with `
+	plainText = strings.ReplaceAll(plainText, "”", "'")
+	// Replace " with `
+	plainText = strings.ReplaceAll(plainText, "\"", "'")
+	// Replace – with -
+	plainText = strings.ReplaceAll(plainText, "–", "-")
+
+	// Remove line breaks and extra spaces
+	plainText = strings.ReplaceAll(plainText, "\n", " ")
+	plainText = strings.ReplaceAll(plainText, "\r", " ")
+	plainText = strings.Join(strings.Fields(plainText), " ")
+
+	// Clean up leading/trailing whitespace and normalize spacing
+	return strings.TrimSpace(plainText)
+}
+
+// stripTagsManual parses HTML from a string and extracts only the plain text content.
+func stripTagsManual(htmlInput string) (string, error) {
+	// Use strings.NewReader to create an io.Reader from the input string
+	doc, err := html.Parse(strings.NewReader(htmlInput))
+	if err != nil {
+		return "", fmt.Errorf("failed to parse HTML: %w", err)
+	}
+
+	var builder strings.Builder
+	// Call the recursive function to traverse the nodes and extract text
+	traverseAndExtractText(doc, &builder)
+
+	return builder.String(), nil
+}
+
+// traverseAndExtractText recursively walks the HTML node tree and appends text nodes to a strings.Builder.
+func traverseAndExtractText(n *html.Node, builder *strings.Builder) {
+	// If the node is a TextNode, append its data to the builder
+	if n.Type == html.TextNode {
+		builder.WriteString(n.Data)
+	}
+
+	// Recurse through all child nodes
+	for c := n.FirstChild; c != nil; c = c.NextSibling {
+		traverseAndExtractText(c, builder)
 	}
 }
 
@@ -573,7 +661,7 @@ func (cimSpec *CIMSpecification) setDefaultValuesPython() {
 	for _, t := range cimSpec.Types {
 		for _, attr := range t.Attributes {
 			if attr.IsList {
-				attr.DefaultValue = "[]" // Set default value for list attributes
+				attr.DefaultValue = "None" // Set default value for list attributes
 			} else if attr.DataType == DataTypeString {
 				attr.DefaultValue = "''" // Set default value for string attributes
 			} else if attr.DataType == DataTypeInteger {
@@ -584,6 +672,20 @@ func (cimSpec *CIMSpecification) setDefaultValuesPython() {
 				attr.DefaultValue = "0.0" // Set default value for float attributes
 			} else if attr.DataType == DataTypeObject {
 				attr.DefaultValue = "None" // Set default value for object attributes
+			} else if attr.DataType == DataTypeActivePower || attr.DataType == DataTypeActivePowerPerCurrentFlow ||
+				attr.DataType == DataTypeActivePowerPerFrequency || attr.DataType == DataTypeAngleDegrees ||
+				attr.DataType == DataTypeAngleRadians || attr.DataType == DataTypeApparentPower ||
+				attr.DataType == DataTypeArea || attr.DataType == DataTypeCapacitance || attr.DataType == DataTypeConductance ||
+				attr.DataType == DataTypeCurrentFlow || attr.DataType == DataTypeFrequency ||
+				attr.DataType == DataTypeInductance || attr.DataType == DataTypeLength || attr.DataType == DataTypeMoney ||
+				attr.DataType == DataTypePerCent || attr.DataType == DataTypePU || attr.DataType == DataTypeReactance ||
+				attr.DataType == DataTypeReactivePower || attr.DataType == DataTypeRealEnergy || attr.DataType == DataTypeResistance ||
+				attr.DataType == DataTypeRotationSpeed || attr.DataType == DataTypeSeconds || attr.DataType == DataTypeSusceptance ||
+				attr.DataType == DataTypeTemperature || attr.DataType == DataTypeVoltage || attr.DataType == DataTypeVoltagePerReactivePower ||
+				attr.DataType == DataTypeVolumeFlowRate {
+				attr.DefaultValue = "0.0" // Set default value for specific CIM data types
+			} else {
+				attr.DefaultValue = "None" // Default fallback
 			}
 		}
 	}

@@ -1,9 +1,9 @@
 package cimgen
 
 import (
-	"html/template"
 	"os"
 	"path/filepath"
+	"text/template"
 
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
@@ -49,22 +49,6 @@ type CIMGenerator struct {
 	tmplTypeList  *template.Template
 	tmplTypeAlias *template.Template
 	tmplEnum      *template.Template
-}
-
-func NewCIMGeneratorPython(spec *CIMSpecification) *CIMGenerator {
-	// Since ParseFile does not work well with files in subdirectories, we read the file manually
-	data, err := os.ReadFile("lang-templates/python_class.tmpl")
-	if err != nil {
-		panic(err)
-	}
-	tmplType, err := template.New("python_class").Parse(string(data))
-	if err != nil {
-		panic(err)
-	}
-	return &CIMGenerator{
-		cimSpec:  spec,
-		tmplType: tmplType,
-	}
 }
 
 func NewCIMGeneratorGo(spec *CIMSpecification) *CIMGenerator {
@@ -188,5 +172,43 @@ func (gen *CIMGenerator) GenerateAllGo(outputDir string) {
 			panic(err)
 		}
 	}
+}
 
+func NewCIMGeneratorPython(spec *CIMSpecification) *CIMGenerator {
+	// Since ParseFile does not work well with files in subdirectories, we read the file manually
+	data, err := os.ReadFile("lang-templates/python_class.tmpl")
+	if err != nil {
+		panic(err)
+	}
+	tmplType, err := template.New("python_class").Parse(string(data))
+	if err != nil {
+		panic(err)
+	}
+	return &CIMGenerator{
+		cimSpec:  spec,
+		tmplType: tmplType,
+	}
+}
+
+func (gen *CIMGenerator) GenerateAllPython(outputDir string) {
+	// create output folder if it does not exist
+	if _, err := os.Stat(outputDir); os.IsNotExist(err) {
+		err = os.MkdirAll(outputDir, 0755)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	for typeName := range gen.cimSpec.Types {
+		f, err := os.Create(filepath.Join(outputDir, typeName+".py"))
+		if err != nil {
+			panic(err)
+		}
+		defer f.Close()
+
+		err = gen.tmplType.Execute(f, gen.cimSpec.Types[typeName])
+		if err != nil {
+			panic(err)
+		}
+	}
 }

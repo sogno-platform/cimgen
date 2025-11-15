@@ -1,6 +1,7 @@
 {{if .SuperType}}from .{{.SuperType}} import {{.SuperType}}{{else}}from .Base import Base{{end}}
 from .CGMESProfile import Profile
 
+
 class {{.Id}}({{if .SuperType}}{{.SuperType}}{{else}}Base{{end}}):
     """
 {{- if .Comment}}
@@ -14,7 +15,7 @@ class {{.Id}}({{if .SuperType}}{{.SuperType}}{{else}}Base{{end}}):
     possibleProfileList = {
         "class": [{{range .Origins}}Profile.{{.}}.value, {{end}}],
 {{- range .Attributes}}
-        "{{.Label}}": [{{if .Origin}}Profile.{{.Origin}}.value, {{end}}],
+        "{{.Label}}": [{{range .Origins}}Profile.{{.}}.value, {{end}}],
 {{- end}}
     }
 
