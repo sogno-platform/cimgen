@@ -13,6 +13,11 @@ import (
 	"golang.org/x/net/html"
 )
 
+const (
+	CGMESVersion_3_0_0  = "3.0.0"
+	CGMESVersion_2_4_15 = "2.4.15"
+)
+
 // enum to determine primitve types
 const (
 	DataTypeString   = "String"
@@ -129,13 +134,18 @@ type CIMOntology struct {
 	VersionInfo string
 	Keyword     string
 	RDFType     string
+	Name        string
+	Priority    int
 }
 
 // CIMSpecification represents the entire CIM specification with types, enums, and ontologies.
 type CIMSpecification struct {
-	Types      map[string]*CIMType
-	Enums      map[string]*CIMEnum
-	Ontologies map[string]*CIMOntology
+	Namespaces     map[string]string
+	UsedNamespaces map[string]string
+	Types          map[string]*CIMType
+	Enums          map[string]*CIMEnum
+	Ontologies     map[string]*CIMOntology
+	CGMESVersion   string
 }
 
 // extractResource extracts the resource URI from a map object using the specified key.
@@ -210,6 +220,10 @@ func processClass(classMap map[string]interface{}) CIMType {
 	stereotype := extractStringOrResource(classMap["cims:stereotype"])
 	category := extractResource(classMap, "cims:belongsToCategory")
 	rdfType := extractResource(classMap, "rdf:type")
+	namespace := extractURIPath(typeId)
+	if !strings.HasSuffix(namespace, "#") {
+		namespace += "#"
+	}
 
 	//comment = strings.Join(strings.Fields(template.HTMLEscapeString(comment)), " ")
 	comment = cleanText(comment)
@@ -219,7 +233,7 @@ func processClass(classMap map[string]interface{}) CIMType {
 		Label:      label,
 		SuperType:  extractURIEnd(superType),
 		Comment:    comment,
-		Namespace:  extractURIPath(typeId),
+		Namespace:  namespace,
 		Stereotype: extractURIEnd(stereotype),
 		RDFType:    extractURIEnd(rdfType),
 		Categories: []string{extractURIEnd(category)},
@@ -253,11 +267,16 @@ func processProperty(classMap map[string]interface{}) CIMAttribute {
 		isList = true
 	}
 
+	namespace := extractURIPath(attrId)
+	if !strings.HasSuffix(namespace, "#") {
+		namespace += "#"
+	}
+
 	return CIMAttribute{
 		Id:              extractURIEnd(attrId),
 		Comment:         comment,
 		Stereotype:      extractURIEnd(stereotype),
-		Namespace:       extractURIPath(attrId),
+		Namespace:       namespace,
 		Label:           label,
 		RDFDomain:       extractURIEnd(rdfDomain),
 		DataType:        extractURIEnd(cimDataType),
@@ -335,11 +354,16 @@ func processEnum(classMap map[string]interface{}) CIMEnum {
 	stereotype := extractStringOrResource(classMap["cims:stereotype"])
 	rdfType := extractResource(classMap, "rdf:type")
 
+	namespace := extractURIPath(typeId)
+	if !strings.HasSuffix(namespace, "#") {
+		namespace += "#"
+	}
+
 	return CIMEnum{
 		Id:         extractURIEnd(typeId),
 		Label:      label,
 		Comment:    comment,
-		Namespace:  extractURIPath(typeId),
+		Namespace:  namespace,
 		Stereotype: extractURIEnd(stereotype),
 		RDFType:    extractURIEnd(rdfType),
 	}
@@ -371,6 +395,9 @@ func processOntology(classMap map[string]interface{}) CIMOntology {
 	versionIRI := extractResource(classMap, "owl:versionIRI")
 	versionInfo := extractText(classMap, "owl:versionInfo")
 	keyword := extractValue(classMap, "dcat:keyword")
+	name := extractText(classMap, "dct:title")
+	// remove suffix " Vocabulary" from name if present
+	name = strings.TrimSuffix(name, " Vocabulary")
 
 	return CIMOntology{
 		Id:          extractURIEnd(typeId),
@@ -379,12 +406,34 @@ func processOntology(classMap map[string]interface{}) CIMOntology {
 		VersionIRI:  versionIRI,
 		VersionInfo: versionInfo,
 		Keyword:     keyword,
+		Name:        name,
 	}
 }
 
 // processRDFMap processes the RDF map and extracts CIM types, enums, and ontology.
-func processRDFMap(inputMap map[string]interface{}) (map[string]*CIMType, map[string]*CIMEnum, CIMOntology) {
+func processRDFMap(inputMap map[string]interface{}) (map[string]*CIMType, map[string]*CIMEnum, CIMOntology, map[string]string) {
+	namespaces := make(map[string]string)
 	rdfMap := inputMap["rdf:RDF"].(map[string]interface{})
+	// iterate over rdfMap and process each element that is @xml or @xmlns
+	for k, v := range rdfMap {
+		if strings.HasPrefix(k, "@xmlns:") {
+			// add # at the end of the namespace URI if not present
+			ns := v.(string)
+			if !strings.HasSuffix(ns, "#") {
+				ns += "#"
+			}
+			namespaces[strings.TrimPrefix(k, "@xmlns:")] = ns
+		}
+		if strings.HasPrefix(k, "@xml:") {
+			// add # at the end of the namespace URI if not present
+			ns := v.(string)
+			if !strings.HasSuffix(ns, "#") {
+				ns += "#"
+			}
+			namespaces[strings.TrimPrefix(k, "@xml:")] = ns
+		}
+	}
+
 	descriptions := rdfMap["rdf:Description"].([]map[string]interface{})
 	cimTypes := make(map[string]*CIMType, 0)
 	cimEnums := make(map[string]*CIMEnum, 0)
@@ -426,7 +475,7 @@ func processRDFMap(inputMap map[string]interface{}) (map[string]*CIMType, map[st
 
 	assignEnumValuesToEnums(cimEnums, cimEnumValues)
 
-	return cimTypes, cimEnums, cimOntology
+	return cimTypes, cimEnums, cimOntology, namespaces
 }
 
 // assignAttributesToTypes assigns attributes to their corresponding CIM types based on RDFDomain.
@@ -446,6 +495,16 @@ func assignEnumValuesToEnums(cimEnums map[string]*CIMEnum, cimEnumValues []*CIME
 			enum.Values = append(enum.Values, val)
 		}
 	}
+}
+
+// mergeNamepaces merges two maps of namespaces.
+func mergeNamespaces(namespacesMerged map[string]string, namespaces map[string]string) map[string]string {
+	for k, v := range namespaces {
+		if _, ok := namespacesMerged[k]; !ok {
+			namespacesMerged[k] = v
+		}
+	}
+	return namespacesMerged
 }
 
 // mergeCimTypes merges two maps of CIM types, combining attributes and origins for types with the same Id.
@@ -607,18 +666,22 @@ func contains(slice []string, str string) bool {
 // NewCIMSpecification creates and returns a new CIMSpecification instance.
 func NewCIMSpecification() *CIMSpecification {
 	return &CIMSpecification{
-		Types:      make(map[string]*CIMType, 0),
-		Enums:      make(map[string]*CIMEnum, 0),
-		Ontologies: make(map[string]*CIMOntology, 0),
+		Types:          make(map[string]*CIMType, 0),
+		Enums:          make(map[string]*CIMEnum, 0),
+		Ontologies:     make(map[string]*CIMOntology, 0),
+		Namespaces:     make(map[string]string, 0),
+		UsedNamespaces: make(map[string]string),
+		CGMESVersion:   CGMESVersion_3_0_0,
 	}
 }
 
 // addRDFMap adds the CIM types, enums, and ontology from the input map to the CIMSpecification.
 func (cimSpec *CIMSpecification) addRDFMap(inputMap map[string]interface{}) {
-	cimTypes, cimEnums, cimOntology := processRDFMap(inputMap)
+	cimTypes, cimEnums, cimOntology, namespaces := processRDFMap(inputMap)
 	cimSpec.Types = mergeCimTypes(cimSpec.Types, cimTypes)
 	cimSpec.Enums = mergeCimEnums(cimSpec.Enums, cimEnums)
 	cimSpec.Ontologies[cimOntology.Keyword] = &cimOntology
+	cimSpec.Namespaces = mergeNamespaces(cimSpec.Namespaces, namespaces)
 }
 
 // sortAttributes sorts the attributes of each CIMType by their Id.
@@ -760,6 +823,77 @@ func (cimSpec *CIMSpecification) findEnumAttributes() {
 	}
 }
 
+// fillMissingNamespaces fills in missing namespaces for types and their attributes and enums using the base URI.
+// It also ensures that the "md" namespace is present in the CIMSpecification.
+// It stores the namespaces that are used in the UsedNamespaces map.
+func (cimSpec *CIMSpecification) fillMissingNamespaces() {
+	for _, t := range cimSpec.Types {
+		if t.Namespace == "" {
+			t.Namespace = cimSpec.Namespaces["base"]
+		}
+		for _, attr := range t.Attributes {
+			if attr.Namespace == "" {
+				attr.Namespace = cimSpec.Namespaces["base"]
+			}
+		}
+	}
+	for _, e := range cimSpec.Enums {
+		if e.Namespace == "" {
+			e.Namespace = cimSpec.Namespaces["base"]
+		}
+	}
+
+	revNamespaces := make(map[string]string)
+	// store namespaces in map where value and key are reversed
+	for key, value := range cimSpec.Namespaces {
+		if key != "base" {
+			revNamespaces[value] = key
+		}
+	}
+
+	// fill UsedNamespaces map
+	for _, t := range cimSpec.Types {
+		if _, ok := revNamespaces[t.Namespace]; ok {
+			cimSpec.UsedNamespaces[revNamespaces[t.Namespace]] = t.Namespace
+		}
+	}
+	for _, e := range cimSpec.Enums {
+		if _, ok := revNamespaces[e.Namespace]; ok {
+			cimSpec.UsedNamespaces[revNamespaces[e.Namespace]] = e.Namespace
+		}
+	}
+
+	// add md namespace if not present
+	if _, ok := cimSpec.UsedNamespaces["md"]; !ok {
+		cimSpec.Namespaces["md"] = "http://iec.ch/TC57/61970-552/ModelDescription/1#"
+		cimSpec.UsedNamespaces["md"] = "http://iec.ch/TC57/61970-552/ModelDescription/1#"
+	}
+
+	// add rdf namespace if not present
+	if _, ok := cimSpec.UsedNamespaces["rdf"]; !ok {
+		cimSpec.Namespaces["rdf"] = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+		cimSpec.UsedNamespaces["rdf"] = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+	}
+}
+
+func (cimSpec *CIMSpecification) setProfilePriorities() {
+	cimSpec.Ontologies["EQ"].Priority = 1
+
+	// assign remaining ontologies priorities based on alphabetical order of their keywords
+	keywords := make([]string, 0, len(cimSpec.Ontologies))
+	for k := range cimSpec.Ontologies {
+		if k != "EQ" {
+			keywords = append(keywords, k)
+		}
+	}
+	sort.Strings(keywords)
+	priority := 2
+	for _, k := range keywords {
+		cimSpec.Ontologies[k].Priority = priority
+		priority++
+	}
+}
+
 // postprocess performs various post-processing steps on the CIMSpecification.
 func (cimSpec *CIMSpecification) postprocess() {
 	cimSpec.pickMainOrigin()
@@ -770,11 +904,20 @@ func (cimSpec *CIMSpecification) postprocess() {
 	cimSpec.markUnusedAttributesAndAssociations()
 	cimSpec.removeIdentifiedObjectAttributes()
 	cimSpec.findEnumAttributes()
+	cimSpec.fillMissingNamespaces()
+	cimSpec.setProfilePriorities()
 }
 
 // printSpecification prints the CIMSpecification to the provided writer in JSON format.
 func (cimSpec *CIMSpecification) printSpecification(w io.Writer) {
-	jsonb, err := json.MarshalIndent(cimSpec.Ontologies, "", "  ")
+	jsonb, err := json.MarshalIndent(cimSpec.Namespaces, "", "  ")
+	if err != nil {
+		panic(err)
+	}
+	w.Write(jsonb)
+	fmt.Fprint(w, "\n")
+
+	jsonb, err = json.MarshalIndent(cimSpec.Ontologies, "", "  ")
 	if err != nil {
 		panic(err)
 	}

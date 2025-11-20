@@ -1,0 +1,42 @@
+"""
+Generated from the CGMES specification using cimgen: https://github.com/sogno-platform/cimgen
+"""
+
+from enum import Enum
+
+
+# Mapping between the profiles and their short names
+short_profile_name = {
+{{- range .Ontologies}}
+    "{{.Name}}": "{{.Keyword}}",
+{{- end}}
+}
+long_profile_name = {
+{{- range .Ontologies}}
+    "{{.Keyword}}": "{{.Name}}",
+{{- end}}
+}
+profile_uris = {  # Those are strings, not real addresses, hence the NOSONAR.
+{{- range .Ontologies}}
+    "{{.Keyword}}": [
+        "{{.VersionIRI}}",  # NOSONAR
+    ],
+{{- end}}
+}
+
+
+class Profile(Enum):
+    """Enum containing all CGMES profiles and their export priority."""
+{{range .Ontologies}}
+    {{.Keyword}} = {{.Priority}}
+{{- end}}
+
+    def long_name(self):
+        return long_profile_name[self.name]
+
+    def uris(self):
+        return profile_uris[self.name]
+
+    @classmethod
+    def from_long_name(cls, long_name):
+        return cls[short_profile_name[long_name]]

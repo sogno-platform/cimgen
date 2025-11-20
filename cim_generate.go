@@ -49,6 +49,8 @@ type CIMGenerator struct {
 	tmplTypeList  *template.Template
 	tmplTypeAlias *template.Template
 	tmplEnum      *template.Template
+	tmplConstants *template.Template
+	tmplProfiles  *template.Template
 }
 
 func NewCIMGeneratorGo(spec *CIMSpecification) *CIMGenerator {
@@ -184,9 +186,30 @@ func NewCIMGeneratorPython(spec *CIMSpecification) *CIMGenerator {
 	if err != nil {
 		panic(err)
 	}
+
+	data, err = os.ReadFile("lang-templates/python_constants.tmpl")
+	if err != nil {
+		panic(err)
+	}
+	tmplConstants, err := template.New("python_constants").Parse(string(data))
+	if err != nil {
+		panic(err)
+	}
+
+	data, err = os.ReadFile("lang-templates/python_profiles.tmpl")
+	if err != nil {
+		panic(err)
+	}
+	tmplProfiles, err := template.New("python_profiles").Parse(string(data))
+	if err != nil {
+		panic(err)
+	}
+
 	return &CIMGenerator{
-		cimSpec:  spec,
-		tmplType: tmplType,
+		cimSpec:       spec,
+		tmplType:      tmplType,
+		tmplConstants: tmplConstants,
+		tmplProfiles:  tmplProfiles,
 	}
 }
 
@@ -210,5 +233,29 @@ func (gen *CIMGenerator) GenerateAllPython(outputDir string) {
 		if err != nil {
 			panic(err)
 		}
+	}
+
+	// generate constants file
+	f, err := os.Create(filepath.Join(outputDir, "cim_constants.py"))
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+
+	err = gen.tmplConstants.Execute(f, gen.cimSpec)
+	if err != nil {
+		panic(err)
+	}
+
+	// generate profiles file
+	f, err = os.Create(filepath.Join(outputDir, "cim_profiles.py"))
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+
+	err = gen.tmplProfiles.Execute(f, gen.cimSpec)
+	if err != nil {
+		panic(err)
 	}
 }

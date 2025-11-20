@@ -1,0 +1,13 @@
+"""
+Generated from the CGMES specification using cimgen: https://github.com/sogno-platform/cimgen
+"""
+
+#: CIM version string.
+CIM_VERSION: str = "{{.CGMESVersion}}"
+
+#: Default namespaces used by CGMES. Map of namespace key to URL.
+NAMESPACES: dict[str, str] = {  # Those are strings, not real addresses, hence the NOSONAR.
+{{- range $key, $value := .UsedNamespaces}}
+    "{{$key}}": "{{$value}}",  # NOSONAR
+{{- end}}
+}
