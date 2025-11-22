@@ -1,0 +1,17 @@
+"""
+Generated from the CGMES specification using cimgen: https://github.com/sogno-platform/cimgen
+"""
+
+from enum import Enum
+
+
+class {{.Id}}(str, Enum):
+    """
+    {{- if .Comment}}
+        {{.Comment}}
+    {{end}}
+    """
+
+    {{- range $index, $element := .Values}}
+    {{.Label}} = "http://iec.ch/TC57/CIM100#{{.Id}}" # {{.Comment}} # noqa: E501
+    {{- end}}

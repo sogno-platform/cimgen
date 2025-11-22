@@ -51,6 +51,8 @@ type CIMGenerator struct {
 	tmplEnum      *template.Template
 	tmplConstants *template.Template
 	tmplProfiles  *template.Template
+	tmplDatatype  *template.Template
+	tmplPrimitive *template.Template
 }
 
 func NewCIMGeneratorGo(spec *CIMSpecification) *CIMGenerator {
@@ -196,11 +198,38 @@ func NewCIMGeneratorPython(spec *CIMSpecification) *CIMGenerator {
 		panic(err)
 	}
 
-	data, err = os.ReadFile("lang-templates/python_profiles.tmpl")
+	data, err = os.ReadFile("lang-templates/python_profile.tmpl")
 	if err != nil {
 		panic(err)
 	}
-	tmplProfiles, err := template.New("python_profiles").Parse(string(data))
+	tmplProfiles, err := template.New("python_profile").Parse(string(data))
+	if err != nil {
+		panic(err)
+	}
+
+	data, err = os.ReadFile("lang-templates/python_datatype.tmpl")
+	if err != nil {
+		panic(err)
+	}
+	tmplDatatype, err := template.New("python_datatype").Parse(string(data))
+	if err != nil {
+		panic(err)
+	}
+
+	data, err = os.ReadFile("lang-templates/python_enum.tmpl")
+	if err != nil {
+		panic(err)
+	}
+	tmplEnum, err := template.New("python_enum").Parse(string(data))
+	if err != nil {
+		panic(err)
+	}
+
+	data, err = os.ReadFile("lang-templates/python_primitive.tmpl")
+	if err != nil {
+		panic(err)
+	}
+	tmplPrimitive, err := template.New("python_primitive").Parse(string(data))
 	if err != nil {
 		panic(err)
 	}
@@ -210,6 +239,9 @@ func NewCIMGeneratorPython(spec *CIMSpecification) *CIMGenerator {
 		tmplType:      tmplType,
 		tmplConstants: tmplConstants,
 		tmplProfiles:  tmplProfiles,
+		tmplDatatype:  tmplDatatype,
+		tmplEnum:      tmplEnum,
+		tmplPrimitive: tmplPrimitive,
 	}
 }
 
@@ -257,5 +289,47 @@ func (gen *CIMGenerator) GenerateAllPython(outputDir string) {
 	err = gen.tmplProfiles.Execute(f, gen.cimSpec)
 	if err != nil {
 		panic(err)
+	}
+
+	// generate datatypes
+	for typeName := range gen.cimSpec.CIMDatatypes {
+		f, err = os.Create(filepath.Join(outputDir, typeName+".py"))
+		if err != nil {
+			panic(err)
+		}
+		defer f.Close()
+
+		err = gen.tmplDatatype.Execute(f, gen.cimSpec.CIMDatatypes[typeName])
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	// generate enums
+	for typeName := range gen.cimSpec.Enums {
+		f, err := os.Create(filepath.Join(outputDir, typeName+".py"))
+		if err != nil {
+			panic(err)
+		}
+		defer f.Close()
+
+		err = gen.tmplEnum.Execute(f, gen.cimSpec.Enums[typeName])
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	// generate primitives
+	for typeName := range gen.cimSpec.PrimitiveTypes {
+		f, err := os.Create(filepath.Join(outputDir, typeName+".py"))
+		if err != nil {
+			panic(err)
+		}
+		defer f.Close()
+
+		err = gen.tmplPrimitive.Execute(f, gen.cimSpec.PrimitiveTypes[typeName])
+		if err != nil {
+			panic(err)
+		}
 	}
 }

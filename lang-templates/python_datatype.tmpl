@@ -1,0 +1,21 @@
+"""
+Generated from the CGMES specification using cimgen: https://github.com/sogno-platform/cimgen
+"""
+
+from ..utils.datatypes import CIMDatatype
+from ..utils.profile import Profile
+# TODO add imports for Multiplicity if needed
+
+{{.Id}} = CIMDatatype(
+    name="{{.Id}}",
+    type={{.LangType}},
+        profiles=[{{range .Origins}}
+        Profile.{{.}}, {{end}}
+    ],
+)
+
+"""
+{{- if .Comment}}
+{{.Comment}}
+{{- end}}
+"""

@@ -13,10 +13,12 @@ func main() {
 	var schemaPattern string
 	var outputDir string
 	var language string
+	var cgmesVersion string
 	var verbose bool
 
 	flag.StringVar(&schemaPattern, "schema", "cgmes_schema/CGMES_3.0.0/IEC61970-600-2_CGMES_3_0_0_RDFS2020_*.rdf", "glob pattern for CIM schema files")
 	flag.StringVar(&language, "lang", "go", "output language (e.g., go, python)")
+	flag.StringVar(&cgmesVersion, "version", "3.0.0", "CGMES version")
 	flag.BoolVar(&verbose, "v", false, "verbose logging")
 	flag.Parse()
 
@@ -28,6 +30,7 @@ func main() {
 
 	// create and populate specification
 	cimSpec := cimgen.NewCIMSpecification()
+	cimSpec.CGMESVersion = cgmesVersion
 	cimSpec.ImportCIMSchemaFiles(schemaPattern)
 
 	switch language {

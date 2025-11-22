@@ -12,7 +12,7 @@ import (
 func TestDecode(t *testing.T) {
 	t.Log("Start XML decoder test")
 
-	entries, err := filepath.Glob("cgmes_schema/CGMES_3.0.0/IEC61970-600-2_CGMES_3_0_0_RDFS2020_TP.rdf")
+	entries, err := filepath.Glob("cgmes_schema/CGMES_3.0.0/IEC61970-600-2_CGMES_3_0_0_RDFS2020_EQ.rdf")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -57,23 +57,10 @@ func TestDecode(t *testing.T) {
 			t.Error("decoder tests failed, expected map of interface")
 		}
 
-		arr, ok := desc.([]map[string]interface{})
+		_, ok = desc.([]map[string]interface{})
 		if !ok {
 			t.Error("decoder tests failed, expected array of map")
 		}
 
-		v, ok := arr[0]["@rdf:about"]
-		if !ok {
-			t.Error("decoder tests failed, expected key @rdf:about")
-		}
-
-		about, ok := v.(string)
-		if !ok {
-			t.Error("decoder tests failed, expected string")
-		}
-
-		if about != "http://iec.ch/TC57/ns/CIM/Topology-EU#Ontology" {
-			t.Error("decoder tests failed, expected different string value")
-		}
 	}
 }

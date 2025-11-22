@@ -28,11 +28,18 @@ const (
 	DataTypeTime     = "Time"
 	DataTypeDateTime = "DateTime"
 	DataTypeBinary   = "Binary"
-	DataTypeEnum     = "Enum"
-	DataTypeObject   = "Object"
-	DataTypeList     = "List"
-	DataTypeUnknown  = "Unknown"
+)
 
+// enum for general data types
+const (
+	DataTypeEnum    = "Enum"
+	DataTypeObject  = "Object"
+	DataTypeList    = "List"
+	DataTypeUnknown = "Unknown"
+)
+
+// enum for CGMES specific data types
+const (
 	DataTypeActivePower               = "ActivePower"
 	DataTypeActivePowerPerCurrentFlow = "ActivePowerPerCurrentFlow"
 	DataTypeActivePowerPerFrequency   = "ActivePowerPerFrequency"
@@ -84,24 +91,52 @@ type CIMAttribute struct {
 	DefaultValue    string
 	IsUsed          bool
 	IsEnumValue     bool
+	LangType        string
+	IsCIMDatatype   bool
+	IsClass         bool
 }
 
 // CIMType represents a CIM class/type with its properties and attributes.
 type CIMType struct {
-	Id            string
-	Label         string
-	Namespace     string
-	Comment       string
-	SuperType     string
-	SuperTypes    []string
-	SubClasses    []string
-	EnumInstances []string
-	Stereotype    string
-	Categories    []string
-	Origin        string
-	Origins       []string
-	RDFType       string
-	Attributes    []*CIMAttribute
+	Id         string
+	Label      string
+	Namespace  string
+	Comment    string
+	SuperType  string
+	SuperTypes []string
+	SubClasses []string
+	Stereotype string
+	Categories []string
+	Origin     string
+	Origins    []string
+	RDFType    string
+	Attributes []*CIMAttribute
+}
+
+type CIMDatatype struct {
+	Id         string
+	Label      string
+	Namespace  string
+	Comment    string
+	Stereotype string
+	Categories []string
+	Origin     string
+	Origins    []string
+	RDFType    string
+	LangType   string
+}
+
+type CIMPrimitive struct {
+	Id         string
+	Label      string
+	Namespace  string
+	Comment    string
+	Stereotype string
+	Categories []string
+	Origin     string
+	Origins    []string
+	RDFType    string
+	LangType   string
 }
 
 // CIMEnum represents a CIM enumeration with its values.
@@ -140,74 +175,175 @@ type CIMOntology struct {
 
 // CIMSpecification represents the entire CIM specification with types, enums, and ontologies.
 type CIMSpecification struct {
-	Namespaces     map[string]string
-	UsedNamespaces map[string]string
-	Types          map[string]*CIMType
-	Enums          map[string]*CIMEnum
-	Ontologies     map[string]*CIMOntology
-	CGMESVersion   string
+	SpecificationNamespaces map[string]string
+	ProfileNamespaces       map[string]string
+	Ontologies              map[string]*CIMOntology
+	Types                   map[string]*CIMType
+	Enums                   map[string]*CIMEnum
+	PrimitiveTypes          map[string]*CIMPrimitive
+	CIMDatatypes            map[string]*CIMDatatype
+	CGMESVersion            string
 }
 
-// extractResource extracts the resource URI from a map object using the specified key.
-// It returns an empty string if the key does not exist or the value is not a map.
-func extractResource(obj map[string]interface{}, key string) string {
-	if v, ok := obj[key]; ok {
-		if m, ok := v.(map[string]interface{}); ok {
-			return m["@rdf:resource"].(string)
-		}
+// NewCIMSpecification creates and returns a new CIMSpecification instance.
+func NewCIMSpecification() *CIMSpecification {
+	return &CIMSpecification{
+		Types:                   make(map[string]*CIMType, 0),
+		Enums:                   make(map[string]*CIMEnum, 0),
+		Ontologies:              make(map[string]*CIMOntology, 0),
+		SpecificationNamespaces: make(map[string]string, 0),
+		ProfileNamespaces:       make(map[string]string),
+		PrimitiveTypes:          make(map[string]*CIMPrimitive, 0),
+		CIMDatatypes:            make(map[string]*CIMDatatype, 0),
+		CGMESVersion:            CGMESVersion_3_0_0,
 	}
-	return ""
 }
 
-// extractStringOrResource extracts a string value or a resource URI from an interface{}.
-// It handles cases where the input is a string, a map with a resource, or a slice of maps.
-// It returns an empty string if no valid value is found.
-func extractStringOrResource(obj interface{}) string {
-	switch item := obj.(type) {
-	case string:
-		return item
-	case map[string]interface{}:
-		return item["@rdf:resource"].(string)
-	case []interface{}:
-		for _, m := range item {
-			if m, ok := m.(map[string]interface{}); ok {
-				return m["@rdf:resource"].(string)
+// ImportCIMSchemaFiles imports CIM schema files matching the given glob pattern into the CIMSpecification.
+func (cimSpec *CIMSpecification) ImportCIMSchemaFiles(schemaFiles string) {
+	entries, err := filepath.Glob(schemaFiles)
+	if err != nil {
+		panic(err)
+	}
+	sort.Strings(entries)
+
+	for _, entry := range entries {
+		b, err := os.ReadFile(entry)
+		if err != nil {
+			panic(err)
+		}
+
+		resultMap, err := DecodeToMap(bytes.NewReader(b))
+		if err != nil {
+			panic(err)
+		}
+
+		cimSpec.addRDFMap(resultMap)
+	}
+
+	cimSpec.postprocess()
+}
+
+// addRDFMap adds the CIM types, enums, and ontology from the input map to the CIMSpecification.
+func (cimSpec *CIMSpecification) addRDFMap(inputMap map[string]interface{}) {
+	cimTypes, cimEnums, cimOntology, namespaces, cimDatatypes, cimPrimitives := processRDFMap(inputMap)
+	cimSpec.Types = mergeCimTypes(cimSpec.Types, cimTypes)
+	cimSpec.Enums = mergeCimEnums(cimSpec.Enums, cimEnums)
+	cimSpec.CIMDatatypes = mergeCIMDatatypes(cimSpec.CIMDatatypes, cimDatatypes)
+	cimSpec.PrimitiveTypes = mergePrimitives(cimSpec.PrimitiveTypes, cimPrimitives)
+	cimSpec.Ontologies[cimOntology.Keyword] = &cimOntology
+	cimSpec.SpecificationNamespaces = mergeNamespaces(cimSpec.SpecificationNamespaces, namespaces)
+}
+
+// printSpecification prints the CIMSpecification to the provided writer in JSON format.
+func (cimSpec *CIMSpecification) printSpecification(w io.Writer) {
+	jsonb, err := json.MarshalIndent(cimSpec.SpecificationNamespaces, "", "  ")
+	if err != nil {
+		panic(err)
+	}
+	w.Write(jsonb)
+	fmt.Fprint(w, "\n")
+
+	jsonb, err = json.MarshalIndent(cimSpec.Ontologies, "", "  ")
+	if err != nil {
+		panic(err)
+	}
+	w.Write(jsonb)
+	fmt.Fprint(w, "\n")
+
+	jsonb, err = json.MarshalIndent(cimSpec.Types, "", "  ")
+	if err != nil {
+		panic(err)
+	}
+	w.Write(jsonb)
+	fmt.Fprint(w, "\n")
+
+	jsonb, err = json.MarshalIndent(cimSpec.Enums, "", "  ")
+	if err != nil {
+		panic(err)
+	}
+	w.Write(jsonb)
+	fmt.Fprint(w, "\n")
+}
+
+// processRDFMap processes the RDF map and extracts CIM types, enums, and ontology.
+func processRDFMap(inputMap map[string]interface{}) (map[string]*CIMType, map[string]*CIMEnum, CIMOntology, map[string]string, map[string]*CIMDatatype, map[string]*CIMPrimitive) {
+	namespaces := make(map[string]string)
+	rdfMap := inputMap["rdf:RDF"].(map[string]interface{})
+	// iterate over rdfMap and process each element that is @xml or @xmlns
+	for k, v := range rdfMap {
+		if strings.HasPrefix(k, "@xmlns:") {
+			// add # at the end of the namespace URI if not present
+			ns := v.(string)
+			if !strings.HasSuffix(ns, "#") {
+				ns += "#"
 			}
+			namespaces[strings.TrimPrefix(k, "@xmlns:")] = ns
+		}
+		if strings.HasPrefix(k, "@xml:") {
+			// add # at the end of the namespace URI if not present
+			ns := v.(string)
+			if !strings.HasSuffix(ns, "#") {
+				ns += "#"
+			}
+			namespaces[strings.TrimPrefix(k, "@xml:")] = ns
 		}
 	}
-	return ""
-}
 
-// extractText extracts the text value from a map object using the specified key.
-// It returns an empty string if the key does not exist or the value is not a map.
-func extractText(obj map[string]interface{}, key string) string {
-	if v, ok := obj[key]; ok {
-		if m, ok := v.(map[string]interface{}); ok {
-			return m["_"].(string)
+	descriptions := rdfMap["rdf:Description"].([]map[string]interface{})
+	cimTypes := make(map[string]*CIMType, 0)
+	cimDatatypes := make(map[string]*CIMDatatype, 0)
+	cimPrimitives := make(map[string]*CIMPrimitive, 0)
+	cimEnums := make(map[string]*CIMEnum, 0)
+	cimEnumValues := make([]*CIMEnumValue, 0)
+	cimAttributes := make([]*CIMAttribute, 0)
+	var cimOntology CIMOntology
+
+	for _, v := range descriptions {
+		objType := extractResource(v, "rdf:type")
+
+		if strings.Contains(objType, "http://www.w3.org/2000/01/rdf-schema#Class") {
+			if extractStringOrResource(v["cims:stereotype"]) == "http://iec.ch/TC57/NonStandard/UML#enumeration" {
+				e := processEnum(v)
+				e.Origin = cimOntology.Keyword
+				e.Origins = []string{cimOntology.Keyword}
+				cimEnums[e.Id] = &e
+			} else if extractStringOrResource(v["cims:stereotype"]) == "CIMDatatype" {
+				e := processCIMDatatypes(v)
+				e.Origin = cimOntology.Keyword
+				e.Origins = []string{cimOntology.Keyword}
+				cimDatatypes[e.Id] = &e
+			} else if extractStringOrResource(v["cims:stereotype"]) == "Primitive" {
+				e := processPrimitives(v)
+				e.Origin = cimOntology.Keyword
+				e.Origins = []string{cimOntology.Keyword}
+				cimPrimitives[e.Id] = &e
+			} else {
+				e := processClass(v)
+				e.Origin = cimOntology.Keyword
+				e.Origins = []string{cimOntology.Keyword}
+				cimTypes[e.Id] = &e
+			}
+		} else if strings.Contains(objType, "http://www.w3.org/1999/02/22-rdf-syntax-ns#Property") {
+			cimAttribute := processProperty(v)
+			cimAttribute.Origin = cimOntology.Keyword
+			cimAttribute.Origins = []string{cimOntology.Keyword}
+			cimAttributes = append(cimAttributes, &cimAttribute)
+		} else if strings.Contains(objType, "http://iec.ch/TC57/1999/rdf-schema-extensions-19990926#ClassCategory") {
+
+		} else if strings.Contains(objType, "http://www.w3.org/2002/07/owl#Ontology") {
+			cimOntology = processOntology(v)
+		} else {
+			cimEnumValue := processEnumValue(v)
+			cimEnumValues = append(cimEnumValues, &cimEnumValue)
 		}
 	}
-	return ""
-}
 
-// extractValue extracts a string value from a map object using the specified key.
-// It returns an empty string if the key does not exist.
-func extractValue(obj map[string]interface{}, key string) string {
-	if t, ok := obj[key]; ok {
-		return t.(string)
-	}
-	return ""
-}
+	assignAttributesToTypes(cimTypes, cimAttributes)
 
-// extractURIEnd extracts the fragment identifier from a URI (the part after the '#').
-func extractURIEnd(uri string) string {
-	l := strings.Split(uri, "#")
-	return l[len(l)-1]
-}
+	assignEnumValuesToEnums(cimEnums, cimEnumValues)
 
-// extractURIPath extracts the path part of a URI (the part before the '#').
-func extractURIPath(uri string) string {
-	l := strings.Split(uri, "#")
-	return l[0]
+	return cimTypes, cimEnums, cimOntology, namespaces, cimDatatypes, cimPrimitives
 }
 
 // processClass processes a map representing a CIM class and returns a CIMType struct.
@@ -224,8 +360,6 @@ func processClass(classMap map[string]interface{}) CIMType {
 	if !strings.HasSuffix(namespace, "#") {
 		namespace += "#"
 	}
-
-	//comment = strings.Join(strings.Fields(template.HTMLEscapeString(comment)), " ")
 	comment = cleanText(comment)
 
 	return CIMType{
@@ -241,6 +375,58 @@ func processClass(classMap map[string]interface{}) CIMType {
 	}
 }
 
+// processPrimitives processes a map representing a CIM class and returns a CIMPrimitive struct.
+func processPrimitives(classMap map[string]interface{}) CIMPrimitive {
+
+	typeId := extractValue(classMap, "@rdf:about")
+	label := extractText(classMap, "rdfs:label")
+	comment := extractText(classMap, "rdfs:comment")
+	stereotype := extractStringOrResource(classMap["cims:stereotype"])
+	category := extractResource(classMap, "cims:belongsToCategory")
+	rdfType := extractResource(classMap, "rdf:type")
+	namespace := extractURIPath(typeId)
+	if !strings.HasSuffix(namespace, "#") {
+		namespace += "#"
+	}
+	comment = cleanText(comment)
+
+	return CIMPrimitive{
+		Id:         extractURIEnd(typeId),
+		Label:      label,
+		Comment:    comment,
+		Namespace:  namespace,
+		Stereotype: extractURIEnd(stereotype),
+		RDFType:    extractURIEnd(rdfType),
+		Categories: []string{extractURIEnd(category)},
+	}
+}
+
+// processCIMDatatypes processes a map representing a CIM class and returns a CIMDatatypes struct.
+func processCIMDatatypes(classMap map[string]interface{}) CIMDatatype {
+
+	typeId := extractValue(classMap, "@rdf:about")
+	label := extractText(classMap, "rdfs:label")
+	comment := extractText(classMap, "rdfs:comment")
+	stereotype := extractStringOrResource(classMap["cims:stereotype"])
+	category := extractResource(classMap, "cims:belongsToCategory")
+	rdfType := extractResource(classMap, "rdf:type")
+	namespace := extractURIPath(typeId)
+	if !strings.HasSuffix(namespace, "#") {
+		namespace += "#"
+	}
+	comment = cleanText(comment)
+
+	return CIMDatatype{
+		Id:         extractURIEnd(typeId),
+		Label:      label,
+		Comment:    comment,
+		Namespace:  namespace,
+		Stereotype: extractURIEnd(stereotype),
+		RDFType:    extractURIEnd(rdfType),
+		Categories: []string{extractURIEnd(category)},
+	}
+}
+
 // processProperty processes a map representing a CIM property and returns a CIMAttribute struct.
 func processProperty(classMap map[string]interface{}) CIMAttribute {
 	attrId := extractValue(classMap, "@rdf:about")
@@ -252,8 +438,6 @@ func processProperty(classMap map[string]interface{}) CIMAttribute {
 	cimDataType := extractResource(classMap, "cims:dataType")
 	rdfRange := extractResource(classMap, "rdfs:range")
 	inverseRoleName := extractResource(classMap, "cims:inverseRoleName")
-
-	//comment = strings.Join(strings.Fields(template.HTMLEscapeString(comment)), " ")
 	comment = cleanText(comment)
 
 	associationUsed := false
@@ -410,74 +594,6 @@ func processOntology(classMap map[string]interface{}) CIMOntology {
 	}
 }
 
-// processRDFMap processes the RDF map and extracts CIM types, enums, and ontology.
-func processRDFMap(inputMap map[string]interface{}) (map[string]*CIMType, map[string]*CIMEnum, CIMOntology, map[string]string) {
-	namespaces := make(map[string]string)
-	rdfMap := inputMap["rdf:RDF"].(map[string]interface{})
-	// iterate over rdfMap and process each element that is @xml or @xmlns
-	for k, v := range rdfMap {
-		if strings.HasPrefix(k, "@xmlns:") {
-			// add # at the end of the namespace URI if not present
-			ns := v.(string)
-			if !strings.HasSuffix(ns, "#") {
-				ns += "#"
-			}
-			namespaces[strings.TrimPrefix(k, "@xmlns:")] = ns
-		}
-		if strings.HasPrefix(k, "@xml:") {
-			// add # at the end of the namespace URI if not present
-			ns := v.(string)
-			if !strings.HasSuffix(ns, "#") {
-				ns += "#"
-			}
-			namespaces[strings.TrimPrefix(k, "@xml:")] = ns
-		}
-	}
-
-	descriptions := rdfMap["rdf:Description"].([]map[string]interface{})
-	cimTypes := make(map[string]*CIMType, 0)
-	cimEnums := make(map[string]*CIMEnum, 0)
-	cimEnumValues := make([]*CIMEnumValue, 0)
-	cimAttributes := make([]*CIMAttribute, 0)
-	var cimOntology CIMOntology
-
-	for _, v := range descriptions {
-		objType := extractResource(v, "rdf:type")
-
-		if strings.Contains(objType, "http://www.w3.org/2000/01/rdf-schema#Class") {
-			if extractResource(v, "cims:stereotype") == "http://iec.ch/TC57/NonStandard/UML#enumeration" {
-				cimEnum := processEnum(v)
-				cimEnum.Origin = cimOntology.Keyword
-				cimEnum.Origins = []string{cimOntology.Keyword}
-				cimEnums[cimEnum.Id] = &cimEnum
-			} else {
-				cimType := processClass(v)
-				cimType.Origin = cimOntology.Keyword
-				cimType.Origins = []string{cimOntology.Keyword}
-				cimTypes[cimType.Id] = &cimType
-			}
-		} else if strings.Contains(objType, "http://www.w3.org/1999/02/22-rdf-syntax-ns#Property") {
-			cimAttribute := processProperty(v)
-			cimAttribute.Origin = cimOntology.Keyword
-			cimAttribute.Origins = []string{cimOntology.Keyword}
-			cimAttributes = append(cimAttributes, &cimAttribute)
-		} else if strings.Contains(objType, "http://iec.ch/TC57/1999/rdf-schema-extensions-19990926#ClassCategory") {
-
-		} else if strings.Contains(objType, "http://www.w3.org/2002/07/owl#Ontology") {
-			cimOntology = processOntology(v)
-		} else {
-			cimEnumValue := processEnumValue(v)
-			cimEnumValues = append(cimEnumValues, &cimEnumValue)
-		}
-	}
-
-	assignAttributesToTypes(cimTypes, cimAttributes)
-
-	assignEnumValuesToEnums(cimEnums, cimEnumValues)
-
-	return cimTypes, cimEnums, cimOntology, namespaces
-}
-
 // assignAttributesToTypes assigns attributes to their corresponding CIM types based on RDFDomain.
 func assignAttributesToTypes(cimTypes map[string]*CIMType, cimAttributes []*CIMAttribute) {
 	for _, attr := range cimAttributes {
@@ -588,378 +704,98 @@ func FindCIMEnumValueById(vals []*CIMEnumValue, id string) int {
 	return -1
 }
 
-// pickMainOrigin selects the main origin for each CIMType based on the Origins field of the attributes.
-// The origin that appears most frequently in the Origins field of the attributes is selected as the main origin.
-// If there is a tie, the first origin in the list is selected.
-// Only the attributes are considered that have more than one entry in the Origins field.
-// If "EQ" is among the most frequent origins, it is selected as the main origin.
-// Otherwise, the first origin in alphabetical order is selected.
-// This function updates the Origin field of each CIMType accordingly.
-func (cimSpec *CIMSpecification) pickMainOrigin() {
-	for _, t := range cimSpec.Types {
-
-		originCount := make(map[string]int)
-		tmpType := t
-		id := t.Id
-		for id != "" {
-			for _, attr := range tmpType.Attributes {
-				if len(attr.Origins) > 1 {
-					for _, origin := range attr.Origins {
-						if contains(t.Origins, origin) {
-							originCount[origin]++
-						}
-
-					}
-				}
-			}
-			// Move to the super type to check its attributes
-			if tmpType.SuperType != "" {
-				if superType, ok := cimSpec.Types[tmpType.SuperType]; ok {
-					tmpType = superType
-					id = tmpType.Id
-				} else {
-					break
-				}
-			} else {
-				break
-			}
-		}
-		//fmt.Println("Origin count map:", originCount, "for type", t.Id)
-
-		filteredOrigins := make([]string, 0, len(t.Origins))
-		if len(originCount) > 0 {
-			maxCount := 0
-			for _, count := range originCount {
-				if count > maxCount {
-					maxCount = count
-				}
+func mergeCIMDatatypes(typesMerged map[string]*CIMDatatype, types map[string]*CIMDatatype) map[string]*CIMDatatype {
+	for k := range types {
+		if v, ok := typesMerged[k]; ok {
+			if types[k].Stereotype != "" {
+				v.Stereotype = types[k].Stereotype
 			}
 
-			for origin, count := range originCount {
-				if count == maxCount {
-					filteredOrigins = append(filteredOrigins, origin)
-				}
+			if types[k].Origin != "" {
+				v.Origins = append(v.Origins, types[k].Origin)
 			}
 		} else {
-			filteredOrigins = t.Origins
+			typesMerged[k] = types[k]
 		}
+	}
+	return typesMerged
+}
 
-		if contains(filteredOrigins, "EQ") {
-			t.Origin = "EQ"
+func mergePrimitives(typesMerged map[string]*CIMPrimitive, types map[string]*CIMPrimitive) map[string]*CIMPrimitive {
+	for k := range types {
+		if v, ok := typesMerged[k]; ok {
+			if types[k].Stereotype != "" {
+				v.Stereotype = types[k].Stereotype
+			}
+
+			if types[k].Origin != "" {
+				v.Origins = append(v.Origins, types[k].Origin)
+			}
 		} else {
-			sort.Strings(filteredOrigins)
-			t.Origin = filteredOrigins[0]
+			typesMerged[k] = types[k]
 		}
 	}
+	return typesMerged
 }
 
-// contains checks if a string slice contains a specific string.
-func contains(slice []string, str string) bool {
-	for _, v := range slice {
-		if v == str {
-			return true
+// extractResource extracts the resource URI from a map object using the specified key.
+// It returns an empty string if the key does not exist or the value is not a map.
+func extractResource(obj map[string]interface{}, key string) string {
+	if v, ok := obj[key]; ok {
+		if m, ok := v.(map[string]interface{}); ok {
+			return m["@rdf:resource"].(string)
 		}
 	}
-	return false
+	return ""
 }
 
-// NewCIMSpecification creates and returns a new CIMSpecification instance.
-func NewCIMSpecification() *CIMSpecification {
-	return &CIMSpecification{
-		Types:          make(map[string]*CIMType, 0),
-		Enums:          make(map[string]*CIMEnum, 0),
-		Ontologies:     make(map[string]*CIMOntology, 0),
-		Namespaces:     make(map[string]string, 0),
-		UsedNamespaces: make(map[string]string),
-		CGMESVersion:   CGMESVersion_3_0_0,
-	}
-}
-
-// addRDFMap adds the CIM types, enums, and ontology from the input map to the CIMSpecification.
-func (cimSpec *CIMSpecification) addRDFMap(inputMap map[string]interface{}) {
-	cimTypes, cimEnums, cimOntology, namespaces := processRDFMap(inputMap)
-	cimSpec.Types = mergeCimTypes(cimSpec.Types, cimTypes)
-	cimSpec.Enums = mergeCimEnums(cimSpec.Enums, cimEnums)
-	cimSpec.Ontologies[cimOntology.Keyword] = &cimOntology
-	cimSpec.Namespaces = mergeNamespaces(cimSpec.Namespaces, namespaces)
-}
-
-// sortAttributes sorts the attributes of each CIMType by their Id.
-func (cimSpec *CIMSpecification) sortAttributes() {
-	for _, t := range cimSpec.Types {
-		sort.Slice(t.Attributes, func(i, j int) bool {
-			return t.Attributes[i].Id < t.Attributes[j].Id
-		})
-	}
-}
-
-// determineDataTypes determines the data types of attributes and marks them as primitive if applicable.
-func (cimSpec *CIMSpecification) determineDataTypes() {
-	for _, t := range cimSpec.Types {
-		for _, attr := range t.Attributes {
-			if isDataType(attr.DataType) {
-				attr.IsPrimitive = true
-			} else if attr.DataType == "" {
-				attr.DataType = DataTypeObject
-				attr.IsPrimitive = false
+// extractStringOrResource extracts a string value or a resource URI from an interface{}.
+// It handles cases where the input is a string, a map with a resource, or a slice of maps.
+// It returns an empty string if no valid value is found.
+func extractStringOrResource(obj interface{}) string {
+	switch item := obj.(type) {
+	case string:
+		return item
+	case map[string]interface{}:
+		return item["@rdf:resource"].(string)
+	case []interface{}:
+		for _, m := range item {
+			if m, ok := m.(map[string]interface{}); ok {
+				return m["@rdf:resource"].(string)
 			}
 		}
 	}
+	return ""
 }
 
-// isDataType checks if the given type string is a known data type.
-func isDataType(typeStr string) bool {
-	switch typeStr {
-	case DataTypeString, DataTypeInteger, DataTypeBoolean,
-		DataTypeFloat, DataTypeDate, DataTypeTime,
-		DataTypeDateTime, DataTypeBinary:
-		return true
-	default:
-		return false
+// extractText extracts the text value from a map object using the specified key.
+// It returns an empty string if the key does not exist or the value is not a map.
+func extractText(obj map[string]interface{}, key string) string {
+	if v, ok := obj[key]; ok {
+		if m, ok := v.(map[string]interface{}); ok {
+			return m["_"].(string)
+		}
 	}
+	return ""
 }
 
-// setDefaultValuesPython sets default values for attributes based on their data types for Python code generation.
-func (cimSpec *CIMSpecification) setDefaultValuesPython() {
-	for _, t := range cimSpec.Types {
-		for _, attr := range t.Attributes {
-			if attr.IsList {
-				attr.DefaultValue = "None" // Set default value for list attributes
-			} else if attr.DataType == DataTypeString {
-				attr.DefaultValue = "''" // Set default value for string attributes
-			} else if attr.DataType == DataTypeInteger {
-				attr.DefaultValue = "0" // Set default value for integer attributes
-			} else if attr.DataType == DataTypeBoolean {
-				attr.DefaultValue = "False" // Set default value for boolean attributes
-			} else if attr.DataType == DataTypeFloat {
-				attr.DefaultValue = "0.0" // Set default value for float attributes
-			} else if attr.DataType == DataTypeObject {
-				attr.DefaultValue = "None" // Set default value for object attributes
-			} else if attr.DataType == DataTypeActivePower || attr.DataType == DataTypeActivePowerPerCurrentFlow ||
-				attr.DataType == DataTypeActivePowerPerFrequency || attr.DataType == DataTypeAngleDegrees ||
-				attr.DataType == DataTypeAngleRadians || attr.DataType == DataTypeApparentPower ||
-				attr.DataType == DataTypeArea || attr.DataType == DataTypeCapacitance || attr.DataType == DataTypeConductance ||
-				attr.DataType == DataTypeCurrentFlow || attr.DataType == DataTypeFrequency ||
-				attr.DataType == DataTypeInductance || attr.DataType == DataTypeLength || attr.DataType == DataTypeMoney ||
-				attr.DataType == DataTypePerCent || attr.DataType == DataTypePU || attr.DataType == DataTypeReactance ||
-				attr.DataType == DataTypeReactivePower || attr.DataType == DataTypeRealEnergy || attr.DataType == DataTypeResistance ||
-				attr.DataType == DataTypeRotationSpeed || attr.DataType == DataTypeSeconds || attr.DataType == DataTypeSusceptance ||
-				attr.DataType == DataTypeTemperature || attr.DataType == DataTypeVoltage || attr.DataType == DataTypeVoltagePerReactivePower ||
-				attr.DataType == DataTypeVolumeFlowRate {
-				attr.DefaultValue = "0.0" // Set default value for specific CIM data types
-			} else {
-				attr.DefaultValue = "None" // Default fallback
-			}
-		}
+// extractValue extracts a string value from a map object using the specified key.
+// It returns an empty string if the key does not exist.
+func extractValue(obj map[string]interface{}, key string) string {
+	if t, ok := obj[key]; ok {
+		return t.(string)
 	}
+	return ""
 }
 
-// fixMissingMRIDs adds missing MRID attributes to types that should have them.
-func (cimSpec *CIMSpecification) fixMissingMRIDs() {
-	for _, t := range cimSpec.Types {
-		if (t.Stereotype == "concrete" || t.Stereotype == "") && t.SuperType == "" && t.Id != "IdentifiedObject" {
-			t.Attributes = append(t.Attributes, &CIMAttribute{
-				Id:              "MRID",
-				Label:           "mRID",
-				Namespace:       "",
-				Comment:         "Master resource identifier issued by a model authority. The mRID is unique within an exchange context. Global uniqueness is easily achieved by using a UUID, as specified in RFC 4122, for the mRID. The use of UUID is strongly recommended. For CIMXML data files in RDF syntax conforming to IEC 61970-552, the mRID is mapped to rdf:ID or rdf:about attributes that identify CIM object elements.",
-				IsList:          false,
-				AssociationUsed: false,
-				IsFixed:         false,
-				InverseRole:     "",
-				Stereotype:      "attribute",
-				Range:           "",
-				DataType:        "String",
-				IsPrimitive:     true,
-				RDFDomain:       "",
-				RDFType:         "Property",
-				DefaultValue:    "''",
-			})
-			fmt.Println("Added missing MRID to type", t.Id)
-		}
-	}
+// extractURIEnd extracts the fragment identifier from a URI (the part after the '#').
+func extractURIEnd(uri string) string {
+	l := strings.Split(uri, "#")
+	return l[len(l)-1]
 }
 
-// markUnusedAttributesAndAssociations marks attributes and associations as unused if they are not used.
-func (cimSpec *CIMSpecification) markUnusedAttributesAndAssociations() {
-	for _, t := range cimSpec.Types {
-		for _, attr := range t.Attributes {
-			attr.IsUsed = true
-			if !attr.AssociationUsed {
-				if attr.DataType == DataTypeObject {
-					if attr.IsList {
-						attr.IsUsed = false
-						fmt.Println("Marked unused list association", t.Id+"."+attr.Id, "of type", attr.Range)
-					}
-				} else {
-					attr.IsPrimitive = true
-					fmt.Println("Replaced association with primitive", t.Id+"."+attr.Id, "of type", attr.DataType)
-				}
-			}
-		}
-	}
-}
-
-// removeIdentifiedObjectAttributes renames attributes named "IdentifiedObject" to avoid conflicts.
-func (cimSpec *CIMSpecification) removeIdentifiedObjectAttributes() {
-	for _, t := range cimSpec.Types {
-		for _, attr := range t.Attributes {
-			if attr.Label == "IdentifiedObject" {
-				attr.Label = t.Label + "IdentifiedObject"
-				fmt.Println("Renamed IdentifiedObject attribute to", attr.Label, "in type", t.Id)
-			}
-		}
-	}
-}
-
-// findEnumAttributes marks attributes as enum values if their range corresponds to a known enumeration.
-func (cimSpec *CIMSpecification) findEnumAttributes() {
-	for _, t := range cimSpec.Types {
-		for _, attr := range t.Attributes {
-			if _, ok := cimSpec.Enums[attr.Range]; ok {
-				attr.IsEnumValue = true
-			}
-		}
-	}
-}
-
-// fillMissingNamespaces fills in missing namespaces for types and their attributes and enums using the base URI.
-// It also ensures that the "md" namespace is present in the CIMSpecification.
-// It stores the namespaces that are used in the UsedNamespaces map.
-func (cimSpec *CIMSpecification) fillMissingNamespaces() {
-	for _, t := range cimSpec.Types {
-		if t.Namespace == "" {
-			t.Namespace = cimSpec.Namespaces["base"]
-		}
-		for _, attr := range t.Attributes {
-			if attr.Namespace == "" {
-				attr.Namespace = cimSpec.Namespaces["base"]
-			}
-		}
-	}
-	for _, e := range cimSpec.Enums {
-		if e.Namespace == "" {
-			e.Namespace = cimSpec.Namespaces["base"]
-		}
-	}
-
-	revNamespaces := make(map[string]string)
-	// store namespaces in map where value and key are reversed
-	for key, value := range cimSpec.Namespaces {
-		if key != "base" {
-			revNamespaces[value] = key
-		}
-	}
-
-	// fill UsedNamespaces map
-	for _, t := range cimSpec.Types {
-		if _, ok := revNamespaces[t.Namespace]; ok {
-			cimSpec.UsedNamespaces[revNamespaces[t.Namespace]] = t.Namespace
-		}
-	}
-	for _, e := range cimSpec.Enums {
-		if _, ok := revNamespaces[e.Namespace]; ok {
-			cimSpec.UsedNamespaces[revNamespaces[e.Namespace]] = e.Namespace
-		}
-	}
-
-	// add md namespace if not present
-	if _, ok := cimSpec.UsedNamespaces["md"]; !ok {
-		cimSpec.Namespaces["md"] = "http://iec.ch/TC57/61970-552/ModelDescription/1#"
-		cimSpec.UsedNamespaces["md"] = "http://iec.ch/TC57/61970-552/ModelDescription/1#"
-	}
-
-	// add rdf namespace if not present
-	if _, ok := cimSpec.UsedNamespaces["rdf"]; !ok {
-		cimSpec.Namespaces["rdf"] = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-		cimSpec.UsedNamespaces["rdf"] = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-	}
-}
-
-func (cimSpec *CIMSpecification) setProfilePriorities() {
-	cimSpec.Ontologies["EQ"].Priority = 1
-
-	// assign remaining ontologies priorities based on alphabetical order of their keywords
-	keywords := make([]string, 0, len(cimSpec.Ontologies))
-	for k := range cimSpec.Ontologies {
-		if k != "EQ" {
-			keywords = append(keywords, k)
-		}
-	}
-	sort.Strings(keywords)
-	priority := 2
-	for _, k := range keywords {
-		cimSpec.Ontologies[k].Priority = priority
-		priority++
-	}
-}
-
-// postprocess performs various post-processing steps on the CIMSpecification.
-func (cimSpec *CIMSpecification) postprocess() {
-	cimSpec.pickMainOrigin()
-	cimSpec.sortAttributes()
-	cimSpec.determineDataTypes()
-	cimSpec.setDefaultValuesPython()
-	cimSpec.fixMissingMRIDs()
-	cimSpec.markUnusedAttributesAndAssociations()
-	cimSpec.removeIdentifiedObjectAttributes()
-	cimSpec.findEnumAttributes()
-	cimSpec.fillMissingNamespaces()
-	cimSpec.setProfilePriorities()
-}
-
-// printSpecification prints the CIMSpecification to the provided writer in JSON format.
-func (cimSpec *CIMSpecification) printSpecification(w io.Writer) {
-	jsonb, err := json.MarshalIndent(cimSpec.Namespaces, "", "  ")
-	if err != nil {
-		panic(err)
-	}
-	w.Write(jsonb)
-	fmt.Fprint(w, "\n")
-
-	jsonb, err = json.MarshalIndent(cimSpec.Ontologies, "", "  ")
-	if err != nil {
-		panic(err)
-	}
-	w.Write(jsonb)
-	fmt.Fprint(w, "\n")
-
-	jsonb, err = json.MarshalIndent(cimSpec.Types, "", "  ")
-	if err != nil {
-		panic(err)
-	}
-	w.Write(jsonb)
-	fmt.Fprint(w, "\n")
-
-	jsonb, err = json.MarshalIndent(cimSpec.Enums, "", "  ")
-	if err != nil {
-		panic(err)
-	}
-	w.Write(jsonb)
-	fmt.Fprint(w, "\n")
-}
-
-// ImportCIMSchemaFiles imports CIM schema files matching the given glob pattern into the CIMSpecification.
-func (cimSpec *CIMSpecification) ImportCIMSchemaFiles(schemaFiles string) {
-	entries, err := filepath.Glob(schemaFiles)
-	if err != nil {
-		panic(err)
-	}
-	sort.Strings(entries)
-
-	for _, entry := range entries {
-		b, err := os.ReadFile(entry)
-		if err != nil {
-			panic(err)
-		}
-
-		resultMap, err := DecodeToMap(bytes.NewReader(b))
-		if err != nil {
-			panic(err)
-		}
-
-		cimSpec.addRDFMap(resultMap)
-	}
-
-	cimSpec.postprocess()
+// extractURIPath extracts the path part of a URI (the part before the '#').
+func extractURIPath(uri string) string {
+	l := strings.Split(uri, "#")
+	return l[0]
 }
