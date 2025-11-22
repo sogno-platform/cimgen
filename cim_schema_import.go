@@ -25,17 +25,14 @@ const (
 	DataTypeBoolean  = "Boolean"
 	DataTypeFloat    = "Float"
 	DataTypeDate     = "Date"
-	DataTypeTime     = "Time"
 	DataTypeDateTime = "DateTime"
-	DataTypeBinary   = "Binary"
 )
 
 // enum for general data types
 const (
-	DataTypeEnum    = "Enum"
-	DataTypeObject  = "Object"
-	DataTypeList    = "List"
-	DataTypeUnknown = "Unknown"
+	DataTypeEnum   = "Enum"
+	DataTypeObject = "Object"
+	DataTypeList   = "List"
 )
 
 // enum for CGMES specific data types
@@ -67,6 +64,7 @@ const (
 	DataTypeVoltage                   = "Voltage"
 	DataTypeVoltagePerReactivePower   = "VoltagePerReactivePower"
 	DataTypeVolumeFlowRate            = "VolumeFlowRate"
+	DataTypeMonthDay                  = "MonthDay"
 )
 
 // CIMAttribute represents a CIM attribute with its properties.
@@ -671,27 +669,27 @@ func FindCIMAttributeById(attrs []*CIMAttribute, id string) int {
 }
 
 // mergeCimEnums merges two maps of CIM enums, combining values and origins for enums with the same Id.
-func mergeCimEnums(typesMerged map[string]*CIMEnum, types map[string]*CIMEnum) map[string]*CIMEnum {
-	for k := range types {
-		if v, ok := typesMerged[k]; ok {
-			if types[k].Stereotype != "" {
-				v.Stereotype = types[k].Stereotype
+func mergeCimEnums(enumsMerged map[string]*CIMEnum, enums map[string]*CIMEnum) map[string]*CIMEnum {
+	for k := range enums {
+		if v, ok := enumsMerged[k]; ok {
+			if enums[k].Stereotype != "" {
+				v.Stereotype = enums[k].Stereotype
 			}
 
-			if types[k].Origin != "" {
-				v.Origins = append(v.Origins, types[k].Origin)
+			if enums[k].Origin != "" {
+				v.Origins = append(v.Origins, enums[k].Origin)
 			}
 
-			for _, val := range types[k].Values {
+			for _, val := range enums[k].Values {
 				if existingValIndex := FindCIMEnumValueById(v.Values, val.Id); existingValIndex == -1 {
 					v.Values = append(v.Values, val)
 				}
 			}
 		} else {
-			typesMerged[k] = types[k]
+			enumsMerged[k] = enums[k]
 		}
 	}
-	return typesMerged
+	return enumsMerged
 }
 
 // FindCIMEnumValueById searches for a CIMEnumValue with the given Id in a slice.

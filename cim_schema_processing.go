@@ -120,12 +120,12 @@ func (cimSpec *CIMSpecification) determineDataTypes() {
 	}
 }
 
-// isDataType checks if the given type string is a known data type.
+// IsPrimitiveType checks if the given type string is a known data type.
 func IsPrimitiveType(typeStr string) bool {
 	switch typeStr {
 	case DataTypeString, DataTypeInteger, DataTypeBoolean,
-		DataTypeFloat, DataTypeDate, DataTypeTime,
-		DataTypeDateTime, DataTypeBinary:
+		DataTypeFloat, DataTypeDate,
+		DataTypeDateTime:
 		return true
 	default:
 		return false
@@ -332,10 +332,8 @@ func (cimSpec *CIMSpecification) setLangTypesPython() {
 			t.LangType = "bool"
 		case DataTypeFloat:
 			t.LangType = "float"
-		case DataTypeDate, DataTypeTime, DataTypeDateTime:
+		case DataTypeDate, DataTypeDateTime:
 			t.LangType = "str" // Could be datetime, but keeping it simple for now
-		case DataTypeBinary:
-			t.LangType = "bytes"
 		default:
 			t.LangType = "str" // Default fallback
 		}
@@ -381,6 +379,10 @@ func (cimSpec *CIMSpecification) setDefaultValuesPython() {
 				attr.DataType == DataTypeTemperature || attr.DataType == DataTypeVoltage || attr.DataType == DataTypeVoltagePerReactivePower ||
 				attr.DataType == DataTypeVolumeFlowRate {
 				attr.DefaultValue = "0.0" // Set default value for specific CIM data types
+			} else if attr.DataType == DataTypeDateTime {
+				attr.DefaultValue = "''" // Could be datetime, but keeping it simple for now
+			} else if attr.DataType == DataTypeMonthDay {
+				attr.DefaultValue = "''" // Could be datetime, but keeping it simple for now
 			} else {
 				attr.DefaultValue = "None" // Default fallback
 			}
