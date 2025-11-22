@@ -16,7 +16,7 @@ Ensure that GOPATH is set and included in your PATH. Then install the cimgen bin
 
 Alternatively, you can run binaries directly:
 
-    gi run cmd/cimgen/main.go
+    go run cmd/cimgen/main.go
 
 
 # CIMgen Python
