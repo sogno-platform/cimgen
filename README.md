@@ -18,6 +18,10 @@ Alternatively, you can run binaries directly:
 
     go run cmd/cimgen/main.go
 
+Run tests like so:
+
+    go test -v
+
 
 # CIMgen Python
 

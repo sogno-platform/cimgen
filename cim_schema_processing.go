@@ -1,7 +1,6 @@
 package cimgen
 
 import (
-	"fmt"
 	"sort"
 )
 
@@ -55,7 +54,6 @@ func (cimSpec *CIMSpecification) pickMainOrigin() {
 				break
 			}
 		}
-		//fmt.Println("Origin count map:", originCount, "for type", t.Id)
 
 		filteredOrigins := make([]string, 0, len(t.Origins))
 		if len(originCount) > 0 {
@@ -178,12 +176,16 @@ func (cimSpec *CIMSpecification) fixMissingMRIDs() {
 				RDFType:         "Property",
 				DefaultValue:    "''",
 			})
-			fmt.Println("Added missing MRID to type", t.Id)
+			//log.Println("Added missing MRID to type", t.Id)
 		}
 	}
 }
 
 // markUnusedAttributesAndAssociations marks attributes and associations as unused if they are not used.
+// An attribute is marked as unused if it is an association (DataTypeObject) and its AssociationUsed flag is false.
+// For list associations that are unused, the attribute is marked as unused.
+// For non-list associations that are unused, the attribute is marked as primitive.
+// This function updates the IsUsed and IsPrimitive fields of each CIMAttribute accordingly.
 func (cimSpec *CIMSpecification) markUnusedAttributesAndAssociations() {
 	for _, t := range cimSpec.Types {
 		for _, attr := range t.Attributes {
@@ -192,11 +194,11 @@ func (cimSpec *CIMSpecification) markUnusedAttributesAndAssociations() {
 				if attr.DataType == DataTypeObject {
 					if attr.IsList {
 						attr.IsUsed = false
-						fmt.Println("Marked unused list association", t.Id+"."+attr.Id, "of type", attr.Range)
+						//log.Println("Marked unused list association", t.Id+"."+attr.Id, "of type", attr.Range)
 					}
 				} else {
 					attr.IsPrimitive = true
-					fmt.Println("Replaced association with primitive", t.Id+"."+attr.Id, "of type", attr.DataType)
+					//log.Println("Replaced association with primitive", t.Id+"."+attr.Id, "of type", attr.DataType)
 				}
 			}
 		}
@@ -209,7 +211,7 @@ func (cimSpec *CIMSpecification) removeIdentifiedObjectAttributes() {
 		for _, attr := range t.Attributes {
 			if attr.Label == "IdentifiedObject" {
 				attr.Label = t.Label + "IdentifiedObject"
-				fmt.Println("Renamed IdentifiedObject attribute to", attr.Label, "in type", t.Id)
+				//log.Println("Renamed IdentifiedObject attribute to", attr.Label, "in type", t.Id)
 			}
 		}
 	}

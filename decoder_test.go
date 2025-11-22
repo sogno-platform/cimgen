@@ -2,7 +2,9 @@ package cimgen
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -62,5 +64,14 @@ func TestDecode(t *testing.T) {
 			t.Error("decoder tests failed, expected array of map")
 		}
 
+		// Compute hash of the output file for verification
+		hash := sha256.Sum256(jsonb)
+		t.Logf("SHA256 hash of output file: %x", hash)
+
+		// Test output file against expected hash
+		expectedHash := "2ca0a11b0ccc3827c93150bc8e6998b54622fdd3bd0a1a1cbf156fbf2e09cdcc" // SHA256 of empty file
+		if fmt.Sprintf("%x", hash) != expectedHash {
+			t.Error("decoder tests failed, output file hash does not match expected hash")
+		}
 	}
 }

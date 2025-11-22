@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"log"
 	"os"
 
@@ -28,6 +27,8 @@ func main() {
 		logger.Printf("output: %s", outputDir)
 	}
 
+	logger.Println("Generate code for", language, "from schema files matching", schemaPattern)
+
 	// create and populate specification
 	cimSpec := cimgen.NewCIMSpecification()
 	cimSpec.CGMESVersion = cgmesVersion
@@ -48,6 +49,5 @@ func main() {
 		logger.Fatalf("unsupported language: %s", language)
 	}
 
-	logger.Println("done")
-	fmt.Println("generated files in:", outputDir)
+	logger.Println("Generated source files in:", outputDir)
 }

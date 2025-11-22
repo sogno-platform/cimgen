@@ -1,6 +1,8 @@
 package cimgen
 
 import (
+	"crypto/sha256"
+	"fmt"
 	"os"
 	"testing"
 )
@@ -23,5 +25,20 @@ func TestSchemaImport(t *testing.T) {
 
 	if cimSpec.Ontologies["DL"].Keyword != "DL" {
 		t.Error("cim schema test failed, expected Ontology DL")
+	}
+
+	// Compute hash of the output file for verification
+	f.Sync()
+	data, err := os.ReadFile(output)
+	if err != nil {
+		t.Error("Cannot read output file for hashing:", err)
+	}
+	hash := sha256.Sum256(data)
+	t.Logf("SHA256 hash of output file: %x", hash)
+
+	// Test output file against expected hash
+	expectedHash := "1e25475f44f00de915fb93140eea7bf31988c3f42dad0220beeb628448b78654" // SHA256 of empty file
+	if fmt.Sprintf("%x", hash) != expectedHash {
+		t.Error("decoder tests failed, output file hash does not match expected hash")
 	}
 }
