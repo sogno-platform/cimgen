@@ -2,10 +2,12 @@ package cimgen
 
 import (
 	"sort"
+	"strings"
 )
 
 // postprocess performs various post-processing steps on the CIMSpecification.
 func (cimSpec *CIMSpecification) postprocess() {
+	cimSpec.setIsAssociationUsed()
 	cimSpec.pickMainOrigin()
 	cimSpec.sortAttributes()
 	cimSpec.determineDataTypes()
@@ -16,6 +18,16 @@ func (cimSpec *CIMSpecification) postprocess() {
 	cimSpec.removeIdentifiedObjectAttributes()
 	cimSpec.fillMissingNamespaces()
 	cimSpec.setProfilePriorities()
+}
+
+func (cimSpec *CIMSpecification) setIsAssociationUsed() {
+	for _, t := range cimSpec.Types {
+		for _, attr := range t.Attributes {
+			if attr.AssociationUsed == "yes" || attr.AssociationUsed == "" {
+				attr.IsAssociationUsed = true
+			}
+		}
+	}
 }
 
 // pickMainOrigin selects the main origin for each CIMType based on the Origins field of the attributes.
@@ -105,13 +117,13 @@ func (cimSpec *CIMSpecification) sortAttributes() {
 func (cimSpec *CIMSpecification) determineDataTypes() {
 	for _, t := range cimSpec.Types {
 		for _, attr := range t.Attributes {
-			if IsPrimitiveType(attr.DataType) {
+			if attr.Stereotype == "Primitive" || IsPrimitiveType(attr.DataType) {
 				attr.IsPrimitive = true
+			} else if attr.Stereotype == "CIMDatatype" || IsCIMDatatype(attr.DataType) {
+				attr.IsCIMDatatype = true
 			} else if IsEnumType(attr.DataType, cimSpec) {
 				attr.IsEnumValue = true
-			} else if IsCIMDatatype(attr.DataType) {
-				attr.IsCIMDatatype = true
-			} else if attr.DataType == DataTypeObject || attr.DataType == "" {
+			} else if !attr.IsList && (attr.DataType == DataTypeObject || attr.DataType == "") {
 				attr.IsClass = true
 			}
 		}
@@ -160,21 +172,20 @@ func (cimSpec *CIMSpecification) fixMissingMRIDs() {
 	for _, t := range cimSpec.Types {
 		if (t.Stereotype == "concrete" || t.Stereotype == "") && t.SuperType == "" && t.Id != "IdentifiedObject" {
 			t.Attributes = append(t.Attributes, &CIMAttribute{
-				Id:              "MRID",
-				Label:           "mRID",
-				Namespace:       "",
-				Comment:         "Master resource identifier issued by a model authority. The mRID is unique within an exchange context. Global uniqueness is easily achieved by using a UUID, as specified in RFC 4122, for the mRID. The use of UUID is strongly recommended. For CIMXML data files in RDF syntax conforming to IEC 61970-552, the mRID is mapped to rdf:ID or rdf:about attributes that identify CIM object elements.",
-				IsList:          false,
-				AssociationUsed: false,
-				IsFixed:         false,
-				InverseRole:     "",
-				Stereotype:      "attribute",
-				Range:           "",
-				DataType:        "String",
-				IsPrimitive:     true,
-				RDFDomain:       "",
-				RDFType:         "Property",
-				DefaultValue:    "''",
+				Id:           "MRID",
+				Label:        "mRID",
+				Namespace:    "",
+				Comment:      "Master resource identifier issued by a model authority. The mRID is unique within an exchange context. Global uniqueness is easily achieved by using a UUID, as specified in RFC 4122, for the mRID. The use of UUID is strongly recommended. For CIMXML data files in RDF syntax conforming to IEC 61970-552, the mRID is mapped to rdf:ID or rdf:about attributes that identify CIM object elements.",
+				IsList:       false,
+				IsFixed:      false,
+				InverseRole:  "",
+				Stereotype:   "attribute",
+				Range:        "",
+				DataType:     "String",
+				IsPrimitive:  true,
+				RDFDomain:    "",
+				RDFType:      "Property",
+				DefaultValue: "''",
 			})
 			//log.Println("Added missing MRID to type", t.Id)
 		}
@@ -190,14 +201,14 @@ func (cimSpec *CIMSpecification) markUnusedAttributesAndAssociations() {
 	for _, t := range cimSpec.Types {
 		for _, attr := range t.Attributes {
 			attr.IsUsed = true
-			if !attr.AssociationUsed {
+			if !attr.IsAssociationUsed {
 				if attr.DataType == DataTypeObject {
 					if attr.IsList {
 						attr.IsUsed = false
 						//log.Println("Marked unused list association", t.Id+"."+attr.Id, "of type", attr.Range)
 					}
 				} else {
-					attr.IsPrimitive = true
+					//attr.IsPrimitive = true
 					//log.Println("Replaced association with primitive", t.Id+"."+attr.Id, "of type", attr.DataType)
 				}
 			}
@@ -221,17 +232,28 @@ func (cimSpec *CIMSpecification) removeIdentifiedObjectAttributes() {
 // It also ensures that the "md" namespace is present in the CIMSpecification.
 // It stores the namespaces that are used in the UsedNamespaces map.
 func (cimSpec *CIMSpecification) fillMissingNamespaces() {
+
 	for _, t := range cimSpec.Types {
+		if !strings.HasSuffix(t.Namespace, "#") {
+			t.Namespace += "#"
+		}
+
 		if t.Namespace == "" || t.Namespace == "#" {
 			t.Namespace = cimSpec.SpecificationNamespaces["base"]
 		}
 		for _, attr := range t.Attributes {
-			if attr.Namespace == "" || t.Namespace == "#" {
+			if !strings.HasSuffix(attr.Namespace, "#") {
+				attr.Namespace += "#"
+			}
+			if attr.Namespace == "" || attr.Namespace == "#" {
 				attr.Namespace = cimSpec.SpecificationNamespaces["base"]
 			}
 		}
 	}
 	for _, e := range cimSpec.Enums {
+		if !strings.HasSuffix(e.Namespace, "#") {
+			e.Namespace += "#"
+		}
 		if e.Namespace == "" || e.Namespace == "#" {
 			e.Namespace = cimSpec.SpecificationNamespaces["base"]
 		}

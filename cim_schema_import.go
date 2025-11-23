@@ -69,29 +69,30 @@ const (
 
 // CIMAttribute represents a CIM attribute with its properties.
 type CIMAttribute struct {
-	Id              string
-	Label           string
-	Namespace       string
-	Comment         string
-	IsList          bool
-	AssociationUsed bool
-	IsFixed         bool
-	InverseRole     string
-	Categories      []string
-	Stereotype      string
-	Origin          string
-	Origins         []string
-	Range           string
-	DataType        string
-	IsPrimitive     bool
-	RDFDomain       string
-	RDFType         string
-	DefaultValue    string
-	IsUsed          bool
-	IsEnumValue     bool
-	LangType        string
-	IsCIMDatatype   bool
-	IsClass         bool
+	Id                string
+	Label             string
+	Namespace         string
+	Comment           string
+	IsList            bool
+	AssociationUsed   string
+	IsAssociationUsed bool
+	IsFixed           bool
+	InverseRole       string
+	Stereotype        string
+	Range             string
+	DataType          string
+	IsPrimitive       bool
+	RDFDomain         string
+	RDFType           string
+	DefaultValue      string
+	IsUsed            bool
+	IsEnumValue       bool
+	LangType          string
+	IsCIMDatatype     bool
+	IsClass           bool
+	Origin            string
+	Origins           []string
+	Categories        []string
 }
 
 // CIMType represents a CIM class/type with its properties and attributes.
@@ -100,14 +101,14 @@ type CIMType struct {
 	Label      string
 	Namespace  string
 	Comment    string
+	Stereotype string
+	RDFType    string
 	SuperType  string
 	SuperTypes []string
 	SubClasses []string
-	Stereotype string
-	Categories []string
 	Origin     string
 	Origins    []string
-	RDFType    string
+	Categories []string
 	Attributes []*CIMAttribute
 }
 
@@ -117,11 +118,11 @@ type CIMDatatype struct {
 	Namespace  string
 	Comment    string
 	Stereotype string
+	RDFType    string
+	LangType   string
 	Categories []string
 	Origin     string
 	Origins    []string
-	RDFType    string
-	LangType   string
 }
 
 type CIMPrimitive struct {
@@ -130,11 +131,11 @@ type CIMPrimitive struct {
 	Namespace  string
 	Comment    string
 	Stereotype string
-	Categories []string
-	Origin     string
-	Origins    []string
 	RDFType    string
 	LangType   string
+	Origin     string
+	Origins    []string
+	Categories []string
 }
 
 // CIMEnum represents a CIM enumeration with its values.
@@ -144,9 +145,9 @@ type CIMEnum struct {
 	Namespace  string
 	Comment    string
 	Stereotype string
+	RDFType    string
 	Origin     string
 	Origins    []string
-	RDFType    string
 	Values     []*CIMEnumValue
 }
 
@@ -266,27 +267,8 @@ func (cimSpec *CIMSpecification) printSpecification(w io.Writer) {
 
 // processRDFMap processes the RDF map and extracts CIM types, enums, and ontology.
 func processRDFMap(inputMap map[string]interface{}) (map[string]*CIMType, map[string]*CIMEnum, CIMOntology, map[string]string, map[string]*CIMDatatype, map[string]*CIMPrimitive) {
-	namespaces := make(map[string]string)
 	rdfMap := inputMap["rdf:RDF"].(map[string]interface{})
-	// iterate over rdfMap and process each element that is @xml or @xmlns
-	for k, v := range rdfMap {
-		if strings.HasPrefix(k, "@xmlns:") {
-			// add # at the end of the namespace URI if not present
-			ns := v.(string)
-			if !strings.HasSuffix(ns, "#") {
-				ns += "#"
-			}
-			namespaces[strings.TrimPrefix(k, "@xmlns:")] = ns
-		}
-		if strings.HasPrefix(k, "@xml:") {
-			// add # at the end of the namespace URI if not present
-			ns := v.(string)
-			if !strings.HasSuffix(ns, "#") {
-				ns += "#"
-			}
-			namespaces[strings.TrimPrefix(k, "@xml:")] = ns
-		}
-	}
+	namespaces := processNamespaces(rdfMap)
 
 	descriptions := rdfMap["rdf:Description"].([]map[string]interface{})
 	cimTypes := make(map[string]*CIMType, 0)
@@ -344,24 +326,46 @@ func processRDFMap(inputMap map[string]interface{}) (map[string]*CIMType, map[st
 	return cimTypes, cimEnums, cimOntology, namespaces, cimDatatypes, cimPrimitives
 }
 
+// processNamespaces collects all namespaces declared in the specification
+func processNamespaces(rdfMap map[string]interface{}) map[string]string {
+	namespaces := make(map[string]string)
+	// iterate over rdfMap and process each element that is @xml or @xmlns
+	for k, v := range rdfMap {
+		if strings.HasPrefix(k, "@xmlns:") {
+			// add # at the end of the namespace URI if not present
+			ns := v.(string)
+			if !strings.HasSuffix(ns, "#") {
+				ns += "#"
+			}
+			namespaces[strings.TrimPrefix(k, "@xmlns:")] = ns
+		}
+		if strings.HasPrefix(k, "@xml:") {
+			// add # at the end of the namespace URI if not present
+			ns := v.(string)
+			if !strings.HasSuffix(ns, "#") {
+				ns += "#"
+			}
+			namespaces[strings.TrimPrefix(k, "@xml:")] = ns
+		}
+	}
+	return namespaces
+}
+
 // processClass processes a map representing a CIM class and returns a CIMType struct.
 func processClass(classMap map[string]interface{}) CIMType {
 
-	typeId := extractValue(classMap, "@rdf:about")
+	id := extractValue(classMap, "@rdf:about")
 	label := extractText(classMap, "rdfs:label")
 	superType := extractResource(classMap, "rdfs:subClassOf")
 	comment := extractText(classMap, "rdfs:comment")
 	stereotype := extractStringOrResource(classMap["cims:stereotype"])
 	category := extractResource(classMap, "cims:belongsToCategory")
 	rdfType := extractResource(classMap, "rdf:type")
-	namespace := extractURIPath(typeId)
-	if !strings.HasSuffix(namespace, "#") {
-		namespace += "#"
-	}
+	namespace := extractURIPath(id)
 	comment = cleanText(comment)
 
 	return CIMType{
-		Id:         extractURIEnd(typeId),
+		Id:         extractURIEnd(id),
 		Label:      label,
 		SuperType:  extractURIEnd(superType),
 		Comment:    comment,
@@ -376,20 +380,17 @@ func processClass(classMap map[string]interface{}) CIMType {
 // processPrimitives processes a map representing a CIM class and returns a CIMPrimitive struct.
 func processPrimitives(classMap map[string]interface{}) CIMPrimitive {
 
-	typeId := extractValue(classMap, "@rdf:about")
+	id := extractValue(classMap, "@rdf:about")
 	label := extractText(classMap, "rdfs:label")
 	comment := extractText(classMap, "rdfs:comment")
 	stereotype := extractStringOrResource(classMap["cims:stereotype"])
 	category := extractResource(classMap, "cims:belongsToCategory")
 	rdfType := extractResource(classMap, "rdf:type")
-	namespace := extractURIPath(typeId)
-	if !strings.HasSuffix(namespace, "#") {
-		namespace += "#"
-	}
+	namespace := extractURIPath(id)
 	comment = cleanText(comment)
 
 	return CIMPrimitive{
-		Id:         extractURIEnd(typeId),
+		Id:         extractURIEnd(id),
 		Label:      label,
 		Comment:    comment,
 		Namespace:  namespace,
@@ -409,9 +410,6 @@ func processCIMDatatypes(classMap map[string]interface{}) CIMDatatype {
 	category := extractResource(classMap, "cims:belongsToCategory")
 	rdfType := extractResource(classMap, "rdf:type")
 	namespace := extractURIPath(typeId)
-	if !strings.HasSuffix(namespace, "#") {
-		namespace += "#"
-	}
 	comment = cleanText(comment)
 
 	return CIMDatatype{
@@ -437,21 +435,14 @@ func processProperty(classMap map[string]interface{}) CIMAttribute {
 	rdfRange := extractResource(classMap, "rdfs:range")
 	inverseRoleName := extractResource(classMap, "cims:inverseRoleName")
 	comment = cleanText(comment)
+	namespace := extractURIPath(attrId)
 
-	associationUsed := false
-	if extractStringOrResource(classMap["cims:AssociationUsed"]) == "Yes" {
-		associationUsed = true
-	}
+	associationUsed := strings.ToLower(extractStringOrResource(classMap["cims:AssociationUsed"]))
 
 	isList := false
 	multiplicity := extractResource(classMap, "cims:multiplicity")
 	if multiplicity == "http://iec.ch/TC57/1999/rdf-schema-extensions-19990926#M:0..n" || multiplicity == "http://iec.ch/TC57/1999/rdf-schema-extensions-19990926#M:1..n" {
 		isList = true
-	}
-
-	namespace := extractURIPath(attrId)
-	if !strings.HasSuffix(namespace, "#") {
-		namespace += "#"
 	}
 
 	return CIMAttribute{
@@ -530,19 +521,15 @@ func traverseAndExtractText(n *html.Node, builder *strings.Builder) {
 // processEnum processes a map representing a CIM enumeration and returns a CIMEnum struct.
 func processEnum(classMap map[string]interface{}) CIMEnum {
 
-	typeId := extractValue(classMap, "@rdf:about")
+	id := extractValue(classMap, "@rdf:about")
 	label := extractText(classMap, "rdfs:label")
 	comment := extractText(classMap, "rdfs:comment")
 	stereotype := extractStringOrResource(classMap["cims:stereotype"])
 	rdfType := extractResource(classMap, "rdf:type")
-
-	namespace := extractURIPath(typeId)
-	if !strings.HasSuffix(namespace, "#") {
-		namespace += "#"
-	}
+	namespace := extractURIPath(id)
 
 	return CIMEnum{
-		Id:         extractURIEnd(typeId),
+		Id:         extractURIEnd(id),
 		Label:      label,
 		Comment:    comment,
 		Namespace:  namespace,
@@ -554,14 +541,14 @@ func processEnum(classMap map[string]interface{}) CIMEnum {
 // processEnumValue processes a map representing a CIM enumeration value and returns a CIMEnumValue struct.
 func processEnumValue(classMap map[string]interface{}) CIMEnumValue {
 
-	typeId := extractValue(classMap, "@rdf:about")
+	id := extractValue(classMap, "@rdf:about")
 	label := extractText(classMap, "rdfs:label")
 	comment := extractText(classMap, "rdfs:comment")
 	stereotype := extractStringOrResource(classMap["cims:stereotype"])
 	rdfType := extractResource(classMap, "rdf:type")
 
 	return CIMEnumValue{
-		Id:         extractURIEnd(typeId),
+		Id:         extractURIEnd(id),
 		Label:      label,
 		Comment:    comment,
 		Stereotype: extractURIEnd(stereotype),
@@ -572,7 +559,7 @@ func processEnumValue(classMap map[string]interface{}) CIMEnumValue {
 // processOntology processes a map representing a CIM ontology and returns a CIMOntology struct.
 func processOntology(classMap map[string]interface{}) CIMOntology {
 
-	typeId := extractValue(classMap, "@rdf:about")
+	id := extractValue(classMap, "@rdf:about")
 	rdfType := extractResource(classMap, "rdf:type")
 	versionIRI := extractResource(classMap, "owl:versionIRI")
 	versionInfo := extractText(classMap, "owl:versionInfo")
@@ -582,8 +569,8 @@ func processOntology(classMap map[string]interface{}) CIMOntology {
 	name = strings.TrimSuffix(name, " Vocabulary")
 
 	return CIMOntology{
-		Id:          extractURIEnd(typeId),
-		Namespace:   extractURIPath(typeId),
+		Id:          extractURIEnd(id),
+		Namespace:   extractURIPath(id),
 		RDFType:     extractURIEnd(rdfType),
 		VersionIRI:  versionIRI,
 		VersionInfo: versionInfo,

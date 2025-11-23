@@ -1,8 +1,10 @@
 package cimgen
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
+	"strings"
 	"text/template"
 
 	"golang.org/x/text/cases"
@@ -184,7 +186,10 @@ func NewCIMGeneratorPython(spec *CIMSpecification) *CIMGenerator {
 	if err != nil {
 		panic(err)
 	}
-	tmplType, err := template.New("python_class").Parse(string(data))
+	funcMap := template.FuncMap{
+		"wrapAndIndent": wrapAndIndent,
+	}
+	tmplType, err := template.New("python_class").Funcs(funcMap).Parse(string(data))
 	if err != nil {
 		panic(err)
 	}
@@ -332,4 +337,40 @@ func (gen *CIMGenerator) GenerateAllPython(outputDir string) {
 			panic(err)
 		}
 	}
+}
+
+// indent is a custom template function that indents a multi-line string.
+func wrapAndIndent(spaces int, input string) string {
+	// Limit line length to 120 characters
+	var resultLines []string
+	for len(input) > 120 {
+		splitIndex := strings.LastIndex(input[:120], " ")
+		if splitIndex == -1 {
+			splitIndex = 120
+		}
+		resultLines = append(resultLines, input[:splitIndex])
+		input = input[splitIndex+1:]
+	}
+	resultLines = append(resultLines, input)
+	input = strings.Join(resultLines, "\n")
+
+	// Create the indentation string (e.g., "  " for 2 spaces)
+	pad := strings.Repeat(" ", spaces)
+	// Split the input into lines
+	lines := strings.Split(input, "\n")
+	// Buffer to build the output string
+	var buf bytes.Buffer
+
+	for i, line := range lines {
+		if i > 0 {
+			// Add newline before every line except the first
+			buf.WriteRune('\n')
+		}
+		if line != "" {
+			// Add the indentation to non-empty lines
+			buf.WriteString(pad)
+			buf.WriteString(line)
+		}
+	}
+	return buf.String()
 }
