@@ -47,10 +47,10 @@ class {{.Id}}({{.SuperType}}):
         {{- end}}
         },
     )
-    {{end}}
-    {{if not .Attributes}}
+    {{- end}}
+    {{- if not .Attributes}}
     # No attributes defined for this class.
-    {{end}}
+    {{- end}}
 
     @cached_property
     def possible_profiles(self) -> set[BaseProfile]:

@@ -182,12 +182,12 @@ func (gen *CIMGenerator) GenerateAllGo(outputDir string) {
 
 func NewCIMGeneratorPython(spec *CIMSpecification) *CIMGenerator {
 	// Since ParseFile does not work well with files in subdirectories, we read the file manually
+	funcMap := template.FuncMap{
+		"wrapAndIndent": wrapAndIndent,
+	}
 	data, err := os.ReadFile("lang-templates/python_class.tmpl")
 	if err != nil {
 		panic(err)
-	}
-	funcMap := template.FuncMap{
-		"wrapAndIndent": wrapAndIndent,
 	}
 	tmplType, err := template.New("python_class").Funcs(funcMap).Parse(string(data))
 	if err != nil {
@@ -225,7 +225,7 @@ func NewCIMGeneratorPython(spec *CIMSpecification) *CIMGenerator {
 	if err != nil {
 		panic(err)
 	}
-	tmplEnum, err := template.New("python_enum").Parse(string(data))
+	tmplEnum, err := template.New("python_enum").Funcs(funcMap).Parse(string(data))
 	if err != nil {
 		panic(err)
 	}
@@ -373,4 +373,134 @@ func wrapAndIndent(spaces int, input string) string {
 		}
 	}
 	return buf.String()
+}
+
+func NewCIMGeneratorPythonSimple(spec *CIMSpecification) *CIMGenerator {
+	// Since ParseFile does not work well with files in subdirectories, we read the file manually
+	funcMap := template.FuncMap{
+		"wrapAndIndent": wrapAndIndent,
+	}
+	data, err := os.ReadFile("lang-templates/python_simple_class.tmpl")
+	if err != nil {
+		panic(err)
+	}
+	tmplType, err := template.New("python_simple_class").Funcs(funcMap).Parse(string(data))
+	if err != nil {
+		panic(err)
+	}
+
+	data, err = os.ReadFile("lang-templates/python_constants.tmpl")
+	if err != nil {
+		panic(err)
+	}
+	tmplConstants, err := template.New("python_constants").Parse(string(data))
+	if err != nil {
+		panic(err)
+	}
+
+	data, err = os.ReadFile("lang-templates/python_simple_profiles.tmpl")
+	if err != nil {
+		panic(err)
+	}
+	tmplProfiles, err := template.New("python_simple_profiles").Parse(string(data))
+	if err != nil {
+		panic(err)
+	}
+
+	return &CIMGenerator{
+		cimSpec:       spec,
+		tmplType:      tmplType,
+		tmplConstants: tmplConstants,
+		tmplProfiles:  tmplProfiles,
+	}
+}
+
+func (gen *CIMGenerator) GenerateAllPythonSimple(outputDir string) {
+	// create output folder if it does not exist
+	if _, err := os.Stat(outputDir); os.IsNotExist(err) {
+		err = os.MkdirAll(outputDir, 0755)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	for typeName := range gen.cimSpec.Types {
+		f, err := os.Create(filepath.Join(outputDir, typeName+".py"))
+		if err != nil {
+			panic(err)
+		}
+		defer f.Close()
+
+		err = gen.tmplType.Execute(f, gen.cimSpec.Types[typeName])
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	// generate constants file
+	f, err := os.Create(filepath.Join(outputDir, "cim_constants.py"))
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+
+	err = gen.tmplConstants.Execute(f, gen.cimSpec)
+	if err != nil {
+		panic(err)
+	}
+
+	// generate profiles file
+	f, err = os.Create(filepath.Join(outputDir, "cim_profiles.py"))
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+
+	err = gen.tmplProfiles.Execute(f, gen.cimSpec)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func NewCIMGeneratorProto(spec *CIMSpecification) *CIMGenerator {
+	// Since ParseFile does not work well with files in subdirectories, we read the file manually
+	data, err := os.ReadFile("lang-templates/proto_struct.tmpl")
+	if err != nil {
+		panic(err)
+	}
+	funcMap := template.FuncMap{
+		"wrapAndIndent": wrapAndIndent,
+	}
+	tmplType, err := template.New("proto_struct").Funcs(funcMap).Parse(string(data))
+	if err != nil {
+		panic(err)
+	}
+
+	return &CIMGenerator{
+		cimSpec:  spec,
+		tmplType: tmplType,
+	}
+}
+
+func (gen *CIMGenerator) GenerateAllProto(outputDir string) {
+	// create output folder if it does not exist
+	if _, err := os.Stat(outputDir); os.IsNotExist(err) {
+		err = os.MkdirAll(outputDir, 0755)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	for typeName := range gen.cimSpec.Types {
+		f, err := os.Create(filepath.Join(outputDir, typeName+".proto"))
+		if err != nil {
+			panic(err)
+		}
+		defer f.Close()
+
+		err = gen.tmplType.Execute(f, gen.cimSpec.Types[typeName])
+		if err != nil {
+			panic(err)
+		}
+	}
 }

@@ -22,6 +22,13 @@ Run tests like so:
 
     go test -v
 
+## Debugging
+
+To analyze differences between generated file you can use
+
+    git diff --no-index --word-diff --diff-filter=MR --ignore-space-change --ignore-blank-lines output/[dir 1] output/[dir 2]
+    diff -wB output/[dir 1] output/[dir 2]
+
 
 # CIMgen Python
 

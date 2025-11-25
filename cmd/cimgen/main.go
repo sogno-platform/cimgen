@@ -45,6 +45,16 @@ func main() {
 		genpy := cimgen.NewCIMGeneratorPython(cimSpec)
 		outputDir = "output/python/v3"
 		genpy.GenerateAllPython(outputDir)
+	case "python-simple":
+		// generate Python classes
+		genpy := cimgen.NewCIMGeneratorPythonSimple(cimSpec)
+		outputDir = "output/python-simple/v3"
+		genpy.GenerateAllPythonSimple(outputDir)
+	case "proto":
+		// generate Python classes
+		genpy := cimgen.NewCIMGeneratorProto(cimSpec)
+		outputDir = "output/proto/v3"
+		genpy.GenerateAllProto(outputDir)
 	default:
 		logger.Fatalf("unsupported language: %s", language)
 	}

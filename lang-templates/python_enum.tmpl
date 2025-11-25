@@ -7,9 +7,9 @@ from enum import Enum
 
 class {{.Id}}(str, Enum):
     """
-    {{- if .Comment}}
-        {{.Comment}}
-    {{end}}
+{{- if .Comment}}
+{{ .Comment | wrapAndIndent 4 }}
+{{end}}
     """
 
     {{- range $index, $element := .Values}}
