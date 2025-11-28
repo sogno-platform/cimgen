@@ -2,25 +2,20 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+// A modified version of std marshal.go for cimgo
 package cimgoxml
 
 import (
 	"bufio"
 	"bytes"
 	"encoding"
+	"encoding/xml"
 	"errors"
 	"fmt"
 	"io"
 	"reflect"
 	"strconv"
 	"strings"
-)
-
-const (
-	// Header is a generic XML header suitable for use with the output of [Marshal].
-	// This is not automatically added to any output of this package,
-	// it is provided as a convenience.
-	Header = `<?xml version="1.0" encoding="UTF-8"?>` + "\n"
 )
 
 // Marshal returns the XML encoding of v.
@@ -108,7 +103,7 @@ func Marshal(v any) ([]byte, error) {
 // The sequence of encoded tokens must make up zero or more valid
 // XML elements.
 type Marshaler interface {
-	MarshalXML(e *Encoder, start StartElement) error
+	MarshalXML(e *Encoder, start xml.StartElement) error
 }
 
 // MarshalerAttr is the interface implemented by objects that can marshal
@@ -123,7 +118,7 @@ type Marshaler interface {
 // MarshalXMLAttr is used only for struct fields with the
 // "attr" option in the field tag.
 type MarshalerAttr interface {
-	MarshalXMLAttr(name Name) (Attr, error)
+	MarshalXMLAttr(name xml.Name) (xml.Attr, error)
 }
 
 // MarshalIndent works like [Marshal], but each XML element begins on a new
@@ -183,7 +178,7 @@ func (enc *Encoder) Encode(v any) error {
 // of Go values to XML.
 //
 // EncodeElement calls [Encoder.Flush] before returning.
-func (enc *Encoder) EncodeElement(v any, start StartElement) error {
+func (enc *Encoder) EncodeElement(v any, start xml.StartElement) error {
 	err := enc.p.marshalValue(reflect.ValueOf(v), nil, &start)
 	if err != nil {
 		return err
@@ -209,21 +204,25 @@ var (
 //
 // EncodeToken allows writing a [ProcInst] with Target set to "xml" only as the first token
 // in the stream.
-func (enc *Encoder) EncodeToken(t Token) error {
+func (enc *Encoder) EncodeToken(t xml.Token) error {
 
 	p := &enc.p
 	switch t := t.(type) {
-	case StartElement:
+	case xml.StartElement:
 		if err := p.writeStart(&t); err != nil {
 			return err
 		}
-	case EndElement:
+	case StartElementSelfClosing:
+		if err := p.writeStartSelfClosing(&t); err != nil {
+			return err
+		}
+	case xml.EndElement:
 		if err := p.writeEnd(t.Name); err != nil {
 			return err
 		}
-	case CharData:
+	case xml.CharData:
 		escapeText(p, t, false)
-	case Comment:
+	case xml.Comment:
 		if bytes.Contains(t, endComment) {
 			return fmt.Errorf("xml: EncodeToken of Comment containing --> marker")
 		}
@@ -231,7 +230,7 @@ func (enc *Encoder) EncodeToken(t Token) error {
 		p.Write(t)
 		p.WriteString("-->")
 		return p.cachedWriteError()
-	case ProcInst:
+	case xml.ProcInst:
 		// First token to be encoded which is also a ProcInst with target of xml
 		// is the xml declaration. The only ProcInst where target of xml is allowed.
 		if t.Target == "xml" && p.w.Buffered() != 0 {
@@ -250,7 +249,7 @@ func (enc *Encoder) EncodeToken(t Token) error {
 			p.Write(t.Inst)
 		}
 		p.WriteString("?>")
-	case Directive:
+	case xml.Directive:
 		if !isValidDirective(t) {
 			return fmt.Errorf("xml: EncodeToken of Directive containing wrong < or > markers")
 		}
@@ -266,7 +265,7 @@ func (enc *Encoder) EncodeToken(t Token) error {
 
 // isValidDirective reports whether dir is a valid directive text,
 // meaning angle brackets are matched, ignoring comments and strings.
-func isValidDirective(dir Directive) bool {
+func isValidDirective(dir xml.Directive) bool {
 	var (
 		depth     int
 		inquote   uint8
@@ -329,7 +328,7 @@ type printer struct {
 	attrNS     map[string]string // map prefix -> name space
 	attrPrefix map[string]string // map name space -> prefix
 	prefixes   []string
-	tags       []Name
+	tags       []xml.Name
 	closed     bool
 	err        error
 }
@@ -424,7 +423,7 @@ var (
 
 // marshalValue writes one or more XML elements representing val.
 // If val was obtained from a struct field, finfo must have its details.
-func (p *printer) marshalValue(val reflect.Value, finfo *fieldInfo, startTemplate *StartElement) error {
+func (p *printer) marshalValue(val reflect.Value, finfo *fieldInfo, startTemplate *xml.StartElement) error {
 	if startTemplate != nil && startTemplate.Name.Local == "" {
 		return fmt.Errorf("xml: EncodeElement of StartElement with missing name")
 	}
@@ -492,7 +491,7 @@ func (p *printer) marshalValue(val reflect.Value, finfo *fieldInfo, startTemplat
 	// 1. XMLName field in underlying struct;
 	// 2. field name/tag in the struct field; and
 	// 3. type name
-	var start StartElement
+	var start xml.StartElement
 
 	if startTemplate != nil {
 		start.Name = startTemplate.Name
@@ -503,7 +502,7 @@ func (p *printer) marshalValue(val reflect.Value, finfo *fieldInfo, startTemplat
 			start.Name.Space, start.Name.Local = xmlname.xmlns, xmlname.name
 		} else {
 			fv := xmlname.value(val, dontInitNilPointers)
-			if v, ok := fv.Interface().(Name); ok && v.Local != "" {
+			if v, ok := fv.Interface().(xml.Name); ok && v.Local != "" {
 				start.Name = v
 			}
 		}
@@ -539,7 +538,7 @@ func (p *printer) marshalValue(val reflect.Value, finfo *fieldInfo, startTemplat
 			continue
 		}
 
-		name := Name{Space: finfo.xmlns, Local: finfo.name}
+		name := xml.Name{Space: finfo.xmlns, Local: finfo.name}
 		if err := p.marshalAttr(&start, name, fv); err != nil {
 			return err
 		}
@@ -549,7 +548,7 @@ func (p *printer) marshalValue(val reflect.Value, finfo *fieldInfo, startTemplat
 	if tinfo.xmlname != nil && start.Name.Space == "" &&
 		tinfo.xmlname.xmlns == "" && tinfo.xmlname.name == "" &&
 		len(p.tags) != 0 && p.tags[len(p.tags)-1].Space != "" {
-		start.Attr = append(start.Attr, Attr{Name{"", xmlnsPrefix}, ""})
+		start.Attr = append(start.Attr, xml.Attr{xml.Name{"", xmlnsPrefix}, ""})
 	}
 	if err := p.writeStart(&start); err != nil {
 		return err
@@ -579,7 +578,7 @@ func (p *printer) marshalValue(val reflect.Value, finfo *fieldInfo, startTemplat
 }
 
 // marshalAttr marshals an attribute with the given name and value, adding to start.Attr.
-func (p *printer) marshalAttr(start *StartElement, name Name, val reflect.Value) error {
+func (p *printer) marshalAttr(start *xml.StartElement, name xml.Name, val reflect.Value) error {
 	if val.CanInterface() && val.Type().Implements(marshalerAttrType) {
 		attr, err := val.Interface().(MarshalerAttr).MarshalXMLAttr(name)
 		if err != nil {
@@ -610,7 +609,7 @@ func (p *printer) marshalAttr(start *StartElement, name Name, val reflect.Value)
 		if err != nil {
 			return err
 		}
-		start.Attr = append(start.Attr, Attr{name, string(text)})
+		start.Attr = append(start.Attr, xml.Attr{name, string(text)})
 		return nil
 	}
 
@@ -621,7 +620,7 @@ func (p *printer) marshalAttr(start *StartElement, name Name, val reflect.Value)
 			if err != nil {
 				return err
 			}
-			start.Attr = append(start.Attr, Attr{name, string(text)})
+			start.Attr = append(start.Attr, xml.Attr{name, string(text)})
 			return nil
 		}
 	}
@@ -647,7 +646,7 @@ func (p *printer) marshalAttr(start *StartElement, name Name, val reflect.Value)
 	}
 
 	if val.Type() == attrType {
-		start.Attr = append(start.Attr, val.Interface().(Attr))
+		start.Attr = append(start.Attr, val.Interface().(xml.Attr))
 		return nil
 	}
 
@@ -658,14 +657,14 @@ func (p *printer) marshalAttr(start *StartElement, name Name, val reflect.Value)
 	if b != nil {
 		s = string(b)
 	}
-	start.Attr = append(start.Attr, Attr{name, s})
+	start.Attr = append(start.Attr, xml.Attr{name, s})
 	return nil
 }
 
 // defaultStart returns the default start element to use,
 // given the reflect type, field info, and start template.
-func defaultStart(typ reflect.Type, finfo *fieldInfo, startTemplate *StartElement) StartElement {
-	var start StartElement
+func defaultStart(typ reflect.Type, finfo *fieldInfo, startTemplate *xml.StartElement) xml.StartElement {
+	var start xml.StartElement
 	// Precedence for the XML element name is as above,
 	// except that we do not look inside structs for the first field.
 	if startTemplate != nil {
@@ -685,10 +684,10 @@ func defaultStart(typ reflect.Type, finfo *fieldInfo, startTemplate *StartElemen
 }
 
 // marshalInterface marshals a Marshaler interface value.
-func (p *printer) marshalInterface(val Marshaler, start StartElement) error {
+func (p *printer) marshalInterface(val Marshaler, start xml.StartElement) error {
 	// Push a marker onto the tag stack so that MarshalXML
 	// cannot close the XML tags that it did not open.
-	p.tags = append(p.tags, Name{})
+	p.tags = append(p.tags, xml.Name{})
 	n := len(p.tags)
 
 	err := val.MarshalXML(p.encoder, start)
@@ -705,7 +704,7 @@ func (p *printer) marshalInterface(val Marshaler, start StartElement) error {
 }
 
 // marshalTextInterface marshals a TextMarshaler interface value.
-func (p *printer) marshalTextInterface(val encoding.TextMarshaler, start StartElement) error {
+func (p *printer) marshalTextInterface(val encoding.TextMarshaler, start xml.StartElement) error {
 	if err := p.writeStart(&start); err != nil {
 		return err
 	}
@@ -718,7 +717,7 @@ func (p *printer) marshalTextInterface(val encoding.TextMarshaler, start StartEl
 }
 
 // writeStart writes the given start element.
-func (p *printer) writeStart(start *StartElement) error {
+func (p *printer) writeStart(start *xml.StartElement) error {
 	if start.Name.Local == "" {
 		return fmt.Errorf("xml: start tag with no name")
 	}
@@ -756,7 +755,7 @@ func (p *printer) writeStart(start *StartElement) error {
 	return nil
 }
 
-func (p *printer) writeEnd(name Name) error {
+func (p *printer) writeEnd(name xml.Name) error {
 	if name.Local == "" {
 		return fmt.Errorf("xml: end tag with no name")
 	}
@@ -1089,7 +1088,7 @@ func (s *parentStack) trim(parents []string) error {
 		}
 	}
 	for i := len(s.stack) - 1; i >= split; i-- {
-		if err := s.p.writeEnd(Name{Local: s.stack[i]}); err != nil {
+		if err := s.p.writeEnd(xml.Name{Local: s.stack[i]}); err != nil {
 			return err
 		}
 	}
@@ -1100,7 +1099,7 @@ func (s *parentStack) trim(parents []string) error {
 // push adds parent elements to the stack and writes open tags.
 func (s *parentStack) push(parents []string) error {
 	for i := 0; i < len(parents); i++ {
-		if err := s.p.writeStart(&StartElement{Name: Name{Local: parents[i]}}); err != nil {
+		if err := s.p.writeStart(&xml.StartElement{Name: xml.Name{Local: parents[i]}}); err != nil {
 			return err
 		}
 	}
@@ -1130,4 +1129,47 @@ func isEmptyValue(v reflect.Value) bool {
 		return v.IsZero()
 	}
 	return false
+}
+
+// writeStart writes the given start element as self closing tag.
+func (p *printer) writeStartSelfClosing(start *StartElementSelfClosing) error {
+	if start.Name.Local == "" {
+		return fmt.Errorf("xml: start tag with no name")
+	}
+
+	p.tags = append(p.tags, start.Name)
+	p.markPrefix()
+
+	p.writeIndent(1)
+	p.WriteByte('<')
+	p.WriteString(start.Name.Local)
+
+	if start.Name.Space != "" {
+		p.WriteString(` xmlns="`)
+		p.EscapeString(start.Name.Space)
+		p.WriteByte('"')
+	}
+
+	// Attributes
+	for _, attr := range start.Attr {
+		name := attr.Name
+		if name.Local == "" {
+			continue
+		}
+		p.WriteByte(' ')
+		if name.Space != "" {
+			p.WriteString(p.createAttrPrefix(name.Space))
+			p.WriteByte(':')
+		}
+		p.WriteString(name.Local)
+		p.WriteString(`="`)
+		p.EscapeString(attr.Value)
+		p.WriteByte('"')
+	}
+	p.WriteByte('/')
+	p.WriteByte('>')
+	p.tags = p.tags[:len(p.tags)-1]
+	p.writeIndent(-1)
+	p.popPrefix()
+	return nil
 }
