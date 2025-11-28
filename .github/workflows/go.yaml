@@ -1,0 +1,27 @@
+name: Go Build and Test
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.24' # Specify the version of Go you want to use
+        cache: true # Caches Go modules for faster subsequent runs
+
+    - name: Install dependencies
+      run: go mod tidy # Ensures all dependencies are installed and the go.mod file is clean
+
+    - name: Build
+      run: go build -v ./... # Builds all packages in the repository
+
+    - name: Test
+      run: go test -v ./... # Runs all tests in the repository
