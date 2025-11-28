@@ -1,4 +1,4 @@
-package cimgo
+package cimgostructs
 
 type CIMElementList struct {
 	Elements map[string]interface{}

@@ -16,7 +16,7 @@ func TestGenerate(t *testing.T) {
 	cimSpec.GenerateGo(outputDir)
 
 	// Compute hash of the output files for verification
-	data, err := os.ReadFile(outputDir + "ACLineSegment.go")
+	data, err := os.ReadFile(outputDir + "/ACLineSegment.go")
 	if err != nil {
 		t.Error("Cannot read output file for hashing:", err)
 	}

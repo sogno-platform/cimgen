@@ -1,23 +1,24 @@
 package cimgo
 
 import (
+	"encoding/xml"
 	"fmt"
 	"io"
 	"strings"
 
-	cimgo "github.com/sogno-platform/cimgen/cimgostructs"
+	"github.com/sogno-platform/cimgen/cimgostructs"
 	"github.com/sogno-platform/cimgen/cimgoxml"
 )
 
-func EncodeProfile(w io.Writer, cimData *cimgo.CIMElementList) error {
+func EncodeProfile(w io.Writer, cimData *cimgostructs.CIMElementList) error {
 	enc := cimgoxml.NewEncoder(w)
 	enc.Indent("", "  ")
 
-	start := cimgoxml.StartElement{
-		Name: cimgoxml.Name{Local: "rdf:RDF"},
-		Attr: []cimgoxml.Attr{
-			{Name: cimgoxml.Name{Local: "xmlns:rdf"}, Value: "http://www.w3.org/1999/02/22-rdf-syntax-ns#"},
-			{Name: cimgoxml.Name{Local: "xmlns:cim"}, Value: "http://iec.ch/TC57/2013/CIM-schema-cim16#"}},
+	start := xml.StartElement{
+		Name: xml.Name{Local: "rdf:RDF"},
+		Attr: []xml.Attr{
+			{Name: xml.Name{Local: "xmlns:rdf"}, Value: "http://www.w3.org/1999/02/22-rdf-syntax-ns#"},
+			{Name: xml.Name{Local: "xmlns:cim"}, Value: "http://iec.ch/TC57/2013/CIM-schema-cim16#"}},
 	}
 
 	if err := enc.EncodeToken(start); err != nil {
