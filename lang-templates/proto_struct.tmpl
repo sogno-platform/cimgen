@@ -1,0 +1,13 @@
+syntax = "proto3";
+package cimproto;
+
+import "{{ .SuperType }}.proto"
+
+message {{ .Id }} {
+{{- if .SuperType }}
+    {{ .SuperType }} {{ .SuperType }} = 1
+{{- end }}
+{{- range .Attributes}}
+    {{ .LangType }} {{ .Label }} = 2
+{{- end}}
+}

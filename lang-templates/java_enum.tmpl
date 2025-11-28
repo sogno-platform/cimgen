@@ -1,0 +1,50 @@
+/*
+Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cimgen
+*/
+
+package cim4j.types;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
+{{if .Comment}}
+/**
+ * {{.Comment}}
+ */
+{{end}}
+public enum {{.Id}} {
+{{- range $index, $element := .Values}}
+{{if .Comment}}
+/**
+ * {{.Comment}}
+ */
+{{end}}
+    _{{.Label}}("{{.Label}}"),
+{{end}}
+    ;
+
+    private final String value;
+
+    private {{.Id}}(String value) {
+        this.value = value;
+    }
+
+    @Override
+    public String toString() {
+        return value;
+    }
+
+    public static {{.Id}} fromString(String value) {
+        return ENUM_MAP.get(value);
+    }
+
+    private static final Map<String, {{.Id}}> ENUM_MAP;
+    static {
+        var map = new HashMap<String, {{.Id}}>();
+        for ({{.Id}} instance : {{.Id}}.values()) {
+            map.put(instance.value, instance);
+        }
+        ENUM_MAP = Collections.unmodifiableMap(map);
+    }
+}

@@ -45,85 +45,7 @@ func MapDataTypeGo(s string) string {
 	}
 }
 
-type CIMGenerator struct {
-	cimSpec       *CIMSpecification
-	tmplType      *template.Template
-	tmplTypeList  *template.Template
-	tmplTypeAlias *template.Template
-	tmplEnum      *template.Template
-	tmplConstants *template.Template
-	tmplProfiles  *template.Template
-	tmplDatatype  *template.Template
-	tmplPrimitive *template.Template
-}
-
-func NewCIMGeneratorGo(spec *CIMSpecification) *CIMGenerator {
-	funcMap := template.FuncMap{
-		"capitalizefirstletter": CapitalizeFirstLetter,
-		"lower":                 Lower,
-		"mapDataTypeGo":         MapDataTypeGo,
-	}
-
-	// Since ParseFile does not work well with files in subdirectories, we read the file manually
-	data, err := os.ReadFile("lang-templates/go_struct.tmpl")
-	if err != nil {
-		panic(err)
-	}
-	tmplType, err := template.New("go_struct").Funcs(funcMap).Parse(string(data))
-	if err != nil {
-		panic(err)
-	}
-
-	data, err = os.ReadFile("lang-templates/go_struct_lists.tmpl")
-	if err != nil {
-		panic(err)
-	}
-	tmplTypeList, err := template.New("go_struct_lists").Funcs(funcMap).Parse(string(data))
-	if err != nil {
-		panic(err)
-	}
-
-	data, err = os.ReadFile("lang-templates/go_type_alias.tmpl")
-	if err != nil {
-		panic(err)
-	}
-	tmplTypeAlias, err := template.New("go_type_alias").Funcs(funcMap).Parse(string(data))
-	if err != nil {
-		panic(err)
-	}
-
-	data, err = os.ReadFile("lang-templates/go_enum.tmpl")
-	if err != nil {
-		panic(err)
-	}
-	tmplEnum, err := template.New("go_enum").Funcs(funcMap).Parse(string(data))
-	if err != nil {
-		panic(err)
-	}
-
-	return &CIMGenerator{
-		cimSpec:       spec,
-		tmplType:      tmplType,
-		tmplTypeList:  tmplTypeList,
-		tmplTypeAlias: tmplTypeAlias,
-		tmplEnum:      tmplEnum,
-	}
-}
-
-func (gen *CIMGenerator) GenerateType(typeName string, outputFile string) {
-	f, err := os.Create(outputFile)
-	if err != nil {
-		panic(err)
-	}
-	defer f.Close()
-
-	err = gen.tmplType.Execute(f, gen.cimSpec.Types[typeName])
-	if err != nil {
-		panic(err)
-	}
-}
-
-func (gen *CIMGenerator) GenerateAllGo(outputDir string) {
+func (spec *CIMSpecification) GenerateGo(outputDir string) {
 	// create output folder if it does not exist
 	if _, err := os.Stat(outputDir); os.IsNotExist(err) {
 		err = os.MkdirAll(outputDir, 0755)
@@ -132,125 +54,13 @@ func (gen *CIMGenerator) GenerateAllGo(outputDir string) {
 		}
 	}
 
-	for typeName := range gen.cimSpec.Types {
-		f, err := os.Create(filepath.Join(outputDir, typeName+".go"))
-		if err != nil {
-			panic(err)
-		}
-		defer f.Close()
-
-		// generate type alias if needed
-		if gen.cimSpec.Types[typeName].Stereotype == "CIMDatatype" {
-			err = gen.tmplTypeAlias.Execute(f, gen.cimSpec.Types[typeName])
-			if err != nil {
-				panic(err)
-			}
-		} else {
-			err = gen.tmplType.Execute(f, gen.cimSpec.Types[typeName])
-			if err != nil {
-				panic(err)
-			}
-		}
-	}
-
-	// generate CIM struct lists
-	f, err := os.Create(filepath.Join(outputDir, "cim_struct_lists.go"))
-	if err != nil {
-		panic(err)
-	}
-	defer f.Close()
-
-	err = gen.tmplTypeList.Execute(f, gen.cimSpec)
-	if err != nil {
-		panic(err)
-	}
-
-	// generate enums
-	for typeName := range gen.cimSpec.Enums {
-		f, err := os.Create(filepath.Join(outputDir, typeName+".go"))
-		if err != nil {
-			panic(err)
-		}
-		defer f.Close()
-
-		err = gen.tmplEnum.Execute(f, gen.cimSpec.Enums[typeName])
-		if err != nil {
-			panic(err)
-		}
-	}
+	generateFiles("go_struct", ".go", outputDir, spec.Types)
+	generateFile("go_struct_lists", "go_struct_lists.go", outputDir, spec)
+	generateFiles("go_enum", ".go", outputDir, spec.Enums)
+	generateFiles("go_type_alias", ".go", outputDir, spec.CIMDatatypes)
 }
 
-func NewCIMGeneratorPython(spec *CIMSpecification) *CIMGenerator {
-	// Since ParseFile does not work well with files in subdirectories, we read the file manually
-	funcMap := template.FuncMap{
-		"wrapAndIndent": wrapAndIndent,
-	}
-	data, err := os.ReadFile("lang-templates/python_class.tmpl")
-	if err != nil {
-		panic(err)
-	}
-	tmplType, err := template.New("python_class").Funcs(funcMap).Parse(string(data))
-	if err != nil {
-		panic(err)
-	}
-
-	data, err = os.ReadFile("lang-templates/python_constants.tmpl")
-	if err != nil {
-		panic(err)
-	}
-	tmplConstants, err := template.New("python_constants").Parse(string(data))
-	if err != nil {
-		panic(err)
-	}
-
-	data, err = os.ReadFile("lang-templates/python_profile.tmpl")
-	if err != nil {
-		panic(err)
-	}
-	tmplProfiles, err := template.New("python_profile").Parse(string(data))
-	if err != nil {
-		panic(err)
-	}
-
-	data, err = os.ReadFile("lang-templates/python_datatype.tmpl")
-	if err != nil {
-		panic(err)
-	}
-	tmplDatatype, err := template.New("python_datatype").Parse(string(data))
-	if err != nil {
-		panic(err)
-	}
-
-	data, err = os.ReadFile("lang-templates/python_enum.tmpl")
-	if err != nil {
-		panic(err)
-	}
-	tmplEnum, err := template.New("python_enum").Funcs(funcMap).Parse(string(data))
-	if err != nil {
-		panic(err)
-	}
-
-	data, err = os.ReadFile("lang-templates/python_primitive.tmpl")
-	if err != nil {
-		panic(err)
-	}
-	tmplPrimitive, err := template.New("python_primitive").Parse(string(data))
-	if err != nil {
-		panic(err)
-	}
-
-	return &CIMGenerator{
-		cimSpec:       spec,
-		tmplType:      tmplType,
-		tmplConstants: tmplConstants,
-		tmplProfiles:  tmplProfiles,
-		tmplDatatype:  tmplDatatype,
-		tmplEnum:      tmplEnum,
-		tmplPrimitive: tmplPrimitive,
-	}
-}
-
-func (gen *CIMGenerator) GenerateAllPython(outputDir string) {
+func (spec *CIMSpecification) GeneratePython(outputDir string) {
 	// create output folder if it does not exist
 	if _, err := os.Stat(outputDir); os.IsNotExist(err) {
 		err = os.MkdirAll(outputDir, 0755)
@@ -259,84 +69,12 @@ func (gen *CIMGenerator) GenerateAllPython(outputDir string) {
 		}
 	}
 
-	for typeName := range gen.cimSpec.Types {
-		f, err := os.Create(filepath.Join(outputDir, typeName+".py"))
-		if err != nil {
-			panic(err)
-		}
-		defer f.Close()
-
-		err = gen.tmplType.Execute(f, gen.cimSpec.Types[typeName])
-		if err != nil {
-			panic(err)
-		}
-	}
-
-	// generate constants file
-	f, err := os.Create(filepath.Join(outputDir, "cim_constants.py"))
-	if err != nil {
-		panic(err)
-	}
-	defer f.Close()
-
-	err = gen.tmplConstants.Execute(f, gen.cimSpec)
-	if err != nil {
-		panic(err)
-	}
-
-	// generate profiles file
-	f, err = os.Create(filepath.Join(outputDir, "cim_profiles.py"))
-	if err != nil {
-		panic(err)
-	}
-	defer f.Close()
-
-	err = gen.tmplProfiles.Execute(f, gen.cimSpec)
-	if err != nil {
-		panic(err)
-	}
-
-	// generate datatypes
-	for typeName := range gen.cimSpec.CIMDatatypes {
-		f, err = os.Create(filepath.Join(outputDir, typeName+".py"))
-		if err != nil {
-			panic(err)
-		}
-		defer f.Close()
-
-		err = gen.tmplDatatype.Execute(f, gen.cimSpec.CIMDatatypes[typeName])
-		if err != nil {
-			panic(err)
-		}
-	}
-
-	// generate enums
-	for typeName := range gen.cimSpec.Enums {
-		f, err := os.Create(filepath.Join(outputDir, typeName+".py"))
-		if err != nil {
-			panic(err)
-		}
-		defer f.Close()
-
-		err = gen.tmplEnum.Execute(f, gen.cimSpec.Enums[typeName])
-		if err != nil {
-			panic(err)
-		}
-	}
-
-	// generate primitives
-	for typeName := range gen.cimSpec.PrimitiveTypes {
-		f, err := os.Create(filepath.Join(outputDir, typeName+".py"))
-		if err != nil {
-			panic(err)
-		}
-		defer f.Close()
-
-		err = gen.tmplPrimitive.Execute(f, gen.cimSpec.PrimitiveTypes[typeName])
-		if err != nil {
-			panic(err)
-		}
-	}
+	generateFiles("python_class", ".py", outputDir, spec.Types)
+	generateFile("python_constants", "cim_constants.py", outputDir, spec)
+	generateFile("python_profile", "cim_profiles.py", outputDir, spec)
+	generateFiles("python_datatype", ".py", outputDir, spec.CIMDatatypes)
+	generateFiles("python_enum", ".py", outputDir, spec.Enums)
+	generateFiles("python_primitive", ".py", outputDir, spec.PrimitiveTypes)
 }
 
 // indent is a custom template function that indents a multi-line string.
@@ -375,47 +113,7 @@ func wrapAndIndent(spaces int, input string) string {
 	return buf.String()
 }
 
-func NewCIMGeneratorPythonSimple(spec *CIMSpecification) *CIMGenerator {
-	// Since ParseFile does not work well with files in subdirectories, we read the file manually
-	funcMap := template.FuncMap{
-		"wrapAndIndent": wrapAndIndent,
-	}
-	data, err := os.ReadFile("lang-templates/python_simple_class.tmpl")
-	if err != nil {
-		panic(err)
-	}
-	tmplType, err := template.New("python_simple_class").Funcs(funcMap).Parse(string(data))
-	if err != nil {
-		panic(err)
-	}
-
-	data, err = os.ReadFile("lang-templates/python_constants.tmpl")
-	if err != nil {
-		panic(err)
-	}
-	tmplConstants, err := template.New("python_constants").Parse(string(data))
-	if err != nil {
-		panic(err)
-	}
-
-	data, err = os.ReadFile("lang-templates/python_simple_profiles.tmpl")
-	if err != nil {
-		panic(err)
-	}
-	tmplProfiles, err := template.New("python_simple_profiles").Parse(string(data))
-	if err != nil {
-		panic(err)
-	}
-
-	return &CIMGenerator{
-		cimSpec:       spec,
-		tmplType:      tmplType,
-		tmplConstants: tmplConstants,
-		tmplProfiles:  tmplProfiles,
-	}
-}
-
-func (gen *CIMGenerator) GenerateAllPythonSimple(outputDir string) {
+func (spec *CIMSpecification) GeneratePythonSimple(outputDir string) {
 	// create output folder if it does not exist
 	if _, err := os.Stat(outputDir); os.IsNotExist(err) {
 		err = os.MkdirAll(outputDir, 0755)
@@ -424,65 +122,12 @@ func (gen *CIMGenerator) GenerateAllPythonSimple(outputDir string) {
 		}
 	}
 
-	for typeName := range gen.cimSpec.Types {
-		f, err := os.Create(filepath.Join(outputDir, typeName+".py"))
-		if err != nil {
-			panic(err)
-		}
-		defer f.Close()
-
-		err = gen.tmplType.Execute(f, gen.cimSpec.Types[typeName])
-		if err != nil {
-			panic(err)
-		}
-	}
-
-	// generate constants file
-	f, err := os.Create(filepath.Join(outputDir, "cim_constants.py"))
-	if err != nil {
-		panic(err)
-	}
-	defer f.Close()
-
-	err = gen.tmplConstants.Execute(f, gen.cimSpec)
-	if err != nil {
-		panic(err)
-	}
-
-	// generate profiles file
-	f, err = os.Create(filepath.Join(outputDir, "cim_profiles.py"))
-	if err != nil {
-		panic(err)
-	}
-	defer f.Close()
-
-	err = gen.tmplProfiles.Execute(f, gen.cimSpec)
-	if err != nil {
-		panic(err)
-	}
+	generateFiles("python_simple_class", ".py", outputDir, spec.Types)
+	generateFile("python_constants", "cim_constants.py", outputDir, spec)
+	generateFile("python_simple_profiles", "cim_profiles.py", outputDir, spec)
 }
 
-func NewCIMGeneratorProto(spec *CIMSpecification) *CIMGenerator {
-	// Since ParseFile does not work well with files in subdirectories, we read the file manually
-	data, err := os.ReadFile("lang-templates/proto_struct.tmpl")
-	if err != nil {
-		panic(err)
-	}
-	funcMap := template.FuncMap{
-		"wrapAndIndent": wrapAndIndent,
-	}
-	tmplType, err := template.New("proto_struct").Funcs(funcMap).Parse(string(data))
-	if err != nil {
-		panic(err)
-	}
-
-	return &CIMGenerator{
-		cimSpec:  spec,
-		tmplType: tmplType,
-	}
-}
-
-func (gen *CIMGenerator) GenerateAllProto(outputDir string) {
+func (spec *CIMSpecification) GenerateProto(outputDir string) {
 	// create output folder if it does not exist
 	if _, err := os.Stat(outputDir); os.IsNotExist(err) {
 		err = os.MkdirAll(outputDir, 0755)
@@ -491,14 +136,77 @@ func (gen *CIMGenerator) GenerateAllProto(outputDir string) {
 		}
 	}
 
-	for typeName := range gen.cimSpec.Types {
-		f, err := os.Create(filepath.Join(outputDir, typeName+".proto"))
+	generateFiles("proto_struct", ".proto", outputDir, spec.Types)
+}
+
+func (spec *CIMSpecification) GenerateJava(outputDir string) {
+	// create output folder if it does not exist
+	if _, err := os.Stat(outputDir); os.IsNotExist(err) {
+		err = os.MkdirAll(outputDir, 0755)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	generateFiles("java_class", ".java", outputDir, spec.Types)
+}
+
+func generateFile[T any](tmplFile string, outputFile string, outputDir string, input T) {
+	funcMap := template.FuncMap{
+		"wrapAndIndent":         wrapAndIndent,
+		"capitalizefirstletter": CapitalizeFirstLetter,
+		"lower":                 Lower,
+		"mapDataTypeGo":         MapDataTypeGo,
+	}
+
+	// Since ParseFile does not work well with files in subdirectories, we read the file manually
+	data, err := os.ReadFile("lang-templates/" + tmplFile + ".tmpl")
+	if err != nil {
+		panic(err)
+	}
+	tmpl, err := template.New(tmplFile).Funcs(funcMap).Parse(string(data))
+	if err != nil {
+		panic(err)
+	}
+
+	f, err := os.Create(filepath.Join(outputDir, outputFile))
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+
+	err = tmpl.Execute(f, input)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func generateFiles[T any](tmplFile string, fileExt string, outputDir string, input map[string]T) {
+	funcMap := template.FuncMap{
+		"wrapAndIndent":         wrapAndIndent,
+		"capitalizeFirstLetter": CapitalizeFirstLetter,
+		"lower":                 Lower,
+		"mapDataTypeGo":         MapDataTypeGo,
+	}
+
+	// Since ParseFile does not work well with files in subdirectories, we read the file manually
+	data, err := os.ReadFile("lang-templates/" + tmplFile + ".tmpl")
+	if err != nil {
+		panic(err)
+	}
+	tmpl, err := template.New(tmplFile).Funcs(funcMap).Parse(string(data))
+	if err != nil {
+		panic(err)
+	}
+
+	for k, v := range input {
+		f, err := os.Create(filepath.Join(outputDir, k+fileExt))
 		if err != nil {
 			panic(err)
 		}
 		defer f.Close()
 
-		err = gen.tmplType.Execute(f, gen.cimSpec.Types[typeName])
+		err = tmpl.Execute(f, v)
 		if err != nil {
 			panic(err)
 		}

@@ -316,32 +316,31 @@ func (cimSpec *CIMSpecification) setLangTypesPython() {
 		for _, attr := range t.Attributes {
 			if attr.IsList {
 				attr.LangType = "list" // Set default value for list attributes
-			} else if attr.DataType == DataTypeString {
-				attr.LangType = "str" // Set default value for string attributes
-			} else if attr.DataType == DataTypeInteger {
-				attr.LangType = "int" // Set default value for integer attributes
-			} else if attr.DataType == DataTypeBoolean {
-				attr.LangType = "bool" // Set default value for boolean attributes
-			} else if attr.DataType == DataTypeFloat {
-				attr.LangType = "float" // Set default value for float attributes
-			} else if attr.DataType == DataTypeObject {
-				attr.LangType = "Optional[str]" // Set default value for object attributes
-			} else if attr.DataType == DataTypeActivePower || attr.DataType == DataTypeActivePowerPerCurrentFlow ||
-				attr.DataType == DataTypeActivePowerPerFrequency || attr.DataType == DataTypeAngleDegrees ||
-				attr.DataType == DataTypeAngleRadians || attr.DataType == DataTypeApparentPower ||
-				attr.DataType == DataTypeArea || attr.DataType == DataTypeCapacitance || attr.DataType == DataTypeConductance ||
-				attr.DataType == DataTypeCurrentFlow || attr.DataType == DataTypeFrequency ||
-				attr.DataType == DataTypeInductance || attr.DataType == DataTypeLength || attr.DataType == DataTypeMoney ||
-				attr.DataType == DataTypePerCent || attr.DataType == DataTypePU || attr.DataType == DataTypeReactance ||
-				attr.DataType == DataTypeReactivePower || attr.DataType == DataTypeRealEnergy || attr.DataType == DataTypeResistance ||
-				attr.DataType == DataTypeRotationSpeed || attr.DataType == DataTypeSeconds || attr.DataType == DataTypeSusceptance ||
-				attr.DataType == DataTypeTemperature || attr.DataType == DataTypeVoltage || attr.DataType == DataTypeVoltagePerReactivePower ||
-				attr.DataType == DataTypeVolumeFlowRate {
-				attr.LangType = "float" // Set default value for specific CIM data types
-			} else if attr.DataType == DataTypeDateTime {
-				attr.LangType = "str" // Could be datetime, but keeping it simple for now
 			} else {
-				attr.LangType = "float" // Default fallback
+				switch attr.DataType {
+				case DataTypeString:
+					attr.LangType = "str"
+				case DataTypeInteger:
+					attr.LangType = "int"
+				case DataTypeBoolean:
+					attr.LangType = "bool"
+				case DataTypeFloat:
+					attr.LangType = "float"
+				case DataTypeObject:
+					attr.LangType = "Optional[str]"
+				case DataTypeActivePower, DataTypeActivePowerPerCurrentFlow, DataTypeActivePowerPerFrequency,
+					DataTypeAngleDegrees, DataTypeAngleRadians, DataTypeApparentPower, DataTypeArea,
+					DataTypeCapacitance, DataTypeConductance, DataTypeCurrentFlow, DataTypeFrequency,
+					DataTypeInductance, DataTypeLength, DataTypeMoney, DataTypePerCent, DataTypePU, DataTypeReactance,
+					DataTypeReactivePower, DataTypeRealEnergy, DataTypeResistance, DataTypeRotationSpeed,
+					DataTypeSeconds, DataTypeSusceptance, DataTypeTemperature, DataTypeVoltage,
+					DataTypeVoltagePerReactivePower, DataTypeVolumeFlowRate:
+					attr.LangType = "float"
+				case DataTypeDateTime:
+					attr.LangType = "str"
+				default:
+					attr.LangType = "float"
+				}
 			}
 		}
 	}
@@ -359,18 +358,24 @@ func (cimSpec *CIMSpecification) setLangTypesPython() {
 		case DataTypeDate, DataTypeDateTime:
 			t.LangType = "str" // Could be datetime, but keeping it simple for now
 		default:
-			t.LangType = "str" // Default fallback
+			t.LangType = "str"
 		}
 	}
 
 	for _, t := range cimSpec.CIMDatatypes {
 		switch t.Id {
-		case DataTypeActivePower, DataTypeActivePowerPerCurrentFlow, DataTypeActivePowerPerFrequency, DataTypeAngleDegrees, DataTypeAngleRadians, DataTypeApparentPower, DataTypeArea, DataTypeCapacitance, DataTypeConductance, DataTypeCurrentFlow, DataTypeFrequency, DataTypeInductance, DataTypeLength, DataTypeMoney, DataTypePerCent, DataTypePU, DataTypeReactance, DataTypeReactivePower, DataTypeRealEnergy, DataTypeResistance, DataTypeRotationSpeed, DataTypeSeconds, DataTypeSusceptance, DataTypeTemperature, DataTypeVoltage, DataTypeVoltagePerReactivePower, DataTypeVolumeFlowRate:
+		case DataTypeActivePower, DataTypeActivePowerPerCurrentFlow, DataTypeActivePowerPerFrequency,
+			DataTypeAngleDegrees, DataTypeAngleRadians, DataTypeApparentPower, DataTypeArea,
+			DataTypeCapacitance, DataTypeConductance, DataTypeCurrentFlow, DataTypeFrequency,
+			DataTypeInductance, DataTypeLength, DataTypeMoney, DataTypePerCent,
+			DataTypePU, DataTypeReactance, DataTypeReactivePower, DataTypeRealEnergy,
+			DataTypeResistance, DataTypeRotationSpeed, DataTypeSeconds, DataTypeSusceptance,
+			DataTypeTemperature, DataTypeVoltage, DataTypeVoltagePerReactivePower, DataTypeVolumeFlowRate:
 			t.LangType = "float" // Set default value for specific CIM data types
 		case DataTypeDateTime:
 			t.LangType = "str" // Could be datetime, but keeping it simple for now
 		default:
-			t.LangType = "str" // Default fallback
+			t.LangType = "str"
 		}
 	}
 }
@@ -381,34 +386,29 @@ func (cimSpec *CIMSpecification) setDefaultValuesPython() {
 		for _, attr := range t.Attributes {
 			if attr.IsList {
 				attr.DefaultValue = "list" // Set default value for list attributes
-			} else if attr.DataType == DataTypeString {
-				attr.DefaultValue = "''" // Set default value for string attributes
-			} else if attr.DataType == DataTypeInteger {
-				attr.DefaultValue = "0" // Set default value for integer attributes
-			} else if attr.DataType == DataTypeBoolean {
-				attr.DefaultValue = "False" // Set default value for boolean attributes
-			} else if attr.DataType == DataTypeFloat {
-				attr.DefaultValue = "0.0" // Set default value for float attributes
-			} else if attr.DataType == DataTypeObject {
-				attr.DefaultValue = "None" // Set default value for object attributes
-			} else if attr.DataType == DataTypeActivePower || attr.DataType == DataTypeActivePowerPerCurrentFlow ||
-				attr.DataType == DataTypeActivePowerPerFrequency || attr.DataType == DataTypeAngleDegrees ||
-				attr.DataType == DataTypeAngleRadians || attr.DataType == DataTypeApparentPower ||
-				attr.DataType == DataTypeArea || attr.DataType == DataTypeCapacitance || attr.DataType == DataTypeConductance ||
-				attr.DataType == DataTypeCurrentFlow || attr.DataType == DataTypeFrequency ||
-				attr.DataType == DataTypeInductance || attr.DataType == DataTypeLength || attr.DataType == DataTypeMoney ||
-				attr.DataType == DataTypePerCent || attr.DataType == DataTypePU || attr.DataType == DataTypeReactance ||
-				attr.DataType == DataTypeReactivePower || attr.DataType == DataTypeRealEnergy || attr.DataType == DataTypeResistance ||
-				attr.DataType == DataTypeRotationSpeed || attr.DataType == DataTypeSeconds || attr.DataType == DataTypeSusceptance ||
-				attr.DataType == DataTypeTemperature || attr.DataType == DataTypeVoltage || attr.DataType == DataTypeVoltagePerReactivePower ||
-				attr.DataType == DataTypeVolumeFlowRate {
-				attr.DefaultValue = "0.0" // Set default value for specific CIM data types
-			} else if attr.DataType == DataTypeDateTime {
-				attr.DefaultValue = "''" // Could be datetime, but keeping it simple for now
-			} else if attr.DataType == DataTypeMonthDay {
-				attr.DefaultValue = "''" // Could be datetime, but keeping it simple for now
 			} else {
-				attr.DefaultValue = "None" // Default fallback
+				switch attr.DataType {
+				case DataTypeString, DataTypeDateTime, DataTypeMonthDay:
+					attr.DefaultValue = "''"
+				case DataTypeInteger:
+					attr.DefaultValue = "0"
+				case DataTypeBoolean:
+					attr.DefaultValue = "False"
+				case DataTypeFloat:
+					attr.DefaultValue = "0.0"
+				case DataTypeObject:
+					attr.DefaultValue = "None"
+				case DataTypeActivePower, DataTypeActivePowerPerCurrentFlow, DataTypeActivePowerPerFrequency,
+					DataTypeAngleDegrees, DataTypeAngleRadians, DataTypeApparentPower, DataTypeArea,
+					DataTypeCapacitance, DataTypeConductance, DataTypeCurrentFlow, DataTypeFrequency,
+					DataTypeInductance, DataTypeLength, DataTypeMoney, DataTypePerCent, DataTypePU,
+					DataTypeReactance, DataTypeReactivePower, DataTypeRealEnergy, DataTypeResistance,
+					DataTypeRotationSpeed, DataTypeSeconds, DataTypeSusceptance, DataTypeTemperature,
+					DataTypeVoltage, DataTypeVoltagePerReactivePower, DataTypeVolumeFlowRate:
+					attr.DefaultValue = "0.0"
+				default:
+					attr.DefaultValue = "None"
+				}
 			}
 		}
 	}

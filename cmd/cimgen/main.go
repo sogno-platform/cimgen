@@ -37,24 +37,24 @@ func main() {
 	switch language {
 	case "go":
 		// generate Go structs
-		gengo := cimgen.NewCIMGeneratorGo(cimSpec)
 		outputDir = "cimgostructs"
-		gengo.GenerateAllGo(outputDir)
+		cimSpec.GenerateGo(outputDir)
 	case "python":
 		// generate Python classes
-		genpy := cimgen.NewCIMGeneratorPython(cimSpec)
 		outputDir = "output/python/v3"
-		genpy.GenerateAllPython(outputDir)
+		cimSpec.GeneratePython(outputDir)
 	case "python-simple":
 		// generate Python classes
-		genpy := cimgen.NewCIMGeneratorPythonSimple(cimSpec)
 		outputDir = "output/python-simple/v3"
-		genpy.GenerateAllPythonSimple(outputDir)
+		cimSpec.GeneratePythonSimple(outputDir)
 	case "proto":
 		// generate Python classes
-		genpy := cimgen.NewCIMGeneratorProto(cimSpec)
 		outputDir = "output/proto/v3"
-		genpy.GenerateAllProto(outputDir)
+		cimSpec.GenerateProto(outputDir)
+	case "java":
+		// generate Java classes
+		outputDir = "output/java/v3"
+		cimSpec.GenerateJava(outputDir)
 	default:
 		logger.Fatalf("unsupported language: %s", language)
 	}
