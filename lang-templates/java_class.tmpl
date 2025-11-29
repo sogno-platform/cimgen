@@ -13,12 +13,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-
-{{if .Comment}}
+{{ if .Comment}}
 /**
  * {{.Comment}}
  */
-{{end}}
+{{- end}}
 @SuppressWarnings("unused")
 public class {{.Id}} extends {{.SuperType}} {
 
@@ -63,8 +62,19 @@ public class {{.Id}} extends {{.SuperType}} {
     private static Object get{{capitalizeFirstLetter .Label}}(BaseClass _this_) {
         return (({{$p.Id}}) _this_).get{{capitalizeFirstLetter .Label}}();
     }
-{{- end }}
 
+    private static void set{{capitalizeFirstLetter .Label}}(BaseClass _this_, Object _value_) {
+        if (_value_ instanceof {{.LangType}}) {
+            (({{$p.Id}}) _this_).set{{capitalizeFirstLetter .Label}}(({{.LangType}}) _value_);
+{{- if not (eq .LangType "String")}}
+        } else if (_value_ instanceof String) {
+            (({{$p.Id}}) _this_).set{{capitalizeFirstLetter .Label}}(get{{.LangType}}FromString((String) _value_));
+{{- end}}
+        } else {
+            throw new IllegalArgumentException("Object is neither {{.LangType}} nor String");
+        }
+    }
+{{- end }}
 {{- if .IsCIMDatatype}}
     private Double {{.Label}};
 
@@ -90,7 +100,6 @@ public class {{.Id}} extends {{.SuperType}} {
         }
     }
 {{- end}}
-
 {{- if .IsEnumValue}}
     private String {{.Label}};
 
@@ -114,7 +123,6 @@ public class {{.Id}} extends {{.SuperType}} {
         }
     }
 {{- end}}
-
 {{- if .IsClass}}
     private {{.Range}} {{.Label}};
 
@@ -127,7 +135,9 @@ public class {{.Id}} extends {{.SuperType}} {
     public void set{{capitalizeFirstLetter .Label}}({{.Range}} _object_) {
         if ({{.Label}} != _object_) {
             {{.Label}} = _object_;
-
+{{- if .HasInverseRole}}
+            _object_.set{{capitalizeFirstLetter $p.Id}}(this);
+{{- end}}
             {{.Label}}Id = _object_.getRdfid();
         }
     }
@@ -151,7 +161,6 @@ public class {{.Id}} extends {{.SuperType}} {
         }
     }
 {{- end}}
-
 {{- if .IsList}}
     private Set<{{.Range}}> {{.Label}} = new HashSet<>();
 
@@ -188,10 +197,7 @@ public class {{.Id}} extends {{.SuperType}} {
         }
     }
 {{- end}}
-
-{{end}}
-
-
+{{- end}}
 
     /**
      * Get a list of all attribute names of the CIM type.
@@ -385,7 +391,7 @@ public class {{.Id}} extends {{.SuperType}} {
 {{- if .IsPrimitive}}
             map.put("{{.Label}}", new AttrDetails("{{$p.Id}}.{{.Label}}", true, "{{.Namespace}}", profiles, true, false, {{$p.Id}}::get{{capitalizeFirstLetter .Label}}, {{$p.Id}}::set{{capitalizeFirstLetter .Label}}));
 {{- end}}
-{{if .IsCIMDatatype}}
+{{- if .IsCIMDatatype}}
             map.put("{{.Label}}", new AttrDetails("{{$p.Id}}.{{.Label}}", true, "{{.Namespace}}", profiles, true, false, {{$p.Id}}::get{{capitalizeFirstLetter .Label}}, {{$p.Id}}::set{{capitalizeFirstLetter .Label}}));
 {{- end}}
 {{- if .IsEnumValue}}
@@ -394,10 +400,10 @@ public class {{.Id}} extends {{.SuperType}} {
 {{- if .IsClass}}
 {{- if .IsAssociationUsed}}
             map.put("{{.Label}}", new AttrDetails("{{$p.Id}}.{{.Label}}", true, "{{.Namespace}}", profiles, false, false, {{$p.Id}}::get{{capitalizeFirstLetter .Label}}, {{$p.Id}}::set{{capitalizeFirstLetter .Label}}));
-{{else}}
+{{- else}}
             map.put("{{.Label}}", new AttrDetails("{{$p.Id}}.{{.Label}}", false, "{{.Namespace}}", profiles, false, false, {{$p.Id}}::get{{capitalizeFirstLetter .Label}}, {{$p.Id}}::set{{capitalizeFirstLetter .Label}}));
-{{end}}
-{{end}}
+{{- end}}
+{{- end}}
 {{- if .IsList}}
 {{- if .IsAssociationUsed}}
             map.put("{{.Label}}", new AttrDetails("{{$p.Id}}.{{.Label}}", true, "{{.Namespace}}", profiles, false, false, {{$p.Id}}::get{{capitalizeFirstLetter .Label}}, {{$p.Id}}::set{{capitalizeFirstLetter .Label}}));

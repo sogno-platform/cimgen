@@ -8,6 +8,7 @@ import (
 // postprocess performs various post-processing steps on the CIMSpecification.
 func (cimSpec *CIMSpecification) postprocess() {
 	cimSpec.setIsAssociationUsed()
+	cimSpec.setHasInverseRole()
 	cimSpec.pickMainOrigin()
 	cimSpec.sortAttributes()
 	cimSpec.determineDataTypes()
@@ -110,6 +111,16 @@ func (cimSpec *CIMSpecification) sortAttributes() {
 		sort.Slice(t.Attributes, func(i, j int) bool {
 			return t.Attributes[i].Id < t.Attributes[j].Id
 		})
+	}
+}
+
+func (cimSpec *CIMSpecification) setHasInverseRole() {
+	for _, t := range cimSpec.Types {
+		for _, attr := range t.Attributes {
+			if attr.InverseRole != "" {
+				attr.HasInverseRole = true
+			}
+		}
 	}
 }
 
@@ -315,68 +326,46 @@ func (cimSpec *CIMSpecification) setLangTypesPython() {
 	for _, t := range cimSpec.Types {
 		for _, attr := range t.Attributes {
 			if attr.IsList {
-				attr.LangType = "list" // Set default value for list attributes
+				attr.LangType = "list"
 			} else {
-				switch attr.DataType {
-				case DataTypeString:
-					attr.LangType = "str"
-				case DataTypeInteger:
-					attr.LangType = "int"
-				case DataTypeBoolean:
-					attr.LangType = "bool"
-				case DataTypeFloat:
-					attr.LangType = "float"
-				case DataTypeObject:
-					attr.LangType = "Optional[str]"
-				case DataTypeActivePower, DataTypeActivePowerPerCurrentFlow, DataTypeActivePowerPerFrequency,
-					DataTypeAngleDegrees, DataTypeAngleRadians, DataTypeApparentPower, DataTypeArea,
-					DataTypeCapacitance, DataTypeConductance, DataTypeCurrentFlow, DataTypeFrequency,
-					DataTypeInductance, DataTypeLength, DataTypeMoney, DataTypePerCent, DataTypePU, DataTypeReactance,
-					DataTypeReactivePower, DataTypeRealEnergy, DataTypeResistance, DataTypeRotationSpeed,
-					DataTypeSeconds, DataTypeSusceptance, DataTypeTemperature, DataTypeVoltage,
-					DataTypeVoltagePerReactivePower, DataTypeVolumeFlowRate:
-					attr.LangType = "float"
-				case DataTypeDateTime:
-					attr.LangType = "str"
-				default:
-					attr.LangType = "float"
-				}
+				attr.LangType = MapDatatypePython(attr.DataType)
 			}
 		}
 	}
 
 	for _, t := range cimSpec.PrimitiveTypes {
-		switch t.Id {
-		case DataTypeString:
-			t.LangType = "str"
-		case DataTypeInteger:
-			t.LangType = "int"
-		case DataTypeBoolean:
-			t.LangType = "bool"
-		case DataTypeFloat:
-			t.LangType = "float"
-		case DataTypeDate, DataTypeDateTime:
-			t.LangType = "str" // Could be datetime, but keeping it simple for now
-		default:
-			t.LangType = "str"
-		}
+		t.LangType = MapDatatypePython(t.Id)
 	}
 
 	for _, t := range cimSpec.CIMDatatypes {
-		switch t.Id {
-		case DataTypeActivePower, DataTypeActivePowerPerCurrentFlow, DataTypeActivePowerPerFrequency,
-			DataTypeAngleDegrees, DataTypeAngleRadians, DataTypeApparentPower, DataTypeArea,
-			DataTypeCapacitance, DataTypeConductance, DataTypeCurrentFlow, DataTypeFrequency,
-			DataTypeInductance, DataTypeLength, DataTypeMoney, DataTypePerCent,
-			DataTypePU, DataTypeReactance, DataTypeReactivePower, DataTypeRealEnergy,
-			DataTypeResistance, DataTypeRotationSpeed, DataTypeSeconds, DataTypeSusceptance,
-			DataTypeTemperature, DataTypeVoltage, DataTypeVoltagePerReactivePower, DataTypeVolumeFlowRate:
-			t.LangType = "float" // Set default value for specific CIM data types
-		case DataTypeDateTime:
-			t.LangType = "str" // Could be datetime, but keeping it simple for now
-		default:
-			t.LangType = "str"
-		}
+		t.LangType = MapDatatypePython(t.Id)
+	}
+}
+
+func MapDatatypePython(t string) string {
+	switch t {
+	case DataTypeString:
+		return "str"
+	case DataTypeInteger:
+		return "int"
+	case DataTypeBoolean:
+		return "bool"
+	case DataTypeFloat:
+		return "float"
+	case DataTypeObject:
+		return "Optional[str]"
+	case DataTypeActivePower, DataTypeActivePowerPerCurrentFlow, DataTypeActivePowerPerFrequency,
+		DataTypeAngleDegrees, DataTypeAngleRadians, DataTypeApparentPower, DataTypeArea,
+		DataTypeCapacitance, DataTypeConductance, DataTypeCurrentFlow, DataTypeFrequency,
+		DataTypeInductance, DataTypeLength, DataTypeMoney, DataTypePerCent, DataTypePU, DataTypeReactance,
+		DataTypeReactivePower, DataTypeRealEnergy, DataTypeResistance, DataTypeRotationSpeed,
+		DataTypeSeconds, DataTypeSusceptance, DataTypeTemperature, DataTypeVoltage,
+		DataTypeVoltagePerReactivePower, DataTypeVolumeFlowRate:
+		return "float"
+	case DataTypeDateTime, DataTypeDate:
+		return "str"
+	default:
+		return "str"
 	}
 }
 
@@ -387,29 +376,79 @@ func (cimSpec *CIMSpecification) setDefaultValuesPython() {
 			if attr.IsList {
 				attr.DefaultValue = "list" // Set default value for list attributes
 			} else {
-				switch attr.DataType {
-				case DataTypeString, DataTypeDateTime, DataTypeMonthDay:
-					attr.DefaultValue = "''"
-				case DataTypeInteger:
-					attr.DefaultValue = "0"
-				case DataTypeBoolean:
-					attr.DefaultValue = "False"
-				case DataTypeFloat:
-					attr.DefaultValue = "0.0"
-				case DataTypeObject:
-					attr.DefaultValue = "None"
-				case DataTypeActivePower, DataTypeActivePowerPerCurrentFlow, DataTypeActivePowerPerFrequency,
-					DataTypeAngleDegrees, DataTypeAngleRadians, DataTypeApparentPower, DataTypeArea,
-					DataTypeCapacitance, DataTypeConductance, DataTypeCurrentFlow, DataTypeFrequency,
-					DataTypeInductance, DataTypeLength, DataTypeMoney, DataTypePerCent, DataTypePU,
-					DataTypeReactance, DataTypeReactivePower, DataTypeRealEnergy, DataTypeResistance,
-					DataTypeRotationSpeed, DataTypeSeconds, DataTypeSusceptance, DataTypeTemperature,
-					DataTypeVoltage, DataTypeVoltagePerReactivePower, DataTypeVolumeFlowRate:
-					attr.DefaultValue = "0.0"
-				default:
-					attr.DefaultValue = "None"
-				}
+				attr.DefaultValue = MapDefaultValuePython(attr.DataType)
 			}
 		}
+	}
+}
+
+func MapDefaultValuePython(t string) string {
+	switch t {
+	case DataTypeString, DataTypeDateTime, DataTypeMonthDay:
+		return "''"
+	case DataTypeInteger:
+		return "0"
+	case DataTypeBoolean:
+		return "False"
+	case DataTypeFloat:
+		return "0.0"
+	case DataTypeObject:
+		return "None"
+	case DataTypeActivePower, DataTypeActivePowerPerCurrentFlow, DataTypeActivePowerPerFrequency,
+		DataTypeAngleDegrees, DataTypeAngleRadians, DataTypeApparentPower, DataTypeArea,
+		DataTypeCapacitance, DataTypeConductance, DataTypeCurrentFlow, DataTypeFrequency,
+		DataTypeInductance, DataTypeLength, DataTypeMoney, DataTypePerCent, DataTypePU,
+		DataTypeReactance, DataTypeReactivePower, DataTypeRealEnergy, DataTypeResistance,
+		DataTypeRotationSpeed, DataTypeSeconds, DataTypeSusceptance, DataTypeTemperature,
+		DataTypeVoltage, DataTypeVoltagePerReactivePower, DataTypeVolumeFlowRate:
+		return "0.0"
+	default:
+		return "None"
+	}
+}
+
+// setLangTypesPython sets default values for attributes based on their data types for Go code generation.
+func (cimSpec *CIMSpecification) setLangTypesJava() {
+	for _, t := range cimSpec.Types {
+		for _, attr := range t.Attributes {
+			if attr.IsList {
+				attr.LangType = "HashSet"
+			} else {
+				attr.LangType = MapDatatypeJava(attr.DataType)
+			}
+		}
+	}
+
+	for _, t := range cimSpec.PrimitiveTypes {
+		t.LangType = MapDatatypeJava(t.Id)
+	}
+
+	for _, t := range cimSpec.CIMDatatypes {
+		t.LangType = MapDatatypeJava(t.Id)
+	}
+}
+
+func MapDatatypeJava(t string) string {
+	switch t {
+	case DataTypeString, DataTypeDateTime, DataTypeDate:
+		return "String"
+	case DataTypeInteger:
+		return "int"
+	case DataTypeBoolean:
+		return "bool"
+	case DataTypeFloat:
+		return "float"
+	case DataTypeObject:
+		return "Class"
+	case DataTypeActivePower, DataTypeActivePowerPerCurrentFlow, DataTypeActivePowerPerFrequency,
+		DataTypeAngleDegrees, DataTypeAngleRadians, DataTypeApparentPower, DataTypeArea,
+		DataTypeCapacitance, DataTypeConductance, DataTypeCurrentFlow, DataTypeFrequency,
+		DataTypeInductance, DataTypeLength, DataTypeMoney, DataTypePerCent, DataTypePU, DataTypeReactance,
+		DataTypeReactivePower, DataTypeRealEnergy, DataTypeResistance, DataTypeRotationSpeed,
+		DataTypeSeconds, DataTypeSusceptance, DataTypeTemperature, DataTypeVoltage,
+		DataTypeVoltagePerReactivePower, DataTypeVolumeFlowRate:
+		return "float"
+	default:
+		return "String"
 	}
 }

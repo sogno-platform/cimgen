@@ -78,6 +78,7 @@ type CIMAttribute struct {
 	IsAssociationUsed bool
 	IsFixed           bool
 	InverseRole       string
+	HasInverseRole    bool
 	Stereotype        string
 	Range             string
 	DataType          string

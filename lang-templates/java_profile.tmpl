@@ -68,7 +68,7 @@ public enum CGMESProfile {
 
     {{- range .Ontologies}}
         uris = new ArrayList<>();
-        uris.add("{{VersionIRI}}");
+        uris.add("{{.VersionIRI}}");
         map.put("{{.Keyword}}", uris);
     {{- end}}
 

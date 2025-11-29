@@ -148,7 +148,13 @@ func (spec *CIMSpecification) GenerateJava(outputDir string) {
 		}
 	}
 
+	spec.setLangTypesJava()
+
 	generateFiles("java_class", ".java", outputDir, spec.Types)
+	generateFiles("java_enum", ".java", outputDir, spec.Enums)
+	generateFile("java_constants", "CimConstants.java", outputDir, spec)
+	generateFile("java_classlist", "CimClassMap.java", outputDir, spec)
+	generateFile("java_profile", "CGMESProfile.java", outputDir, spec)
 }
 
 func generateFile[T any](tmplFile string, outputFile string, outputDir string, input T) {
