@@ -34,26 +34,32 @@ func main() {
 	cimSpec.CGMESVersion = cgmesVersion
 	cimSpec.ImportCIMSchemaFiles(schemaPattern)
 
+	outputVersionDir := ""
+	switch cgmesVersion {
+	case "3.0.0":
+		outputVersionDir = "/v3"
+	}
+
 	switch language {
 	case "go":
 		// generate Go structs
-		outputDir = "cimgostructs"
+		outputDir = "output/go" + outputVersionDir
 		cimSpec.GenerateGo(outputDir)
 	case "python":
 		// generate Python classes
-		outputDir = "output/python/v3"
+		outputDir = "output/python" + outputVersionDir
 		cimSpec.GeneratePython(outputDir)
 	case "python-simple":
 		// generate Python classes
-		outputDir = "output/python-simple/v3"
+		outputDir = "output/python-simple" + outputVersionDir
 		cimSpec.GeneratePythonSimple(outputDir)
 	case "proto":
 		// generate Python classes
-		outputDir = "output/proto/v3"
+		outputDir = "output/proto" + outputVersionDir
 		cimSpec.GenerateProto(outputDir)
 	case "java":
 		// generate Java classes
-		outputDir = "output/java/v3"
+		outputDir = "output/java" + outputVersionDir
 		cimSpec.GenerateJava(outputDir)
 	default:
 		logger.Fatalf("unsupported language: %s", language)
