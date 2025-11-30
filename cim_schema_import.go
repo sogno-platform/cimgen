@@ -26,6 +26,7 @@ const (
 	DataTypeFloat    = "Float"
 	DataTypeDate     = "Date"
 	DataTypeDateTime = "DateTime"
+	DateTypeDecimal  = "Decimal"
 )
 
 // enum for general data types
@@ -114,16 +115,18 @@ type CIMType struct {
 }
 
 type CIMDatatype struct {
-	Id         string
-	Label      string
-	Namespace  string
-	Comment    string
-	Stereotype string
-	RDFType    string
-	LangType   string
-	Categories []string
-	Origin     string
-	Origins    []string
+	Id            string
+	Label         string
+	Namespace     string
+	Comment       string
+	Stereotype    string
+	RDFType       string
+	LangType      string
+	Categories    []string
+	Origin        string
+	Origins       []string
+	PrimitiveType string
+	Attributes    []*CIMAttribute
 }
 
 type CIMPrimitive struct {
@@ -264,6 +267,20 @@ func (cimSpec *CIMSpecification) printSpecification(w io.Writer) {
 	}
 	w.Write(jsonb)
 	fmt.Fprint(w, "\n")
+
+	jsonb, err = json.MarshalIndent(cimSpec.CIMDatatypes, "", "  ")
+	if err != nil {
+		panic(err)
+	}
+	w.Write(jsonb)
+	fmt.Fprint(w, "\n")
+
+	jsonb, err = json.MarshalIndent(cimSpec.PrimitiveTypes, "", "  ")
+	if err != nil {
+		panic(err)
+	}
+	w.Write(jsonb)
+	fmt.Fprint(w, "\n")
 }
 
 // processRDFMap processes the RDF map and extracts CIM types, enums, and ontology.
@@ -321,8 +338,8 @@ func processRDFMap(inputMap map[string]interface{}) (map[string]*CIMType, map[st
 	}
 
 	assignAttributesToTypes(cimTypes, cimAttributes)
-
 	assignEnumValuesToEnums(cimEnums, cimEnumValues)
+	assignAttributesToCIMDataTypes(cimDatatypes, cimAttributes)
 
 	return cimTypes, cimEnums, cimOntology, namespaces, cimDatatypes, cimPrimitives
 }
@@ -581,9 +598,18 @@ func processOntology(classMap map[string]interface{}) CIMOntology {
 }
 
 // assignAttributesToTypes assigns attributes to their corresponding CIM types based on RDFDomain.
-func assignAttributesToTypes(cimTypes map[string]*CIMType, cimAttributes []*CIMAttribute) {
-	for _, attr := range cimAttributes {
+func assignAttributesToTypes(cimTypes map[string]*CIMType, attributes []*CIMAttribute) {
+	for _, attr := range attributes {
 		if v, ok := cimTypes[attr.RDFDomain]; ok {
+			attr.Categories = v.Categories
+			v.Attributes = append(v.Attributes, attr)
+		}
+	}
+}
+
+func assignAttributesToCIMDataTypes(t map[string]*CIMDatatype, attributes []*CIMAttribute) {
+	for _, attr := range attributes {
+		if v, ok := t[attr.RDFDomain]; ok {
 			attr.Categories = v.Categories
 			v.Attributes = append(v.Attributes, attr)
 		}

@@ -8,6 +8,7 @@ import (
 // postprocess performs various post-processing steps on the CIMSpecification.
 func (cimSpec *CIMSpecification) postprocess() {
 	cimSpec.setIsAssociationUsed()
+	cimSpec.setCIMDataTypePrimitiveType()
 	cimSpec.setHasInverseRole()
 	cimSpec.pickMainOrigin()
 	cimSpec.sortAttributes()
@@ -19,6 +20,16 @@ func (cimSpec *CIMSpecification) postprocess() {
 	cimSpec.removeIdentifiedObjectAttributes()
 	cimSpec.fillMissingNamespaces()
 	cimSpec.setProfilePriorities()
+}
+
+func (cimSpec *CIMSpecification) setCIMDataTypePrimitiveType() {
+	for _, t := range cimSpec.CIMDatatypes {
+		for _, attr := range t.Attributes {
+			if attr.Label == "value" {
+				t.PrimitiveType = attr.DataType
+			}
+		}
+	}
 }
 
 func (cimSpec *CIMSpecification) setIsAssociationUsed() {
@@ -338,13 +349,13 @@ func (cimSpec *CIMSpecification) setLangTypesPython() {
 	}
 
 	for _, t := range cimSpec.CIMDatatypes {
-		t.LangType = MapDatatypePython(t.Id)
+		t.LangType = MapDatatypePython(t.PrimitiveType)
 	}
 }
 
 func MapDatatypePython(t string) string {
 	switch t {
-	case DataTypeString:
+	case DataTypeString, DataTypeDateTime, DataTypeDate:
 		return "str"
 	case DataTypeInteger:
 		return "int"
@@ -354,16 +365,6 @@ func MapDatatypePython(t string) string {
 		return "float"
 	case DataTypeObject:
 		return "Optional[str]"
-	case DataTypeActivePower, DataTypeActivePowerPerCurrentFlow, DataTypeActivePowerPerFrequency,
-		DataTypeAngleDegrees, DataTypeAngleRadians, DataTypeApparentPower, DataTypeArea,
-		DataTypeCapacitance, DataTypeConductance, DataTypeCurrentFlow, DataTypeFrequency,
-		DataTypeInductance, DataTypeLength, DataTypeMoney, DataTypePerCent, DataTypePU, DataTypeReactance,
-		DataTypeReactivePower, DataTypeRealEnergy, DataTypeResistance, DataTypeRotationSpeed,
-		DataTypeSeconds, DataTypeSusceptance, DataTypeTemperature, DataTypeVoltage,
-		DataTypeVoltagePerReactivePower, DataTypeVolumeFlowRate:
-		return "float"
-	case DataTypeDateTime, DataTypeDate:
-		return "str"
 	default:
 		return "str"
 	}
@@ -384,7 +385,7 @@ func (cimSpec *CIMSpecification) setDefaultValuesPython() {
 
 func MapDefaultValuePython(t string) string {
 	switch t {
-	case DataTypeString, DataTypeDateTime, DataTypeMonthDay:
+	case DataTypeString, DataTypeDateTime, DataTypeDate:
 		return "''"
 	case DataTypeInteger:
 		return "0"
@@ -394,14 +395,6 @@ func MapDefaultValuePython(t string) string {
 		return "0.0"
 	case DataTypeObject:
 		return "None"
-	case DataTypeActivePower, DataTypeActivePowerPerCurrentFlow, DataTypeActivePowerPerFrequency,
-		DataTypeAngleDegrees, DataTypeAngleRadians, DataTypeApparentPower, DataTypeArea,
-		DataTypeCapacitance, DataTypeConductance, DataTypeCurrentFlow, DataTypeFrequency,
-		DataTypeInductance, DataTypeLength, DataTypeMoney, DataTypePerCent, DataTypePU,
-		DataTypeReactance, DataTypeReactivePower, DataTypeRealEnergy, DataTypeResistance,
-		DataTypeRotationSpeed, DataTypeSeconds, DataTypeSusceptance, DataTypeTemperature,
-		DataTypeVoltage, DataTypeVoltagePerReactivePower, DataTypeVolumeFlowRate:
-		return "0.0"
 	default:
 		return "None"
 	}
@@ -440,14 +433,6 @@ func MapDatatypeJava(t string) string {
 		return "float"
 	case DataTypeObject:
 		return "Class"
-	case DataTypeActivePower, DataTypeActivePowerPerCurrentFlow, DataTypeActivePowerPerFrequency,
-		DataTypeAngleDegrees, DataTypeAngleRadians, DataTypeApparentPower, DataTypeArea,
-		DataTypeCapacitance, DataTypeConductance, DataTypeCurrentFlow, DataTypeFrequency,
-		DataTypeInductance, DataTypeLength, DataTypeMoney, DataTypePerCent, DataTypePU, DataTypeReactance,
-		DataTypeReactivePower, DataTypeRealEnergy, DataTypeResistance, DataTypeRotationSpeed,
-		DataTypeSeconds, DataTypeSusceptance, DataTypeTemperature, DataTypeVoltage,
-		DataTypeVoltagePerReactivePower, DataTypeVolumeFlowRate:
-		return "float"
 	default:
 		return "String"
 	}

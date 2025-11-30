@@ -8,6 +8,13 @@ import (
 	"github.com/sogno-platform/cimgen"
 )
 
+const (
+	CGMES2        = "2.4.15"
+	CGMES3        = "3.0.0"
+	CGMES2_SCHEMA = "cgmes_schema/CGMES_2.4.15_27JAN2020/*-v2_4_15-27Jan2020.rdf"
+	CGMES3_SCHEMA = "cgmes_schema/CGMES_3.0.0/IEC61970-600-2_CGMES_3_0_0_RDFS2020_*.rdf"
+)
+
 func main() {
 	var schemaPattern string
 	var outputDir string
@@ -15,16 +22,17 @@ func main() {
 	var cgmesVersion string
 	var verbose bool
 
-	flag.StringVar(&schemaPattern, "schema", "cgmes_schema/CGMES_3.0.0/IEC61970-600-2_CGMES_3_0_0_RDFS2020_*.rdf", "glob pattern for CIM schema files")
-	flag.StringVar(&language, "lang", "go", "output language (e.g., go, python)")
-	flag.StringVar(&cgmesVersion, "version", "3.0.0", "CGMES version")
+	flag.StringVar(&schemaPattern, "schema", CGMES3_SCHEMA, "glob pattern for CIM schema files")
+	flag.StringVar(&language, "lang", "go", "output language (go, python, python-simple, java, proto)")
+	flag.StringVar(&cgmesVersion, "version", CGMES3, "CGMES version")
 	flag.BoolVar(&verbose, "v", false, "verbose logging")
 	flag.Parse()
 
 	logger := log.New(os.Stderr, "", 0)
 	if verbose {
 		logger.Printf("schema: %s", schemaPattern)
-		logger.Printf("output: %s", outputDir)
+		logger.Printf("language: %s", language)
+		logger.Printf("version: %s", cgmesVersion)
 	}
 
 	logger.Println("Generate code for", language, "from schema files matching", schemaPattern)
@@ -36,8 +44,10 @@ func main() {
 
 	outputVersionDir := ""
 	switch cgmesVersion {
-	case "3.0.0":
+	case CGMES3:
 		outputVersionDir = "/v3"
+	case CGMES2:
+		outputVersionDir = "/v2"
 	}
 
 	switch language {
