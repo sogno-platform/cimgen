@@ -8,20 +8,20 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-{{if .Comment}}
+{{ if .Comment -}}
 /**
  * {{.Comment}}
  */
-{{end}}
+{{- end}}
 public enum {{.Id}} {
 {{- range $index, $element := .Values}}
-{{if .Comment}}
-/**
- * {{.Comment}}
- */
-{{end}}
+{{- if .Comment}}
+    /**
+     * {{.Comment}}
+     */
+{{- end}}
     _{{.Label}}("{{.Label}}"),
-{{end}}
+{{- end}}
     ;
 
     private final String value;

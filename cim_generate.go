@@ -11,7 +11,7 @@ import (
 	"golang.org/x/text/language"
 )
 
-func CapitalizeFirstLetter(s string) string {
+func capitalFirstLetter(s string) string {
 	if len(s) == 0 {
 		return s
 	}
@@ -148,10 +148,19 @@ func (spec *CIMSpecification) GenerateJava(outputDir string) {
 		}
 	}
 
+	enumOuputDir := outputDir + "/types"
+	// create output folder for enums if it does not exist
+	if _, err := os.Stat(enumOuputDir); os.IsNotExist(err) {
+		err = os.MkdirAll(enumOuputDir, 0755)
+		if err != nil {
+			panic(err)
+		}
+	}
+
 	spec.setLangTypesJava()
 
 	generateFiles("java_class", ".java", outputDir, spec.Types)
-	generateFiles("java_enum", ".java", outputDir, spec.Enums)
+	generateFiles("java_enum", ".java", enumOuputDir, spec.Enums)
 	generateFile("java_constants", "CimConstants.java", outputDir, spec)
 	generateFile("java_classlist", "CimClassMap.java", outputDir, spec)
 	generateFile("java_profile", "CGMESProfile.java", outputDir, spec)
@@ -159,10 +168,10 @@ func (spec *CIMSpecification) GenerateJava(outputDir string) {
 
 func generateFile[T any](tmplFile string, outputFile string, outputDir string, input T) {
 	funcMap := template.FuncMap{
-		"wrapAndIndent":         wrapAndIndent,
-		"capitalizefirstletter": CapitalizeFirstLetter,
-		"lower":                 Lower,
-		"mapDataTypeGo":         MapDataTypeGo,
+		"wrapAndIndent":      wrapAndIndent,
+		"capitalFirstLetter": capitalFirstLetter,
+		"lower":              Lower,
+		"mapDataTypeGo":      MapDataTypeGo,
 	}
 
 	// Since ParseFile does not work well with files in subdirectories, we read the file manually
@@ -189,10 +198,10 @@ func generateFile[T any](tmplFile string, outputFile string, outputDir string, i
 
 func generateFiles[T any](tmplFile string, fileExt string, outputDir string, input map[string]T) {
 	funcMap := template.FuncMap{
-		"wrapAndIndent":         wrapAndIndent,
-		"capitalizeFirstLetter": CapitalizeFirstLetter,
-		"lower":                 Lower,
-		"mapDataTypeGo":         MapDataTypeGo,
+		"wrapAndIndent":      wrapAndIndent,
+		"capitalFirstLetter": capitalFirstLetter,
+		"lower":              Lower,
+		"mapDataTypeGo":      MapDataTypeGo,
 	}
 
 	// Since ParseFile does not work well with files in subdirectories, we read the file manually

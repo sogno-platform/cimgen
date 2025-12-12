@@ -70,110 +70,108 @@ const (
 
 // CIMAttribute represents a CIM attribute with its properties.
 type CIMAttribute struct {
-	Id                string
-	Label             string
-	Namespace         string
-	Comment           string
-	IsList            bool
-	AssociationUsed   string
-	IsAssociationUsed bool
-	IsFixed           bool
-	InverseRole       string
-	HasInverseRole    bool
-	Stereotype        string
-	Range             string
-	DataType          string
-	IsPrimitive       bool
-	RDFDomain         string
-	RDFType           string
-	DefaultValue      string
-	IsUsed            bool
-	IsEnumValue       bool
-	LangType          string
-	IsCIMDatatype     bool
-	IsClass           bool
-	Origin            string
-	Origins           []string
-	Categories        []string
+	Id                   string   // from RDF schema
+	Label                string   // from RDF schema
+	Namespace            string   // from RDF schema
+	Comment              string   // from RDF schema
+	CIMMultiplicity      string   // from RDF schema
+	IsList               bool     // derived
+	CIMAssociationUsed   string   // from RDF schema
+	IsAssociationUsed    bool     // derived
+	IsFixed              bool     // TODO from RDF schema
+	CIMInverseRole       string   // from RDF schema
+	HasInverseRole       bool     // derived
+	InverseRoleAttribute string   // derived
+	CIMStereotype        string   // from RDF schema
+	RDFRange             string   // from RDF schema
+	CIMDataType          string   // from RDF schema
+	DataType             string   // derived
+	IsPrimitive          bool     // derived
+	RDFDomain            string   // from RDF schema
+	RDFType              string   // from RDF schema
+	DefaultValue         string   // derived
+	IsUsed               bool     // derived
+	IsEnumValue          bool     // derived
+	LangType             string   // derived
+	IsCIMDatatype        bool     // derived
+	IsClass              bool     // derived
+	Origin               string   // derived
+	Origins              []string // from RDF schema
+	CIMCategories        []string // from RDF schema
 }
 
 // CIMType represents a CIM class/type with its properties and attributes.
 type CIMType struct {
-	Id         string
-	Label      string
-	Namespace  string
-	Comment    string
-	Stereotype string
-	RDFType    string
-	SuperType  string
-	SuperTypes []string
-	SubClasses []string
-	Origin     string
-	Origins    []string
-	Categories []string
-	Attributes []*CIMAttribute
+	Id            string          // from RDF schema
+	Label         string          // from RDF schema
+	Namespace     string          // from RDF schema
+	Comment       string          // from RDF schema
+	CIMStereotype string          // from RDF schema
+	RDFType       string          // from RDF schema
+	SuperType     string          // from RDF schema
+	SuperTypes    []string        // TODO from RDF schema
+	SubClasses    []string        // TODO derived
+	Origin        string          // derived
+	Origins       []string        // from RDF schema
+	CIMCategories []string        // from RDF schema
+	Attributes    []*CIMAttribute // from RDF schema
 }
 
 type CIMDatatype struct {
-	Id            string
-	Label         string
-	Namespace     string
-	Comment       string
-	Stereotype    string
-	RDFType       string
-	LangType      string
-	Categories    []string
-	Origin        string
-	Origins       []string
-	PrimitiveType string
-	Attributes    []*CIMAttribute
+	Id            string          // from RDF schema
+	Label         string          // from RDF schema
+	Namespace     string          // from RDF schema
+	Comment       string          // from RDF schema
+	CIMStereotype string          // from RDF schema
+	RDFType       string          // from RDF schema
+	LangType      string          // derived
+	PrimitiveType string          // derived
+	CIMCategory   string          // from RDF schema
+	Attributes    []*CIMAttribute // from RDF schema
 }
 
 type CIMPrimitive struct {
-	Id         string
-	Label      string
-	Namespace  string
-	Comment    string
-	Stereotype string
-	RDFType    string
-	LangType   string
-	Origin     string
-	Origins    []string
-	Categories []string
+	Id            string // from RDF schema
+	Label         string // from RDF schema
+	Namespace     string // from RDF schema
+	Comment       string // from RDF schema
+	CIMStereotype string // from RDF schema
+	RDFType       string // from RDF schema
+	LangType      string // derived
 }
 
 // CIMEnum represents a CIM enumeration with its values.
 type CIMEnum struct {
-	Id         string
-	Label      string
-	Namespace  string
-	Comment    string
-	Stereotype string
-	RDFType    string
-	Origin     string
-	Origins    []string
-	Values     []*CIMEnumValue
+	Id            string          // from RDF schema
+	Label         string          // from RDF schema
+	Namespace     string          // from RDF schema
+	Comment       string          // from RDF schema
+	CIMStereotype string          // from RDF schema
+	RDFType       string          // from RDF schema
+	Origin        string          // derived
+	Origins       []string        // from RDF schema
+	Values        []*CIMEnumValue // from RDF schema
 }
 
 // CIMEnumValue represents a value of a CIM enumeration.
 type CIMEnumValue struct {
-	Id         string
-	Label      string
-	Comment    string
-	Stereotype string
-	RDFType    string
+	Id            string // from RDF schema
+	Label         string // from RDF schema
+	Comment       string // from RDF schema
+	CIMStereotype string // from RDF schema
+	RDFType       string // from RDF schema
 }
 
 // CIMOntology represents a CIM ontology with its properties.
 type CIMOntology struct {
-	Id          string
-	Namespace   string
-	VersionIRI  string
-	VersionInfo string
-	Keyword     string
-	RDFType     string
-	Name        string
-	Priority    int
+	Id             string // from RDF schema
+	Namespace      string // from RDF schema
+	OWLVersionIRI  string // from RDF schema
+	OWLVersionInfo string // from RDF schema
+	Keyword        string // from RDF schema
+	RDFType        string // from RDF schema
+	Name           string // from RDF schema
+	Priority       int    // derived
 }
 
 // CIMSpecification represents the entire CIM specification with types, enums, and ontologies.
@@ -308,13 +306,9 @@ func processRDFMap(inputMap map[string]interface{}) (map[string]*CIMType, map[st
 				cimEnums[e.Id] = &e
 			} else if extractStringOrResource(v["cims:stereotype"]) == "CIMDatatype" {
 				e := processCIMDatatypes(v)
-				e.Origin = cimOntology.Keyword
-				e.Origins = []string{cimOntology.Keyword}
 				cimDatatypes[e.Id] = &e
 			} else if extractStringOrResource(v["cims:stereotype"]) == "Primitive" {
 				e := processPrimitives(v)
-				e.Origin = cimOntology.Keyword
-				e.Origins = []string{cimOntology.Keyword}
 				cimPrimitives[e.Id] = &e
 			} else {
 				e := processClass(v)
@@ -371,112 +365,71 @@ func processNamespaces(rdfMap map[string]interface{}) map[string]string {
 
 // processClass processes a map representing a CIM class and returns a CIMType struct.
 func processClass(classMap map[string]interface{}) CIMType {
-
-	id := extractValue(classMap, "@rdf:about")
-	label := extractText(classMap, "rdfs:label")
-	superType := extractResource(classMap, "rdfs:subClassOf")
-	comment := extractText(classMap, "rdfs:comment")
-	stereotype := extractStringOrResource(classMap["cims:stereotype"])
-	category := extractResource(classMap, "cims:belongsToCategory")
-	rdfType := extractResource(classMap, "rdf:type")
-	namespace := extractURIPath(id)
-	comment = cleanText(comment)
-
 	return CIMType{
-		Id:         extractURIEnd(id),
-		Label:      label,
-		SuperType:  extractURIEnd(superType),
-		Comment:    comment,
-		Namespace:  namespace,
-		Stereotype: extractURIEnd(stereotype),
-		RDFType:    extractURIEnd(rdfType),
-		Categories: []string{extractURIEnd(category)},
-		Attributes: make([]*CIMAttribute, 0),
+		Id:            extractURIEnd(extractValue(classMap, "@rdf:about")),
+		Label:         extractText(classMap, "rdfs:label"),
+		SuperType:     extractURIEnd(extractResource(classMap, "rdfs:subClassOf")),
+		Comment:       cleanText(extractText(classMap, "rdfs:comment")),
+		Namespace:     extractURIPath(extractValue(classMap, "@rdf:about")),
+		CIMStereotype: extractURIEnd(extractStringOrResource(classMap["cims:stereotype"])),
+		RDFType:       extractURIEnd(extractResource(classMap, "rdf:type")),
+		CIMCategories: []string{extractURIEnd(extractResource(classMap, "cims:belongsToCategory"))},
+		Attributes:    make([]*CIMAttribute, 0),
 	}
 }
 
 // processPrimitives processes a map representing a CIM class and returns a CIMPrimitive struct.
 func processPrimitives(classMap map[string]interface{}) CIMPrimitive {
-
-	id := extractValue(classMap, "@rdf:about")
-	label := extractText(classMap, "rdfs:label")
-	comment := extractText(classMap, "rdfs:comment")
-	stereotype := extractStringOrResource(classMap["cims:stereotype"])
-	category := extractResource(classMap, "cims:belongsToCategory")
-	rdfType := extractResource(classMap, "rdf:type")
-	namespace := extractURIPath(id)
-	comment = cleanText(comment)
-
 	return CIMPrimitive{
-		Id:         extractURIEnd(id),
-		Label:      label,
-		Comment:    comment,
-		Namespace:  namespace,
-		Stereotype: extractURIEnd(stereotype),
-		RDFType:    extractURIEnd(rdfType),
-		Categories: []string{extractURIEnd(category)},
+		Id:            extractURIEnd(extractValue(classMap, "@rdf:about")),
+		Label:         extractText(classMap, "rdfs:label"),
+		Comment:       cleanText(extractText(classMap, "rdfs:comment")),
+		Namespace:     extractURIPath(extractValue(classMap, "@rdf:about")),
+		CIMStereotype: extractURIEnd(extractStringOrResource(classMap["cims:stereotype"])),
+		RDFType:       extractURIEnd(extractResource(classMap, "rdf:type")),
 	}
 }
 
 // processCIMDatatypes processes a map representing a CIM class and returns a CIMDatatypes struct.
 func processCIMDatatypes(classMap map[string]interface{}) CIMDatatype {
-
-	typeId := extractValue(classMap, "@rdf:about")
-	label := extractText(classMap, "rdfs:label")
-	comment := extractText(classMap, "rdfs:comment")
-	stereotype := extractStringOrResource(classMap["cims:stereotype"])
-	category := extractResource(classMap, "cims:belongsToCategory")
-	rdfType := extractResource(classMap, "rdf:type")
-	namespace := extractURIPath(typeId)
-	comment = cleanText(comment)
-
 	return CIMDatatype{
-		Id:         extractURIEnd(typeId),
-		Label:      label,
-		Comment:    comment,
-		Namespace:  namespace,
-		Stereotype: extractURIEnd(stereotype),
-		RDFType:    extractURIEnd(rdfType),
-		Categories: []string{extractURIEnd(category)},
+		Id:            extractURIEnd(extractValue(classMap, "@rdf:about")),
+		Label:         extractText(classMap, "rdfs:label"),
+		Comment:       cleanText(extractText(classMap, "rdfs:comment")),
+		Namespace:     extractURIPath(extractValue(classMap, "@rdf:about")),
+		CIMStereotype: extractURIEnd(extractStringOrResource(classMap["cims:stereotype"])),
+		RDFType:       extractURIEnd(extractResource(classMap, "rdf:type")),
+		CIMCategory:   extractURIEnd(extractResource(classMap, "cims:belongsToCategory")),
 	}
 }
 
 // processProperty processes a map representing a CIM property and returns a CIMAttribute struct.
 func processProperty(classMap map[string]interface{}) CIMAttribute {
-	attrId := extractValue(classMap, "@rdf:about")
-	rdfType := extractResource(classMap, "rdf:type")
-	comment := extractText(classMap, "rdfs:comment")
-	stereotype := extractStringOrResource(classMap["cims:stereotype"])
-	label := extractText(classMap, "rdfs:label")
-	rdfDomain := extractResource(classMap, "rdfs:domain")
-	cimDataType := extractResource(classMap, "cims:dataType")
-	rdfRange := extractResource(classMap, "rdfs:range")
-	inverseRoleName := extractResource(classMap, "cims:inverseRoleName")
-	comment = cleanText(comment)
-	namespace := extractURIPath(attrId)
-
 	associationUsed := strings.ToLower(extractStringOrResource(classMap["cims:AssociationUsed"]))
-
-	isList := false
-	multiplicity := extractResource(classMap, "cims:multiplicity")
-	if multiplicity == "http://iec.ch/TC57/1999/rdf-schema-extensions-19990926#M:0..n" || multiplicity == "http://iec.ch/TC57/1999/rdf-schema-extensions-19990926#M:1..n" {
-		isList = true
-	}
-
 	return CIMAttribute{
-		Id:              extractURIEnd(attrId),
-		Comment:         comment,
-		Stereotype:      extractURIEnd(stereotype),
-		Namespace:       namespace,
-		Label:           label,
-		RDFDomain:       extractURIEnd(rdfDomain),
-		DataType:        extractURIEnd(cimDataType),
-		Range:           extractURIEnd(rdfRange),
-		RDFType:         extractURIEnd(rdfType),
-		AssociationUsed: associationUsed,
-		InverseRole:     extractURIEnd(inverseRoleName),
-		IsList:          isList,
+		Id:                 extractURIEnd(extractValue(classMap, "@rdf:about")),
+		Namespace:          extractURIPath(extractValue(classMap, "@rdf:about")),
+		Label:              extractText(classMap, "rdfs:label"),
+		Comment:            cleanText(extractText(classMap, "rdfs:comment")),
+		CIMStereotype:      extractURIEnd(extractStringOrResource(classMap["cims:stereotype"])),
+		RDFDomain:          extractURIEnd(extractResource(classMap, "rdfs:domain")),
+		CIMDataType:        extractURIEnd(extractResource(classMap, "cims:dataType")),
+		RDFRange:           extractURIEnd(extractResource(classMap, "rdfs:range")),
+		RDFType:            extractURIEnd(extractResource(classMap, "rdf:type")),
+		CIMAssociationUsed: associationUsed,
+		IsAssociationUsed:  isAssociationUsed(associationUsed),
+		CIMInverseRole:     extractURIEnd(extractResource(classMap, "cims:inverseRoleName")),
+		CIMMultiplicity:    extractResource(classMap, "cims:multiplicity"),
+		IsList:             isListAttribute(extractResource(classMap, "cims:multiplicity")),
 	}
+}
+
+func isListAttribute(multiplicity string) bool {
+	return multiplicity == "http://iec.ch/TC57/1999/rdf-schema-extensions-19990926#M:0..n" || multiplicity == "http://iec.ch/TC57/1999/rdf-schema-extensions-19990926#M:1..n"
+}
+
+func isAssociationUsed(associationUsed string) bool {
+	return associationUsed == "yes" || associationUsed == ""
 }
 
 func cleanText(htmlString string) string {
@@ -486,17 +439,11 @@ func cleanText(htmlString string) string {
 		return ""
 	}
 
-	// Replace ’ with `
 	plainText = strings.ReplaceAll(plainText, "’", "'")
-	// Replace ' with `
 	plainText = strings.ReplaceAll(plainText, "'", "'")
-	// Replace “ with `
 	plainText = strings.ReplaceAll(plainText, "“", "'")
-	// Replace ” with `
 	plainText = strings.ReplaceAll(plainText, "”", "'")
-	// Replace " with `
 	plainText = strings.ReplaceAll(plainText, "\"", "'")
-	// Replace – with -
 	plainText = strings.ReplaceAll(plainText, "–", "-")
 
 	// Remove line breaks and extra spaces
@@ -538,62 +485,38 @@ func traverseAndExtractText(n *html.Node, builder *strings.Builder) {
 
 // processEnum processes a map representing a CIM enumeration and returns a CIMEnum struct.
 func processEnum(classMap map[string]interface{}) CIMEnum {
-
-	id := extractValue(classMap, "@rdf:about")
-	label := extractText(classMap, "rdfs:label")
-	comment := extractText(classMap, "rdfs:comment")
-	stereotype := extractStringOrResource(classMap["cims:stereotype"])
-	rdfType := extractResource(classMap, "rdf:type")
-	namespace := extractURIPath(id)
-
 	return CIMEnum{
-		Id:         extractURIEnd(id),
-		Label:      label,
-		Comment:    comment,
-		Namespace:  namespace,
-		Stereotype: extractURIEnd(stereotype),
-		RDFType:    extractURIEnd(rdfType),
+		Id:            extractURIEnd(extractValue(classMap, "@rdf:about")),
+		Label:         extractText(classMap, "rdfs:label"),
+		Comment:       extractText(classMap, "rdfs:comment"),
+		Namespace:     extractURIPath(extractValue(classMap, "@rdf:about")),
+		CIMStereotype: extractURIEnd(extractStringOrResource(classMap["cims:stereotype"])),
+		RDFType:       extractURIEnd(extractResource(classMap, "rdf:type")),
 	}
 }
 
 // processEnumValue processes a map representing a CIM enumeration value and returns a CIMEnumValue struct.
 func processEnumValue(classMap map[string]interface{}) CIMEnumValue {
-
-	id := extractValue(classMap, "@rdf:about")
-	label := extractText(classMap, "rdfs:label")
-	comment := extractText(classMap, "rdfs:comment")
-	stereotype := extractStringOrResource(classMap["cims:stereotype"])
-	rdfType := extractResource(classMap, "rdf:type")
-
 	return CIMEnumValue{
-		Id:         extractURIEnd(id),
-		Label:      label,
-		Comment:    comment,
-		Stereotype: extractURIEnd(stereotype),
-		RDFType:    extractURIEnd(rdfType),
+		Id:            extractURIEnd(extractValue(classMap, "@rdf:about")),
+		Label:         extractText(classMap, "rdfs:label"),
+		Comment:       extractText(classMap, "rdfs:comment"),
+		CIMStereotype: extractURIEnd(extractStringOrResource(classMap["cims:stereotype"])),
+		RDFType:       extractURIEnd(extractResource(classMap, "rdf:type")),
 	}
 }
 
 // processOntology processes a map representing a CIM ontology and returns a CIMOntology struct.
 func processOntology(classMap map[string]interface{}) CIMOntology {
-
-	id := extractValue(classMap, "@rdf:about")
-	rdfType := extractResource(classMap, "rdf:type")
-	versionIRI := extractResource(classMap, "owl:versionIRI")
-	versionInfo := extractText(classMap, "owl:versionInfo")
-	keyword := extractValue(classMap, "dcat:keyword")
-	name := extractText(classMap, "dct:title")
-	// remove suffix " Vocabulary" from name if present
-	name = strings.TrimSuffix(name, " Vocabulary")
-
 	return CIMOntology{
-		Id:          extractURIEnd(id),
-		Namespace:   extractURIPath(id),
-		RDFType:     extractURIEnd(rdfType),
-		VersionIRI:  versionIRI,
-		VersionInfo: versionInfo,
-		Keyword:     keyword,
-		Name:        name,
+		Id:             extractURIEnd(extractValue(classMap, "@rdf:about")),
+		Namespace:      extractURIPath(extractValue(classMap, "@rdf:about")),
+		RDFType:        extractURIEnd(extractResource(classMap, "rdf:type")),
+		OWLVersionIRI:  extractResource(classMap, "owl:versionIRI"),
+		OWLVersionInfo: extractText(classMap, "owl:versionInfo"),
+		Keyword:        extractValue(classMap, "dcat:keyword"),
+		// remove suffix " Vocabulary" from name if present
+		Name: strings.TrimSuffix(extractText(classMap, "dct:title"), " Vocabulary"),
 	}
 }
 
@@ -601,7 +524,7 @@ func processOntology(classMap map[string]interface{}) CIMOntology {
 func assignAttributesToTypes(cimTypes map[string]*CIMType, attributes []*CIMAttribute) {
 	for _, attr := range attributes {
 		if v, ok := cimTypes[attr.RDFDomain]; ok {
-			attr.Categories = v.Categories
+			attr.CIMCategories = v.CIMCategories
 			v.Attributes = append(v.Attributes, attr)
 		}
 	}
@@ -610,7 +533,6 @@ func assignAttributesToTypes(cimTypes map[string]*CIMType, attributes []*CIMAttr
 func assignAttributesToCIMDataTypes(t map[string]*CIMDatatype, attributes []*CIMAttribute) {
 	for _, attr := range attributes {
 		if v, ok := t[attr.RDFDomain]; ok {
-			attr.Categories = v.Categories
 			v.Attributes = append(v.Attributes, attr)
 		}
 	}
@@ -643,12 +565,12 @@ func mergeCimTypes(typesMerged map[string]*CIMType, types map[string]*CIMType) m
 				v.SuperType = types[k].SuperType
 			}
 
-			if types[k].Stereotype != "" {
-				v.Stereotype = types[k].Stereotype
+			if types[k].CIMStereotype != "" {
+				v.CIMStereotype = types[k].CIMStereotype
 			}
 
-			if len(types[k].Categories) > 0 {
-				v.Categories = append(v.Categories, types[k].Categories...)
+			if len(types[k].CIMCategories) > 0 {
+				v.CIMCategories = append(v.CIMCategories, types[k].CIMCategories...)
 			}
 
 			if types[k].Origin != "" {
@@ -660,7 +582,7 @@ func mergeCimTypes(typesMerged map[string]*CIMType, types map[string]*CIMType) m
 					// If the attribute already exists, we can merge the attributes
 					existingAttr := v.Attributes[existingAttrIndex]
 					existingAttr.Origins = append(existingAttr.Origins, attr.Origin)
-					existingAttr.Categories = append(existingAttr.Categories, attr.Categories...)
+					existingAttr.CIMCategories = append(existingAttr.CIMCategories, attr.CIMCategories...)
 				} else {
 					v.Attributes = append(v.Attributes, attr)
 				}
@@ -686,8 +608,8 @@ func FindCIMAttributeById(attrs []*CIMAttribute, id string) int {
 func mergeCimEnums(enumsMerged map[string]*CIMEnum, enums map[string]*CIMEnum) map[string]*CIMEnum {
 	for k := range enums {
 		if v, ok := enumsMerged[k]; ok {
-			if enums[k].Stereotype != "" {
-				v.Stereotype = enums[k].Stereotype
+			if enums[k].CIMStereotype != "" {
+				v.CIMStereotype = enums[k].CIMStereotype
 			}
 
 			if enums[k].Origin != "" {
@@ -719,12 +641,8 @@ func FindCIMEnumValueById(vals []*CIMEnumValue, id string) int {
 func mergeCIMDatatypes(typesMerged map[string]*CIMDatatype, types map[string]*CIMDatatype) map[string]*CIMDatatype {
 	for k := range types {
 		if v, ok := typesMerged[k]; ok {
-			if types[k].Stereotype != "" {
-				v.Stereotype = types[k].Stereotype
-			}
-
-			if types[k].Origin != "" {
-				v.Origins = append(v.Origins, types[k].Origin)
+			if types[k].CIMStereotype != "" {
+				v.CIMStereotype = types[k].CIMStereotype
 			}
 		} else {
 			typesMerged[k] = types[k]
@@ -736,12 +654,8 @@ func mergeCIMDatatypes(typesMerged map[string]*CIMDatatype, types map[string]*CI
 func mergePrimitives(typesMerged map[string]*CIMPrimitive, types map[string]*CIMPrimitive) map[string]*CIMPrimitive {
 	for k := range types {
 		if v, ok := typesMerged[k]; ok {
-			if types[k].Stereotype != "" {
-				v.Stereotype = types[k].Stereotype
-			}
-
-			if types[k].Origin != "" {
-				v.Origins = append(v.Origins, types[k].Origin)
+			if types[k].CIMStereotype != "" {
+				v.CIMStereotype = types[k].CIMStereotype
 			}
 		} else {
 			typesMerged[k] = types[k]

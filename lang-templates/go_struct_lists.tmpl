@@ -5,7 +5,7 @@ import "fmt"
 type CIMElementList struct {
 	Elements map[string]interface{}
 {{- range .Types}}
-    {{- if eq .Stereotype "concrete"}}
+    {{- if eq .CIMStereotype "concrete"}}
     {{.Id}}s map[string]*{{.Id}}
     {{- end}}
 {{- end}}
@@ -15,7 +15,7 @@ func NewCIMElementList() *CIMElementList {
 	return &CIMElementList{
 		Elements: make(map[string]interface{}),
 		{{- range .Types}}
-        {{- if eq .Stereotype "concrete"}}
+        {{- if eq .CIMStereotype "concrete"}}
 		{{.Id}}s: make(map[string]*{{.Id}}),
         {{- end}}
 		{{- end}}
@@ -25,7 +25,7 @@ func NewCIMElementList() *CIMElementList {
 func (ds *CIMElementList) AddElement(element interface{}) {
     switch e := element.(type) {
 	{{- range .Types}}
-    {{- if eq .Stereotype "concrete"}}
+    {{- if eq .CIMStereotype "concrete"}}
 	case *{{.Id}}:
 		ds.{{.Id}}s[e.MRID] = e
 		ds.Elements[e.MRID] = e
@@ -38,7 +38,7 @@ func (ds *CIMElementList) AddElement(element interface{}) {
 
 var StructMap = map[string]func() interface{}{
 {{- range .Types}}
-    {{- if eq .Stereotype "concrete"}}
+    {{- if eq .CIMStereotype "concrete"}}
     "{{.Id}}": func() interface{} {
         return &{{.Id}}{}
     },

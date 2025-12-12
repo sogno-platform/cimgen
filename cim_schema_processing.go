@@ -7,49 +7,89 @@ import (
 
 // postprocess performs various post-processing steps on the CIMSpecification.
 func (cimSpec *CIMSpecification) postprocess() {
-	cimSpec.setIsAssociationUsed()
-	cimSpec.setCIMDataTypePrimitiveType()
-	cimSpec.setHasInverseRole()
-	cimSpec.pickMainOrigin()
-	cimSpec.sortAttributes()
 	cimSpec.determineDataTypes()
+
+	cimSpec.fixMissingMRIDs()
+	cimSpec.renameIdentifiedObjectAttributes()
+
+	cimSpec.setMainOrigin()
+	cimSpec.setProfilePriorities()
+	cimSpec.setHasInverseRole()
+	cimSpec.setMissingNamespaces()
+	cimSpec.markUnusedAttributesAndAssociations()
+	cimSpec.sortAttributes()
+
 	cimSpec.setDefaultValuesPython()
 	cimSpec.setLangTypesPython()
-	cimSpec.fixMissingMRIDs()
-	cimSpec.markUnusedAttributesAndAssociations()
-	cimSpec.removeIdentifiedObjectAttributes()
-	cimSpec.fillMissingNamespaces()
-	cimSpec.setProfilePriorities()
 }
 
-func (cimSpec *CIMSpecification) setCIMDataTypePrimitiveType() {
+// determineDataTypes determines the data types of attributes and marks them as primitive if applicable.
+func (cimSpec *CIMSpecification) determineDataTypes() {
+	// first, set PrimitiveType for CIMDatatypes
 	for _, t := range cimSpec.CIMDatatypes {
 		for _, attr := range t.Attributes {
 			if attr.Label == "value" {
-				t.PrimitiveType = attr.DataType
+				t.PrimitiveType = attr.CIMDataType
 			}
 		}
 	}
-}
 
-func (cimSpec *CIMSpecification) setIsAssociationUsed() {
+	// then, determine attribute data types
 	for _, t := range cimSpec.Types {
 		for _, attr := range t.Attributes {
-			if attr.AssociationUsed == "yes" || attr.AssociationUsed == "" {
-				attr.IsAssociationUsed = true
+			if attr.CIMStereotype == "Primitive" || isPrimitiveType(attr.CIMDataType) {
+				attr.IsPrimitive = true
+				attr.DataType = attr.CIMDataType
+			} else if attr.CIMStereotype == "CIMDatatype" || isCIMDatatype(attr.CIMDataType, cimSpec) {
+				attr.IsCIMDatatype = true
+				attr.DataType = cimSpec.CIMDatatypes[attr.CIMDataType].PrimitiveType
+			} else if isEnumType(attr.CIMDataType, cimSpec) {
+				attr.IsEnumValue = true
+			} else if !attr.IsList && (attr.CIMDataType == DataTypeObject || attr.CIMDataType == "") {
+				attr.IsClass = true
+				attr.DataType = DataTypeObject
 			}
 		}
 	}
 }
 
-// pickMainOrigin selects the main origin for each CIMType based on the Origins field of the attributes.
+// IsPrimitiveType checks if the given type string is a known data type.
+func isPrimitiveType(typeStr string) bool {
+	switch typeStr {
+	case DataTypeString, DataTypeInteger, DataTypeBoolean,
+		DataTypeFloat, DataTypeDate,
+		DataTypeDateTime:
+		return true
+	default:
+		return false
+	}
+}
+
+// is CIMDatatype checks if the given type string is a known CIM data type.
+func isCIMDatatype(typeStr string, cimSpec *CIMSpecification) bool {
+	if _, ok := cimSpec.CIMDatatypes[typeStr]; ok {
+		return true
+	} else {
+		return false
+	}
+}
+
+// isEnumType checks if the given type string is a known enumeration type.
+func isEnumType(typeStr string, cimSpec *CIMSpecification) bool {
+	if _, ok := cimSpec.Enums[typeStr]; ok {
+		return true
+	}
+	return false
+}
+
+// setMainOrigin selects the main origin for each CIMType based on the Origins field of the attributes.
 // The origin that appears most frequently in the Origins field of the attributes is selected as the main origin.
 // If there is a tie, the first origin in the list is selected.
 // Only the attributes are considered that have more than one entry in the Origins field.
 // If "EQ" is among the most frequent origins, it is selected as the main origin.
 // Otherwise, the first origin in alphabetical order is selected.
 // This function updates the Origin field of each CIMType accordingly.
-func (cimSpec *CIMSpecification) pickMainOrigin() {
+func (cimSpec *CIMSpecification) setMainOrigin() {
 	for _, t := range cimSpec.Types {
 
 		originCount := make(map[string]int)
@@ -125,89 +165,35 @@ func (cimSpec *CIMSpecification) sortAttributes() {
 	}
 }
 
+// setHasInverseRole iterates over all CIMTypes and attributes
+// and sets the HasInverseRole flag if the InverseRole field is not empty.
+// It also extracts the InverseRoleAttribute from the InverseRole field.
 func (cimSpec *CIMSpecification) setHasInverseRole() {
 	for _, t := range cimSpec.Types {
 		for _, attr := range t.Attributes {
-			if attr.InverseRole != "" {
+			if attr.CIMInverseRole != "" {
 				attr.HasInverseRole = true
+				parts := strings.Split(attr.CIMInverseRole, ".")
+				if len(parts) == 2 {
+					attr.InverseRoleAttribute = parts[1]
+				}
 			}
 		}
 	}
-}
-
-// determineDataTypes determines the data types of attributes and marks them as primitive if applicable.
-func (cimSpec *CIMSpecification) determineDataTypes() {
-	for _, t := range cimSpec.Types {
-		for _, attr := range t.Attributes {
-			if attr.Stereotype == "Primitive" || IsPrimitiveType(attr.DataType) {
-				attr.IsPrimitive = true
-			} else if attr.Stereotype == "CIMDatatype" || IsCIMDatatype(attr.DataType) {
-				attr.IsCIMDatatype = true
-			} else if IsEnumType(attr.DataType, cimSpec) {
-				attr.IsEnumValue = true
-			} else if !attr.IsList && (attr.DataType == DataTypeObject || attr.DataType == "") {
-				attr.IsClass = true
-			}
-		}
-	}
-}
-
-// IsPrimitiveType checks if the given type string is a known data type.
-func IsPrimitiveType(typeStr string) bool {
-	switch typeStr {
-	case DataTypeString, DataTypeInteger, DataTypeBoolean,
-		DataTypeFloat, DataTypeDate,
-		DataTypeDateTime:
-		return true
-	default:
-		return false
-	}
-}
-
-// is CIMDatatype checks if the given type string is a known CIM data type.
-func IsCIMDatatype(typeStr string) bool {
-	switch typeStr {
-	case DataTypeActivePower, DataTypeActivePowerPerCurrentFlow, DataTypeActivePowerPerFrequency,
-		DataTypeAngleDegrees, DataTypeAngleRadians, DataTypeApparentPower,
-		DataTypeArea, DataTypeCapacitance, DataTypeConductance, DataTypeCurrentFlow,
-		DataTypeFrequency, DataTypeInductance, DataTypeLength, DataTypeMoney,
-		DataTypePerCent, DataTypePU, DataTypeReactance, DataTypeReactivePower,
-		DataTypeRealEnergy, DataTypeResistance, DataTypeRotationSpeed, DataTypeSeconds,
-		DataTypeSusceptance, DataTypeTemperature, DataTypeVoltage, DataTypeVoltagePerReactivePower,
-		DataTypeVolumeFlowRate:
-		return true
-	default:
-		return false
-	}
-}
-
-// isEnumType checks if the given type string is a known enumeration type.
-func IsEnumType(typeStr string, cimSpec *CIMSpecification) bool {
-	if _, ok := cimSpec.Enums[typeStr]; ok {
-		return true
-	}
-	return false
 }
 
 // fixMissingMRIDs adds missing MRID attributes to types that should have them.
 func (cimSpec *CIMSpecification) fixMissingMRIDs() {
 	for _, t := range cimSpec.Types {
-		if (t.Stereotype == "concrete" || t.Stereotype == "") && t.SuperType == "" && t.Id != "IdentifiedObject" {
+		if (t.CIMStereotype == "concrete" || t.CIMStereotype == "") && t.SuperType == "" && t.Id != "IdentifiedObject" {
 			t.Attributes = append(t.Attributes, &CIMAttribute{
-				Id:           "MRID",
-				Label:        "mRID",
-				Namespace:    "",
-				Comment:      "Master resource identifier issued by a model authority. The mRID is unique within an exchange context. Global uniqueness is easily achieved by using a UUID, as specified in RFC 4122, for the mRID. The use of UUID is strongly recommended. For CIMXML data files in RDF syntax conforming to IEC 61970-552, the mRID is mapped to rdf:ID or rdf:about attributes that identify CIM object elements.",
-				IsList:       false,
-				IsFixed:      false,
-				InverseRole:  "",
-				Stereotype:   "attribute",
-				Range:        "",
-				DataType:     "String",
-				IsPrimitive:  true,
-				RDFDomain:    "",
-				RDFType:      "Property",
-				DefaultValue: "''",
+				Id:            "MRID",
+				Label:         "mRID",
+				Comment:       "Master resource identifier issued by a model authority. The mRID is unique within an exchange context. Global uniqueness is easily achieved by using a UUID, as specified in RFC 4122, for the mRID. The use of UUID is strongly recommended. For CIMXML data files in RDF syntax conforming to IEC 61970-552, the mRID is mapped to rdf:ID or rdf:about attributes that identify CIM object elements.",
+				CIMStereotype: "attribute",
+				CIMDataType:   "String",
+				IsPrimitive:   true,
+				RDFType:       "Property",
 			})
 			//log.Println("Added missing MRID to type", t.Id)
 		}
@@ -224,7 +210,7 @@ func (cimSpec *CIMSpecification) markUnusedAttributesAndAssociations() {
 		for _, attr := range t.Attributes {
 			attr.IsUsed = true
 			if !attr.IsAssociationUsed {
-				if attr.DataType == DataTypeObject {
+				if attr.CIMDataType == DataTypeObject {
 					if attr.IsList {
 						attr.IsUsed = false
 						//log.Println("Marked unused list association", t.Id+"."+attr.Id, "of type", attr.Range)
@@ -238,8 +224,8 @@ func (cimSpec *CIMSpecification) markUnusedAttributesAndAssociations() {
 	}
 }
 
-// removeIdentifiedObjectAttributes renames attributes named "IdentifiedObject" to avoid conflicts.
-func (cimSpec *CIMSpecification) removeIdentifiedObjectAttributes() {
+// renameIdentifiedObjectAttributes renames attributes named "IdentifiedObject" to avoid conflicts.
+func (cimSpec *CIMSpecification) renameIdentifiedObjectAttributes() {
 	for _, t := range cimSpec.Types {
 		for _, attr := range t.Attributes {
 			if attr.Label == "IdentifiedObject" {
@@ -250,10 +236,10 @@ func (cimSpec *CIMSpecification) removeIdentifiedObjectAttributes() {
 	}
 }
 
-// fillMissingNamespaces fills in missing namespaces for types and their attributes and enums using the base URI.
+// setMissingNamespaces fills in missing namespaces for types and their attributes and enums using the base URI.
 // It also ensures that the "md" namespace is present in the CIMSpecification.
 // It stores the namespaces that are used in the UsedNamespaces map.
-func (cimSpec *CIMSpecification) fillMissingNamespaces() {
+func (cimSpec *CIMSpecification) setMissingNamespaces() {
 
 	for _, t := range cimSpec.Types {
 		if !strings.HasSuffix(t.Namespace, "#") {
@@ -417,7 +403,7 @@ func (cimSpec *CIMSpecification) setLangTypesJava() {
 	}
 
 	for _, t := range cimSpec.CIMDatatypes {
-		t.LangType = MapDatatypeJava(t.Id)
+		t.LangType = MapDatatypeJava(t.PrimitiveType)
 	}
 }
 
@@ -426,11 +412,11 @@ func MapDatatypeJava(t string) string {
 	case DataTypeString, DataTypeDateTime, DataTypeDate:
 		return "String"
 	case DataTypeInteger:
-		return "int"
+		return "Integer"
 	case DataTypeBoolean:
-		return "bool"
+		return "Boolean"
 	case DataTypeFloat:
-		return "float"
+		return "Double"
 	case DataTypeObject:
 		return "Class"
 	default:
