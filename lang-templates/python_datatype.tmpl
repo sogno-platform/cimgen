@@ -9,9 +9,6 @@ from ..utils.profile import Profile
 {{.Id}} = CIMDatatype(
     name="{{.Id}}",
     type={{.LangType}},
-        profiles=[{{range .Origins}}
-        Profile.{{.}}, {{end}}
-    ],
 )
 
 """

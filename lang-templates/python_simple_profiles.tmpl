@@ -19,7 +19,7 @@ long_profile_name = {
 profile_uris = {  # Those are strings, not real addresses, hence the NOSONAR.
 {{- range .Ontologies}}
     "{{.Keyword}}": [
-        "{{.VersionIRI}}",  # NOSONAR
+        "{{.OWLVersionIRI}}",  # NOSONAR
     ],
 {{- end}}
 }

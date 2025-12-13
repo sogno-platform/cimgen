@@ -9,9 +9,6 @@ from ..utils.profile import Profile
 {{.Id}} = Primitive(
     name="{{.Id}}",
     type={{.LangType}},
-    profiles=[{{range .Origins}}
-        Profile.{{.}}, {{end}}
-    ],
 )
 
 """
