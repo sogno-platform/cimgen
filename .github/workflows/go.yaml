@@ -10,7 +10,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+    # Checkout the repository recursively to include submodules
     - uses: actions/checkout@v4
+      with:
+        submodules: recursive
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
