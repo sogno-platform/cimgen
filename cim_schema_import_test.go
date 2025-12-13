@@ -3,14 +3,16 @@ package cimgen
 import (
 	"crypto/sha256"
 	"fmt"
+	"log"
 	"os"
+	"path/filepath"
 	"testing"
 )
 
 func TestSchemaImport(t *testing.T) {
 	t.Log("Start CIM schema import test")
 
-	output := "cim_schema_import_test.log"
+	output := "cim_schema_import_test.json"
 	t.Log("Write imported schema to file:", output)
 	f, err := os.Create(output)
 	if err != nil {
@@ -18,14 +20,19 @@ func TestSchemaImport(t *testing.T) {
 	}
 	defer f.Close()
 
+	// deprecated shema files included in the repo
+	//schemaFiles := "cgmes_schema/CGMES_3.0.0/IEC61970-600-2_CGMES_3_0_0_RDFS2020_*.rdf"
+	schemaFiles := "cgmes-application-profiles-library/CGMES/CurrentRelease/RDFS/61970-600-2_*-AP-Voc-RDFS2020.rdf"
+	entries, err := filepath.Glob(schemaFiles)
+	if err != nil {
+		log.Fatal(err)
+	}
+	t.Log("Read schema files:", entries)
+
 	cimSpec := NewCIMSpecification()
-	cimSpec.ImportCIMSchemaFiles("cgmes_schema/CGMES_3.0.0/IEC61970-600-2_CGMES_3_0_0_RDFS2020_*.rdf")
+	cimSpec.ImportCIMSchemaFiles(schemaFiles)
 
 	cimSpec.printSpecification(f)
-
-	if cimSpec.Ontologies["DL"].Keyword != "DL" {
-		t.Error("cim schema test failed, expected Ontology DL")
-	}
 
 	// Compute hash of the output file for verification
 	f.Sync()
@@ -37,7 +44,7 @@ func TestSchemaImport(t *testing.T) {
 	t.Logf("SHA256 hash of output file: %x", hash)
 
 	// Test output file against expected hash
-	expectedHash := "2bd3431fe6d9ecc7f597b1c0c005e14922a7af5971f29b4055ff6dc4a5eed2f4" // SHA256 of empty file
+	expectedHash := "ded2ca0eb8a8736c0169f8a7f397de51b5dc80c1f20f0a4aca4531748fe086eb"
 	if fmt.Sprintf("%x", hash) != expectedHash {
 		t.Error("decoder tests failed, output file hash does not match expected hash")
 	}

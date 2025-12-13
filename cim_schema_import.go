@@ -109,8 +109,8 @@ type CIMType struct {
 	CIMStereotype string          // from RDF schema
 	RDFType       string          // from RDF schema
 	SuperType     string          // from RDF schema
-	SuperTypes    []string        // TODO from RDF schema
-	SubClasses    []string        // TODO derived
+	SuperTypes    []string        // TODO derived
+	SubTypes      []string        // TODO derived
 	Origin        string          // derived
 	Origins       []string        // from RDF schema
 	CIMCategories []string        // from RDF schema
@@ -238,47 +238,48 @@ func (cimSpec *CIMSpecification) addRDFMap(inputMap map[string]interface{}) {
 
 // printSpecification prints the CIMSpecification to the provided writer in JSON format.
 func (cimSpec *CIMSpecification) printSpecification(w io.Writer) {
+	fmt.Fprint(w, "[\n")
 	jsonb, err := json.MarshalIndent(cimSpec.SpecificationNamespaces, "", "  ")
 	if err != nil {
 		panic(err)
 	}
 	w.Write(jsonb)
-	fmt.Fprint(w, "\n")
+	fmt.Fprint(w, ",\n")
 
 	jsonb, err = json.MarshalIndent(cimSpec.Ontologies, "", "  ")
 	if err != nil {
 		panic(err)
 	}
 	w.Write(jsonb)
-	fmt.Fprint(w, "\n")
+	fmt.Fprint(w, ",\n")
 
 	jsonb, err = json.MarshalIndent(cimSpec.Types, "", "  ")
 	if err != nil {
 		panic(err)
 	}
 	w.Write(jsonb)
-	fmt.Fprint(w, "\n")
+	fmt.Fprint(w, ",\n")
 
 	jsonb, err = json.MarshalIndent(cimSpec.Enums, "", "  ")
 	if err != nil {
 		panic(err)
 	}
 	w.Write(jsonb)
-	fmt.Fprint(w, "\n")
+	fmt.Fprint(w, ",\n")
 
 	jsonb, err = json.MarshalIndent(cimSpec.CIMDatatypes, "", "  ")
 	if err != nil {
 		panic(err)
 	}
 	w.Write(jsonb)
-	fmt.Fprint(w, "\n")
+	fmt.Fprint(w, ",\n")
 
 	jsonb, err = json.MarshalIndent(cimSpec.PrimitiveTypes, "", "  ")
 	if err != nil {
 		panic(err)
 	}
 	w.Write(jsonb)
-	fmt.Fprint(w, "\n")
+	fmt.Fprint(w, "\n]\n")
 }
 
 // processRDFMap processes the RDF map and extracts CIM types, enums, and ontology.
@@ -516,7 +517,7 @@ func processOntology(classMap map[string]interface{}) CIMOntology {
 		OWLVersionInfo: extractText(classMap, "owl:versionInfo"),
 		Keyword:        extractValue(classMap, "dcat:keyword"),
 		// remove suffix " Vocabulary" from name if present
-		Name: strings.TrimSuffix(extractText(classMap, "dct:title"), " Vocabulary"),
+		Name: strings.TrimSuffix(extractText(classMap, "dcterms:title"), " Vocabulary"),
 	}
 }
 

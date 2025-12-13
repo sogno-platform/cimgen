@@ -12,7 +12,7 @@ const (
 	CGMES2        = "2.4.15"
 	CGMES3        = "3.0.0"
 	CGMES2_SCHEMA = "cgmes_schema/CGMES_2.4.15_27JAN2020/*-v2_4_15-27Jan2020.rdf"
-	CGMES3_SCHEMA = "cgmes_schema/CGMES_3.0.0/IEC61970-600-2_CGMES_3_0_0_RDFS2020_*.rdf"
+	CGMES3_SCHEMA = "cgmes-application-profiles-library/CGMES/CurrentRelease/RDFS/61970-600-2_*-AP-Voc-RDFS2020.rdf"
 )
 
 func main() {
@@ -23,7 +23,7 @@ func main() {
 	var verbose bool
 
 	flag.StringVar(&schemaPattern, "schema", CGMES3_SCHEMA, "glob pattern for CIM schema files")
-	flag.StringVar(&language, "lang", "go", "output language (go, python, python-simple, java, proto)")
+	flag.StringVar(&language, "lang", "go", "output language (go, python, python-simple, java, proto, cpp, js)")
 	flag.StringVar(&cgmesVersion, "version", CGMES3, "CGMES version")
 	flag.BoolVar(&verbose, "v", false, "verbose logging")
 	flag.Parse()
@@ -71,6 +71,14 @@ func main() {
 		// generate Java classes
 		outputDir = "output/java" + outputVersionDir
 		cimSpec.GenerateJava(outputDir)
+	case "cpp":
+		// generate C++ classes
+		outputDir = "output/cpp" + outputVersionDir
+		cimSpec.GenerateCpp(outputDir)
+	case "js":
+		// generate JavaScript classes
+		outputDir = "output/js" + outputVersionDir
+		cimSpec.GenerateJS(outputDir)
 	default:
 		logger.Fatalf("unsupported language: %s", language)
 	}

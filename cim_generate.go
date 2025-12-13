@@ -77,7 +77,8 @@ func (spec *CIMSpecification) GeneratePython(outputDir string) {
 	generateFiles("python_primitive", ".py", outputDir, spec.PrimitiveTypes)
 }
 
-// indent is a custom template function that indents a multi-line string.
+// wrapAndIndent is a custom template function that indents a multi-line string.
+// It also wraps lines to a maximum of 120 characters.
 func wrapAndIndent(spaces int, input string) string {
 	// Limit line length to 120 characters
 	var resultLines []string
@@ -164,6 +165,50 @@ func (spec *CIMSpecification) GenerateJava(outputDir string) {
 	generateFile("java_constants", "CimConstants.java", outputDir, spec)
 	generateFile("java_classlist", "CimClassMap.java", outputDir, spec)
 	generateFile("java_profile", "CGMESProfile.java", outputDir, spec)
+}
+
+func (spec *CIMSpecification) GenerateCpp(outputDir string) {
+	// create output folder if it does not exist
+	if _, err := os.Stat(outputDir); os.IsNotExist(err) {
+		err = os.MkdirAll(outputDir, 0755)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	// TODO spec.setLangTypesCpp()
+
+	generateFiles("cpp_header", ".cpp", outputDir, spec.Types)
+	generateFiles("cpp_object", ".cpp", outputDir, spec.Types)
+	generateFiles("cpp_enum_header", ".cpp", outputDir, spec.Enums)
+	generateFiles("cpp_enum_object", ".cpp", outputDir, spec.Enums)
+	generateFile("cpp_constants_header", "CimConstants.hpp", outputDir, spec)
+	generateFile("cpp_constants_object", "CimConstants.cpp", outputDir, spec)
+	generateFile("cpp_classlist", "CimClassList.hpp", outputDir, spec)
+	generateFile("cpp_profile_header", "CGMESProfile.hpp", outputDir, spec)
+	generateFile("cpp_profile_object", "CGMESProfile.cpp", outputDir, spec)
+	generateFile("cpp_float_header", "Float.hpp", outputDir, spec)
+	generateFile("cpp_float_object", "Float.cpp", outputDir, spec)
+	generateFile("cpp_string_header", "String.hpp", outputDir, spec)
+	generateFile("cpp_string_object", "String.cpp", outputDir, spec)
+	generateFile("cpp_iec61970", "IEC61970.hpp", outputDir, spec)
+}
+
+func (spec *CIMSpecification) GenerateJS(outputDir string) {
+	// create output folder if it does not exist
+	if _, err := os.Stat(outputDir); os.IsNotExist(err) {
+		err = os.MkdirAll(outputDir, 0755)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	// TODO spec.setLangTypesJS()
+
+	generateFiles("js_class", ".js", outputDir, spec.Types)
+	generateFile("js_constants", "CimConstants.js", outputDir, spec)
+	generateFile("js_baseclass", "BaseClass.js", outputDir, spec)
+	generateFile("java_profile", "CGMESProfile.js", outputDir, spec)
 }
 
 func generateFile[T any](tmplFile string, outputFile string, outputDir string, input T) {

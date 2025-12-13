@@ -301,7 +301,9 @@ func (cimSpec *CIMSpecification) setMissingNamespaces() {
 }
 
 func (cimSpec *CIMSpecification) setProfilePriorities() {
-	cimSpec.Ontologies["EQ"].Priority = 1
+	if _, ok := cimSpec.Ontologies["EQ"]; ok {
+		cimSpec.Ontologies["EQ"].Priority = 1
+	}
 
 	// assign remaining ontologies priorities based on alphabetical order of their keywords
 	keywords := make([]string, 0, len(cimSpec.Ontologies))

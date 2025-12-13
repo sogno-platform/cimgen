@@ -10,6 +10,14 @@ Rewrite of CIMgen in golang to generate code from the CIM data model for several
 
 ## Usage
 
+Make sure that you have cloned the repo recursively to include the CGMES schema files from ENTSO-E
+
+    git clone --recursive [...]
+
+or clone the submodule in a second step
+
+    git submodule update --init --recursive
+
 Ensure that GOPATH is set and included in your PATH. Then install the cimgen binary:
 
     go install ./...
