@@ -1,0 +1,20 @@
+/*
+Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cimgen
+*/
+
+class CGMESProfile {
+    static profileUrls = {  // Those are strings, not real addresses, hence the NOSONAR.
+{{- range .Ontologies}}
+    "{{.Name}}": "{{.Keyword}}",
+
+    {{Keyword}}": [
+        "{{.OWLVersionIRI}}",  // NOSONAR
+    ],
+{{- end}}
+    };
+    static shortNames = {
+{{- range .Ontologies}}
+        "{{.Keyword}}": {{.Priority}},
+{{- end}}
+    };
+}

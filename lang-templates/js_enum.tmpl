@@ -1,0 +1,17 @@
+import templates from "../../templates/index.js"
+import {{.SuperType}} from "./{{.SuperType}}.js"
+import common from "../../src/common.js"
+import CGMESProfile from "./CGMESProfile.js"
+
+const {{.Id}}Enum = {
+        {{range .Values}}
+        {{.Label}}:{{index}},
+        {{end}}
+}
+const possibleValues = [
+        { "value": "--"},
+        {{range .Values}}
+        { "value": "{{.Id}}", "label": "{{.Label}}" },
+        {{end}}
+]
+export default {{.Id}}
