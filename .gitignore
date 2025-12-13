@@ -10,7 +10,7 @@ __pycache__/
 */.DS_Store
 .DS_Store
 tests/
-
 *.log
+*.json
+
 cimgostructs
-application-profiles-library
