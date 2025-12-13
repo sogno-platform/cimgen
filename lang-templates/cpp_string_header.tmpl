@@ -1,0 +1,35 @@
+#ifndef {{.Id}}_H
+#define {{.Id}}_H
+/*
+Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cimgen
+*/
+
+#include <istream>
+#include <ostream>
+#include <string>
+
+namespace CIMPP
+{
+{{if .Comment -}}
+	/** \brief { {{.Id}} } */
+{{- end}}
+	class {{.Id}}
+	{
+	public:
+		{{.Id}}() : initialized(false) {}
+		{{.Id}}(const std::string& value) : value(value), initialized(true) {}
+
+		{{.Id}}& operator=(const std::string& rop);
+		operator std::string() const;
+
+		std::string value;
+		bool initialized;
+
+		static const char debugName[];
+		const char* debugString() const;
+
+		friend std::istream& operator>>(std::istream& lop, {{.Id}}& rop);
+		friend std::ostream& operator<<(std::ostream& os, const {{.Id}}& obj);
+	};
+}
+#endif

@@ -1,0 +1,199 @@
+/*
+Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cimgen
+*/
+#include "{{.Id}}.hpp"
+
+#include <algorithm>
+#include <ios>
+#include <iterator>
+#include <sstream>
+
+{{range .Attributes}}
+#include "{{.Label}}.hpp"
+{{end}}
+
+using namespace CIMPP;
+
+static const CimClassDetails& getCimClassDetails()
+{
+	static const CimClassDetails ClassDetails = CimClassDetails(
+		{{.Id}}(),
+		"{{.Namespace}}",
+		{
+{{range .Origins}}
+			CGMESProfile::{{.}},
+{{end}}
+		},
+		CGMESProfile::{{.Origin}}
+	);
+	return ClassDetails;
+}
+
+static const std::map<std::string, AttrDetails>& getClassAttrDetailsMap()
+{
+	static const std::map<std::string, AttrDetails> ClassAttrDetailsMap =
+	{
+{{range .Attributes}}
+		{ "{{.RDFDomain}}.{{.Label}}", { "{{.Namespace}}", { {{range .Origins}}CGMESProfile::{{.}}, {{end}}} } },
+{{end}}
+	};
+    return ClassAttrDetailsMap;
+}
+
+{{.Id}}::{{.Id}}() TODO nullptr_assigns {}
+{{.Id}}::~{{.Id}}() {}
+
+const std::list<std::string>& {{.Id}}::getAttributeNames() const
+{
+	return getCimClassDetails().AttrNamesList;
+}
+
+const std::string& {{.Id}}::getClassNamespaceUrl() const
+{
+	return getCimClassDetails().ClassNamespace;
+}
+
+const std::string& {{.Id}}::getAttributeNamespaceUrl(const std::string& attrName) const
+{
+	return getCimClassDetails().getAttributeNamespaceUrl(attrName);
+}
+
+const std::list<CGMESProfile>& {{.Id}}::getPossibleProfiles() const
+{
+	return getCimClassDetails().PossibleProfiles;
+}
+
+const CGMESProfile& {{.Id}}::getRecommendedProfile() const
+{
+	return getCimClassDetails().RecommendedProfile;
+}
+
+const std::list<CGMESProfile>& {{.Id}}::getPossibleAttributeProfiles(const std::string& attrName) const
+{
+	return getCimClassDetails().getPossibleAttributeProfiles(attrName);
+}
+
+const std::list<CGMESProfile>& {{.Id}}::getPossibleProfilesIncludingAttributes() const
+{
+	return getCimClassDetails().PossibleProfilesIncludingAttributes;
+}
+
+{{range .Attributes}}
+
+{{if .IsPrimitive}}
+bool assign_{{.RDFDomain}}_{{.Label}}(std::stringstream& buffer, BaseClass* BaseClass_ptr1)
+{
+	{{.RDFDomain}}* element = dynamic_cast<{{.RDFDomain}}*>(BaseClass_ptr1);
+	if (element != nullptr)
+	{
+{{end}}
+
+		element->{{.Label}} = buffer.str();
+{{if eq .DataType "String"}}
+{{else}}
+		buffer >> element->{{.Label}};
+{{end}}
+		if (!buffer.fail())
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+{{if .IsCIMDatatype}}
+bool assign_{{.RDFDomain}}_{{.Label}}(std::stringstream& buffer, BaseClass* BaseClass_ptr1)
+{
+	{{.RDFDomain}}* element = dynamic_cast<{{.RDFDomain}}*>(BaseClass_ptr1);
+	if (element != nullptr)
+	{
+		buffer >> element->{{.Label}};
+		if (!buffer.fail())
+		{
+			return true;
+		}
+	}
+	return false;
+}
+{{end}}
+
+{{if .IsEnumValue}}
+bool assign_{{.RDFDomain}}_{{.Label}}(std::stringstream& buffer, BaseClass* BaseClass_ptr1)
+{
+	{{.RDFDomain}}* element = dynamic_cast<{{.RDFDomain}}*>(BaseClass_ptr1);
+	if (element != nullptr)
+	{
+		buffer >> element->{{.Label}};
+		if (!buffer.fail())
+		{
+			return true;
+		}
+	}
+	return false;
+}
+{{end}}
+
+{{if .IsClass}}
+{{if .HasInverseRole}}
+bool assign_{{.}}(BaseClass*, BaseClass*);
+bool assign_{{.RDFDomain}}_{{.Label}}(BaseClass* BaseClass_ptr1, BaseClass* BaseClass_ptr2)
+{
+	{{.RDFDomain}}* element = dynamic_cast<{{.RDFDomain}}*>(BaseClass_ptr1);
+	{{.DataType}}* element2 = dynamic_cast<{{.DataType}}*>(BaseClass_ptr2);
+	if (element != nullptr && element2 != nullptr)
+	{
+		if (element->{{.Label}} != element2)
+		{
+			element->{{.Label}} = element2;
+			return assign_{{.}}(BaseClass_ptr2, BaseClass_ptr1);
+		}
+		return true;
+	}
+	return false;
+}
+{{else}}
+bool assign_{{.RDFDomain}}_{{.Label}}(BaseClass* BaseClass_ptr1, BaseClass* BaseClass_ptr2)
+{
+	{{.RDFDomain}}* element = dynamic_cast<{{.RDFDomain}}*>(BaseClass_ptr1);
+	if (element != nullptr)
+	{
+		element->{{.Label}} = dynamic_cast<{{.DataType}}*>(BaseClass_ptr2);
+		if (element->{{.Label}} != nullptr)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+{{end}}
+{{end}}
+{{end}}
+
+TODO
+
+bool {{.Id}}::isAssignableFrom(BaseClass* otherObject) const
+{
+	return std::string(debugString()) == "{{.Id}}" &&
+		dynamic_cast<{{.Id}}*>(otherObject) != nullptr;
+}
+
+const BaseClassDefiner {{.Id}}::declare()
+{
+	return BaseClassDefiner({{.Id}}::addConstructToMap, {{.Id}}::addPrimitiveAssignFnsToMap, {{.Id}}::addClassAssignFnsToMap, {{.Id}}::debugName);
+}
+
+std::map<std::string, AttrDetails> {{.Id}}::allAttrDetailsMap() const
+{
+	auto map = getClassAttrDetailsMap();
+	const auto& parent_map = {{.SuperType}}::allAttrDetailsMap();
+	map.insert(parent_map.begin(), parent_map.end());
+	return map;
+}
+
+namespace CIMPP
+{
+	BaseClass* {{.Id}}_factory()
+	{
+		return new {{.Id}};
+	}
+}

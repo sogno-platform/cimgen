@@ -187,10 +187,10 @@ func (spec *CIMSpecification) GenerateCpp(outputDir string) {
 	generateFile("cpp_classlist", "CimClassList.hpp", outputDir, spec)
 	generateFile("cpp_profile_header", "CGMESProfile.hpp", outputDir, spec)
 	generateFile("cpp_profile_object", "CGMESProfile.cpp", outputDir, spec)
-	generateFile("cpp_float_header", "Float.hpp", outputDir, spec)
-	generateFile("cpp_float_object", "Float.cpp", outputDir, spec)
-	generateFile("cpp_string_header", "String.hpp", outputDir, spec)
-	generateFile("cpp_string_object", "String.cpp", outputDir, spec)
+	generateFile("cpp_float_header", "Float.hpp", outputDir, spec.PrimitiveTypes["Float"])
+	generateFile("cpp_float_object", "Float.cpp", outputDir, spec.PrimitiveTypes["Float"])
+	generateFile("cpp_string_header", "String.hpp", outputDir, spec.PrimitiveTypes["String"])
+	generateFile("cpp_string_object", "String.cpp", outputDir, spec.PrimitiveTypes["String"])
 	generateFile("cpp_iec61970", "IEC61970.hpp", outputDir, spec)
 }
 

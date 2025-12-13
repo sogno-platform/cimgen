@@ -1,0 +1,85 @@
+/*
+Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cimgen
+*/
+#include "{{.Id}}.hpp"
+
+#include <ios>
+#include <string>
+
+#include "../src/CIMExceptions.hpp"
+
+using namespace CIMPP;
+
+{{.Id}}& {{.Id}}::operator=({{.Id}}_ENUM rop)
+{
+	value = rop;
+	initialized = true;
+	return *this;
+}
+
+{{.Id}}::operator {{.Id}}_ENUM() const
+{
+	if (!initialized)
+	{
+		throw new ReadingUninitializedField();
+	}
+	return value;
+}
+
+const char {{.Id}}::debugName[] = "{{.Id}}";
+const char* {{.Id}}::debugString() const
+{
+	return {{.Id}}::debugName;
+}
+
+namespace CIMPP
+{
+	std::istream& operator>>(std::istream& lop, {{.Id}}& rop)
+	{
+		rop.initialized = false;
+
+		std::string EnumSymbol;
+		lop >> EnumSymbol;
+
+		size_t pos = EnumSymbol.find_first_of('.');
+		if (EnumSymbol.substr(0, pos) != "{{.Id}}")
+		{
+			lop.setstate(std::ios::failbit);
+			return lop;
+		}
+
+		EnumSymbol = EnumSymbol.substr(pos + 1);
+
+{{- range .Values}}
+		if (EnumSymbol == "{{.Label}}")
+		{
+			rop = {{.Id}}::{{.Label}};
+			return lop;
+		}
+{{- end}}
+
+		lop.setstate(std::ios::failbit);
+		return lop;
+	}
+
+	std::ostream& operator<<(std::ostream& os, const {{.Id}}& obj)
+	{
+		if (obj.initialized)
+		{
+			std::string EnumSymbol;
+
+{{- range .Values}}
+			if (obj.value == {{.Id}}::{{.Label}})
+			{
+				EnumSymbol = "{{.Label}}";
+			}
+{{- end}}
+
+			if (!EnumSymbol.empty())
+			{
+				os << "{{.Id}}." << EnumSymbol;
+			}
+		}
+		return os;
+	}
+}
