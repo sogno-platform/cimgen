@@ -5,9 +5,7 @@ Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cim
 class CGMESProfile {
     static profileUrls = {  // Those are strings, not real addresses, hence the NOSONAR.
 {{- range .Ontologies}}
-    "{{.Name}}": "{{.Keyword}}",
-
-    {{Keyword}}": [
+    "{{.Keyword}}": [
         "{{.OWLVersionIRI}}",  // NOSONAR
     ],
 {{- end}}
