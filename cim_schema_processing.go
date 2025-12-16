@@ -8,12 +8,14 @@ import (
 // postprocess performs various post-processing steps on the CIMSpecification.
 func (cimSpec *CIMSpecification) postprocess() {
 	cimSpec.determineDataTypes()
+	cimSpec.addOriginsOfAttributes()
+	cimSpec.setProfilePriorities()
 
 	cimSpec.fixMissingMRIDs()
 	cimSpec.renameIdentifiedObjectAttributes()
-
+	cimSpec.reorderOrigins()
 	cimSpec.setMainOrigin()
-	cimSpec.setProfilePriorities()
+
 	cimSpec.setHasInverseRole()
 	cimSpec.setMissingNamespaces()
 	cimSpec.markUnusedAttributesAndAssociations()
@@ -80,6 +82,46 @@ func isEnumType(typeStr string, cimSpec *CIMSpecification) bool {
 		return true
 	}
 	return false
+}
+
+// addOriginsOfAttributes adds the origins of attributes to their parent CIMType's Origins field.
+func (cimSpec *CIMSpecification) addOriginsOfAttributes() {
+	for _, t := range cimSpec.Types {
+		originSet := make(map[string]struct{})
+		// add origins of CIMType first
+		for _, origin := range t.Origins {
+			originSet[origin] = struct{}{}
+		}
+		// add origins of attributes
+		for _, attr := range t.Attributes {
+			for _, origin := range attr.Origins {
+				originSet[origin] = struct{}{}
+			}
+		}
+		// convert set to slice
+		t.Origins = make([]string, 0, len(originSet))
+		tmpOrigins := make([]string, 0, len(originSet))
+		for origin := range originSet {
+			tmpOrigins = append(tmpOrigins, origin)
+		}
+		// sort origins
+		sort.Strings(tmpOrigins)
+		// assign to CIMType
+		t.Origins = append(t.Origins, tmpOrigins...)
+	}
+}
+
+// reorderOrigins reorders the Origins field of each CIMType based on the priority of the ontologies.
+func (cimSpec *CIMSpecification) reorderOrigins() {
+	for _, t := range cimSpec.Types {
+		sort.Slice(t.Origins, func(i, j int) bool {
+			originI := t.Origins[i]
+			originJ := t.Origins[j]
+			priorityI := cimSpec.Ontologies[originI].Priority
+			priorityJ := cimSpec.Ontologies[originJ].Priority
+			return priorityI < priorityJ
+		})
+	}
 }
 
 // setMainOrigin selects the main origin for each CIMType based on the Origins field of the attributes.
@@ -303,6 +345,7 @@ func (cimSpec *CIMSpecification) setMissingNamespaces() {
 func (cimSpec *CIMSpecification) setProfilePriorities() {
 	if _, ok := cimSpec.Ontologies["EQ"]; ok {
 		cimSpec.Ontologies["EQ"].Priority = 1
+		cimSpec.OntologyList = append(cimSpec.OntologyList, cimSpec.Ontologies["EQ"])
 	}
 
 	// assign remaining ontologies priorities based on alphabetical order of their keywords
@@ -316,6 +359,7 @@ func (cimSpec *CIMSpecification) setProfilePriorities() {
 	priority := 2
 	for _, k := range keywords {
 		cimSpec.Ontologies[k].Priority = priority
+		cimSpec.OntologyList = append(cimSpec.OntologyList, cimSpec.Ontologies[k])
 		priority++
 	}
 }
@@ -363,7 +407,7 @@ func (cimSpec *CIMSpecification) setDefaultValuesPython() {
 	for _, t := range cimSpec.Types {
 		for _, attr := range t.Attributes {
 			if attr.IsList {
-				attr.DefaultValue = "list" // Set default value for list attributes
+				attr.DefaultValue = "None" // Set default value for list attributes
 			} else {
 				attr.DefaultValue = MapDefaultValuePython(attr.DataType)
 			}

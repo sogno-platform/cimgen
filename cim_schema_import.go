@@ -179,6 +179,7 @@ type CIMSpecification struct {
 	SpecificationNamespaces map[string]string
 	ProfileNamespaces       map[string]string
 	Ontologies              map[string]*CIMOntology
+	OntologyList            []*CIMOntology
 	Types                   map[string]*CIMType
 	Enums                   map[string]*CIMEnum
 	PrimitiveTypes          map[string]*CIMPrimitive
@@ -192,6 +193,7 @@ func NewCIMSpecification() *CIMSpecification {
 		Types:                   make(map[string]*CIMType, 0),
 		Enums:                   make(map[string]*CIMEnum, 0),
 		Ontologies:              make(map[string]*CIMOntology, 0),
+		OntologyList:            make([]*CIMOntology, 0),
 		SpecificationNamespaces: make(map[string]string, 0),
 		ProfileNamespaces:       make(map[string]string),
 		PrimitiveTypes:          make(map[string]*CIMPrimitive, 0),
