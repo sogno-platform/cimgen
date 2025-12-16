@@ -208,7 +208,7 @@ func (spec *CIMSpecification) GenerateJS(outputDir string) {
 	generateFiles("js_class", ".js", outputDir, spec.Types)
 	generateFile("js_constants", "CimConstants.js", outputDir, spec)
 	generateFile("js_baseclass", "BaseClass.js", outputDir, spec)
-	generateFile("java_profile", "CGMESProfile.js", outputDir, spec)
+	generateFile("js_profile", "CGMESProfile.js", outputDir, spec)
 }
 
 func generateFile[T any](tmplFile string, outputFile string, outputDir string, input T) {
