@@ -178,9 +178,9 @@ func (spec *CIMSpecification) GenerateCpp(outputDir string) {
 
 	// TODO spec.setLangTypesCpp()
 
-	generateFiles("cpp_header", ".cpp", outputDir, spec.Types)
+	generateFiles("cpp_header", ".hpp", outputDir, spec.Types)
 	generateFiles("cpp_object", ".cpp", outputDir, spec.Types)
-	generateFiles("cpp_enum_header", ".cpp", outputDir, spec.Enums)
+	generateFiles("cpp_enum_header", ".hpp", outputDir, spec.Enums)
 	generateFiles("cpp_enum_object", ".cpp", outputDir, spec.Enums)
 	generateFile("cpp_constants_header", "CimConstants.hpp", outputDir, spec)
 	generateFile("cpp_constants_object", "CimConstants.cpp", outputDir, spec)
