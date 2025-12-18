@@ -7,17 +7,17 @@ from enum import Enum
 
 # Mapping between the profiles and their short names
 short_profile_name = {
-{{- range .Ontologies}}
+{{- range .OntologyList}}
     "{{.Name}}": "{{.Keyword}}",
 {{- end}}
 }
 long_profile_name = {
-{{- range .Ontologies}}
+{{- range .OntologyList}}
     "{{.Keyword}}": "{{.Name}}",
 {{- end}}
 }
 profile_uris = {  # Those are strings, not real addresses, hence the NOSONAR.
-{{- range .Ontologies}}
+{{- range .OntologyList}}
     "{{.Keyword}}": [
         "{{.OWLVersionIRI}}",  # NOSONAR
     ],
@@ -27,7 +27,7 @@ profile_uris = {  # Those are strings, not real addresses, hence the NOSONAR.
 
 class Profile(Enum):
     """Enum containing all CGMES profiles and their export priority."""
-{{range .Ontologies}}
+{{range .OntologyList}}
     {{.Keyword}} = {{.Priority}}
 {{- end}}
 
