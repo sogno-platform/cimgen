@@ -17,6 +17,7 @@ func (cimSpec *CIMSpecification) postprocess() {
 	cimSpec.setMainOrigin()
 
 	cimSpec.setHasInverseRole()
+	cimSpec.setIsFixedAttributes()
 	cimSpec.setMissingNamespaces()
 	cimSpec.markUnusedAttributesAndAssociations()
 	cimSpec.sortAttributes()
@@ -230,6 +231,17 @@ func (cimSpec *CIMSpecification) setHasInverseRole() {
 				if len(parts) == 2 {
 					attr.InverseRoleAttribute = parts[1]
 				}
+			}
+		}
+	}
+}
+
+// setIsFixedAttributes sets the IsFixed flag for attributes based on the CIMIsFixed field.
+func (cimSpec *CIMSpecification) setIsFixedAttributes() {
+	for _, t := range cimSpec.CIMDatatypes {
+		for _, attr := range t.Attributes {
+			if attr.CIMIsFixed != "" {
+				attr.IsFixed = true
 			}
 		}
 	}

@@ -52,7 +52,7 @@ class Profile(BaseProfile):
     Enum containing all CGMES profiles and their export priority.
     """
 
-    {{- range .Ontologies}}
+    {{- range .OntologyList}}
     {{.Keyword}} = "{{.Name}}"
     {{- end}}
 
@@ -63,7 +63,7 @@ class Profile(BaseProfile):
 
 
 profile_uris: dict[str, list[str]] = {  # Those are strings, not real addresses, hence the NOSONAR.
-    {{- range .Ontologies}}
+    {{- range .OntologyList}}
     "{{.Keyword}}": [
         "{{.OWLVersionIRI}}",  # NOSONAR
     ],

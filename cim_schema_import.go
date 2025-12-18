@@ -78,7 +78,8 @@ type CIMAttribute struct {
 	IsList               bool     // derived
 	CIMAssociationUsed   string   // from RDF schema
 	IsAssociationUsed    bool     // derived
-	IsFixed              bool     // TODO from RDF schema
+	CIMIsFixed           string   // from RDF schema
+	IsFixed              bool     // derived
 	CIMInverseRole       string   // from RDF schema
 	HasInverseRole       bool     // derived
 	InverseRoleAttribute string   // derived
@@ -424,6 +425,7 @@ func processProperty(classMap map[string]interface{}) CIMAttribute {
 		CIMInverseRole:     extractURIEnd(extractResource(classMap, "cims:inverseRoleName")),
 		CIMMultiplicity:    extractResource(classMap, "cims:multiplicity"),
 		IsList:             isListAttribute(extractResource(classMap, "cims:multiplicity")),
+		CIMIsFixed:         extractText(classMap, "cims:isFixed"),
 	}
 }
 
@@ -491,7 +493,7 @@ func processEnum(classMap map[string]interface{}) CIMEnum {
 	return CIMEnum{
 		Id:            extractURIEnd(extractValue(classMap, "@rdf:about")),
 		Label:         extractText(classMap, "rdfs:label"),
-		Comment:       extractText(classMap, "rdfs:comment"),
+		Comment:       cleanText(extractText(classMap, "rdfs:comment")),
 		Namespace:     extractURIPath(extractValue(classMap, "@rdf:about")),
 		CIMStereotype: extractURIEnd(extractStringOrResource(classMap["cims:stereotype"])),
 		RDFType:       extractURIEnd(extractResource(classMap, "rdf:type")),
@@ -503,7 +505,7 @@ func processEnumValue(classMap map[string]interface{}) CIMEnumValue {
 	return CIMEnumValue{
 		Id:            extractURIEnd(extractValue(classMap, "@rdf:about")),
 		Label:         extractText(classMap, "rdfs:label"),
-		Comment:       extractText(classMap, "rdfs:comment"),
+		Comment:       cleanText(extractText(classMap, "rdfs:comment")),
 		CIMStereotype: extractURIEnd(extractStringOrResource(classMap["cims:stereotype"])),
 		RDFType:       extractURIEnd(extractResource(classMap, "rdf:type")),
 	}

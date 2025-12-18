@@ -43,7 +43,7 @@ class {{.Id}}({{.SuperType}}):
             "is_list_attribute": {{if .IsList}}True{{else}}False{{end}},
             "is_primitive_attribute": {{if .IsPrimitive}}True{{else}}False{{end}},
         {{- if or .IsCIMDatatype .IsPrimitive}}
-            "attribute_class": "{{.DataType}}",
+            "attribute_class": "{{.CIMDataType}}",
         {{- end}}
         },
     )

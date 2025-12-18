@@ -4,11 +4,17 @@ Generated from the CGMES specification using cimgen: https://github.com/sogno-pl
 
 from ..utils.datatypes import CIMDatatype
 from ..utils.profile import Profile
-# TODO add imports for Multiplicity if needed
+from .UnitMultiplier import UnitMultiplier
+from .UnitSymbol import UnitSymbol
 
 {{.Id}} = CIMDatatype(
     name="{{.Id}}",
     type={{.LangType}},
+    {{- range .Attributes}}
+    {{- if .IsFixed}}
+    {{.Label}}={{.RDFRange}}.{{.CIMIsFixed}},
+    {{- end}}
+    {{- end}}
 )
 
 """
