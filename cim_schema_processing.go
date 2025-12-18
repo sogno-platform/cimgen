@@ -46,7 +46,7 @@ func (cimSpec *CIMSpecification) determineDataTypes() {
 			} else if attr.CIMStereotype == "CIMDatatype" || isCIMDatatype(attr.CIMDataType, cimSpec) {
 				attr.IsCIMDatatype = true
 				attr.DataType = cimSpec.CIMDatatypes[attr.CIMDataType].PrimitiveType
-			} else if isEnumType(attr.CIMDataType, cimSpec) {
+			} else if isEnumType(attr.RDFRange, cimSpec) {
 				attr.IsEnumValue = true
 			} else if !attr.IsList && (attr.CIMDataType == DataTypeObject || attr.CIMDataType == "") {
 				attr.IsClass = true

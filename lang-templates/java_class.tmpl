@@ -49,8 +49,8 @@ public class {{.Id}} extends {{.SuperType}} {
      * NOT USED
 {{- end}}
      */
-{{- if or .IsPrimitive .IsCIMDatatype}}
-    private {{.LangType}} {{.Label}};
+{{- if or .IsPrimitive .IsCIMDatatype .IsEnumValue}}
+    private {{.LangType}} {{.Label}}; // {{- if .IsEnumValue}} {{.RDFRange}} {{- else}} {{.CIMDataType}} {{- end}}
 
     public {{.LangType}} get{{capitalFirstLetter .Label}}() {
         return {{.Label}};
@@ -70,35 +70,16 @@ public class {{.Id}} extends {{.SuperType}} {
 {{- if not (eq .LangType "String")}}
         } else if (_value_ instanceof String) {
             (({{$p.Id}}) _this_).set{{capitalFirstLetter .Label}}(get{{.LangType}}FromString((String) _value_));
-{{- end}}
         } else {
             throw new IllegalArgumentException("Object is neither {{.LangType}} nor String");
         }
-    }
-{{- end }}
-{{- if .IsEnumValue}}
-    private String {{.Label}};
-
-    public String get{{capitalFirstLetter .Label}}() {
-        return {{.Label}};
-    }
-
-    public void set{{capitalFirstLetter .Label}}(String _value_) {
-        {{.Label}} = _value_;
-    }
-
-    private static Object get{{capitalFirstLetter .Label}}(BaseClass _this_) {
-        return (({{$p.Id}}) _this_).get{{capitalFirstLetter .Label}}();
-    }
-
-    private static void set{{capitalFirstLetter .Label}}(BaseClass _this_, Object _value_) {
-        if (_value_ instanceof String) {
-            (({{$p.Id}}) _this_).set{{capitalFirstLetter .Label}}((String) _value_);
+{{- else}}
         } else {
             throw new IllegalArgumentException("Object is not String");
         }
-    }
 {{- end}}
+    }
+{{- end }}
 {{- if .IsClass}}
     private {{.RDFRange}} {{.Label}};
 
