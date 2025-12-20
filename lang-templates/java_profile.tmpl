@@ -14,7 +14,7 @@ import java.util.Map;
  * Enum containing all CGMES profiles.
  */
 public enum CGMESProfile {
-{{- range .Ontologies}}
+{{- range .OntologyList}}
     {{.Keyword}}("{{.Name}}"),
 {{- end}}
     ;
@@ -65,11 +65,11 @@ public enum CGMESProfile {
     static {
         Map<String, List<String>> map = new LinkedHashMap<>();
         List<String> uris;
-        {{range .Ontologies}}
+{{range .OntologyList}}
         uris = new ArrayList<>();
         uris.add("{{.OWLVersionIRI}}");
         map.put("{{.Keyword}}", uris);
-        {{end}}
+{{end}}
         URI_MAP = Collections.unmodifiableMap(map);
     }
 }

@@ -9,28 +9,28 @@ Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cim
 
 static const std::list<CGMESProfile> ProfileList =
 {
-{{- range .Ontologies}}
+{{- range .OntologyList}}
 	CGMESProfile::{{.Keyword}},
 {{- end}}
 };
 
 static const std::map<CGMESProfile, std::string> ProfileShortNames =
 {
-{{- range .Ontologies}}
+{{- range .OntologyList}}
 	{ CGMESProfile::{{.Keyword}}, "{{.Keyword}}" },
 {{- end}}
 };
 
 static const std::map<CGMESProfile, std::string> ProfileLongNames =
 {
-{{- range .Ontologies}}
+{{- range .OntologyList}}
 	{ CGMESProfile::{{.Keyword}}, "{{.Name}}" },
 {{- end}}
 };
 
 static const std::map<CGMESProfile, std::list<std::string>> ProfileURIs =
 {
-{{- range .Ontologies}}
+{{- range .OntologyList}}
 	{ CGMESProfile::{{.Keyword}}, { "{{.OWLVersionIRI}}", } },
 {{- end}}
 };

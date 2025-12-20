@@ -17,6 +17,7 @@ func (cimSpec *CIMSpecification) postprocess() {
 	cimSpec.setMainOrigin()
 
 	cimSpec.setHasInverseRole()
+	cimSpec.setHasClassAttributes()
 	cimSpec.setIsFixedAttributes()
 	cimSpec.setMissingNamespaces()
 	cimSpec.markUnusedAttributesAndAssociations()
@@ -32,7 +33,11 @@ func (cimSpec *CIMSpecification) determineDataTypes() {
 	for _, t := range cimSpec.CIMDatatypes {
 		for _, attr := range t.Attributes {
 			if attr.Label == "value" {
-				t.PrimitiveType = attr.CIMDataType
+				if attr.CIMDataType == DateTypeDecimal {
+					t.PrimitiveType = DataTypeFloat
+				} else {
+					t.PrimitiveType = attr.CIMDataType
+				}
 			}
 		}
 	}
@@ -42,7 +47,11 @@ func (cimSpec *CIMSpecification) determineDataTypes() {
 		for _, attr := range t.Attributes {
 			if attr.CIMStereotype == "Primitive" || isPrimitiveType(attr.CIMDataType) {
 				attr.IsPrimitive = true
-				attr.DataType = attr.CIMDataType
+				if attr.CIMDataType == DateTypeDecimal {
+					attr.DataType = DataTypeFloat
+				} else {
+					attr.DataType = attr.CIMDataType
+				}
 			} else if attr.CIMStereotype == "CIMDatatype" || isCIMDatatype(attr.CIMDataType, cimSpec) {
 				attr.IsCIMDatatype = true
 				attr.DataType = cimSpec.CIMDatatypes[attr.CIMDataType].PrimitiveType
@@ -52,6 +61,24 @@ func (cimSpec *CIMSpecification) determineDataTypes() {
 				attr.IsClass = true
 				attr.DataType = DataTypeObject
 			}
+		}
+	}
+
+	// finally, set DataType for PrimitiveTypes
+	for _, t := range cimSpec.PrimitiveTypes {
+		switch t.Id {
+		case DataTypeString:
+			t.DataType = DataTypeString
+		case DataTypeInteger:
+			t.DataType = DataTypeInteger
+		case DataTypeBoolean:
+			t.DataType = DataTypeBoolean
+		case DataTypeFloat:
+			t.DataType = DataTypeFloat
+		case DateTypeDecimal:
+			t.DataType = DataTypeFloat
+		default:
+			t.DataType = DataTypeString
 		}
 	}
 }
@@ -231,6 +258,17 @@ func (cimSpec *CIMSpecification) setHasInverseRole() {
 				if len(parts) == 2 {
 					attr.InverseRoleAttribute = parts[1]
 				}
+			}
+		}
+	}
+}
+
+// setHasClassAttributes sets the IsClass flag for attributes based on their CIMDataType.
+func (cimSpec *CIMSpecification) setHasClassAttributes() {
+	for _, t := range cimSpec.Types {
+		for _, attr := range t.Attributes {
+			if attr.IsClass && !attr.IsList {
+				t.HasClassAttributes = true
 			}
 		}
 	}
@@ -478,7 +516,7 @@ func (cimSpec *CIMSpecification) setLangTypesJava() {
 
 func MapDatatypeJava(t string) string {
 	switch t {
-	case DataTypeString, DataTypeDateTime, DataTypeDate:
+	case DataTypeString:
 		return "String"
 	case DataTypeInteger:
 		return "Integer"

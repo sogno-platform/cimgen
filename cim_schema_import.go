@@ -103,19 +103,20 @@ type CIMAttribute struct {
 
 // CIMType represents a CIM class/type with its properties and attributes.
 type CIMType struct {
-	Id            string          // from RDF schema
-	Label         string          // from RDF schema
-	Namespace     string          // from RDF schema
-	Comment       string          // from RDF schema
-	CIMStereotype string          // from RDF schema
-	RDFType       string          // from RDF schema
-	SuperType     string          // from RDF schema
-	SuperTypes    []string        // TODO derived
-	SubTypes      []string        // TODO derived
-	Origin        string          // derived
-	Origins       []string        // from RDF schema
-	CIMCategories []string        // from RDF schema
-	Attributes    []*CIMAttribute // from RDF schema
+	Id                 string          // from RDF schema
+	Label              string          // from RDF schema
+	Namespace          string          // from RDF schema
+	Comment            string          // from RDF schema
+	CIMStereotype      string          // from RDF schema
+	RDFType            string          // from RDF schema
+	SuperType          string          // from RDF schema
+	SuperTypes         []string        // TODO derived
+	SubTypes           []string        // TODO derived
+	HasClassAttributes bool            // derived
+	Origin             string          // derived
+	Origins            []string        // from RDF schema
+	CIMCategories      []string        // from RDF schema
+	Attributes         []*CIMAttribute // from RDF schema
 }
 
 type CIMDatatype struct {
@@ -138,6 +139,7 @@ type CIMPrimitive struct {
 	Comment       string // from RDF schema
 	CIMStereotype string // from RDF schema
 	RDFType       string // from RDF schema
+	DataType      string // derived
 	LangType      string // derived
 }
 

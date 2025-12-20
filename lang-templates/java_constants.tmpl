@@ -22,9 +22,9 @@ public final class CimConstants {
     static {
         var map = new HashMap<String, String>();
 
-    {{- range $key, $value := .ProfileNamespaces}}
+{{- range $key, $value := .ProfileNamespaces}}
         map.put("{{$key}}", "{{$value}}");
-    {{- end}}
+{{- end}}
 
         NAMESPACES_MAP = Collections.unmodifiableMap(map);
     }

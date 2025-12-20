@@ -14,37 +14,38 @@ Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cim
 #include "CGMESProfile.hpp"
 #include "CimClassDetails.hpp"
 {{range .Attributes}}
-#include "{{.Label}}.hpp"
-{{end}}
+{{- if or .IsPrimitive .IsEnumValue .IsCIMDatatype}}
+#include "{{.CIMDataType}}.hpp"
+{{- end}}
+{{- end}}
 
 namespace CIMPP
 {
-{{range .Attributes}}
+{{- range .Attributes}}
 	class {{.Label}};
-{{end}}
-
-{{if .Comment -}}
+{{- end}}
+{{if .Comment}}
 	/** \brief {{.Comment}} */
-{{end}}
+{{- end}}
 	class {{.Id}} : public {{.SuperType}}
 	{
 	public:
 		/* constructor initialising all attributes to null */
 		{{.Id}}();
 		~{{.Id}}() override;
-{{range .Attributes}}
+{{- range .Attributes}}
 
 		/** \brief {{.Comment}} Default: {{.DefaultValue}} */
-{{if or .IsPrimitive .IsCIMDatatype .IsEnumValue}}
-		CIMPP::{{.DataType}} {{.Label}};
-{{end}}
-{{if .IsClass}}
-		CIMPP::{{.DataType}}* {{.Label}};
-{{end}}
-{{if .IsList}}
-		std::list<CIMPP::{{.DataType}}*> {{.Label}};
-{{end}}
-{{end}}
+{{- if or .IsPrimitive .IsCIMDatatype .IsEnumValue}}
+		CIMPP::{{.CIMDataType}} {{.Label}};
+{{- end}}
+{{- if .IsClass}}
+		CIMPP::{{.RDFRange}}* {{.Label}};
+{{- end}}
+{{- if .IsList}}
+		std::list<CIMPP::{{.RDFRange}}*> {{.Label}};
+{{- end}}
+{{- end}}
 
 		static const char debugName[];
 		const char* debugString() const override;

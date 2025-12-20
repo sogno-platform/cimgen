@@ -9,8 +9,10 @@ Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cim
 #include <sstream>
 
 {{range .Attributes}}
-#include "{{.Label}}.hpp"
-{{end}}
+{{- if not (or .IsPrimitive .IsEnumValue .IsCIMDatatype)}}
+#include "{{.RDFRange}}.hpp"
+{{- end}}
+{{- end}}
 
 using namespace CIMPP;
 
@@ -20,9 +22,9 @@ static const CimClassDetails& getCimClassDetails()
 		{{.Id}}(),
 		"{{.Namespace}}",
 		{
-{{range .Origins}}
+{{- range .Origins}}
 			CGMESProfile::{{.}},
-{{end}}
+{{- end}}
 		},
 		CGMESProfile::{{.Origin}}
 	);
@@ -35,12 +37,12 @@ static const std::map<std::string, AttrDetails>& getClassAttrDetailsMap()
 	{
 {{range .Attributes}}
 		{ "{{.RDFDomain}}.{{.Label}}", { "{{.Namespace}}", { {{range .Origins}}CGMESProfile::{{.}}, {{end}}} } },
-{{end}}
+{{- end}}
 	};
     return ClassAttrDetailsMap;
 }
 
-{{.Id}}::{{.Id}}() TODO nullptr_assigns {}
+{{.Id}}::{{.Id}}() {{- if .HasClassAttributes -}}: {{range .Attributes}}{{- if .IsClass -}}{{.Label}}(nullptr), {{- end}}{{end}}{{end}} {}
 {{.Id}}::~{{.Id}}() {}
 
 const std::list<std::string>& {{.Id}}::getAttributeNames() const
@@ -78,21 +80,18 @@ const std::list<CGMESProfile>& {{.Id}}::getPossibleProfilesIncludingAttributes()
 	return getCimClassDetails().PossibleProfilesIncludingAttributes;
 }
 
-{{range .Attributes}}
-
-{{if .IsPrimitive}}
+{{- range .Attributes}}
+{{- if or .IsPrimitive .IsCIMDatatype .IsEnumValue}}
 bool assign_{{.RDFDomain}}_{{.Label}}(std::stringstream& buffer, BaseClass* BaseClass_ptr1)
 {
 	{{.RDFDomain}}* element = dynamic_cast<{{.RDFDomain}}*>(BaseClass_ptr1);
 	if (element != nullptr)
 	{
-{{end}}
-
+{{- if and .IsPrimitive (eq .DataType "String")}}
 		element->{{.Label}} = buffer.str();
-{{if eq .DataType "String"}}
-{{else}}
+{{- else}}
 		buffer >> element->{{.Label}};
-{{end}}
+{{- end}}
 		if (!buffer.fail())
 		{
 			return true;
@@ -100,64 +99,33 @@ bool assign_{{.RDFDomain}}_{{.Label}}(std::stringstream& buffer, BaseClass* Base
 	}
 	return false;
 }
+{{- end}}
 
-{{if .IsCIMDatatype}}
-bool assign_{{.RDFDomain}}_{{.Label}}(std::stringstream& buffer, BaseClass* BaseClass_ptr1)
-{
-	{{.RDFDomain}}* element = dynamic_cast<{{.RDFDomain}}*>(BaseClass_ptr1);
-	if (element != nullptr)
-	{
-		buffer >> element->{{.Label}};
-		if (!buffer.fail())
-		{
-			return true;
-		}
-	}
-	return false;
-}
-{{end}}
-
-{{if .IsEnumValue}}
-bool assign_{{.RDFDomain}}_{{.Label}}(std::stringstream& buffer, BaseClass* BaseClass_ptr1)
-{
-	{{.RDFDomain}}* element = dynamic_cast<{{.RDFDomain}}*>(BaseClass_ptr1);
-	if (element != nullptr)
-	{
-		buffer >> element->{{.Label}};
-		if (!buffer.fail())
-		{
-			return true;
-		}
-	}
-	return false;
-}
-{{end}}
-
-{{if .IsClass}}
-{{if .HasInverseRole}}
-bool assign_{{.}}(BaseClass*, BaseClass*);
+{{- if .IsClass}}
+{{- if .HasInverseRole}}
+bool assign_{{.RDFRange}}_{{.InverseRoleAttribute}}(BaseClass*, BaseClass*);
 bool assign_{{.RDFDomain}}_{{.Label}}(BaseClass* BaseClass_ptr1, BaseClass* BaseClass_ptr2)
 {
 	{{.RDFDomain}}* element = dynamic_cast<{{.RDFDomain}}*>(BaseClass_ptr1);
-	{{.DataType}}* element2 = dynamic_cast<{{.DataType}}*>(BaseClass_ptr2);
+	{{.RDFRange}}* element2 = dynamic_cast<{{.RDFRange}}*>(BaseClass_ptr2);
 	if (element != nullptr && element2 != nullptr)
 	{
 		if (element->{{.Label}} != element2)
 		{
 			element->{{.Label}} = element2;
-			return assign_{{.}}(BaseClass_ptr2, BaseClass_ptr1);
+			return assign_{{.RDFRange}}_{{.InverseRoleAttribute}}(BaseClass_ptr2, BaseClass_ptr1);
 		}
 		return true;
 	}
 	return false;
 }
-{{else}}
+{{- else}}
 bool assign_{{.RDFDomain}}_{{.Label}}(BaseClass* BaseClass_ptr1, BaseClass* BaseClass_ptr2)
 {
 	{{.RDFDomain}}* element = dynamic_cast<{{.RDFDomain}}*>(BaseClass_ptr1);
 	if (element != nullptr)
 	{
-		element->{{.Label}} = dynamic_cast<{{.DataType}}*>(BaseClass_ptr2);
+		element->{{.Label}} = dynamic_cast<{{.RDFRange}}*>(BaseClass_ptr2);
 		if (element->{{.Label}} != nullptr)
 		{
 			return true;
@@ -165,11 +133,155 @@ bool assign_{{.RDFDomain}}_{{.Label}}(BaseClass* BaseClass_ptr1, BaseClass* Base
 	}
 	return false;
 }
-{{end}}
-{{end}}
-{{end}}
+{{- end}} {{- /* HasInverseRole */}}
+{{- end}} {{- /* IsClass */}}
 
-TODO
+{{- if .IsList}}
+{{- if .HasInverseRole}}
+bool assign_{{.RDFRange}}_{{.InverseRoleAttribute}}(BaseClass*, BaseClass*);
+bool assign_{{.RDFDomain}}_{{.Label}}(BaseClass* BaseClass_ptr1, BaseClass* BaseClass_ptr2)
+{
+	{{.RDFDomain}}* element = dynamic_cast<{{.RDFDomain}}*>(BaseClass_ptr1);
+	{{.RDFRange}}* element2 = dynamic_cast<{{.RDFRange}}*>(BaseClass_ptr2);
+	if (element != nullptr && element2 != nullptr)
+	{
+		if (std::find(element->{{.Label}}.begin(), element->{{.Label}}.end(), element2) == element->{{.Label}}.end())
+		{
+			element->{{.Label}}.push_back(element2);
+			return assign_{{.RDFRange}}_{{.InverseRoleAttribute}}(BaseClass_ptr2, BaseClass_ptr1);
+		}
+		return true;
+	}
+	return false;
+}
+{{- else}}
+bool assign_{{.RDFDomain}}_{{.Label}}(BaseClass* BaseClass_ptr1, BaseClass* BaseClass_ptr2)
+{
+	{{.RDFDomain}}* element = dynamic_cast<{{.RDFDomain}}*>(BaseClass_ptr1);
+	if (element != nullptr)
+	{
+		if (dynamic_cast<{{.RDFRange}}*>(BaseClass_ptr2) != nullptr)
+		{
+			element->{{.RDFRange}}.push_back(dynamic_cast<{{.RDFRange}}*>(BaseClass_ptr2));
+			return true;
+		}
+	}
+	return false;
+}
+{{- end}} {{/* end if HasInverseRole */}}
+{{- end}} {{/* end if IsList */}}
+{{- end}} {{- /* range Attributes */}}
+
+{{- range .Attributes}}
+{{- if .IsAssociationUsed}}
+{{- if or .IsPrimitive .IsCIMDatatype .IsEnumValue}}
+bool get_{{.RDFDomain}}_{{.Label}}(const BaseClass* BaseClass_ptr1, std::stringstream& buffer)
+{
+	const {{.RDFDomain}}* element = dynamic_cast<const {{.RDFDomain}}*>(BaseClass_ptr1);
+	if (element != nullptr)
+	{
+		buffer << element->{{.Label}};
+		if (!buffer.str().empty())
+		{
+			return true;
+		}
+	}
+	buffer.setstate(std::ios::failbit);
+	return false;
+}
+{{- end}} {{/* if IsPrimitive IsCIMDatatype IsEnumValue */}}
+
+{{- if .IsClass}}
+bool get_{{.RDFDomain}}_{{.Label}}(const BaseClass* BaseClass_ptr1, std::list<const BaseClass*>& BaseClass_list)
+{
+	const {{.RDFDomain}}* element = dynamic_cast<const {{.RDFDomain}}*>(BaseClass_ptr1);
+	if (element != nullptr)
+	{
+		if (element->{{.Label}} != 0)
+		{
+			BaseClass_list.push_back(element->{{.Label}});
+			return true;
+		}
+	}
+	return false;
+}
+{{- end}} {{/* if IsClass */}}
+
+{{- if .IsList}}
+bool get_{{.RDFDomain}}_{{.Label}}(const BaseClass* BaseClass_ptr1, std::list<const BaseClass*>& BaseClass_list)
+{
+	const {{.RDFDomain}}* element = dynamic_cast<const {{.RDFDomain}}*>(BaseClass_ptr1);
+	if (element != nullptr)
+	{
+		std::copy(element->{{.Label}}.begin(), element->{{.Label}}.end(), std::back_inserter(BaseClass_list));
+		return !BaseClass_list.empty();
+	}
+	return false;
+}
+{{- end}} {{/* if IsList */}}
+{{- end}} {{/* if IsAssociationUsed */}}
+{{- end}} {{- /* range Attributes */}}
+
+const char {{.Id}}::debugName[] = "{{.Id}}";
+const char* {{.Id}}::debugString() const
+{
+	return {{.Id}}::debugName;
+}
+
+void {{.Id}}::addConstructToMap(std::unordered_map<std::string, BaseClass* (*)()>& factory_map)
+{
+	factory_map.emplace("{{.Id}}", &{{.Id}}_factory);
+}
+
+void {{.Id}}::addPrimitiveAssignFnsToMap(std::unordered_map<std::string, assign_function>& assign_map)
+{
+{{range .Attributes}}
+{{- if or .IsPrimitive .IsCIMDatatype .IsEnumValue}}
+	assign_map.emplace("{{.RDFDomain}}.{{.Label}}", &assign_{{.RDFDomain}}_{{.Label}});
+{{- end}}
+{{- end}}
+}
+
+void {{.Id}}::addClassAssignFnsToMap(std::unordered_map<std::string, class_assign_function>& assign_map)
+{
+{{range .Attributes}}
+{{- if or .IsClass .IsList}}
+	assign_map.emplace("{{.RDFDomain}}.{{.Label}}", &assign_{{.RDFDomain}}_{{.Label}});
+{{- end}}
+{{- end}}
+}
+
+void {{.Id}}::addPrimitiveGetFnsToMap(std::map<std::string, get_function>& get_map) const
+{
+	{{.SuperType}}::addPrimitiveGetFnsToMap(get_map);
+{{range .Attributes}}
+{{- if or .IsPrimitive .IsCIMDatatype}}
+	get_map.emplace("{{.RDFDomain}}.{{.Label}}", &get_{{.RDFDomain}}_{{.Label}});
+{{- end}}
+{{- end}} {{/* range Attributes */}}
+}
+
+void {{.Id}}::addClassGetFnsToMap(std::map<std::string, class_get_function>& get_map) const
+{
+	{{.SuperType}}::addClassGetFnsToMap(get_map);
+{{range .Attributes}}
+{{- if .IsAssociationUsed}}
+{{- if or .IsClass .IsList}}
+	get_map.emplace("{{.RDFDomain}}.{{.Label}}", &get_{{.RDFDomain}}_{{.Label}});
+{{- end}}
+{{- end}}
+{{- end}} {{/* range Attributes */}}
+}
+
+void {{.Id}}::addEnumGetFnsToMap(std::map<std::string, get_function>& get_map) const
+{
+	{{.SuperType}}::addEnumGetFnsToMap(get_map);
+{{range .Attributes}}
+{{- if .IsEnumValue}}
+	get_map.emplace("{{.RDFDomain}}.{{.Label}}", &get_{{.RDFDomain}}_{{.Label}});
+{{- end}}
+{{- end}} {{/* range Attributes */}}
+}
 
 bool {{.Id}}::isAssignableFrom(BaseClass* otherObject) const
 {

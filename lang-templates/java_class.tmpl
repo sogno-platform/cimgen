@@ -80,6 +80,7 @@ public class {{.Id}} extends {{.SuperType}} {
 {{- end}}
     }
 {{- end }}
+{{- if or .IsClass .IsList}}
 {{- if .IsClass}}
     private {{.RDFRange}} {{.Label}};
 
@@ -98,27 +99,7 @@ public class {{.Id}} extends {{.SuperType}} {
             {{.Label}}Id = _object_.getRdfid();
         }
     }
-
-    private static Object get{{capitalFirstLetter .Label}}(BaseClass _this_) {
-        var obj = (({{$p.Id}}) _this_).get{{capitalFirstLetter .Label}}();
-        var id = (({{$p.Id}}) _this_).{{.Label}}Id;
-        if (obj == null && id != null) {
-            return id;
-        }
-        return obj;
-    }
-
-    private static void set{{capitalFirstLetter .Label}}(BaseClass _this_, Object _value_) {
-        if (_value_ instanceof String) {
-            (({{$p.Id}}) _this_).{{.Label}}Id = (String) _value_;
-        } else if (_value_ instanceof {{.RDFRange}}) {
-            (({{$p.Id}}) _this_).set{{capitalFirstLetter .Label}}(({{.RDFRange}}) _value_);
-        } else {
-            throw new IllegalArgumentException("Object is not {{.RDFRange}}");
-        }
-    }
-{{- end}}
-{{- if .IsList}}
+{{- else if .IsList}}
     private Set<{{.RDFRange}}> {{.Label}} = new HashSet<>();
 
     private Set<String> {{.Label}}IdSet = new HashSet<>();
@@ -136,27 +117,41 @@ public class {{.Id}} extends {{.SuperType}} {
             {{.Label}}IdSet.add(_object_.getRdfid());
         }
     }
+{{- end}}
 
     private static Object get{{capitalFirstLetter .Label}}(BaseClass _this_) {
+{{- if .IsClass}}
+        var obj = (({{$p.Id}}) _this_).get{{capitalFirstLetter .Label}}();
+        var id = (({{$p.Id}}) _this_).{{.Label}}Id;
+        if (obj == null && id != null) {
+            return id;
+        }
+        return obj;
+{{- else if .IsList}}
         var objs = (({{$p.Id}}) _this_).get{{capitalFirstLetter .Label}}();
         var ids = (({{$p.Id}}) _this_).{{.Label}}IdSet;
         if (objs.size() < ids.size()) {
             return ids;
         }
         return objs;
+{{- end}}
     }
 
     private static void set{{capitalFirstLetter .Label}}(BaseClass _this_, Object _value_) {
         if (_value_ instanceof String) {
+{{- if .IsClass}}
+            (({{$p.Id}}) _this_).{{.Label}}Id = (String) _value_;
+{{- else if .IsList}}
             (({{$p.Id}}) _this_).{{.Label}}IdSet.add((String) _value_);
+{{- end}}
         } else if (_value_ instanceof {{.RDFRange}}) {
             (({{$p.Id}}) _this_).set{{capitalFirstLetter .Label}}(({{.RDFRange}}) _value_);
         } else {
             throw new IllegalArgumentException("Object is not {{.RDFRange}}");
         }
     }
-{{- end}}
-{{- end}}
+{{- end}} {{- /* Class or List block */}}
+{{- end}} {{- /* range Attributes */}}
 
     /**
      * Get a list of all attribute names of the CIM type.
@@ -347,23 +342,13 @@ public class {{.Id}} extends {{.SuperType}} {
 {{- range .Origins}}
             profiles.add(CGMESProfile.{{.}});
 {{- end}}
-{{- if .IsPrimitive}}
-            map.put("{{.Label}}", new AttrDetails("{{$p.Id}}.{{.Label}}", true, "{{.Namespace}}", profiles, true, false, {{$p.Id}}::get{{capitalFirstLetter .Label}}, {{$p.Id}}::set{{capitalFirstLetter .Label}}));
-{{- end}}
-{{- if .IsCIMDatatype}}
+{{- if or .IsPrimitive .IsCIMDatatype}}
             map.put("{{.Label}}", new AttrDetails("{{$p.Id}}.{{.Label}}", true, "{{.Namespace}}", profiles, true, false, {{$p.Id}}::get{{capitalFirstLetter .Label}}, {{$p.Id}}::set{{capitalFirstLetter .Label}}));
 {{- end}}
 {{- if .IsEnumValue}}
             map.put("{{.Label}}", new AttrDetails("{{$p.Id}}.{{.Label}}", true, "{{.Namespace}}", profiles, false, true, {{$p.Id}}::get{{capitalFirstLetter .Label}}, {{$p.Id}}::set{{capitalFirstLetter .Label}}));
 {{- end}}
-{{- if .IsClass}}
-{{- if .IsAssociationUsed}}
-            map.put("{{.Label}}", new AttrDetails("{{$p.Id}}.{{.Label}}", true, "{{.Namespace}}", profiles, false, false, {{$p.Id}}::get{{capitalFirstLetter .Label}}, {{$p.Id}}::set{{capitalFirstLetter .Label}}));
-{{- else}}
-            map.put("{{.Label}}", new AttrDetails("{{$p.Id}}.{{.Label}}", false, "{{.Namespace}}", profiles, false, false, {{$p.Id}}::get{{capitalFirstLetter .Label}}, {{$p.Id}}::set{{capitalFirstLetter .Label}}));
-{{- end}}
-{{- end}}
-{{- if .IsList}}
+{{- if or .IsClass .IsList}}
 {{- if .IsAssociationUsed}}
             map.put("{{.Label}}", new AttrDetails("{{$p.Id}}.{{.Label}}", true, "{{.Namespace}}", profiles, false, false, {{$p.Id}}::get{{capitalFirstLetter .Label}}, {{$p.Id}}::set{{capitalFirstLetter .Label}}));
 {{- else}}
@@ -371,7 +356,7 @@ public class {{.Id}} extends {{.SuperType}} {
 {{- end}}
 {{- end}}
         }
-{{- end}}
+{{- end}} {{- /* range Attributes */}}
         CLASS_ATTR_DETAILS_MAP = map;
         ATTR_DETAILS_MAP = Collections.unmodifiableMap(new {{$p.Id}}(null).allAttrDetailsMap());
         ATTR_NAMES_LIST = new ArrayList<>(ATTR_DETAILS_MAP.keySet());
