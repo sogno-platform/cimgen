@@ -42,7 +42,7 @@ static const std::map<std::string, AttrDetails>& getClassAttrDetailsMap()
     return ClassAttrDetailsMap;
 }
 
-{{.Id}}::{{.Id}}() {{- if .HasClassAttributes -}}: {{range .Attributes}}{{- if .IsClass -}}{{.Label}}(nullptr), {{- end}}{{end}}{{end}} {}
+{{.Id}}::{{.Id}}() {{- if .HasClassAttributes}} : {{range .Attributes}}{{- if .IsClass -}}{{.Label}}(nullptr), {{- end}}{{end}}{{end}} {}
 {{.Id}}::~{{.Id}}() {}
 
 const std::list<std::string>& {{.Id}}::getAttributeNames() const
@@ -87,7 +87,7 @@ bool assign_{{.RDFDomain}}_{{.Label}}(std::stringstream& buffer, BaseClass* Base
 	{{.RDFDomain}}* element = dynamic_cast<{{.RDFDomain}}*>(BaseClass_ptr1);
 	if (element != nullptr)
 	{
-{{- if and .IsPrimitive (eq .DataType "String")}}
+{{- if and .IsPrimitive (eq .LangType "std::string")}}
 		element->{{.Label}} = buffer.str();
 {{- else}}
 		buffer >> element->{{.Label}};

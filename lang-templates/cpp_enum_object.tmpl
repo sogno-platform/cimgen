@@ -50,10 +50,11 @@ namespace CIMPP
 
 		EnumSymbol = EnumSymbol.substr(pos + 1);
 
+{{- $p:=.}}
 {{- range .Values}}
 		if (EnumSymbol == "{{.Label}}")
 		{
-			rop = {{.Id}}::{{.Label}};
+			rop = {{$p.Id}}::{{.Label}};
 			return lop;
 		}
 {{- end}}
@@ -69,7 +70,7 @@ namespace CIMPP
 			std::string EnumSymbol;
 
 {{- range .Values}}
-			if (obj.value == {{.Id}}::{{.Label}})
+			if (obj.value == {{$p.Id}}::{{.Label}})
 			{
 				EnumSymbol = "{{.Label}}";
 			}

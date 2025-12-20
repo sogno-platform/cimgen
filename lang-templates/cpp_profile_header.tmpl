@@ -10,7 +10,7 @@ Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cim
 enum class CGMESProfile : unsigned short
 {
 {{- range .OntologyList}}
-    {{.Keyword}}("{{.Name}}"),
+    {{.Keyword}},
 {{- end}}
 };
 

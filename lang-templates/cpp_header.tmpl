@@ -8,8 +8,9 @@ Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cim
 #include <map>
 #include <string>
 #include <unordered_map>
-
+{{if .SuperType}}
 #include "{{.SuperType}}.hpp"
+{{- end}}
 #include "BaseClassDefiner.hpp"
 #include "CGMESProfile.hpp"
 #include "CimClassDetails.hpp"
@@ -19,11 +20,16 @@ Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cim
 {{- range .CIMDatatypes}}
 #include "{{.}}.hpp"
 {{- end}}
+{{- range .EnumTypes}}
+#include "{{.}}.hpp"
+{{- end}}
 
 namespace CIMPP
 {
 {{- range .Attributes}}
-	class {{.Label}};
+{{- if not (or .IsPrimitive .IsEnumValue .IsCIMDatatype)}}
+	class {{.RDFRange}};
+{{- end}}
 {{- end}}
 {{if .Comment}}
 	/** \brief {{.Comment}} */
@@ -37,8 +43,11 @@ namespace CIMPP
 {{- range .Attributes}}
 
 		/** \brief {{.Comment}} Default: {{.DefaultValue}} */
-{{- if or .IsPrimitive .IsCIMDatatype .IsEnumValue}}
+{{- if or .IsPrimitive .IsCIMDatatype}}
 		CIMPP::{{.CIMDataType}} {{.Label}};
+{{- end}}
+{{- if .IsEnumValue}}
+		CIMPP::{{.RDFRange}} {{.Label}};
 {{- end}}
 {{- if .IsClass}}
 		CIMPP::{{.RDFRange}}* {{.Label}};

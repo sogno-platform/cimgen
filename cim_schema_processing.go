@@ -87,11 +87,14 @@ func (cimSpec *CIMSpecification) determineDataTypes() {
 	for _, t := range cimSpec.Types {
 		primitiveTypeSet := make(map[string]struct{})
 		CIMDatatypeSet := make(map[string]struct{})
+		enumTypeSet := make(map[string]struct{})
 		for _, attr := range t.Attributes {
 			if attr.IsPrimitive {
 				primitiveTypeSet[attr.DataType] = struct{}{}
 			} else if attr.IsCIMDatatype {
 				CIMDatatypeSet[attr.CIMDataType] = struct{}{}
+			} else if attr.IsEnumValue {
+				enumTypeSet[attr.RDFRange] = struct{}{}
 			}
 		}
 		t.PrimitiveTypes = make([]string, 0, len(primitiveTypeSet))
@@ -105,6 +108,11 @@ func (cimSpec *CIMSpecification) determineDataTypes() {
 			t.CIMDatatypes = append(t.CIMDatatypes, dt)
 		}
 		sort.Strings(t.CIMDatatypes)
+		t.EnumTypes = make([]string, 0, len(enumTypeSet))
+		for et := range enumTypeSet {
+			t.EnumTypes = append(t.EnumTypes, et)
+		}
+		sort.Strings(t.EnumTypes)
 	}
 }
 
@@ -553,5 +561,75 @@ func MapDatatypeJava(t string) string {
 		return "Class"
 	default:
 		return "String"
+	}
+}
+
+// setLangTypesCpp sets default values for attributes based on their data types for C++ code generation.
+func (cimSpec *CIMSpecification) setLangTypesCpp() {
+	for _, t := range cimSpec.Types {
+		for _, attr := range t.Attributes {
+			if attr.IsList {
+				attr.LangType = "std::vector"
+			} else {
+				attr.LangType = MapDatatypeCpp(attr.DataType)
+			}
+		}
+	}
+
+	for _, t := range cimSpec.PrimitiveTypes {
+		t.LangType = MapDatatypeCpp(t.Id)
+	}
+
+	for _, t := range cimSpec.CIMDatatypes {
+		t.LangType = MapDatatypeCpp(t.PrimitiveType)
+	}
+}
+
+func MapDatatypeCpp(t string) string {
+	switch t {
+	case DataTypeString:
+		return "std::string"
+	case DataTypeInteger:
+		return "int"
+	case DataTypeBoolean:
+		return "bool"
+	case DataTypeFloat:
+		return "double"
+	case DataTypeObject:
+		return "Class*"
+	default:
+		return "std::string"
+	}
+}
+
+// setDefaultValuesCpp sets default values for attributes based on their data types for C++ code generation.
+func (cimSpec *CIMSpecification) setDefaultValuesCpp() {
+	for _, t := range cimSpec.Types {
+		for _, attr := range t.Attributes {
+			if attr.IsList {
+				attr.DefaultValue = "{}" // Set default value for list attributes
+			} else if attr.IsEnumValue {
+				attr.DefaultValue = "0" // Set default value for enum attributes
+			} else {
+				attr.DefaultValue = MapDefaultValueCpp(attr.DataType)
+			}
+		}
+	}
+}
+
+func MapDefaultValueCpp(t string) string {
+	switch t {
+	case DataTypeString:
+		return "\"\""
+	case DataTypeInteger:
+		return "0"
+	case DataTypeBoolean:
+		return "false"
+	case DataTypeFloat:
+		return "0.0"
+	case DataTypeObject:
+		return "nullptr"
+	default:
+		return "nullptr"
 	}
 }

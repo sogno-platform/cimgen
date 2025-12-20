@@ -176,7 +176,8 @@ func (spec *CIMSpecification) GenerateCpp(outputDir string) {
 		}
 	}
 
-	// TODO spec.setLangTypesCpp()
+	spec.setLangTypesCpp()
+	spec.setDefaultValuesCpp()
 
 	generateFiles("cpp_header", ".hpp", outputDir, spec.Types)
 	generateFiles("cpp_object", ".cpp", outputDir, spec.Types)
@@ -196,7 +197,7 @@ func (spec *CIMSpecification) GenerateCpp(outputDir string) {
 		if pt.Id == "Float" {
 			generateFile("cpp_float_header", pt.Id+".hpp", outputDir, pt)
 			generateFile("cpp_float_object", pt.Id+".cpp", outputDir, pt)
-		} else {
+		} else if pt.Id != "Boolean" && pt.Id != "Integer" {
 			generateFile("cpp_string_header", pt.Id+".hpp", outputDir, pt)
 			generateFile("cpp_string_object", pt.Id+".cpp", outputDir, pt)
 		}

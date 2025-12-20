@@ -60,7 +60,7 @@ func main() {
 		outputDir = "output/python" + outputVersionDir
 		cimSpec.GeneratePython(outputDir)
 	case "python-simple":
-		// generate Python classes
+		// generate Python simple classes
 		outputDir = "output/python-simple" + outputVersionDir
 		cimSpec.GeneratePythonSimple(outputDir)
 	case "proto":
@@ -77,6 +77,7 @@ func main() {
 		cimSpec.GenerateCpp(outputDir)
 	case "js":
 		// generate JavaScript classes
+		logger.Println("Javascript generation is experimental")
 		outputDir = "output/js" + outputVersionDir
 		cimSpec.GenerateJS(outputDir)
 	default:
