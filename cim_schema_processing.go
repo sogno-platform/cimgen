@@ -81,6 +81,31 @@ func (cimSpec *CIMSpecification) determineDataTypes() {
 			t.DataType = DataTypeString
 		}
 	}
+
+	// collect PrimitiveTypes and CIMDatatypes from attributes only once
+	// and assign this to the PrimitiveTypes and CIMDatatypes slices
+	for _, t := range cimSpec.Types {
+		primitiveTypeSet := make(map[string]struct{})
+		CIMDatatypeSet := make(map[string]struct{})
+		for _, attr := range t.Attributes {
+			if attr.IsPrimitive {
+				primitiveTypeSet[attr.DataType] = struct{}{}
+			} else if attr.IsCIMDatatype {
+				CIMDatatypeSet[attr.CIMDataType] = struct{}{}
+			}
+		}
+		t.PrimitiveTypes = make([]string, 0, len(primitiveTypeSet))
+		for pt := range primitiveTypeSet {
+			t.PrimitiveTypes = append(t.PrimitiveTypes, pt)
+		}
+		sort.Strings(t.PrimitiveTypes)
+
+		t.CIMDatatypes = make([]string, 0, len(CIMDatatypeSet))
+		for dt := range CIMDatatypeSet {
+			t.CIMDatatypes = append(t.CIMDatatypes, dt)
+		}
+		sort.Strings(t.CIMDatatypes)
+	}
 }
 
 // IsPrimitiveType checks if the given type string is a known data type.

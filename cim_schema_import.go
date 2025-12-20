@@ -113,6 +113,9 @@ type CIMType struct {
 	SuperTypes         []string        // TODO derived
 	SubTypes           []string        // TODO derived
 	HasClassAttributes bool            // derived
+	PrimitiveTypes     []string        // derived
+	CIMDatatypes       []string        // derived
+	EnumTypes          []string        // derived
 	Origin             string          // derived
 	Origins            []string        // from RDF schema
 	CIMCategories      []string        // from RDF schema
