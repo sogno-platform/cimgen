@@ -42,7 +42,7 @@ static const std::map<std::string, AttrDetails>& getClassAttrDetailsMap()
     return ClassAttrDetailsMap;
 }
 
-{{.Id}}::{{.Id}}() {{- if .HasClassAttributes}} : {{range .Attributes}}{{- if .IsClass -}}{{.Label}}(nullptr), {{- end}}{{end}}{{end}} {}
+{{.Id}}::{{.Id}}() {{- if .HasClassAttributes}} : {{joinAttributes .Attributes}}{{end}} {}
 {{.Id}}::~{{.Id}}() {}
 
 const std::list<std::string>& {{.Id}}::getAttributeNames() const

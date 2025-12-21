@@ -10,6 +10,8 @@ Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cim
 #include <unordered_map>
 {{if .SuperType}}
 #include "{{.SuperType}}.hpp"
+{{- else}}
+#include "BaseClass.hpp"
 {{- end}}
 #include "BaseClassDefiner.hpp"
 #include "CGMESProfile.hpp"
@@ -34,7 +36,7 @@ namespace CIMPP
 {{if .Comment}}
 	/** \brief {{.Comment}} */
 {{- end}}
-	class {{.Id}} : public {{.SuperType}}
+	class {{.Id}} : public {{if .SuperType}}{{.SuperType}}{{else}}BaseClass{{end}}
 	{
 	public:
 		/* constructor initialising all attributes to null */

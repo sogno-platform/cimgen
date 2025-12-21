@@ -257,6 +257,7 @@ func generateFiles[T any](tmplFile string, fileExt string, outputDir string, inp
 		"capitalFirstLetter": capitalFirstLetter,
 		"lower":              Lower,
 		"mapDataTypeGo":      MapDataTypeGo,
+		"joinAttributes":     joinAttributes,
 	}
 
 	// Since ParseFile does not work well with files in subdirectories, we read the file manually
@@ -281,4 +282,14 @@ func generateFiles[T any](tmplFile string, fileExt string, outputDir string, inp
 			panic(err)
 		}
 	}
+}
+
+func joinAttributes(attributes []*CIMAttribute) string {
+	filtered := make([]string, 0)
+	for _, attr := range attributes {
+		if attr.IsClass {
+			filtered = append(filtered, attr.Label+"(nullptr)")
+		}
+	}
+	return strings.Join(filtered, ",")
 }

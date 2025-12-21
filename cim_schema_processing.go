@@ -11,7 +11,7 @@ func (cimSpec *CIMSpecification) postprocess() {
 	cimSpec.addOriginsOfAttributes()
 	cimSpec.setProfilePriorities()
 
-	cimSpec.fixMissingMRIDs()
+	//cimSpec.fixMissingMRIDs()
 	cimSpec.renameIdentifiedObjectAttributes()
 	cimSpec.reorderOrigins()
 	cimSpec.setMainOrigin()
