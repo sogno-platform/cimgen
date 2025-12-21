@@ -14,7 +14,7 @@ using namespace CIMPP;
 static std::list<BaseClassDefiner> CIMClassList =
 {
 {{- range .Types}}
-	{{.}}::declare(),
+	{{.Id}}::declare(),
 {{- end }}
 	UnknownType::declare(),
 };
