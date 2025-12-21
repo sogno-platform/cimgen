@@ -124,8 +124,8 @@ func (spec *CIMSpecification) GeneratePythonSimple(outputDir string) {
 	}
 
 	generateFiles("python_simple_class", ".py", outputDir, spec.Types)
-	generateFile("python_constants", "cim_constants.py", outputDir, spec)
-	generateFile("python_simple_profiles", "cim_profiles.py", outputDir, spec)
+	generateFile("python_constants", "CimConstants.py", outputDir, spec)
+	generateFile("python_simple_profiles", "CGMESProfile.py", outputDir, spec)
 }
 
 func (spec *CIMSpecification) GenerateProto(outputDir string) {
