@@ -185,7 +185,7 @@ func (spec *CIMSpecification) GenerateCpp(outputDir string) {
 	generateFiles("cpp_enum_object", ".cpp", outputDir, spec.Enums)
 	generateFile("cpp_constants_header", "CimConstants.hpp", outputDir, spec)
 	generateFile("cpp_constants_object", "CimConstants.cpp", outputDir, spec)
-	generateFile("cpp_classlist", "CimClassList.hpp", outputDir, spec)
+	generateFile("cpp_classlist", "CIMClassList.hpp", outputDir, spec)
 	generateFile("cpp_profile_header", "CGMESProfile.hpp", outputDir, spec)
 	generateFile("cpp_profile_object", "CGMESProfile.cpp", outputDir, spec)
 	generateFile("cpp_iec61970", "IEC61970.hpp", outputDir, spec)
