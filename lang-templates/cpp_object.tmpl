@@ -263,7 +263,7 @@ void {{.Id}}::addPrimitiveGetFnsToMap(std::map<std::string, get_function>& get_m
 
 void {{.Id}}::addClassGetFnsToMap(std::map<std::string, class_get_function>& get_map) const
 {
-	{{.SuperType}}::addClassGetFnsToMap(get_map);
+	{{if .SuperType}}{{.SuperType}}{{else}}BaseClass{{end}}::addClassGetFnsToMap(get_map);
 {{range .Attributes}}
 {{- if .IsAssociationUsed}}
 {{- if or .IsClass .IsList}}
