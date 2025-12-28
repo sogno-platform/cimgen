@@ -297,7 +297,7 @@ const BaseClassDefiner {{.Id}}::declare()
 std::map<std::string, AttrDetails> {{.Id}}::allAttrDetailsMap() const
 {
 	auto map = getClassAttrDetailsMap();
-	const auto& parent_map = {{.SuperType}}::allAttrDetailsMap();
+	const auto& parent_map = {{if .SuperType}}{{.SuperType}}{{else}}BaseClass{{end}}::allAttrDetailsMap();
 	map.insert(parent_map.begin(), parent_map.end());
 	return map;
 }
