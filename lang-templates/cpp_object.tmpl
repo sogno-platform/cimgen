@@ -253,7 +253,7 @@ void {{.Id}}::addClassAssignFnsToMap(std::unordered_map<std::string, class_assig
 
 void {{.Id}}::addPrimitiveGetFnsToMap(std::map<std::string, get_function>& get_map) const
 {
-	{{.SuperType}}::addPrimitiveGetFnsToMap(get_map);
+	{{if .SuperType}}{{.SuperType}}{{else}}BaseClass{{end}}::addPrimitiveGetFnsToMap(get_map);
 {{range .Attributes}}
 {{- if or .IsPrimitive .IsCIMDatatype}}
 	get_map.emplace("{{.RDFDomain}}.{{.Label}}", &get_{{.RDFDomain}}_{{.Label}});
