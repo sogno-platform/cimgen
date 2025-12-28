@@ -20,7 +20,7 @@ import java.util.Set;
  */
 {{- end}}
 @SuppressWarnings("unused")
-public class {{.Id}} extends {{.SuperType}} {
+public class {{.Id}} extends {{if .SuperType}}{{.SuperType}}{{else}}BaseClass{{end}} {
 
     private static final Logging LOG = Logging.getLogger({{.Id}}.class);
 
@@ -82,7 +82,7 @@ public class {{.Id}} extends {{.SuperType}} {
 {{- end }}
 {{- if or .IsClass .IsList}}
 {{- if .IsClass}}
-    private {{.RDFRange}} {{.Label}};
+    private {{.RDFRange}} {{.Label}}; {{if .HasInverseRole}}{{if .IsInverseRoleAttributeList}}// ManyToOne{{else}}// OneToOne{{end}}{{end}}
 
     private String {{.Label}}Id;
 
@@ -100,7 +100,7 @@ public class {{.Id}} extends {{.SuperType}} {
         }
     }
 {{- else if .IsList}}
-    private Set<{{.RDFRange}}> {{.Label}} = new HashSet<>();
+    private Set<{{.RDFRange}}> {{.Label}} = new HashSet<>(); {{if .HasInverseRole}}{{if .IsInverseRoleAttributeList}}// ManyToMany{{else}}// OneToMany{{end}}{{end}}
 
     private Set<String> {{.Label}}IdSet = new HashSet<>();
 

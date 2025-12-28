@@ -36,69 +36,38 @@ const (
 	DataTypeList   = "List"
 )
 
-// enum for CGMES specific data types
-const (
-	DataTypeActivePower               = "ActivePower"
-	DataTypeActivePowerPerCurrentFlow = "ActivePowerPerCurrentFlow"
-	DataTypeActivePowerPerFrequency   = "ActivePowerPerFrequency"
-	DataTypeAngleDegrees              = "AngleDegrees"
-	DataTypeAngleRadians              = "AngleRadians"
-	DataTypeApparentPower             = "ApparentPower"
-	DataTypeArea                      = "Area"
-	DataTypeCapacitance               = "Capacitance"
-	DataTypeConductance               = "Conductance"
-	DataTypeCurrentFlow               = "CurrentFlow"
-	DataTypeFrequency                 = "Frequency"
-	DataTypeInductance                = "Inductance"
-	DataTypeLength                    = "Length"
-	DataTypeMoney                     = "Money"
-	DataTypePerCent                   = "PerCent"
-	DataTypePU                        = "PU"
-	DataTypeReactance                 = "Reactance"
-	DataTypeReactivePower             = "ReactivePower"
-	DataTypeRealEnergy                = "RealEnergy"
-	DataTypeResistance                = "Resistance"
-	DataTypeRotationSpeed             = "RotationSpeed"
-	DataTypeSeconds                   = "Seconds"
-	DataTypeSusceptance               = "Susceptance"
-	DataTypeTemperature               = "Temperature"
-	DataTypeVoltage                   = "Voltage"
-	DataTypeVoltagePerReactivePower   = "VoltagePerReactivePower"
-	DataTypeVolumeFlowRate            = "VolumeFlowRate"
-	DataTypeMonthDay                  = "MonthDay"
-)
-
 // CIMAttribute represents a CIM attribute with its properties.
 type CIMAttribute struct {
-	Id                   string   // from RDF schema
-	Label                string   // from RDF schema
-	Namespace            string   // from RDF schema
-	Comment              string   // from RDF schema
-	CIMMultiplicity      string   // from RDF schema
-	IsList               bool     // derived
-	CIMAssociationUsed   string   // from RDF schema
-	IsAssociationUsed    bool     // derived
-	CIMIsFixed           string   // from RDF schema
-	IsFixed              bool     // derived
-	CIMInverseRole       string   // from RDF schema
-	HasInverseRole       bool     // derived
-	InverseRoleAttribute string   // derived
-	CIMStereotype        string   // from RDF schema
-	RDFRange             string   // from RDF schema
-	CIMDataType          string   // from RDF schema
-	DataType             string   // derived
-	IsPrimitive          bool     // derived
-	RDFDomain            string   // from RDF schema
-	RDFType              string   // from RDF schema
-	DefaultValue         string   // derived
-	IsUsed               bool     // derived
-	IsEnumValue          bool     // derived
-	LangType             string   // derived
-	IsCIMDatatype        bool     // derived
-	IsClass              bool     // derived
-	Origin               string   // derived
-	Origins              []string // from RDF schema
-	CIMCategories        []string // from RDF schema
+	Id                         string   // from RDF schema
+	Label                      string   // from RDF schema
+	Namespace                  string   // from RDF schema
+	Comment                    string   // from RDF schema
+	CIMMultiplicity            string   // from RDF schema
+	IsList                     bool     // derived
+	CIMAssociationUsed         string   // from RDF schema
+	IsAssociationUsed          bool     // derived
+	CIMIsFixed                 string   // from RDF schema
+	IsFixed                    bool     // derived
+	CIMInverseRole             string   // from RDF schema
+	HasInverseRole             bool     // derived
+	InverseRoleAttribute       string   // derived
+	IsInverseRoleAttributeList bool     // derived
+	CIMStereotype              string   // from RDF schema
+	RDFRange                   string   // from RDF schema
+	CIMDataType                string   // from RDF schema
+	DataType                   string   // derived
+	IsPrimitive                bool     // derived
+	RDFDomain                  string   // from RDF schema
+	RDFType                    string   // from RDF schema
+	DefaultValue               string   // derived
+	IsUsed                     bool     // derived
+	IsEnumValue                bool     // derived
+	LangType                   string   // derived
+	IsCIMDatatype              bool     // derived
+	IsClass                    bool     // derived
+	Origin                     string   // derived
+	Origins                    []string // from RDF schema
+	CIMCategories              []string // from RDF schema
 }
 
 // CIMType represents a CIM class/type with its properties and attributes.
@@ -435,7 +404,9 @@ func processProperty(classMap map[string]interface{}) CIMAttribute {
 }
 
 func isListAttribute(multiplicity string) bool {
-	return multiplicity == "http://iec.ch/TC57/1999/rdf-schema-extensions-19990926#M:0..n" || multiplicity == "http://iec.ch/TC57/1999/rdf-schema-extensions-19990926#M:1..n"
+	return multiplicity == "http://iec.ch/TC57/1999/rdf-schema-extensions-19990926#M:0..n" ||
+		multiplicity == "http://iec.ch/TC57/1999/rdf-schema-extensions-19990926#M:1..n" ||
+		multiplicity == "http://iec.ch/TC57/1999/rdf-schema-extensions-19990926#M:2..n"
 }
 
 func isAssociationUsed(associationUsed string) bool {

@@ -12,7 +12,8 @@ func (cimSpec *CIMSpecification) postprocess() {
 	cimSpec.setProfilePriorities()
 
 	//cimSpec.fixMissingMRIDs()
-	cimSpec.renameIdentifiedObjectAttributes()
+	// This needs to be handled only for golang code generation
+	//cimSpec.renameIdentifiedObjectAttributes()
 	cimSpec.reorderOrigins()
 	cimSpec.setMainOrigin()
 
@@ -22,6 +23,7 @@ func (cimSpec *CIMSpecification) postprocess() {
 	cimSpec.setMissingNamespaces()
 	cimSpec.markUnusedAttributesAndAssociations()
 	cimSpec.sortAttributes()
+	cimSpec.setIsInverseRoleAttributeList()
 
 	cimSpec.setLangTypesGo()
 }
@@ -674,4 +676,34 @@ func MapDefaultValueCpp(t string) string {
 	default:
 		return "nullptr"
 	}
+}
+
+// setIsInverseRoleAttributeList sets the IsInverseRoleAttributeList flag for attributes
+// based on whether their inverse role attribute is a list.
+func (cimSpec *CIMSpecification) setIsInverseRoleAttributeList() {
+	for _, t := range cimSpec.Types {
+		for _, attr := range t.Attributes {
+			if cimSpec.isAttributeWithInverseList(attr) {
+				attr.IsInverseRoleAttributeList = true
+			}
+		}
+	}
+}
+
+// isAttributeWithInverseList checks if the given attribute has an inverse role that is a list.
+func (cimSpec *CIMSpecification) isAttributeWithInverseList(a *CIMAttribute) bool {
+	if a.CIMInverseRole != "" {
+		parts := strings.Split(a.CIMInverseRole, ".")
+		inverseType := parts[0]
+		inverseLabel := parts[1]
+
+		for _, inverseAttr := range cimSpec.Types[inverseType].Attributes {
+			if inverseAttr.Label == inverseLabel {
+				if inverseAttr.IsList {
+					return true
+				}
+			}
+		}
+	}
+	return false
 }
