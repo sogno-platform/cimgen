@@ -275,7 +275,7 @@ void {{.Id}}::addClassGetFnsToMap(std::map<std::string, class_get_function>& get
 
 void {{.Id}}::addEnumGetFnsToMap(std::map<std::string, get_function>& get_map) const
 {
-	{{.SuperType}}::addEnumGetFnsToMap(get_map);
+	{{if .SuperType}}{{.SuperType}}{{else}}BaseClass{{end}}::addEnumGetFnsToMap(get_map);
 {{range .Attributes}}
 {{- if .IsEnumValue}}
 	get_map.emplace("{{.RDFDomain}}.{{.Label}}", &get_{{.RDFDomain}}_{{.Label}});
