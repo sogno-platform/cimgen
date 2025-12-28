@@ -24,6 +24,7 @@ func (cimSpec *CIMSpecification) postprocess() {
 	cimSpec.markUnusedAttributesAndAssociations()
 	cimSpec.sortAttributes()
 	cimSpec.setIsInverseRoleAttributeList()
+	cimSpec.renameSwitchAttributes()
 
 	cimSpec.setLangTypesGo()
 }
@@ -32,6 +33,10 @@ func (cimSpec *CIMSpecification) postprocess() {
 func (cimSpec *CIMSpecification) determineDataTypes() {
 	// first, set PrimitiveType for CIMDatatypes
 	for _, t := range cimSpec.CIMDatatypes {
+		if t.CIMStereotype == "Compound" {
+			// Compound CIMDatatypes cannot be mapped to a single primitive type
+			continue
+		}
 		for _, attr := range t.Attributes {
 			if attr.Label == "value" {
 				if attr.CIMDataType == DateTypeDecimal {
@@ -58,9 +63,16 @@ func (cimSpec *CIMSpecification) determineDataTypes() {
 				attr.DataType = cimSpec.CIMDatatypes[attr.CIMDataType].PrimitiveType
 			} else if isEnumType(attr.RDFRange, cimSpec) {
 				attr.IsEnumValue = true
+				attr.DataType = attr.RDFRange
 			} else if !attr.IsList && (attr.CIMDataType == DataTypeObject || attr.CIMDataType == "") {
 				attr.IsClass = true
-				attr.DataType = DataTypeObject
+				attr.DataType = attr.RDFRange
+			} else if !attr.IsList && (attr.CIMDataType != "") {
+				// For Compound type attributes TODO check if this is correct
+				attr.IsClass = true
+				attr.DataType = attr.CIMDataType
+			} else {
+				attr.DataType = attr.RDFRange
 			}
 		}
 	}
@@ -122,7 +134,7 @@ func isPrimitiveType(typeStr string) bool {
 	switch typeStr {
 	case DataTypeString, DataTypeInteger, DataTypeBoolean,
 		DataTypeFloat, DataTypeDate,
-		DataTypeDateTime:
+		DataTypeDateTime, DataTypeMonthDay:
 		return true
 	default:
 		return false
@@ -706,4 +718,16 @@ func (cimSpec *CIMSpecification) isAttributeWithInverseList(a *CIMAttribute) boo
 		}
 	}
 	return false
+}
+
+// renameSwitchAttributes renames attributes named "Switch" to avoid conflicts.
+func (cimSpec *CIMSpecification) renameSwitchAttributes() {
+	for _, t := range cimSpec.Types {
+		for _, attr := range t.Attributes {
+			if attr.Label == "switch" {
+				attr.Label = "switch_"
+				//log.Println("Renamed Switch attribute to", attr.Label, "in type", t.Id)
+			}
+		}
+	}
 }

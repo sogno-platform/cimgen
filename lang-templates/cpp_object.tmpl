@@ -10,7 +10,7 @@ Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cim
 
 {{range .Attributes}}
 {{- if not (or .IsPrimitive .IsEnumValue .IsCIMDatatype)}}
-#include "{{.RDFRange}}.hpp"
+#include "{{.DataType}}.hpp"
 {{- end}}
 {{- end}}
 
@@ -103,17 +103,17 @@ bool assign_{{.RDFDomain}}_{{.Label}}(std::stringstream& buffer, BaseClass* Base
 
 {{- if .IsClass}}
 {{- if .HasInverseRole}}
-bool assign_{{.RDFRange}}_{{.InverseRoleAttribute}}(BaseClass*, BaseClass*);
+bool assign_{{.DataType}}_{{.InverseRoleAttribute}}(BaseClass*, BaseClass*);
 bool assign_{{.RDFDomain}}_{{.Label}}(BaseClass* BaseClass_ptr1, BaseClass* BaseClass_ptr2)
 {
 	{{.RDFDomain}}* element = dynamic_cast<{{.RDFDomain}}*>(BaseClass_ptr1);
-	{{.RDFRange}}* element2 = dynamic_cast<{{.RDFRange}}*>(BaseClass_ptr2);
+	{{.DataType}}* element2 = dynamic_cast<{{.DataType}}*>(BaseClass_ptr2);
 	if (element != nullptr && element2 != nullptr)
 	{
 		if (element->{{.Label}} != element2)
 		{
 			element->{{.Label}} = element2;
-			return assign_{{.RDFRange}}_{{.InverseRoleAttribute}}(BaseClass_ptr2, BaseClass_ptr1);
+			return assign_{{.DataType}}_{{.InverseRoleAttribute}}(BaseClass_ptr2, BaseClass_ptr1);
 		}
 		return true;
 	}
@@ -125,7 +125,7 @@ bool assign_{{.RDFDomain}}_{{.Label}}(BaseClass* BaseClass_ptr1, BaseClass* Base
 	{{.RDFDomain}}* element = dynamic_cast<{{.RDFDomain}}*>(BaseClass_ptr1);
 	if (element != nullptr)
 	{
-		element->{{.Label}} = dynamic_cast<{{.RDFRange}}*>(BaseClass_ptr2);
+		element->{{.Label}} = dynamic_cast<{{.DataType}}*>(BaseClass_ptr2);
 		if (element->{{.Label}} != nullptr)
 		{
 			return true;
@@ -138,17 +138,17 @@ bool assign_{{.RDFDomain}}_{{.Label}}(BaseClass* BaseClass_ptr1, BaseClass* Base
 
 {{- if .IsList}}
 {{- if .HasInverseRole}}
-bool assign_{{.RDFRange}}_{{.InverseRoleAttribute}}(BaseClass*, BaseClass*);
+bool assign_{{.DataType}}_{{.InverseRoleAttribute}}(BaseClass*, BaseClass*);
 bool assign_{{.RDFDomain}}_{{.Label}}(BaseClass* BaseClass_ptr1, BaseClass* BaseClass_ptr2)
 {
 	{{.RDFDomain}}* element = dynamic_cast<{{.RDFDomain}}*>(BaseClass_ptr1);
-	{{.RDFRange}}* element2 = dynamic_cast<{{.RDFRange}}*>(BaseClass_ptr2);
+	{{.DataType}}* element2 = dynamic_cast<{{.DataType}}*>(BaseClass_ptr2);
 	if (element != nullptr && element2 != nullptr)
 	{
 		if (std::find(element->{{.Label}}.begin(), element->{{.Label}}.end(), element2) == element->{{.Label}}.end())
 		{
 			element->{{.Label}}.push_back(element2);
-			return assign_{{.RDFRange}}_{{.InverseRoleAttribute}}(BaseClass_ptr2, BaseClass_ptr1);
+			return assign_{{.DataType}}_{{.InverseRoleAttribute}}(BaseClass_ptr2, BaseClass_ptr1);
 		}
 		return true;
 	}
@@ -160,9 +160,9 @@ bool assign_{{.RDFDomain}}_{{.Label}}(BaseClass* BaseClass_ptr1, BaseClass* Base
 	{{.RDFDomain}}* element = dynamic_cast<{{.RDFDomain}}*>(BaseClass_ptr1);
 	if (element != nullptr)
 	{
-		if (dynamic_cast<{{.RDFRange}}*>(BaseClass_ptr2) != nullptr)
+		if (dynamic_cast<{{.DataType}}*>(BaseClass_ptr2) != nullptr)
 		{
-			element->{{.RDFRange}}.push_back(dynamic_cast<{{.RDFRange}}*>(BaseClass_ptr2));
+			element->{{.DataType}}.push_back(dynamic_cast<{{.DataType}}*>(BaseClass_ptr2));
 			return true;
 		}
 	}

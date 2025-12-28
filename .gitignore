@@ -12,3 +12,4 @@ __pycache__/
 tests/
 *.log
 *.json
+test-output/

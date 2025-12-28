@@ -50,7 +50,7 @@ public class {{.Id}} extends {{if .SuperType}}{{.SuperType}}{{else}}BaseClass{{e
 {{- end}}
      */
 {{- if or .IsPrimitive .IsCIMDatatype .IsEnumValue}}
-    private {{.LangType}} {{.Label}}; // {{- if .IsEnumValue}} {{.RDFRange}} {{- else}} {{.CIMDataType}} {{- end}}
+    private {{.LangType}} {{.Label}}; // {{- if .IsEnumValue}} {{.DataType}} {{- else}} {{.CIMDataType}} {{- end}}
 
     public {{.LangType}} get{{capitalFirstLetter .Label}}() {
         return {{.Label}};
@@ -82,15 +82,15 @@ public class {{.Id}} extends {{if .SuperType}}{{.SuperType}}{{else}}BaseClass{{e
 {{- end }}
 {{- if or .IsClass .IsList}}
 {{- if .IsClass}}
-    private {{.RDFRange}} {{.Label}}; {{if .HasInverseRole}}{{if .IsInverseRoleAttributeList}}// ManyToOne{{else}}// OneToOne{{end}}{{end}}
+    private {{.DataType}} {{.Label}}; {{if .HasInverseRole}}{{if .IsInverseRoleAttributeList}}// ManyToOne{{else}}// OneToOne{{end}}{{end}}
 
     private String {{.Label}}Id;
 
-    public {{.RDFRange}} get{{capitalFirstLetter .Label}}() {
+    public {{.DataType}} get{{capitalFirstLetter .Label}}() {
         return {{.Label}};
     }
 
-    public void set{{capitalFirstLetter .Label}}({{.RDFRange}} _object_) {
+    public void set{{capitalFirstLetter .Label}}({{.DataType}} _object_) {
         if ({{.Label}} != _object_) {
             {{.Label}} = _object_;
 {{- if .HasInverseRole}}
@@ -100,15 +100,15 @@ public class {{.Id}} extends {{if .SuperType}}{{.SuperType}}{{else}}BaseClass{{e
         }
     }
 {{- else if .IsList}}
-    private Set<{{.RDFRange}}> {{.Label}} = new HashSet<>(); {{if .HasInverseRole}}{{if .IsInverseRoleAttributeList}}// ManyToMany{{else}}// OneToMany{{end}}{{end}}
+    private Set<{{.DataType}}> {{.Label}} = new HashSet<>(); {{if .HasInverseRole}}{{if .IsInverseRoleAttributeList}}// ManyToMany{{else}}// OneToMany{{end}}{{end}}
 
     private Set<String> {{.Label}}IdSet = new HashSet<>();
 
-    public Set<{{.RDFRange}}> get{{capitalFirstLetter .Label}}() {
+    public Set<{{.DataType}}> get{{capitalFirstLetter .Label}}() {
         return {{.Label}};
     }
 
-    public void set{{capitalFirstLetter .Label}}({{.RDFRange}} _object_) {
+    public void set{{capitalFirstLetter .Label}}({{.DataType}} _object_) {
         if (!{{.Label}}.contains(_object_)) {
             {{.Label}}.add(_object_);
 {{- if .HasInverseRole}}
@@ -144,10 +144,10 @@ public class {{.Id}} extends {{if .SuperType}}{{.SuperType}}{{else}}BaseClass{{e
 {{- else if .IsList}}
             (({{$p.Id}}) _this_).{{.Label}}IdSet.add((String) _value_);
 {{- end}}
-        } else if (_value_ instanceof {{.RDFRange}}) {
-            (({{$p.Id}}) _this_).set{{capitalFirstLetter .Label}}(({{.RDFRange}}) _value_);
+        } else if (_value_ instanceof {{.DataType}}) {
+            (({{$p.Id}}) _this_).set{{capitalFirstLetter .Label}}(({{.DataType}}) _value_);
         } else {
-            throw new IllegalArgumentException("Object is not {{.RDFRange}}");
+            throw new IllegalArgumentException("Object is not {{.DataType}}");
         }
     }
 {{- end}} {{- /* Class or List block */}}

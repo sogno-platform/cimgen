@@ -30,7 +30,7 @@ namespace CIMPP
 {
 {{- range .Attributes}}
 {{- if not (or .IsPrimitive .IsEnumValue .IsCIMDatatype)}}
-	class {{.RDFRange}};
+	class {{.DataType}};
 {{- end}}
 {{- end}}
 {{if .Comment}}
@@ -49,13 +49,13 @@ namespace CIMPP
 		CIMPP::{{.CIMDataType}} {{.Label}};
 {{- end}}
 {{- if .IsEnumValue}}
-		CIMPP::{{.RDFRange}} {{.Label}};
+		CIMPP::{{.DataType}} {{.Label}};
 {{- end}}
 {{- if .IsClass}}
-		CIMPP::{{.RDFRange}}* {{.Label}};
+		CIMPP::{{.DataType}}* {{.Label}};
 {{- end}}
 {{- if .IsList}}
-		std::list<CIMPP::{{.RDFRange}}*> {{.Label}};
+		std::list<CIMPP::{{.DataType}}*> {{.Label}};
 {{- end}}
 {{- end}}
 

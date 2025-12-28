@@ -12,7 +12,7 @@ func TestGenerate(t *testing.T) {
 	cimSpec := NewCIMSpecification()
 	cimSpec.ImportCIMSchemaFiles("cgmes_schema/CGMES_3.0.0/IEC61970-600-2_CGMES_3_0_0_RDFS2020_*.rdf")
 
-	outputDir := "cimgostructs"
+	outputDir := "test-output"
 	cimSpec.GenerateGo(outputDir)
 
 	// Compute hash of the output files for verification

@@ -27,6 +27,7 @@ const (
 	DataTypeDate     = "Date"
 	DataTypeDateTime = "DateTime"
 	DateTypeDecimal  = "Decimal"
+	DataTypeMonthDay = "MonthDay"
 )
 
 // enum for general data types
@@ -283,6 +284,7 @@ func processRDFMap(inputMap map[string]interface{}) (map[string]*CIMType, map[st
 				e.Origins = []string{cimOntology.Keyword}
 				cimEnums[e.Id] = &e
 			} else if extractStringOrResource(v["cims:stereotype"]) == "CIMDatatype" {
+				//TODO || extractStringOrResource(v["cims:stereotype"]) == "Compound" {
 				e := processCIMDatatypes(v)
 				cimDatatypes[e.Id] = &e
 			} else if extractStringOrResource(v["cims:stereotype"]) == "Primitive" {
@@ -406,7 +408,8 @@ func processProperty(classMap map[string]interface{}) CIMAttribute {
 func isListAttribute(multiplicity string) bool {
 	return multiplicity == "http://iec.ch/TC57/1999/rdf-schema-extensions-19990926#M:0..n" ||
 		multiplicity == "http://iec.ch/TC57/1999/rdf-schema-extensions-19990926#M:1..n" ||
-		multiplicity == "http://iec.ch/TC57/1999/rdf-schema-extensions-19990926#M:2..n"
+		multiplicity == "http://iec.ch/TC57/1999/rdf-schema-extensions-19990926#M:2..n" ||
+		multiplicity == "http://iec.ch/TC57/1999/rdf-schema-extensions-19990926#M:0..2"
 }
 
 func isAssociationUsed(associationUsed string) bool {
@@ -414,11 +417,13 @@ func isAssociationUsed(associationUsed string) bool {
 }
 
 func cleanText(htmlString string) string {
-	plainText, err := stripTagsManual(htmlString)
-	if err != nil {
-		fmt.Printf("Error: %v\n", err)
-		return ""
-	}
+	// temporarily disable HTML tag stripping
+	//plainText, err := stripTagsManual(htmlString)
+	//if err != nil {
+	//	fmt.Printf("Error: %v\n", err)
+	//	return ""
+	//}
+	plainText := htmlString
 
 	// Replace special characters
 	// We might want to enable some of these replacements in the future
