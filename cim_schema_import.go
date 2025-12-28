@@ -449,11 +449,12 @@ func cleanText(htmlString string) string {
 		return ""
 	}
 
-	plainText = strings.ReplaceAll(plainText, "’", "'")
-	plainText = strings.ReplaceAll(plainText, "'", "'")
-	plainText = strings.ReplaceAll(plainText, "“", "'")
-	plainText = strings.ReplaceAll(plainText, "”", "'")
-	plainText = strings.ReplaceAll(plainText, "\"", "'")
+	// Replace special characters
+	// We might want to enable some of these replacements in the future
+	//plainText = strings.ReplaceAll(plainText, "’", "'")
+	//plainText = strings.ReplaceAll(plainText, "“", "'")
+	//plainText = strings.ReplaceAll(plainText, "”", "'")
+	//plainText = strings.ReplaceAll(plainText, "\"", "'")
 	plainText = strings.ReplaceAll(plainText, "–", "-")
 
 	// Remove line breaks and extra spaces

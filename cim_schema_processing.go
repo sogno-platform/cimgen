@@ -23,8 +23,7 @@ func (cimSpec *CIMSpecification) postprocess() {
 	cimSpec.markUnusedAttributesAndAssociations()
 	cimSpec.sortAttributes()
 
-	cimSpec.setDefaultValuesPython()
-	cimSpec.setLangTypesPython()
+	cimSpec.setLangTypesGo()
 }
 
 // determineDataTypes determines the data types of attributes and marks them as primitive if applicable.
@@ -270,9 +269,14 @@ func contains(slice []string, str string) bool {
 	return false
 }
 
-// sortAttributes sorts the attributes of each CIMType by their Id.
+// sortAttributes sorts the attributes of each CIMType and CIMDatatype by their Id.
 func (cimSpec *CIMSpecification) sortAttributes() {
 	for _, t := range cimSpec.Types {
+		sort.Slice(t.Attributes, func(i, j int) bool {
+			return t.Attributes[i].Id < t.Attributes[j].Id
+		})
+	}
+	for _, t := range cimSpec.CIMDatatypes {
 		sort.Slice(t.Attributes, func(i, j int) bool {
 			return t.Attributes[i].Id < t.Attributes[j].Id
 		})
@@ -458,6 +462,44 @@ func (cimSpec *CIMSpecification) setProfilePriorities() {
 	}
 }
 
+// setLangTypesGo sets default values for attributes based on their data types for Go code generation.
+func (cimSpec *CIMSpecification) setLangTypesGo() {
+	for _, t := range cimSpec.Types {
+		for _, attr := range t.Attributes {
+			if attr.IsList {
+				attr.LangType = "[]" + MapDataTypeGo(attr.DataType)
+			} else {
+				attr.LangType = MapDataTypeGo(attr.DataType)
+			}
+		}
+	}
+
+	for _, t := range cimSpec.PrimitiveTypes {
+		t.LangType = MapDataTypeGo(t.Id)
+	}
+
+	for _, t := range cimSpec.CIMDatatypes {
+		t.LangType = MapDataTypeGo(t.PrimitiveType)
+	}
+}
+
+func MapDataTypeGo(s string) string {
+	switch s {
+	case DataTypeString:
+		return "string"
+	case DataTypeBoolean:
+		return "bool"
+	case DataTypeInteger:
+		return "int"
+	case DataTypeFloat:
+		return "float64"
+	case DataTypeDateTime:
+		return "string"
+	default:
+		return "string"
+	}
+}
+
 // setLangTypesPython sets default values for attributes based on their data types for Go code generation.
 func (cimSpec *CIMSpecification) setLangTypesPython() {
 	for _, t := range cimSpec.Types {
@@ -501,7 +543,7 @@ func (cimSpec *CIMSpecification) setDefaultValuesPython() {
 	for _, t := range cimSpec.Types {
 		for _, attr := range t.Attributes {
 			if attr.IsList {
-				attr.DefaultValue = "None" // Set default value for list attributes
+				attr.DefaultValue = "list" // Set default value for list attributes
 			} else {
 				attr.DefaultValue = MapDefaultValuePython(attr.DataType)
 			}
@@ -512,7 +554,7 @@ func (cimSpec *CIMSpecification) setDefaultValuesPython() {
 func MapDefaultValuePython(t string) string {
 	switch t {
 	case DataTypeString, DataTypeDateTime, DataTypeDate:
-		return "''"
+		return "\"\""
 	case DataTypeInteger:
 		return "0"
 	case DataTypeBoolean:
@@ -522,7 +564,7 @@ func MapDefaultValuePython(t string) string {
 	case DataTypeObject:
 		return "None"
 	default:
-		return "None"
+		return "\"\""
 	}
 }
 

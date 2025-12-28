@@ -1,5 +1,5 @@
 """
-Generated from the CGMES specification using cimgen: https://github.com/sogno-platform/cimgen
+Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cimgen
 """
 
 from functools import cached_property
@@ -9,18 +9,22 @@ from pydantic import Field
 from pydantic.dataclasses import dataclass
 
 from ..utils.profile import BaseProfile, Profile
+{{if .SuperType}}
 from .{{.SuperType}} import {{.SuperType}}
+{{- else}}
+from ..utils.base import Base
+{{- end}}
 
 
 @dataclass
-class {{.Id}}({{.SuperType}}):
+class {{.Id}}{{if .SuperType}}({{.SuperType}}){{else}}(Base){{end}}:
     """
 {{- if .Comment}}
 {{ .Comment | wrapAndIndent 4 }}
 {{end}}
 
 {{- range .Attributes}}
-    :{{.Label}}: {{ .Comment }}
+    {{.Label}}: {{ .Comment }}
 {{- end}}
     """
 

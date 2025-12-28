@@ -25,26 +25,6 @@ func Lower(s string) string {
 	return cases.Lower(language.English).String(s)
 }
 
-func MapDataTypeGo(s string) string {
-	if len(s) == 0 {
-		return s
-	}
-	switch s {
-	case DataTypeString:
-		return "string"
-	case DataTypeBoolean:
-		return "bool"
-	case DataTypeInteger:
-		return "int"
-	case DataTypeFloat:
-		return "float64"
-	case DataTypeDateTime:
-		return "string" // TODO: time.Time
-	default:
-		return s // assume it's a struct type
-	}
-}
-
 func (spec *CIMSpecification) GenerateGo(outputDir string) {
 	// create output folder if it does not exist
 	if _, err := os.Stat(outputDir); os.IsNotExist(err) {
@@ -68,6 +48,9 @@ func (spec *CIMSpecification) GeneratePython(outputDir string) {
 			panic(err)
 		}
 	}
+
+	spec.setLangTypesPython()
+	spec.setDefaultValuesPython()
 
 	generateFiles("python_class", ".py", outputDir, spec.Types)
 	generateFile("python_constants", "cim_constants.py", outputDir, spec)
@@ -122,6 +105,9 @@ func (spec *CIMSpecification) GeneratePythonSimple(outputDir string) {
 			panic(err)
 		}
 	}
+
+	spec.setLangTypesPython()
+	spec.setDefaultValuesPython()
 
 	generateFiles("python_simple_class", ".py", outputDir, spec.Types)
 	generateFile("python_constants", "CimConstants.py", outputDir, spec)
@@ -226,7 +212,6 @@ func generateFile[T any](tmplFile string, outputFile string, outputDir string, i
 		"wrapAndIndent":      wrapAndIndent,
 		"capitalFirstLetter": capitalFirstLetter,
 		"lower":              Lower,
-		"mapDataTypeGo":      MapDataTypeGo,
 	}
 
 	// Since ParseFile does not work well with files in subdirectories, we read the file manually
@@ -256,7 +241,6 @@ func generateFiles[T any](tmplFile string, fileExt string, outputDir string, inp
 		"wrapAndIndent":      wrapAndIndent,
 		"capitalFirstLetter": capitalFirstLetter,
 		"lower":              Lower,
-		"mapDataTypeGo":      MapDataTypeGo,
 		"joinAttributes":     joinAttributes,
 	}
 
