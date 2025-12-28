@@ -9,9 +9,9 @@ Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cim
 
 namespace CIMPP
 {
-{{if .Comment -}}
-	/** \brief { {{.Comment}} } */
-{{- end}}
+	{{if .Comment -}}
+	/** \brief {{.Comment}} */
+	{{- end}}
 	class {{.Id}}
 	{
 	public:
