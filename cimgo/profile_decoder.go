@@ -1,12 +1,11 @@
 package cimgo
 
 import (
+	"cimgo/cimgostructs"
 	"encoding/xml"
 	"fmt"
 	"io"
 	"strings"
-
-	cimgo "github.com/sogno-platform/cimgen/cimgostructs"
 )
 
 type CIMProfile struct {
@@ -24,12 +23,12 @@ type CIMProfile struct {
 
 type CIMDataset struct {
 	Profiles []*CIMProfile
-	Elements cimgo.CIMElementList
+	Elements cimgostructs.CIMElementList
 }
 
-func DecodeProfile(r io.Reader) (*cimgo.CIMElementList, error) {
+func DecodeProfile(r io.Reader) (*cimgostructs.CIMElementList, error) {
 	dec := xml.NewDecoder(r)
-	cimData := cimgo.NewCIMElementList()
+	cimData := cimgostructs.NewCIMElementList()
 
 	for {
 		token, err := dec.Token()
@@ -52,8 +51,8 @@ func DecodeProfile(r io.Reader) (*cimgo.CIMElementList, error) {
 
 			fmt.Println("Decode", labelEnd)
 
-			if _, ok := cimgo.StructMap[labelEnd]; ok {
-				node := cimgo.StructMap[labelEnd]()
+			if _, ok := cimgostructs.StructMap[labelEnd]; ok {
+				node := cimgostructs.StructMap[labelEnd]()
 
 				if err := dec.DecodeElement(node, &t); err != nil {
 					panic(err)

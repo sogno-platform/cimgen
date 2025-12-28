@@ -1,13 +1,12 @@
 package cimgo
 
 import (
+	"cimgo/cimgostructs"
+	"cimgo/cimgoxml"
 	"encoding/xml"
 	"fmt"
 	"io"
 	"strings"
-
-	"github.com/sogno-platform/cimgen/cimgostructs"
-	"github.com/sogno-platform/cimgen/cimgoxml"
 )
 
 func EncodeProfile(w io.Writer, cimData *cimgostructs.CIMElementList) error {

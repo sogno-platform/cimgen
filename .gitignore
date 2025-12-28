@@ -12,5 +12,3 @@ __pycache__/
 tests/
 *.log
 *.json
-
-cimgostructs
