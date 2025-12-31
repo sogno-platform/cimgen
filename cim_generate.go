@@ -26,13 +26,18 @@ func Lower(s string) string {
 	return cases.Lower(language.English).String(s)
 }
 
-func (spec *CIMSpecification) GenerateGo(outputDir string) error {
-	// create output folder if it does not exist
+func createOutputDir(outputDir string) error {
 	if _, err := os.Stat(outputDir); os.IsNotExist(err) {
-		err = os.MkdirAll(outputDir, 0755)
-		if err != nil {
+		if err := os.MkdirAll(outputDir, 0755); err != nil {
 			return fmt.Errorf("failed to create output directory %s: %w", outputDir, err)
 		}
+	}
+	return nil
+}
+
+func (spec *CIMSpecification) GenerateGo(outputDir string) error {
+	if err := createOutputDir(outputDir); err != nil {
+		return err
 	}
 
 	if err := generateFiles("go_struct", ".go", outputDir, spec.Types); err != nil {
@@ -51,12 +56,8 @@ func (spec *CIMSpecification) GenerateGo(outputDir string) error {
 }
 
 func (spec *CIMSpecification) GeneratePython(outputDir string) error {
-	// create output folder if it does not exist
-	if _, err := os.Stat(outputDir); os.IsNotExist(err) {
-		err = os.MkdirAll(outputDir, 0755)
-		if err != nil {
-			return fmt.Errorf("failed to create output directory %s: %w", outputDir, err)
-		}
+	if err := createOutputDir(outputDir); err != nil {
+		return err
 	}
 
 	spec.setLangTypesPython()
@@ -121,12 +122,8 @@ func wrapAndIndent(spaces int, input string) string {
 }
 
 func (spec *CIMSpecification) GeneratePythonSimple(outputDir string) error {
-	// create output folder if it does not exist
-	if _, err := os.Stat(outputDir); os.IsNotExist(err) {
-		err = os.MkdirAll(outputDir, 0755)
-		if err != nil {
-			return fmt.Errorf("failed to create output directory %s: %w", outputDir, err)
-		}
+	if err := createOutputDir(outputDir); err != nil {
+		return err
 	}
 
 	spec.setLangTypesPython()
@@ -145,12 +142,8 @@ func (spec *CIMSpecification) GeneratePythonSimple(outputDir string) error {
 }
 
 func (spec *CIMSpecification) GenerateProto(outputDir string) error {
-	// create output folder if it does not exist
-	if _, err := os.Stat(outputDir); os.IsNotExist(err) {
-		err = os.MkdirAll(outputDir, 0755)
-		if err != nil {
-			return fmt.Errorf("failed to create output directory %s: %w", outputDir, err)
-		}
+	if err := createOutputDir(outputDir); err != nil {
+		return err
 	}
 
 	if err := generateFiles("proto_struct", ".proto", outputDir, spec.Types); err != nil {
@@ -160,21 +153,13 @@ func (spec *CIMSpecification) GenerateProto(outputDir string) error {
 }
 
 func (spec *CIMSpecification) GenerateJava(outputDir string) error {
-	// create output folder if it does not exist
-	if _, err := os.Stat(outputDir); os.IsNotExist(err) {
-		err = os.MkdirAll(outputDir, 0755)
-		if err != nil {
-			return fmt.Errorf("failed to create output directory %s: %w", outputDir, err)
-		}
+	if err := createOutputDir(outputDir); err != nil {
+		return err
 	}
 
 	enumOuputDir := outputDir + "/types"
-	// create output folder for enums if it does not exist
-	if _, err := os.Stat(enumOuputDir); os.IsNotExist(err) {
-		err = os.MkdirAll(enumOuputDir, 0755)
-		if err != nil {
-			return fmt.Errorf("failed to create output directory %s: %w", enumOuputDir, err)
-		}
+	if err := createOutputDir(enumOuputDir); err != nil {
+		return err
 	}
 
 	spec.setLangTypesJava()
@@ -198,12 +183,8 @@ func (spec *CIMSpecification) GenerateJava(outputDir string) error {
 }
 
 func (spec *CIMSpecification) GenerateCpp(outputDir string) error {
-	// create output folder if it does not exist
-	if _, err := os.Stat(outputDir); os.IsNotExist(err) {
-		err = os.MkdirAll(outputDir, 0755)
-		if err != nil {
-			return fmt.Errorf("failed to create output directory %s: %w", outputDir, err)
-		}
+	if err := createOutputDir(outputDir); err != nil {
+		return err
 	}
 
 	spec.setLangTypesCpp()
@@ -268,12 +249,8 @@ func (spec *CIMSpecification) GenerateCpp(outputDir string) error {
 }
 
 func (spec *CIMSpecification) GenerateJS(outputDir string) error {
-	// create output folder if it does not exist
-	if _, err := os.Stat(outputDir); os.IsNotExist(err) {
-		err = os.MkdirAll(outputDir, 0755)
-		if err != nil {
-			return fmt.Errorf("failed to create output directory %s: %w", outputDir, err)
-		}
+	if err := createOutputDir(outputDir); err != nil {
+		return err
 	}
 
 	// TODO spec.setLangTypesJS()
