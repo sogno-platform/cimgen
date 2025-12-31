@@ -69,7 +69,7 @@ func run(logger *log.Logger, schemaPattern, language, cgmesVersion string) error
 		"cpp":           (*cimgen.CIMSpecification).GenerateCpp,
 		"js": func(spec *cimgen.CIMSpecification, outputDir string) error {
 			logger.Println("Javascript generation is experimental")
-			return spec.GenerateJS(outputDir)
+			return spec.GenerateJavaScript(outputDir)
 		},
 	}
 
