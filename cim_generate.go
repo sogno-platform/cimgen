@@ -301,7 +301,7 @@ func generateFile[T any](tmplFile string, outputFile string, outputDir string, i
 	}
 
 	// Since ParseFile does not work well with files in subdirectories, we read the file manually
-	data, err := os.ReadFile("lang-templates/" + tmplFile + ".tmpl")
+	data, err := templatesFS.ReadFile("lang-templates/" + tmplFile + ".tmpl")
 	if err != nil {
 		return fmt.Errorf("failed to read template %s: %w", tmplFile, err)
 	}
@@ -332,7 +332,7 @@ func generateFiles[T any](tmplFile string, fileExt string, outputDir string, inp
 	}
 
 	// Since ParseFile does not work well with files in subdirectories, we read the file manually
-	data, err := os.ReadFile("lang-templates/" + tmplFile + ".tmpl")
+	data, err := templatesFS.ReadFile("lang-templates/" + tmplFile + ".tmpl")
 	if err != nil {
 		return fmt.Errorf("failed to read template %s: %w", tmplFile, err)
 	}
