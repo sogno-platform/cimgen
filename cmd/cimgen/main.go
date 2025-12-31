@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"os"
 
@@ -17,7 +18,6 @@ const (
 
 func main() {
 	var schemaPattern string
-	var outputDir string
 	var language string
 	var cgmesVersion string
 	var verbose bool
@@ -35,12 +35,20 @@ func main() {
 		logger.Printf("version: %s", cgmesVersion)
 	}
 
+	if err := run(logger, schemaPattern, language, cgmesVersion); err != nil {
+		logger.Fatalf("Error: %v", err)
+	}
+}
+
+func run(logger *log.Logger, schemaPattern, language, cgmesVersion string) error {
 	logger.Println("Generate code for", language, "from schema files matching", schemaPattern)
 
 	// create and populate specification
 	cimSpec := cimgen.NewCIMSpecification()
 	cimSpec.CGMESVersion = cgmesVersion
-	cimSpec.ImportCIMSchemaFiles(schemaPattern)
+	if err := cimSpec.ImportCIMSchemaFiles(schemaPattern); err != nil {
+		return fmt.Errorf("failed to import CIM schema files: %w", err)
+	}
 
 	outputVersionDir := ""
 	switch cgmesVersion {
@@ -50,39 +58,55 @@ func main() {
 		outputVersionDir = "/v2"
 	}
 
+	var outputDir string
 	switch language {
 	case "go":
 		// generate Go structs
 		outputDir = "output/go" + outputVersionDir
-		cimSpec.GenerateGo(outputDir)
+		if err := cimSpec.GenerateGo(outputDir); err != nil {
+			return fmt.Errorf("failed to generate Go code: %w", err)
+		}
 	case "python":
 		// generate Python classes
 		outputDir = "output/python" + outputVersionDir
-		cimSpec.GeneratePython(outputDir)
+		if err := cimSpec.GeneratePython(outputDir); err != nil {
+			return fmt.Errorf("failed to generate Python code: %w", err)
+		}
 	case "python-simple":
 		// generate Python simple classes
 		outputDir = "output/python-simple" + outputVersionDir
-		cimSpec.GeneratePythonSimple(outputDir)
+		if err := cimSpec.GeneratePythonSimple(outputDir); err != nil {
+			return fmt.Errorf("failed to generate simple Python code: %w", err)
+		}
 	case "proto":
 		// generate Python classes
 		outputDir = "output/proto" + outputVersionDir
-		cimSpec.GenerateProto(outputDir)
+		if err := cimSpec.GenerateProto(outputDir); err != nil {
+			return fmt.Errorf("failed to generate proto code: %w", err)
+		}
 	case "java":
 		// generate Java classes
 		outputDir = "output/java" + outputVersionDir
-		cimSpec.GenerateJava(outputDir)
+		if err := cimSpec.GenerateJava(outputDir); err != nil {
+			return fmt.Errorf("failed to generate Java code: %w", err)
+		}
 	case "cpp":
 		// generate C++ classes
 		outputDir = "output/cpp" + outputVersionDir
-		cimSpec.GenerateCpp(outputDir)
+		if err := cimSpec.GenerateCpp(outputDir); err != nil {
+			return fmt.Errorf("failed to generate C++ code: %w", err)
+		}
 	case "js":
 		// generate JavaScript classes
 		logger.Println("Javascript generation is experimental")
 		outputDir = "output/js" + outputVersionDir
-		cimSpec.GenerateJS(outputDir)
+		if err := cimSpec.GenerateJS(outputDir); err != nil {
+			return fmt.Errorf("failed to generate JavaScript code: %w", err)
+		}
 	default:
-		logger.Fatalf("unsupported language: %s", language)
+		return fmt.Errorf("unsupported language: %s", language)
 	}
 
 	logger.Println("Generated source files in:", outputDir)
+	return nil
 }

@@ -179,28 +179,29 @@ func NewCIMSpecification() *CIMSpecification {
 }
 
 // ImportCIMSchemaFiles imports CIM schema files matching the given glob pattern into the CIMSpecification.
-func (cimSpec *CIMSpecification) ImportCIMSchemaFiles(schemaFiles string) {
+func (cimSpec *CIMSpecification) ImportCIMSchemaFiles(schemaFiles string) error {
 	entries, err := filepath.Glob(schemaFiles)
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("failed to find schema files with glob pattern %s: %w", schemaFiles, err)
 	}
 	sort.Strings(entries)
 
 	for _, entry := range entries {
 		b, err := os.ReadFile(entry)
 		if err != nil {
-			panic(err)
+			return fmt.Errorf("failed to read schema file %s: %w", entry, err)
 		}
 
 		resultMap, err := DecodeToMap(bytes.NewReader(b))
 		if err != nil {
-			panic(err)
+			return fmt.Errorf("failed to decode schema file %s: %w", entry, err)
 		}
 
 		cimSpec.addRDFMap(resultMap)
 	}
 
 	cimSpec.postprocess()
+	return nil
 }
 
 // addRDFMap adds the CIM types, enums, and ontology from the input map to the CIMSpecification.
@@ -215,49 +216,50 @@ func (cimSpec *CIMSpecification) addRDFMap(inputMap map[string]interface{}) {
 }
 
 // printSpecification prints the CIMSpecification to the provided writer in JSON format.
-func (cimSpec *CIMSpecification) printSpecification(w io.Writer) {
+func (cimSpec *CIMSpecification) printSpecification(w io.Writer) error {
 	fmt.Fprint(w, "[\n")
 	jsonb, err := json.MarshalIndent(cimSpec.SpecificationNamespaces, "", "  ")
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("failed to marshal SpecificationNamespaces: %w", err)
 	}
 	w.Write(jsonb)
 	fmt.Fprint(w, ",\n")
 
 	jsonb, err = json.MarshalIndent(cimSpec.Ontologies, "", "  ")
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("failed to marshal Ontologies: %w", err)
 	}
 	w.Write(jsonb)
 	fmt.Fprint(w, ",\n")
 
 	jsonb, err = json.MarshalIndent(cimSpec.Types, "", "  ")
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("failed to marshal Types: %w", err)
 	}
 	w.Write(jsonb)
 	fmt.Fprint(w, ",\n")
 
 	jsonb, err = json.MarshalIndent(cimSpec.Enums, "", "  ")
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("failed to marshal Enums: %w", err)
 	}
 	w.Write(jsonb)
 	fmt.Fprint(w, ",\n")
 
 	jsonb, err = json.MarshalIndent(cimSpec.CIMDatatypes, "", "  ")
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("failed to marshal CIMDatatypes: %w", err)
 	}
 	w.Write(jsonb)
 	fmt.Fprint(w, ",\n")
 
 	jsonb, err = json.MarshalIndent(cimSpec.PrimitiveTypes, "", "  ")
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("failed to marshal PrimitiveTypes: %w", err)
 	}
 	w.Write(jsonb)
 	fmt.Fprint(w, "\n]\n")
+	return nil
 }
 
 // processRDFMap processes the RDF map and extracts CIM types, enums, and ontology.
