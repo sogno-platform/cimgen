@@ -10,10 +10,16 @@ func TestGenerate(t *testing.T) {
 	t.Log("Start CIM code generation test")
 
 	cimSpec := NewCIMSpecification()
-	cimSpec.ImportCIMSchemaFiles("cgmes_schema/CGMES_3.0.0/IEC61970-600-2_CGMES_3_0_0_RDFS2020_*.rdf")
+	err := cimSpec.ImportCIMSchemaFiles("cgmes-application-profiles-library/CGMES/CurrentRelease/RDFS/61970-600-2_*-AP-Voc-RDFS2020.rdf")
+	if err != nil {
+		t.Fatalf("ImportCIMSchemaFiles failed: %v", err)
+	}
 
 	outputDir := "test-output"
-	cimSpec.GenerateGo(outputDir)
+	err = cimSpec.GenerateGo(outputDir)
+	if err != nil {
+		t.Fatalf("GenerateGo failed: %v", err)
+	}
 
 	// Compute hash of the output files for verification
 	data, err := os.ReadFile(outputDir + "/ACLineSegment.go")

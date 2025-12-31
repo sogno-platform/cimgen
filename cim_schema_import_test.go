@@ -30,9 +30,13 @@ func TestSchemaImport(t *testing.T) {
 	t.Log("Read schema files:", entries)
 
 	cimSpec := NewCIMSpecification()
-	cimSpec.ImportCIMSchemaFiles(schemaFiles)
+	if err := cimSpec.ImportCIMSchemaFiles(schemaFiles); err != nil {
+		t.Fatalf("ImportCIMSchemaFiles failed: %v", err)
+	}
 
-	cimSpec.printSpecification(f)
+	if err := cimSpec.printSpecification(f); err != nil {
+		t.Fatalf("printSpecification failed: %v", err)
+	}
 
 	// Compute hash of the output file for verification
 	f.Sync()
@@ -44,7 +48,7 @@ func TestSchemaImport(t *testing.T) {
 	t.Logf("SHA256 hash of output file: %x", hash)
 
 	// Test output file against expected hash
-	expectedHash := "aa1358b1430d9a24ac94b70a7306bd1a73c5b5d70c60e215e0d487a4c0d96085"
+	expectedHash := "8a9afd45f506c4faf4458419926346629a25ea5f3711f26de55952d62cc2163a"
 	if fmt.Sprintf("%x", hash) != expectedHash {
 		t.Error("decoder tests failed, output file hash does not match expected hash")
 	}

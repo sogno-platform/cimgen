@@ -58,53 +58,29 @@ func run(logger *log.Logger, schemaPattern, language, cgmesVersion string) error
 		outputVersionDir = "/v2"
 	}
 
-	var outputDir string
-	switch language {
-	case "go":
-		// generate Go structs
-		outputDir = "output/go" + outputVersionDir
-		if err := cimSpec.GenerateGo(outputDir); err != nil {
-			return fmt.Errorf("failed to generate Go code: %w", err)
-		}
-	case "python":
-		// generate Python classes
-		outputDir = "output/python" + outputVersionDir
-		if err := cimSpec.GeneratePython(outputDir); err != nil {
-			return fmt.Errorf("failed to generate Python code: %w", err)
-		}
-	case "python-simple":
-		// generate Python simple classes
-		outputDir = "output/python-simple" + outputVersionDir
-		if err := cimSpec.GeneratePythonSimple(outputDir); err != nil {
-			return fmt.Errorf("failed to generate simple Python code: %w", err)
-		}
-	case "proto":
-		// generate Python classes
-		outputDir = "output/proto" + outputVersionDir
-		if err := cimSpec.GenerateProto(outputDir); err != nil {
-			return fmt.Errorf("failed to generate proto code: %w", err)
-		}
-	case "java":
-		// generate Java classes
-		outputDir = "output/java" + outputVersionDir
-		if err := cimSpec.GenerateJava(outputDir); err != nil {
-			return fmt.Errorf("failed to generate Java code: %w", err)
-		}
-	case "cpp":
-		// generate C++ classes
-		outputDir = "output/cpp" + outputVersionDir
-		if err := cimSpec.GenerateCpp(outputDir); err != nil {
-			return fmt.Errorf("failed to generate C++ code: %w", err)
-		}
-	case "js":
-		// generate JavaScript classes
-		logger.Println("Javascript generation is experimental")
-		outputDir = "output/js" + outputVersionDir
-		if err := cimSpec.GenerateJS(outputDir); err != nil {
-			return fmt.Errorf("failed to generate JavaScript code: %w", err)
-		}
-	default:
+	type generatorFunc func(spec *cimgen.CIMSpecification, outputDir string) error
+
+	generators := map[string]generatorFunc{
+		"go":            (*cimgen.CIMSpecification).GenerateGo,
+		"python":        (*cimgen.CIMSpecification).GeneratePython,
+		"python-simple": (*cimgen.CIMSpecification).GeneratePythonSimple,
+		"proto":         (*cimgen.CIMSpecification).GenerateProto,
+		"java":          (*cimgen.CIMSpecification).GenerateJava,
+		"cpp":           (*cimgen.CIMSpecification).GenerateCpp,
+		"js": func(spec *cimgen.CIMSpecification, outputDir string) error {
+			logger.Println("Javascript generation is experimental")
+			return spec.GenerateJS(outputDir)
+		},
+	}
+
+	generator, ok := generators[language]
+	if !ok {
 		return fmt.Errorf("unsupported language: %s", language)
+	}
+
+	outputDir := "output/" + language + outputVersionDir
+	if err := generator(cimSpec, outputDir); err != nil {
+		return fmt.Errorf("failed to generate %s code: %w", language, err)
 	}
 
 	logger.Println("Generated source files in:", outputDir)

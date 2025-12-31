@@ -39,17 +39,17 @@ func TestDecode(t *testing.T) {
 
 		b, err := os.ReadFile(entry)
 		if err != nil {
-			panic(err)
+			t.Fatalf("ReadFile failed for %s: %v", entry, err)
 		}
 
 		newMap, err := DecodeToMap(bytes.NewReader(b))
 		if err != nil {
-			panic(err)
+			t.Fatalf("DecodeToMap failed for %s: %v", entry, err)
 		}
 
 		jsonb, err := json.MarshalIndent(newMap, "", "  ")
 		if err != nil {
-			panic(err)
+			t.Fatalf("MarshalIndent failed for %s: %v", entry, err)
 		}
 
 		// add comma and newline for array formatting except for the last entry
