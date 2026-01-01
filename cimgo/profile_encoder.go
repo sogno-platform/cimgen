@@ -10,14 +10,19 @@ import (
 )
 
 func EncodeProfile(w io.Writer, cimData *cimgostructs.CIMElementList) error {
+	if _, err := w.Write([]byte("<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n")); err != nil {
+		return err
+	}
+
 	enc := cimgoxml.NewEncoder(w)
 	enc.Indent("", "  ")
 
 	start := xml.StartElement{
 		Name: xml.Name{Local: "rdf:RDF"},
 		Attr: []xml.Attr{
-			{Name: xml.Name{Local: "xmlns:rdf"}, Value: "http://www.w3.org/1999/02/22-rdf-syntax-ns#"},
-			{Name: xml.Name{Local: "xmlns:cim"}, Value: "http://iec.ch/TC57/2013/CIM-schema-cim16#"}},
+			{Name: xml.Name{Local: "xmlns:cim"}, Value: cimgostructs.CIMNamespaces["cim"]},
+			{Name: xml.Name{Local: "xmlns:rdf"}, Value: cimgostructs.CIMNamespaces["rdf"]},
+		},
 	}
 
 	if err := enc.EncodeToken(start); err != nil {
@@ -41,6 +46,11 @@ func EncodeProfile(w io.Writer, cimData *cimgostructs.CIMElementList) error {
 	}
 
 	if err := enc.Flush(); err != nil {
+		return err
+	}
+
+	// Add newline at end of file
+	if _, err := w.Write([]byte("\n")); err != nil {
 		return err
 	}
 

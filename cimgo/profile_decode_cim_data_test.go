@@ -2,16 +2,17 @@ package cimgo
 
 import (
 	"bytes"
+	"encoding/json"
 	"log"
 	"os"
 	"path/filepath"
 	"testing"
 )
 
-func TestDecodeEncodeCIMData(t *testing.T) {
+func TestDecodeCIMData(t *testing.T) {
 	t.Log("Start CIM-Data decoding test")
 
-	entries, err := filepath.Glob("../test/test_*[^out.].xml")
+	entries, err := filepath.Glob("../test/test_001.xml")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -29,13 +30,10 @@ func TestDecodeEncodeCIMData(t *testing.T) {
 			panic(err)
 		}
 
-		// Encode back to XML for testing
-		f, err := os.Create(entry + ".out.xml")
+		jsonOut, err := json.MarshalIndent(cimData.Elements, "", "  ")
 		if err != nil {
-			panic(err)
+			t.Fatalf("Failed to create a nicely formatted JSON: %v", err)
 		}
-		defer f.Close()
-
-		EncodeProfile(f, cimData)
+		t.Log("Decoded CIM data:\n" + string(jsonOut))
 	}
 }

@@ -538,7 +538,13 @@ func (p *printer) marshalValue(val reflect.Value, finfo *fieldInfo, startTemplat
 			continue
 		}
 
+		// Always marshal attributes with rdf namespace.
+		// This is a CIM-specific modification.
 		name := xml.Name{Space: finfo.xmlns, Local: finfo.name}
+		if !strings.Contains(name.Local, ":") {
+			name.Local = "rdf:" + name.Local
+			name.Space = ""
+		}
 		if err := p.marshalAttr(&start, name, fv); err != nil {
 			return err
 		}
@@ -550,6 +556,51 @@ func (p *printer) marshalValue(val reflect.Value, finfo *fieldInfo, startTemplat
 		len(p.tags) != 0 && p.tags[len(p.tags)-1].Space != "" {
 		start.Attr = append(start.Attr, xml.Attr{xml.Name{"", xmlnsPrefix}, ""})
 	}
+
+	// Always marshal elements with cim namespace.
+	// This is a CIM-specific modification.
+	if !strings.Contains(start.Name.Local, ":") {
+		start.Name.Local = "cim:" + start.Name.Local
+		start.Name.Space = ""
+	}
+
+	// The standard does not support self-closing tags for elements with no content,
+	// but CIM/XML does use them, so we check for that case here.
+	hasContent := false
+	if val.Kind() == reflect.Struct {
+		for i := range tinfo.fields {
+			finfo := &tinfo.fields[i]
+			if finfo.flags&fAttr != 0 {
+				continue
+			}
+			vf := finfo.value(val, dontInitNilPointers)
+			if !vf.IsValid() {
+				continue
+			}
+			if finfo.flags&fOmitEmpty != 0 && isEmptyValue(vf) {
+				continue
+			}
+			hasContent = true
+			break
+		}
+	} else {
+		s, b, err := p.marshalSimple(typ, val)
+		if err != nil {
+			return err
+		}
+		if len(s) > 0 || len(b) > 0 {
+			hasContent = true
+		}
+	}
+
+	if !hasContent {
+		se := StartElementSelfClosing{Name: start.Name, Attr: start.Attr}
+		if err := p.writeStartSelfClosing(&se); err != nil {
+			return err
+		}
+		return p.cachedWriteError()
+	}
+
 	if err := p.writeStart(&start); err != nil {
 		return err
 	}
@@ -786,7 +837,12 @@ func (p *printer) marshalSimple(typ reflect.Type, val reflect.Value) (string, []
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
 		return strconv.FormatUint(val.Uint(), 10), nil, nil
 	case reflect.Float32, reflect.Float64:
-		return strconv.FormatFloat(val.Float(), 'g', -1, val.Type().Bits()), nil, nil
+		// Ensure that float values always have a decimal point or exponent part
+		s := strconv.FormatFloat(val.Float(), 'g', -1, val.Type().Bits())
+		if !strings.ContainsAny(s, ".eENI") {
+			return s + ".0", nil, nil
+		}
+		return s, nil, nil
 	case reflect.String:
 		return val.String(), nil, nil
 	case reflect.Bool:
@@ -1166,6 +1222,7 @@ func (p *printer) writeStartSelfClosing(start *StartElementSelfClosing) error {
 		p.EscapeString(attr.Value)
 		p.WriteByte('"')
 	}
+	p.WriteByte(' ')
 	p.WriteByte('/')
 	p.WriteByte('>')
 	p.tags = p.tags[:len(p.tags)-1]

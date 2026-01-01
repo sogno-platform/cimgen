@@ -2,6 +2,7 @@ package cimgo
 
 import (
 	"cimgo/cimgostructs"
+	"cimgo/cimgoxml"
 	"encoding/xml"
 	"fmt"
 	"io"
@@ -27,7 +28,7 @@ type CIMDataset struct {
 }
 
 func DecodeProfile(r io.Reader) (*cimgostructs.CIMElementList, error) {
-	dec := xml.NewDecoder(r)
+	dec := cimgoxml.NewDecoder(r)
 	cimData := cimgostructs.NewCIMElementList()
 
 	for {

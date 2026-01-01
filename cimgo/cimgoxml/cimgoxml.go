@@ -196,6 +196,12 @@ func (d *Decoder) Token() (xml.Token, error) {
 		d.translate(&t1.Name, true)
 		for i := range t1.Attr {
 			d.translate(&t1.Attr[i].Name, false)
+			// CIM-specific modification: convert rdf:about to ID
+			if t1.Attr[i].Name.Local == "about" &&
+				(t1.Attr[i].Name.Space == "http://www.w3.org/1999/02/22-rdf-syntax-ns#" || t1.Attr[i].Name.Space == "rdf") {
+				t1.Attr[i].Name.Local = "ID"
+				t1.Attr[i].Value = strings.TrimPrefix(t1.Attr[i].Value, "#")
+			}
 		}
 		t = t1
 
