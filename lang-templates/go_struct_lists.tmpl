@@ -27,8 +27,8 @@ func (ds *CIMElementList) AddElement(element interface{}) {
 	{{- range .Types}}
     {{- if eq .CIMStereotype "concrete"}}
 	case *{{.Id}}:
-		ds.{{.Id}}s[e.MRID] = e
-		ds.Elements[e.MRID] = e
+		ds.{{.Id}}s[e.Id] = e
+		ds.Elements[e.Id] = e
     {{- end}}
 	{{- end}}
 	default:

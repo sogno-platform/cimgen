@@ -21,10 +21,12 @@ func main() {
 	var language string
 	var cgmesVersion string
 	var verbose bool
+	var outputDir string
 
 	flag.StringVar(&schemaPattern, "schema", CGMES3_SCHEMA, "glob pattern for CIM schema files")
 	flag.StringVar(&language, "lang", "go", "output language (go, python, python-simple, java, proto, cpp, js)")
 	flag.StringVar(&cgmesVersion, "version", CGMES3, "CGMES version")
+	flag.StringVar(&outputDir, "output", "", "output directory")
 	flag.BoolVar(&verbose, "v", false, "verbose logging")
 	flag.Parse()
 
@@ -35,12 +37,12 @@ func main() {
 		logger.Printf("version: %s", cgmesVersion)
 	}
 
-	if err := run(logger, schemaPattern, language, cgmesVersion); err != nil {
+	if err := run(logger, schemaPattern, language, cgmesVersion, outputDir); err != nil {
 		logger.Fatalf("Error: %v", err)
 	}
 }
 
-func run(logger *log.Logger, schemaPattern, language, cgmesVersion string) error {
+func run(logger *log.Logger, schemaPattern, language, cgmesVersion string, outputDir string) error {
 	logger.Println("Generate code for", language, "from schema files matching", schemaPattern)
 
 	// create and populate specification
@@ -56,6 +58,10 @@ func run(logger *log.Logger, schemaPattern, language, cgmesVersion string) error
 		outputVersionDir = "/v3"
 	case CGMES2:
 		outputVersionDir = "/v2"
+	}
+
+	if outputDir == "" {
+		outputDir = "output/" + language + outputVersionDir
 	}
 
 	type generatorFunc func(spec *cimgen.CIMSpecification, outputDir string) error
@@ -78,7 +84,6 @@ func run(logger *log.Logger, schemaPattern, language, cgmesVersion string) error
 		return fmt.Errorf("unsupported language: %s", language)
 	}
 
-	outputDir := "output/" + language + outputVersionDir
 	if err := generator(cimSpec, outputDir); err != nil {
 		return fmt.Errorf("failed to generate %s code: %w", language, err)
 	}

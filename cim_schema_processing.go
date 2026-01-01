@@ -24,7 +24,7 @@ func (cimSpec *CIMSpecification) postprocess() {
 	cimSpec.markUnusedAttributesAndAssociations()
 	cimSpec.sortAttributes()
 	cimSpec.setIsInverseRoleAttributeList()
-	cimSpec.renameSwitchAttributes()
+	cimSpec.renameConflictingAttributes()
 
 }
 
@@ -335,24 +335,6 @@ func (cimSpec *CIMSpecification) setIsFixedAttributes() {
 	}
 }
 
-// fixMissingMRIDs adds missing MRID attributes to types that should have them.
-func (cimSpec *CIMSpecification) fixMissingMRIDs() {
-	for _, t := range cimSpec.Types {
-		if (t.CIMStereotype == "concrete" || t.CIMStereotype == "") && t.SuperType == "" && t.Id != "IdentifiedObject" {
-			t.Attributes = append(t.Attributes, &CIMAttribute{
-				Id:            "MRID",
-				Label:         "mRID",
-				Comment:       "Master resource identifier issued by a model authority. The mRID is unique within an exchange context. Global uniqueness is easily achieved by using a UUID, as specified in RFC 4122, for the mRID. The use of UUID is strongly recommended. For CIMXML data files in RDF syntax conforming to IEC 61970-552, the mRID is mapped to rdf:ID or rdf:about attributes that identify CIM object elements.",
-				CIMStereotype: "attribute",
-				CIMDataType:   "String",
-				IsPrimitive:   true,
-				RDFType:       "Property",
-			})
-			//log.Println("Added missing MRID to type", t.Id)
-		}
-	}
-}
-
 // markUnusedAttributesAndAssociations marks attributes and associations as unused if they are not used.
 // An attribute is marked as unused if it is an association (DataTypeObject) and its AssociationUsed flag is false.
 // For list associations that are unused, the attribute is marked as unused.
@@ -372,18 +354,6 @@ func (cimSpec *CIMSpecification) markUnusedAttributesAndAssociations() {
 					//attr.IsPrimitive = true
 					//log.Println("Replaced association with primitive", t.Id+"."+attr.Id, "of type", attr.DataType)
 				}
-			}
-		}
-	}
-}
-
-// renameIdentifiedObjectAttributes renames attributes named "IdentifiedObject" to avoid conflicts.
-func (cimSpec *CIMSpecification) renameIdentifiedObjectAttributes() {
-	for _, t := range cimSpec.Types {
-		for _, attr := range t.Attributes {
-			if attr.Label == "IdentifiedObject" {
-				attr.Label = t.Label + "IdentifiedObject"
-				//log.Println("Renamed IdentifiedObject attribute to", attr.Label, "in type", t.Id)
 			}
 		}
 	}
@@ -505,13 +475,16 @@ func (cimSpec *CIMSpecification) isAttributeWithInverseList(a *CIMAttribute) boo
 	return false
 }
 
-// renameSwitchAttributes renames attributes named "Switch" to avoid conflicts.
-func (cimSpec *CIMSpecification) renameSwitchAttributes() {
+// renameConflictingAttributes renames attributes that may cause conflicts.
+func (cimSpec *CIMSpecification) renameConflictingAttributes() {
 	for _, t := range cimSpec.Types {
 		for _, attr := range t.Attributes {
 			if attr.Label == "switch" {
 				attr.Label = "switch_"
-				//log.Println("Renamed Switch attribute to", attr.Label, "in type", t.Id)
+				//log.Println("Renamed switch attribute to", attr.Label, "in type", t.Id)
+			} else if attr.Label == "IdentifiedObject" {
+				attr.Label = "IdentifiedObject_"
+				//log.Println("Renamed IdentifiedObject attribute to", attr.Label, "in type", t.Id)
 			}
 		}
 	}

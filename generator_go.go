@@ -11,13 +11,16 @@ func (spec *CIMSpecification) GenerateGo(outputDir string) error {
 	if err := generateFiles("go_struct", ".go", outputDir, spec.Types); err != nil {
 		return err
 	}
-	if err := generateFile("go_struct_lists", "go_struct_lists.go", outputDir, spec); err != nil {
+	if err := generateFile("go_struct_lists", "cim_struct_lists.go", outputDir, spec); err != nil {
 		return err
 	}
 	if err := generateFiles("go_enum", ".go", outputDir, spec.Enums); err != nil {
 		return err
 	}
 	if err := generateFiles("go_type_alias", ".go", outputDir, spec.CIMDatatypes); err != nil {
+		return err
+	}
+	if err := generateFile("go_constants", "cim_constants.go", outputDir, spec); err != nil {
 		return err
 	}
 	return nil

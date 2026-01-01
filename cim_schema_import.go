@@ -419,20 +419,18 @@ func isAssociationUsed(associationUsed string) bool {
 }
 
 func cleanText(htmlString string) string {
-	// temporarily disable HTML tag stripping
-	//plainText, err := stripTagsManual(htmlString)
-	//if err != nil {
-	//	fmt.Printf("Error: %v\n", err)
-	//	return ""
-	//}
-	plainText := htmlString
+	plainText, err := stripTagsManual(htmlString)
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		return ""
+	}
 
 	// Replace special characters
 	// We might want to enable some of these replacements in the future
 	//plainText = strings.ReplaceAll(plainText, "’", "'")
 	//plainText = strings.ReplaceAll(plainText, "“", "'")
 	//plainText = strings.ReplaceAll(plainText, "”", "'")
-	//plainText = strings.ReplaceAll(plainText, "\"", "'")
+	plainText = strings.ReplaceAll(plainText, "\"", "'")
 	plainText = strings.ReplaceAll(plainText, "–", "-")
 
 	// Remove line breaks and extra spaces

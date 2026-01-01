@@ -1,14 +1,17 @@
 package cimgostructs
 
+import "cimgo/cimgoinfo"
+
 type {{.Id}} struct {
+{{- if .SuperType}}
     {{.SuperType}}
+{{- else}}
+    Base
+{{- end}}
 
 {{- range .Attributes}}
-{{- if .IsUsed}}
-{{- if eq .Label "mRID"}}
-    MRID string `xml:"ID,attr"`
-{{- else if .IsPrimitive}}
-    {{capitalFirstLetter .Label}} {{.DataType}} `xml:"{{.Id}},omitempty"`
+{{- if or .IsPrimitive .IsCIMDatatype}}
+    {{capitalFirstLetter .Label}} {{.LangType}} `xml:"{{.Id}},omitempty"`
 {{- else if .IsEnumValue}}
     {{capitalFirstLetter .Label}} *struct {
         URI string `xml:"resource,attr"`
@@ -19,10 +22,9 @@ type {{.Id}} struct {
     } `xml:"{{.Id}},omitempty"`
 {{- end}}
 {{- end}}
-{{- end}}
 }
 
-var info{{.Id}} = CIMTypeInfo{
+var info{{.Id}} = cimgoinfo.CIMTypeInfo{
     Id: "{{.Id}}",
     Label: "{{.Label}}",
     Namespace: "{{.Namespace}}",
@@ -31,14 +33,12 @@ var info{{.Id}} = CIMTypeInfo{
     Origin: "{{.Origin}}",
     Origins: []string{ {{- range .Origins}}
         "{{.}}",{{- end}} },
-    Attributes: map[string]CIMAttributeInfo{
+    Attributes: map[string]cimgoinfo.CIMAttributeInfo{
 {{- range .Attributes}}
-{{- if .IsUsed}}
         "{{.Id}}": {
             Label: "{{.Label}}",
             IsList: {{.IsList}},
         },
-{{- end}}
 {{- end}}
     },
 }
