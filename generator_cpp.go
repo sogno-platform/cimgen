@@ -48,7 +48,7 @@ func (spec *CIMSpecification) GenerateCpp(outputDir string) error {
 		}
 	}
 	for _, pt := range spec.PrimitiveTypes {
-		if pt.Id == "Float" {
+		if pt.Id == "Float" || pt.Id == "Decimal" {
 			if err := generateFile("cpp_float_header", pt.Id+".hpp", outputDir, pt); err != nil {
 				return err
 			}
@@ -90,7 +90,7 @@ func (cimSpec *CIMSpecification) setLangTypesCpp() {
 
 func MapDatatypeCpp(t string) string {
 	switch t {
-	case DataTypeString:
+	case DataTypeString, DataTypeDateTime, DataTypeDate, DataTypeMonthDay:
 		return "std::string"
 	case DataTypeInteger:
 		return "int"
@@ -122,7 +122,7 @@ func (cimSpec *CIMSpecification) setDefaultValuesCpp() {
 
 func MapDefaultValueCpp(t string) string {
 	switch t {
-	case DataTypeString:
+	case DataTypeString, DataTypeDateTime, DataTypeDate, DataTypeMonthDay:
 		return "\"\""
 	case DataTypeInteger:
 		return "0"

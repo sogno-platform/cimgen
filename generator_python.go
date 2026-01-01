@@ -57,6 +57,10 @@ func (cimSpec *CIMSpecification) setLangTypesPython() {
 		for _, attr := range t.Attributes {
 			if attr.IsList {
 				attr.LangType = "list"
+			} else if attr.IsClass {
+				attr.LangType = "Optional[str]"
+			} else if attr.IsEnumValue {
+				attr.LangType = "str"
 			} else {
 				attr.LangType = MapDatatypePython(attr.DataType)
 			}
@@ -80,7 +84,7 @@ func MapDatatypePython(t string) string {
 		return "int"
 	case DataTypeBoolean:
 		return "bool"
-	case DataTypeFloat:
+	case DataTypeFloat, DateTypeDecimal:
 		return "float"
 	case DataTypeObject:
 		return "Optional[str]"
@@ -95,6 +99,10 @@ func (cimSpec *CIMSpecification) setDefaultValuesPython() {
 		for _, attr := range t.Attributes {
 			if attr.IsList {
 				attr.DefaultValue = "list" // Set default value for list attributes
+			} else if attr.IsClass {
+				attr.DefaultValue = "None"
+			} else if attr.IsEnumValue {
+				attr.DefaultValue = "\"\""
 			} else {
 				attr.DefaultValue = MapDefaultValuePython(attr.DataType)
 			}
@@ -104,17 +112,17 @@ func (cimSpec *CIMSpecification) setDefaultValuesPython() {
 
 func MapDefaultValuePython(t string) string {
 	switch t {
-	case DataTypeString, DataTypeDateTime, DataTypeDate:
+	case DataTypeString, DataTypeDateTime, DataTypeDate, DataTypeMonthDay:
 		return "\"\""
 	case DataTypeInteger:
 		return "0"
 	case DataTypeBoolean:
 		return "False"
-	case DataTypeFloat:
+	case DataTypeFloat, DateTypeDecimal:
 		return "0.0"
 	case DataTypeObject:
 		return "None"
 	default:
-		return "\"\""
+		return "None"
 	}
 }

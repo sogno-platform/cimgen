@@ -8,10 +8,8 @@ Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cim
 #include <iterator>
 #include <sstream>
 
-{{range .Attributes}}
-{{- if not (or .IsPrimitive .IsEnumValue .IsCIMDatatype)}}
-#include "{{.DataType}}.hpp"
-{{- end}}
+{{range (collectAttributeTypes .Attributes)}}
+#include "{{.}}.hpp"
 {{- end}}
 
 using namespace CIMPP;

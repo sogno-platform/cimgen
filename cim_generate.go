@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"text/template"
 
@@ -104,10 +105,11 @@ func generateFile[T any](tmplFile string, outputFile string, outputDir string, i
 
 func generateFiles[T any](tmplFile string, fileExt string, outputDir string, input map[string]T) error {
 	funcMap := template.FuncMap{
-		"wrapAndIndent":      wrapAndIndent,
-		"capitalFirstLetter": capitalFirstLetter,
-		"lower":              Lower,
-		"joinAttributesCpp":  joinAttributesCpp,
+		"wrapAndIndent":         wrapAndIndent,
+		"capitalFirstLetter":    capitalFirstLetter,
+		"lower":                 Lower,
+		"joinAttributesCpp":     joinAttributesCpp,
+		"collectAttributeTypes": collectAttributeTypes,
 	}
 
 	// Since ParseFile does not work well with files in subdirectories, we read the file manually
@@ -143,4 +145,21 @@ func joinAttributesCpp(attributes []*CIMAttribute) string {
 		}
 	}
 	return strings.Join(filtered, ", ")
+}
+
+// collectAttributeTypes collects attribute types
+// each type is only included once and the list is sorted
+func collectAttributeTypes(attributes []*CIMAttribute) []string {
+	attributeTypes := make(map[string]bool)
+	for _, attr := range attributes {
+		if !(attr.IsPrimitive || attr.IsCIMDatatype || attr.IsEnumValue) {
+			attributeTypes[attr.DataType] = true
+		}
+	}
+	types := make([]string, 0, len(attributeTypes))
+	for k := range attributeTypes {
+		types = append(types, k)
+	}
+	sort.Strings(types)
+	return types
 }

@@ -28,10 +28,8 @@ Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cim
 
 namespace CIMPP
 {
-{{- range .Attributes}}
-{{- if not (or .IsPrimitive .IsEnumValue .IsCIMDatatype)}}
-	class {{.DataType}};
-{{- end}}
+{{range (collectAttributeTypes .Attributes)}}
+	class {{.}};
 {{- end}}
 {{if .Comment}}
 	/** \brief {{.Comment}} */
