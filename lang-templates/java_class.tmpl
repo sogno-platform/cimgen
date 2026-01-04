@@ -100,7 +100,7 @@ public class {{.Id}} extends {{if .SuperType}}{{.SuperType}}{{else}}BaseClass{{e
         }
     }
 {{- else if .IsList}}
-    private Set<{{.DataType}}> {{.Label}} = new HashSet<>(); {{if .HasInverseRole}}{{if .IsInverseRoleAttributeList}}// ManyToMany{{else}}// OneToMany{{end}}{{end}}
+    private Set<{{.DataType}}> {{.Label}} = new HashSet<>();{{if .HasInverseRole}} {{if .IsInverseRoleAttributeList}}// ManyToMany{{else}}// OneToMany{{end}}{{end}}
 
     private Set<String> {{.Label}}IdSet = new HashSet<>();
 
