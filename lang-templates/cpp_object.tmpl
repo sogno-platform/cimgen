@@ -33,11 +33,11 @@ static const std::map<std::string, AttrDetails>& getClassAttrDetailsMap()
 {
 	static const std::map<std::string, AttrDetails> ClassAttrDetailsMap =
 	{
-{{range .Attributes}}
+{{- range .Attributes}}
 		{ "{{.RDFDomain}}.{{.Label}}", { "{{.Namespace}}", { {{range .Origins}}CGMESProfile::{{.}}, {{end}}} } },
 {{- end}}
 	};
-    return ClassAttrDetailsMap;
+	return ClassAttrDetailsMap;
 }
 
 {{.Id}}::{{.Id}}() {{- if .HasClassAttributes}} : {{joinAttributesCpp .Attributes}}{{end}} {}
