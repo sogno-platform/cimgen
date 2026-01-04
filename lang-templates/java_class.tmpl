@@ -82,7 +82,7 @@ public class {{.Id}} extends {{if .SuperType}}{{.SuperType}}{{else}}BaseClass{{e
 {{- end }}
 {{- if or .IsClass .IsList}}
 {{- if .IsClass}}
-    private {{.DataType}} {{.Label}}; {{if .HasInverseRole}}{{if .IsInverseRoleAttributeList}}// ManyToOne{{else}}// OneToOne{{end}}{{end}}
+    private {{.DataType}} {{.Label}};{{if .HasInverseRole}} {{if .IsInverseRoleAttributeList}}// ManyToOne{{else}}// OneToOne{{end}}{{end}}
 
     private String {{.Label}}Id;
 
