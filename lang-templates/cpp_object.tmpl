@@ -166,8 +166,8 @@ bool assign_{{.RDFDomain}}_{{.Label}}(BaseClass* BaseClass_ptr1, BaseClass* Base
 	}
 	return false;
 }
-{{- end}} {{/* end if HasInverseRole */}}
-{{- end}} {{/* end if IsList */}}
+{{- end}} {{- /* end if HasInverseRole */}}
+{{- end}} {{- /* end if IsList */}}
 {{- end}} {{- /* range Attributes */}}
 
 {{- range .Attributes}}
@@ -187,7 +187,7 @@ bool get_{{.RDFDomain}}_{{.Label}}(const BaseClass* BaseClass_ptr1, std::strings
 	buffer.setstate(std::ios::failbit);
 	return false;
 }
-{{- end}} {{/* if IsPrimitive IsCIMDatatype IsEnumValue */}}
+{{- end}} {{- /* if IsPrimitive IsCIMDatatype IsEnumValue */}}
 
 {{- if .IsClass}}
 bool get_{{.RDFDomain}}_{{.Label}}(const BaseClass* BaseClass_ptr1, std::list<const BaseClass*>& BaseClass_list)
@@ -203,7 +203,7 @@ bool get_{{.RDFDomain}}_{{.Label}}(const BaseClass* BaseClass_ptr1, std::list<co
 	}
 	return false;
 }
-{{- end}} {{/* if IsClass */}}
+{{- end}} {{- /* if IsClass */}}
 
 {{- if .IsList}}
 bool get_{{.RDFDomain}}_{{.Label}}(const BaseClass* BaseClass_ptr1, std::list<const BaseClass*>& BaseClass_list)
@@ -216,8 +216,8 @@ bool get_{{.RDFDomain}}_{{.Label}}(const BaseClass* BaseClass_ptr1, std::list<co
 	}
 	return false;
 }
-{{- end}} {{/* if IsList */}}
-{{- end}} {{/* if IsAssociationUsed */}}
+{{- end}} {{- /* if IsList */}}
+{{- end}} {{- /* if IsAssociationUsed */}}
 {{- end}} {{- /* range Attributes */}}
 
 const char {{.Id}}::debugName[] = "{{.Id}}";
@@ -256,7 +256,7 @@ void {{.Id}}::addPrimitiveGetFnsToMap(std::map<std::string, get_function>& get_m
 {{- if or .IsPrimitive .IsCIMDatatype}}
 	get_map.emplace("{{.RDFDomain}}.{{.Label}}", &get_{{.RDFDomain}}_{{.Label}});
 {{- end}}
-{{- end}} {{/* range Attributes */}}
+{{- end}} {{- /* range Attributes */}}
 }
 
 void {{.Id}}::addClassGetFnsToMap(std::map<std::string, class_get_function>& get_map) const
@@ -268,7 +268,7 @@ void {{.Id}}::addClassGetFnsToMap(std::map<std::string, class_get_function>& get
 	get_map.emplace("{{.RDFDomain}}.{{.Label}}", &get_{{.RDFDomain}}_{{.Label}});
 {{- end}}
 {{- end}}
-{{- end}} {{/* range Attributes */}}
+{{- end}} {{- /* range Attributes */}}
 }
 
 void {{.Id}}::addEnumGetFnsToMap(std::map<std::string, get_function>& get_map) const
@@ -278,7 +278,7 @@ void {{.Id}}::addEnumGetFnsToMap(std::map<std::string, get_function>& get_map) c
 {{- if .IsEnumValue}}
 	get_map.emplace("{{.RDFDomain}}.{{.Label}}", &get_{{.RDFDomain}}_{{.Label}});
 {{- end}}
-{{- end}} {{/* range Attributes */}}
+{{- end}} {{- /* range Attributes */}}
 }
 
 bool {{.Id}}::isAssignableFrom(BaseClass* otherObject) const
