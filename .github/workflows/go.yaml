@@ -21,7 +21,7 @@ jobs:
         cache: true # Caches Go modules for faster subsequent runs
 
     - name: Install dependencies
-      run: go mod tidy # Ensures all dependencies are installed and the go.mod file is clean
+      run: go -C cimgen-go mod tidy # Ensures all dependencies are installed and the go.mod file is clean
 
     - name: Build
       run: go -C cimgen-go build -v ./... # Builds all packages in the repository
