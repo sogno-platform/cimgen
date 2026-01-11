@@ -24,7 +24,7 @@ jobs:
       run: go mod tidy # Ensures all dependencies are installed and the go.mod file is clean
 
     - name: Build
-      run: go build -v ./... # Builds all packages in the repository
+      run: go -C cimgen-go build -v ./... # Builds all packages in the repository
 
     - name: Test
-      run: go test -v ./... # Runs all tests in the repository
+      run: go -C cimgen-go test -v ./... # Runs all tests in the repository
