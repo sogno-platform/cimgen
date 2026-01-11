@@ -10,7 +10,7 @@ func TestGenerate(t *testing.T) {
 	t.Log("Start CIM code generation test")
 
 	cimSpec := NewCIMSpecification()
-	err := cimSpec.ImportCIMSchemaFiles("cgmes-application-profiles-library/CGMES/CurrentRelease/RDFS/61970-600-2_*-AP-Voc-RDFS2020.rdf")
+	err := cimSpec.ImportCIMSchemaFiles("../cgmes-application-profiles-library/CGMES/CurrentRelease/RDFS/61970-600-2_*-AP-Voc-RDFS2020.rdf")
 	if err != nil {
 		t.Fatalf("ImportCIMSchemaFiles failed: %v", err)
 	}

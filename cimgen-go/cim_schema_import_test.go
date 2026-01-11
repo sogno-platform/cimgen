@@ -22,7 +22,7 @@ func TestSchemaImport(t *testing.T) {
 
 	// deprecated shema files included in the repo
 	//schemaFiles := "cgmes_schema/CGMES_3.0.0/IEC61970-600-2_CGMES_3_0_0_RDFS2020_*.rdf"
-	schemaFiles := "cgmes-application-profiles-library/CGMES/CurrentRelease/RDFS/61970-600-2_*-AP-Voc-RDFS2020.rdf"
+	schemaFiles := "../cgmes-application-profiles-library/CGMES/CurrentRelease/RDFS/61970-600-2_*-AP-Voc-RDFS2020.rdf"
 	entries, err := filepath.Glob(schemaFiles)
 	if err != nil {
 		log.Fatal(err)
