@@ -1,0 +1,49 @@
+/*
+Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cimgen
+*/
+#include "{{.Id}}.hpp"
+
+#include "../src/CIMExceptions.hpp"
+
+using namespace CIMPP;
+
+{{.Id}}& {{.Id}}::operator=(const std::string& rop)
+{
+	value = rop;
+	initialized = true;
+	return *this;
+}
+
+{{.Id}}::operator std::string() const
+{
+	if (!initialized)
+	{
+		throw new ReadingUninitializedField();
+	}
+	return value;
+}
+
+const char {{.Id}}::debugName[] = "{{.Id}}";
+const char* {{.Id}}::debugString() const
+{
+	return {{.Id}}::debugName;
+}
+
+namespace CIMPP
+{
+	std::istream& operator>>(std::istream& lop, {{.Id}}& rop)
+	{
+		lop >> rop.value;
+		rop.initialized = true;
+		return lop;
+	}
+
+	std::ostream& operator<<(std::ostream& os, const {{.Id}}& obj)
+	{
+		if (obj.initialized)
+		{
+			os << obj.value;
+		}
+		return os;
+	}
+}

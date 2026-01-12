@@ -1,0 +1,102 @@
+/*
+Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cimgen
+*/
+#include "CGMESProfile.hpp"
+
+#include <list>
+#include <map>
+#include <string>
+
+static const std::list<CGMESProfile> ProfileList =
+{
+{{- range .OntologyList}}
+	CGMESProfile::{{.Keyword}},
+{{- end}}
+};
+
+static const std::map<CGMESProfile, std::string> ProfileShortNames =
+{
+{{- range .OntologyList}}
+	{ CGMESProfile::{{.Keyword}}, "{{.Keyword}}" },
+{{- end}}
+};
+
+static const std::map<CGMESProfile, std::string> ProfileLongNames =
+{
+{{- range .OntologyList}}
+	{ CGMESProfile::{{.Keyword}}, "{{.Name}}" },
+{{- end}}
+};
+
+static const std::map<CGMESProfile, std::list<std::string>> ProfileURIs =
+{
+{{- range .OntologyList}}
+	{ CGMESProfile::{{.Keyword}}, { "{{.OWLVersionIRI}}", } },
+{{- end}}
+};
+
+const std::list<CGMESProfile>&
+getProfileList()
+{
+	return ProfileList;
+}
+
+std::string
+getProfileShortName(CGMESProfile profile)
+{
+	auto it = ProfileShortNames.find(profile);
+	if (it != ProfileShortNames.end())
+	{
+		return it->second;
+	}
+	return ""; // unknown profile
+}
+
+std::string
+getProfileLongName(CGMESProfile profile)
+{
+	auto it = ProfileLongNames.find(profile);
+	if (it != ProfileLongNames.end())
+	{
+		return it->second;
+	}
+	return ""; // unknown profile
+}
+
+const std::list<std::string>&
+getProfileURIs(CGMESProfile profile)
+{
+	static std::list<std::string> empty_list;
+	auto it = ProfileURIs.find(profile);
+	if (it != ProfileURIs.end())
+	{
+		return it->second;
+	}
+	return empty_list; // unknown profile
+}
+
+CGMESProfile
+getProfileFromShortName(const std::string& name)
+{
+	for (const auto& profile : ProfileShortNames)
+	{
+		if (name == profile.second)
+		{
+			return profile.first;
+		}
+	}
+	return UnknownProfile;
+}
+
+CGMESProfile
+getProfileFromLongName(const std::string& name)
+{
+	for (const auto& profile : ProfileLongNames)
+	{
+		if (name == profile.second)
+		{
+			return profile.first;
+		}
+	}
+	return UnknownProfile;
+}

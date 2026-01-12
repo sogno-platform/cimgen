@@ -1,0 +1,47 @@
+package cimgostructs
+
+import "fmt"
+
+type CIMElementList struct {
+	Elements map[string]interface{}
+{{- range .Types}}
+    {{- if eq .CIMStereotype "concrete"}}
+    {{.Id}}s map[string]*{{.Id}}
+    {{- end}}
+{{- end}}
+}
+
+func NewCIMElementList() *CIMElementList {
+	return &CIMElementList{
+		Elements: make(map[string]interface{}),
+		{{- range .Types}}
+        {{- if eq .CIMStereotype "concrete"}}
+		{{.Id}}s: make(map[string]*{{.Id}}),
+        {{- end}}
+		{{- end}}
+	}
+}
+
+func (ds *CIMElementList) AddElement(element interface{}) {
+    switch e := element.(type) {
+	{{- range .Types}}
+    {{- if eq .CIMStereotype "concrete"}}
+	case *{{.Id}}:
+		ds.{{.Id}}s[e.Id] = e
+		ds.Elements[e.Id] = e
+    {{- end}}
+	{{- end}}
+	default:
+		fmt.Printf("Unknown type: %T\n", e)
+	}
+}
+
+var StructMap = map[string]func() interface{}{
+{{- range .Types}}
+    {{- if eq .CIMStereotype "concrete"}}
+    "{{.Id}}": func() interface{} {
+        return &{{.Id}}{}
+    },
+    {{- end}}
+{{- end}}
+}

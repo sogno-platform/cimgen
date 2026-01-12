@@ -1,0 +1,24 @@
+"""
+Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cimgen
+"""
+
+from ..utils.datatypes import CIMDatatype
+from ..utils.profile import Profile
+from .UnitMultiplier import UnitMultiplier
+from .UnitSymbol import UnitSymbol
+
+{{.Id}} = CIMDatatype(
+    name="{{.Id}}",
+    type={{.LangType}},
+    {{- range .Attributes}}
+    {{- if .IsFixed}}
+    {{.Label}}={{.RDFRange}}.{{.CIMIsFixed}},
+    {{- end}}
+    {{- end}}
+)
+
+"""
+{{- if .Comment}}
+{{.Comment}}
+{{- end}}
+"""

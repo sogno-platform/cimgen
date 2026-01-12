@@ -1,0 +1,77 @@
+/*
+Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cimgen
+*/
+#include "{{.Id}}.hpp"
+
+#include <string>
+
+#include "../src/CIMExceptions.hpp"
+
+using namespace CIMPP;
+
+{{.Id}}& {{.Id}}::operator=(long double rop)
+{
+	value = rop;
+	initialized = true;
+	return *this;
+}
+
+{{.Id}}::operator long double() const
+{
+	if (!initialized)
+	{
+		throw new ReadingUninitializedField();
+	}
+	return value;
+}
+
+const char {{.Id}}::debugName[] = "{{.Id}}";
+const char* {{.Id}}::debugString() const
+{
+	return {{.Id}}::debugName;
+}
+
+{{.Id}}& {{.Id}}::operator+=(const {{.Id}}& rhs)
+{
+	value += rhs.value;
+	return *this;
+}
+
+{{.Id}}& {{.Id}}::operator-=(const {{.Id}}& rhs)
+{
+	value -= rhs.value;
+	return *this;
+}
+
+{{.Id}}& {{.Id}}::operator*=(const {{.Id}}& rhs)
+{
+	value *= rhs.value;
+	return *this;
+}
+
+{{.Id}}& {{.Id}}::operator/=(const {{.Id}}& rhs)
+{
+	value /= rhs.value;
+	return *this;
+}
+
+namespace CIMPP
+{
+	std::istream& operator>>(std::istream& lop, {{.Id}}& rop)
+	{
+		std::string tmp;
+		lop >> tmp;
+		rop.value = stold(tmp);
+		rop.initialized = true;
+		return lop;
+	}
+
+	std::ostream& operator<<(std::ostream& os, const {{.Id}}& obj)
+	{
+		if (obj.initialized)
+		{
+			os << obj.value;
+		}
+		return os;
+	}
+}

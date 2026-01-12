@@ -1,0 +1,77 @@
+"""
+Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cimgen
+"""
+
+from functools import cached_property
+from typing import Optional
+
+from pydantic import Field
+from pydantic.dataclasses import dataclass
+
+from ..utils.profile import BaseProfile, Profile
+{{if .SuperType}}
+from .{{.SuperType}} import {{.SuperType}}
+{{- else}}
+from ..utils.base import Base
+{{- end}}
+
+
+@dataclass
+class {{.Id}}{{if .SuperType}}({{.SuperType}}){{else}}(Base){{end}}:
+    """
+{{- if .Comment}}
+{{ .Comment | wrapAndIndent 4 }}
+{{end}}
+
+{{- range .Attributes}}
+    {{.Label}}: {{ .Comment }}
+{{- end}}
+    """
+
+    {{- range .Attributes}}
+    {{.Label}}: {{.LangType}} = Field(
+    {{- if eq .DefaultValue "list"}}
+        default_factory=list,
+    {{- else}}
+        default={{.DefaultValue}},
+    {{- end}}
+        json_schema_extra={
+            "in_profiles": [{{range .Origins}}
+                Profile.{{.}},{{end}}
+            ],
+            "is_used": {{if .IsAssociationUsed}}True{{else}}False{{end}},
+            "namespace": "{{.Namespace}}",  # NOSONAR
+            "is_class_attribute": {{if .IsClass}}True{{else}}False{{end}},
+            "is_datatype_attribute": {{if .IsCIMDatatype}}True{{else}}False{{end}},
+            "is_enum_attribute": {{if .IsEnumValue}}True{{else}}False{{end}},
+            "is_list_attribute": {{if .IsList}}True{{else}}False{{end}},
+            "is_primitive_attribute": {{if .IsPrimitive}}True{{else}}False{{end}},
+        {{- if or .IsCIMDatatype .IsPrimitive}}
+            "attribute_class": "{{.CIMDataType}}",
+        {{- end}}
+        },
+    )
+    {{- end}}
+    {{- if not .Attributes}}
+    # No attributes defined for this class.
+    {{- end}}
+
+    @cached_property
+    def possible_profiles(self) -> set[BaseProfile]:
+        """
+        A resource can be used by multiple profiles. This is the set of profiles
+        where this element can be found.
+        """
+        return {
+            {{- range .Origins}}
+            Profile.{{.}},
+            {{- end}}
+        }
+
+    @cached_property
+    def recommended_profile(self) -> BaseProfile:
+        """
+        This is the profile with most of the attributes.
+        It should be used to write the data to as few as possible files.
+        """
+        return Profile.{{.Origin}}

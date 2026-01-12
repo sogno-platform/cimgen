@@ -1,0 +1,18 @@
+"""
+Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cimgen
+"""
+
+from datetime import date, datetime, time
+from ..utils.datatypes import Primitive
+from ..utils.profile import Profile
+
+{{.Id}} = Primitive(
+    name="{{.Id}}",
+    type={{.LangType}},
+)
+
+"""
+{{- if .Comment}}
+{{.Comment}}
+{{- end}}
+"""

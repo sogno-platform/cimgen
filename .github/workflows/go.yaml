@@ -1,0 +1,30 @@
+name: Go Build and Test
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    # Checkout the repository recursively to include submodules
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.24' # Specify the version of Go you want to use
+        cache: true # Caches Go modules for faster subsequent runs
+
+    - name: Install dependencies
+      run: go -C cimgen-go mod tidy # Ensures all dependencies are installed and the go.mod file is clean
+
+    - name: Build
+      run: go -C cimgen-go build -v ./... # Builds all packages in the repository
+
+    - name: Test
+      run: go -C cimgen-go test -v ./... # Runs all tests in the repository

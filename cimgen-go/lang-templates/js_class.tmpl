@@ -1,0 +1,89 @@
+import templates from "../../templates/index.js"
+import {{.SuperType}} from "./{{.SuperType}}.js"
+import common from "../../src/common.js"
+import CGMESProfile from "./CGMESProfile.js"
+
+class {{.Id}} extends {{.SuperType}} {
+
+    // Generate HTML for all attributes of this class
+    // Including inherited attributes
+    static attributeHTML(object, cimmenu, classType="{{.Id}}") {
+        let attributeEntries = {{.SuperType}}.attributeHTML(object, cimmenu, classType);
+        {{range .Attributes}}
+        if ('cim:{{.Id}}' in object) {
+            attributeEntries['filledEntries']['cim:{{.Id}}'] =
+                cimmenu.getAggregateComponentMenu(
+                                                   'cim:'+classType,
+                                                   object['pintura:rdfid'],
+                                                   object['{{.Id}}'],
+                                                   'cim:{{.DataType}}',
+                                                   'cim:{{.Id}}'
+                                                 );
+        }
+        else {
+            attributeEntries['emptyEntries']['cim:{{.Id}}'] =
+                cimmenu.getAggregateComponentMenu(
+                                                   'cim:'+classType,
+                                                   object['pintura:rdfid'],
+                                                   object['{{.Id}}'],
+                                                   'cim:{{.DataType}}',
+                                                   'cim:{{.Id}}'
+                                                 );
+        }
+        {{end}}
+        return attributeEntries;
+    }
+
+    static possibleProfileList = {
+        'class': [{{range .Origins}}CGMESProfile.shortNames.{{.}}, {{end}}],
+		{{range .Attributes}}'{{.Label}}': [CGMESProfile.shortNames.{{.Origin}},],
+		{{end}} }
+
+    static isMemberAttribute(attribute) {
+        let attributes = [
+            {{range .Attributes}}
+            "cim:{{.Id}}",
+            {{end}}
+        ];
+        if ( attribute.substr(0,8) == "pintura:") {
+            return true;
+        }
+        if ( attributes.indexOf(attribute) >= 0 ) {
+            return true;
+        }
+        else if ( {{.SuperType}}.isMemberAttribute(attribute) ) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
+    static read(object) {
+        Object.keys(object).forEach((attribute) => {
+            if (!{{.Id}}.isMemberAttribute(attribute) && !(attribute == "about")) {
+                console.error("Unexpected attribute for class {{.Id}}: ", attribute, " with value: ", object[attribute])
+            }
+        });
+    }
+    static renderAsClass(object, cimmenu) {
+        let separateEntries = {{.Id}}.attributeHTML(object, cimmenu);
+        let filledEntries = separateEntries['filledEntries'];
+        let emptyEntries = separateEntries['emptyEntries'];
+        let attributeEntries = { ...filledEntries, ...emptyEntries };
+        return templates.handlebars_cim_class_render({ 'attributes': attributeEntries});
+    }
+    static renderAsAttribute(matchingComponents) {
+        let template = templates.handlebars_cim_update_complex_type;
+        return template(matchingComponents);
+    }
+    static subClassList() {
+        let subClasses = [
+        {{range .SubTypes}}
+        "{{.}}",
+        {{end}}
+        ];
+        return subClasses;
+    }
+};
+export default {{.Id}}

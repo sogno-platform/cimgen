@@ -1,0 +1,75 @@
+/*
+Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cimgen
+*/
+
+package cim4j;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Enum containing all CGMES profiles.
+ */
+public enum CGMESProfile {
+{{- range .OntologyList}}
+    {{.Keyword}}("{{.Name}}"),
+{{- end}}
+    ;
+
+    private final String longName;
+
+    private CGMESProfile(String longName) {
+        this.longName = longName;
+    }
+
+    /**
+     * Search the profile for a long name.
+     *
+     * @return profile
+     */
+    public static CGMESProfile fromLongName(String longName) {
+        return ENUM_MAP.get(longName);
+    }
+
+    private static final Map<String, CGMESProfile> ENUM_MAP;
+    static {
+        Map<String, CGMESProfile> map = new LinkedHashMap<>();
+        for (CGMESProfile profile : CGMESProfile.values()) {
+            map.put(profile.longName, profile);
+        }
+        ENUM_MAP = Collections.unmodifiableMap(map);
+    }
+
+    /**
+     * Return the long name of the profile.
+     *
+     * @return long name
+     */
+    public String getLongName() {
+        return longName;
+    }
+
+    /**
+     * Return the list of uris of the profile.
+     *
+     * @return list of uris
+     */
+    public List<String> getUris() {
+        return URI_MAP.get(name());
+    }
+
+    private static final Map<String, List<String>> URI_MAP;
+    static {
+        Map<String, List<String>> map = new LinkedHashMap<>();
+        List<String> uris;
+{{range .OntologyList}}
+        uris = new ArrayList<>();
+        uris.add("{{.OWLVersionIRI}}");
+        map.put("{{.Keyword}}", uris);
+{{end}}
+        URI_MAP = Collections.unmodifiableMap(map);
+    }
+}
