@@ -137,7 +137,7 @@ public class {{class_name}} extends {{subclass_of}} {
     private {{attribute_class}} {{variable_name}}; // ManyToOne
 {{/is_attribute_with_inverse_list}}
 {{^is_attribute_with_inverse_list}}
-    private {{attribute_class}} {{variable_name}}; // OneToOne
+    private {{attribute_class}} {{variable_name}};{{#inverse_setter}} // OneToOne{{/inverse_setter}}
 {{/is_attribute_with_inverse_list}}
 
     private String {{variable_name}}Id;
@@ -180,7 +180,7 @@ public class {{class_name}} extends {{subclass_of}} {
     private Set<{{attribute_class}}> {{variable_name}} = new HashSet<>(); // ManyToMany
 {{/is_attribute_with_inverse_list}}
 {{^is_attribute_with_inverse_list}}
-    private Set<{{attribute_class}}> {{variable_name}} = new HashSet<>(); // OneToMany
+    private Set<{{attribute_class}}> {{variable_name}} = new HashSet<>();{{#inverse_setter}} // OneToMany{{/inverse_setter}}
 {{/is_attribute_with_inverse_list}}
 
     private Set<String> {{variable_name}}IdSet = new HashSet<>();
