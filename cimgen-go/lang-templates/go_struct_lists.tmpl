@@ -1,47 +1,66 @@
 package cimgostructs
 
-import "fmt"
+import (
+	"cimgo/encoding/cimgobase"
+	"fmt"
+	"reflect"
+)
 
 type CIMElementList struct {
 	Elements map[string]interface{}
-{{- range .Types}}
-    {{- if eq .CIMStereotype "concrete"}}
-    {{.Id}}s map[string]*{{.Id}}
-    {{- end}}
-{{- end}}
+	{{- range .Types}}
+	{{- if eq .CIMStereotype "concrete"}}
+	{{.Id}}s map[string]*{{.Id}}
+	{{- end}}
+	{{- end}}
 }
 
 func NewCIMElementList() *CIMElementList {
 	return &CIMElementList{
 		Elements: make(map[string]interface{}),
 		{{- range .Types}}
-        {{- if eq .CIMStereotype "concrete"}}
+		{{- if eq .CIMStereotype "concrete"}}
 		{{.Id}}s: make(map[string]*{{.Id}}),
-        {{- end}}
+		{{- end}}
 		{{- end}}
 	}
 }
 
-func (ds *CIMElementList) AddElement(element interface{}) {
-    switch e := element.(type) {
-	{{- range .Types}}
-    {{- if eq .CIMStereotype "concrete"}}
-	case *{{.Id}}:
-		ds.{{.Id}}s[e.Id] = e
-		ds.Elements[e.Id] = e
-    {{- end}}
-	{{- end}}
-	default:
-		fmt.Printf("Unknown type: %T\n", e)
+func (ds *CIMElementList) AddElement(element interface{}) error {
+	elem, ok := element.(cimgobase.CIMElement)
+	if !ok {
+		return fmt.Errorf("element of type %T does not implement CIMElement", element)
 	}
+	id := elem.GetId()
+
+	if existing, ok := ds.Elements[id]; ok {
+		err := cimgobase.DeepMerge(reflect.ValueOf(existing), reflect.ValueOf(element))
+		if err != nil {
+			return fmt.Errorf("ID conflict: element with ID %s already exists and cannot be merged: %v", id, err)
+		}
+	} else {
+		// Add new element
+		ds.Elements[id] = element
+		switch e := element.(type) {
+		{{- range .Types}}
+		{{- if eq .CIMStereotype "concrete"}}
+		case *{{.Id}}:
+			ds.{{.Id}}s[e.GetId()] = e
+			{{- end}}
+			{{- end}}
+		default:
+			return fmt.Errorf("unknown CIM type: %T", e)
+		}
+	}
+	return nil
 }
 
 var StructMap = map[string]func() interface{}{
-{{- range .Types}}
-    {{- if eq .CIMStereotype "concrete"}}
-    "{{.Id}}": func() interface{} {
-        return &{{.Id}}{}
-    },
-    {{- end}}
-{{- end}}
+	{{- range .Types}}
+	{{- if eq .CIMStereotype "concrete"}}
+	"{{.Id}}": func() interface{} {
+		return &{{.Id}}{}
+	},
+	{{- end}}
+	{{- end}}
 }

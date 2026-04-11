@@ -1,31 +1,36 @@
 package cimgen
 
 import (
-	"crypto/sha256"
-	"os"
+	"log"
 	"testing"
+
+	"golang.org/x/mod/sumdb/dirhash"
 )
 
 func TestGenerate(t *testing.T) {
 	t.Log("Start CIM code generation test")
 
 	cimSpec := NewCIMSpecification()
-	err := cimSpec.ImportCIMSchemaFiles("../cgmes-application-profiles-library/CGMES/CurrentRelease/RDFS/61970-600-2_*-AP-Voc-RDFS2020.rdf")
+	err := cimSpec.ImportCIMSchemaFiles(CGMES3_SCHEMA)
 	if err != nil {
 		t.Fatalf("ImportCIMSchemaFiles failed: %v", err)
 	}
 
-	outputDir := "test-output"
+	outputDir := "output/go-test"
 	err = cimSpec.GenerateGo(outputDir)
 	if err != nil {
 		t.Fatalf("GenerateGo failed: %v", err)
 	}
 
-	// Compute hash of the output files for verification
-	data, err := os.ReadFile(outputDir + "/ACLineSegment.go")
+	hash, err := dirhash.HashDir(outputDir, "", dirhash.Hash1)
 	if err != nil {
-		t.Error("Cannot read output file for hashing:", err)
+		log.Fatal(err)
 	}
-	hash := sha256.Sum256(data)
-	t.Logf("SHA256 hash of output file: %x", hash)
+	t.Logf("Directory Hash: %s\n", hash)
+
+	// Test directory hash
+	expectedHash := "h1:YI+evC10rsg4HesbMMkPtTW6gV5HydTax1XJ1vTdyCI="
+	if hash != expectedHash {
+		t.Error("decoder tests failed, output file hash does not match expected hash")
+	}
 }

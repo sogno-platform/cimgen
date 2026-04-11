@@ -1,13 +1,29 @@
 syntax = "proto3";
-package cimproto;
+package cimgen;
 
-import "{{ .SuperType }}.proto"
+option go_package = "proto/api/v1;apiv1";
 
+{{- range $customType := (getProtoImports .) }}
+import "{{ $customType }}.proto";
+{{- end }}
+{{- if .SuperType }}
+import "{{ .SuperType }}.proto";
+{{- end }}
+
+// {{ .Comment }}
 message {{ .Id }} {
 {{- if .SuperType }}
-    {{ .SuperType }} {{ .SuperType }} = 1
+  {{ .SuperType }} Super = 1;
+  {{- range $index, $element := .Attributes }}
+  {{- if $element.IsAssociationUsed }}
+  {{ if $element.IsList }}repeated {{ end }}{{ $element.LangType }} {{ $element.Label }} = {{ add $index 2 }};
+  {{- end }} {{/* if IsAssociationUsed */}}
+  {{- end }} {{/* range Attributes */}}
+{{- else }}
+  {{- range $index, $element := .Attributes }}
+  {{- if $element.IsAssociationUsed }}
+  {{ if $element.IsList }}repeated {{ end }}{{ $element.LangType }} {{ $element.Label }} = {{ add $index 1 }};
+  {{- end }}
+  {{- end }}
 {{- end }}
-{{- range .Attributes}}
-    {{ .LangType }} {{ .Label }} = 2
-{{- end}}
 }

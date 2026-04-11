@@ -105,10 +105,29 @@ func generateFile[T any](tmplFile string, outputFile string, outputDir string, i
 
 func generateFiles[T any](tmplFile string, fileExt string, outputDir string, input map[string]T) error {
 	funcMap := template.FuncMap{
-		"wrapAndIndent":         wrapAndIndent,
-		"capitalFirstLetter":    capitalFirstLetter,
-		"lower":                 Lower,
-		"joinAttributesCpp":     joinAttributesCpp,
+		"wrapAndIndent":      wrapAndIndent,
+		"capitalFirstLetter": capitalFirstLetter,
+		"lower":              Lower,
+		"joinAttributesCpp":  joinAttributesCpp,
+		"add":                func(a, b int) int { return a + b },
+		"startsWith":         strings.HasPrefix,
+		"getProtoImports": func(cimType CIMType) []string {
+			imports := make(map[string]bool)
+			for _, attr := range cimType.Attributes {
+				if !(attr.IsPrimitive || attr.IsCIMDatatype) && attr.LangType != "string" {
+					imports[attr.DataType] = true
+				}
+			}
+			for _, e := range cimType.EnumTypes {
+				imports[e] = true
+			}
+			result := make([]string, 0, len(imports))
+			for k := range imports {
+				result = append(result, k)
+			}
+			sort.Strings(result)
+			return result
+		},
 		"collectAttributeTypes": collectAttributeTypes,
 	}
 

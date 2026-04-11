@@ -1,0 +1,11 @@
+syntax = "proto3";
+package cimgen;
+
+option go_package = "proto/api/v1;apiv1";
+
+// {{ .Comment }}
+enum {{ .Id }} {
+  {{- range $index, $element := .Values }}
+  {{ $.Id }}_{{ $element.Label }} = {{ $index }};
+  {{- end }}
+}
