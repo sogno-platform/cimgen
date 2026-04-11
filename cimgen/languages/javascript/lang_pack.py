@@ -1,7 +1,8 @@
 import os
-import chevron
 import sys
 from importlib.resources import files
+
+import chevron
 
 
 # Setup called only once: make output directory, create base class, create profile class, etc.

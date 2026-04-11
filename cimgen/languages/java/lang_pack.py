@@ -1,8 +1,9 @@
-import chevron
 import logging
 import shutil
-from pathlib import Path
 from importlib.resources import files
+from pathlib import Path
+
+import chevron
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +44,6 @@ def get_class_location(class_name: str, class_map: dict, version: str) -> str:  
 
 # This is the function that runs the template.
 def run_template(output_path: str, class_details: dict) -> None:
-
     # Add some attribute infos
     for attribute in class_details["attributes"]:
         attribute["is_primitive_string"] = "true" if _attribute_is_primitive_string(attribute) else ""
