@@ -421,14 +421,12 @@ def _parse_rdf(input_dic: dict, version: str) -> dict[str, dict[str, CIMComponen
 def _write_all_files(
     elem_dict: dict[str, CIMComponentDefinition], lang_pack: ModuleType, output_path: str, version: str
 ) -> None:
-
     # Setup called only once: make output directory, create base class, create profile class, etc.
     lang_pack.setup(output_path, version, _get_profile_details(package_listed_by_short_name), _get_used_namespaces())
 
     recommended_class_profiles = _get_recommended_class_profiles(elem_dict)
 
     for class_name in elem_dict.keys():
-
         class_details = {
             "attributes": elem_dict[class_name].attributes(),
             "class_location": lang_pack.get_class_location(class_name, elem_dict, version),
@@ -513,7 +511,7 @@ def _write_files(class_details: dict, output_path: str) -> None:
 
 
 def _merge_profiles_and_classes(
-    profiles_array: list[dict[str, dict[str, CIMComponentDefinition]]]
+    profiles_array: list[dict[str, dict[str, CIMComponentDefinition]]],
 ) -> dict[str, CIMComponentDefinition]:
     """Merge class infos of all profiles.
 

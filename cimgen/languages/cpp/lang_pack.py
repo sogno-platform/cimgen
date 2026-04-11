@@ -1,7 +1,8 @@
-import chevron
 import shutil
-from pathlib import Path
 from importlib.resources import files
+from pathlib import Path
+
+import chevron
 
 
 # Setup called only once: make output directory, create base class, create profile class, etc.
@@ -66,7 +67,6 @@ def get_class_location(class_name: str, class_map: dict, version: str) -> str:  
 
 # This is the function that runs the template.
 def run_template(output_path: str, class_details: dict) -> None:
-
     # Add some class infos
     class_details["attribute_class_includes"] = _get_attribute_class_includes(class_details["attributes"])
     class_details["attribute_class_declarations"] = _get_attribute_class_declarations(class_details["attributes"])
