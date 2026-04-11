@@ -21,11 +21,27 @@ func (cimSpec *CIMSpecification) postprocess() {
 	cimSpec.setHasClassAttributes()
 	cimSpec.setIsFixedAttributes()
 	cimSpec.setMissingNamespaces()
-	cimSpec.markUnusedAttributesAndAssociations()
 	cimSpec.sortAttributes()
 	cimSpec.setIsInverseRoleAttributeList()
 	cimSpec.renameConflictingAttributes()
+	cimSpec.removeCircularDependencies()
 
+}
+
+// removeCircularDependencies removes circular dependencies in the CIM specification
+// by using ID references for attributes that cause circular dependencies.
+// It iterates over all CIMTypes and their attributes, and if an attribute's data
+// type cannot be mapped to a primitive type, it marks the attribute to use an ID reference
+// instead of a direct reference to the CIMType. This helps to break circular dependencies
+// and allows for successful code generation.
+func (cimSpec *CIMSpecification) removeCircularDependencies() {
+	for _, t := range cimSpec.Types {
+		for _, attr := range t.Attributes {
+			if !attr.IsPrimitive && !attr.IsEnumValue && !attr.IsCIMDatatype {
+				attr.UseIDReference = true
+			}
+		}
+	}
 }
 
 // determineDataTypes determines the data types of attributes and marks them as primitive if applicable.
@@ -330,30 +346,6 @@ func (cimSpec *CIMSpecification) setIsFixedAttributes() {
 		for _, attr := range t.Attributes {
 			if attr.CIMIsFixed != "" {
 				attr.IsFixed = true
-			}
-		}
-	}
-}
-
-// markUnusedAttributesAndAssociations marks attributes and associations as unused if they are not used.
-// An attribute is marked as unused if it is an association (DataTypeObject) and its AssociationUsed flag is false.
-// For list associations that are unused, the attribute is marked as unused.
-// For non-list associations that are unused, the attribute is marked as primitive.
-// This function updates the IsUsed and IsPrimitive fields of each CIMAttribute accordingly.
-func (cimSpec *CIMSpecification) markUnusedAttributesAndAssociations() {
-	for _, t := range cimSpec.Types {
-		for _, attr := range t.Attributes {
-			attr.IsUsed = true
-			if !attr.IsAssociationUsed {
-				if attr.CIMDataType == DataTypeObject {
-					if attr.IsList {
-						attr.IsUsed = false
-						//log.Println("Marked unused list association", t.Id+"."+attr.Id, "of type", attr.Range)
-					}
-				} else {
-					//attr.IsPrimitive = true
-					//log.Println("Replaced association with primitive", t.Id+"."+attr.Id, "of type", attr.DataType)
-				}
 			}
 		}
 	}

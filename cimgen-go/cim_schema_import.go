@@ -61,11 +61,11 @@ type CIMAttribute struct {
 	RDFDomain                  string   // from RDF schema
 	RDFType                    string   // from RDF schema
 	DefaultValue               string   // derived
-	IsUsed                     bool     // derived
 	IsEnumValue                bool     // derived
 	LangType                   string   // derived
 	IsCIMDatatype              bool     // derived
 	IsClass                    bool     // derived
+	UseIDReference             bool     // derived
 	Origin                     string   // derived
 	Origins                    []string // from RDF schema
 	CIMCategories              []string // from RDF schema
