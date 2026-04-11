@@ -10,17 +10,9 @@ repos:
       - id: mixed-line-ending
       - id: check-executables-have-shebangs
 
-  - repo: https://github.com/psf/black
-    rev: 24.10.0
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.9.9
     hooks:
-      - id: black
-
-  - repo: https://github.com/PyCQA/flake8
-    rev: 7.1.1
-    hooks:
-      - id: flake8
-
-  - repo: https://github.com/ComPWA/pyright-pre-commit
-    rev: v1.1.391
-    hooks:
-      - id: pyright
+      - id: ruff
+        args: [ --fix ]
+      - id: ruff-format

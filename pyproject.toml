@@ -29,10 +29,8 @@ classifiers = [
 
 [project.optional-dependencies]
 dev = [
-  "black",
-  "flake8",
   "pre_commit",
-  "pyright",
+  "ruff",
 ]
 
 [project.urls]
@@ -53,10 +51,9 @@ include-package-data = true
 [tool.setuptools.packages.find]
 include = ["cimgen*"]
 
-[tool.black]
+[tool.ruff]
 line-length = 120
 
-[tool.pyright]
-include = ["cimgen"]
-exclude = ["cimgen/languages/modernpython/utils"]
-typeCheckingMode = "basic"
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = []
