@@ -1,19 +1,17 @@
-# <img src="documentation/images/cimgen_logo.png" alt="CIMgen" width=120 />
-
 # CIMgen
 
 CIMgen is a command-line tool that generates language-specific data models (classes, structs) from Common Information Model (CIM) RDF schemas. It is designed to parse complex CIM RDF files and produce idiomatic code in various programming languages like Go, C++, Java, and Python.
 
-Several projects use CIMgen, see [Projects using CIMgen](documentation/CIMgenOverview.md).
+Several projects use CIMgen, see [Projects using CIMgen](docs/CIMgenProjects.md).
 
-![Overview CIMgen](documentation/images/CIMgen.svg)
+![Overview CIMgen](docs/images/cimgen_concept.svg)
 
 
-# CIMgen Go
+## CIMgen Go
 
 This is a rewrite of CIMgen in the Go programming language.
 
-## How to Build and Run
+### How to Build and Run
 
 Make sure that you have cloned the repo recursively to include the CGMES schema files from ENTSO-E
 
@@ -40,14 +38,14 @@ Alternatively, you can install cimgen.
 
     go install ./...
 
-## How to Test
+### How to Test
 
 Run the test suite using the `go test` command. The `-v` flag provides verbose output.
 
     go test -v ./...
 
 
-## Debugging
+### Debugging
 
 To analyze differences between generated file you can use
 
@@ -55,7 +53,7 @@ To analyze differences between generated file you can use
     diff -wB output/[dir 1] output/[dir 2]
 
 
-## Architecture
+### Architecture
 
 The code generation process follows these main steps:
 
@@ -64,7 +62,7 @@ The code generation process follows these main steps:
 3.  **Code Generation:** Using Go's `text/template` engine, it feeds the internal representation into language-specific templates (`lang-templates/*.tmpl`) to generate the final source code files.
 
 
-## Key Go Files
+### Key Go Files
 
 *   `cmd/cimgen/main.go`: The main entry point for the CLI tool. It parses command-line arguments and orchestrates the code generation process.
 *   `cim_generate.go`: Contains the core logic for driving the generation process for a specific language.
@@ -73,121 +71,32 @@ The code generation process follows these main steps:
 *   `generator_*.go`: A set of files (e.g., `generator_go.go`, `generator_cpp.go`) that implement the generation logic for each target language.
 
 
-# CIMgen Python
+## CIMgen Python
 
 Python tool for code generation from CIM data model for several programming languages
 
-## Usage
+### Usage
 
-### Generating C++ files
-
-#### Generating C++ files on Linux
+Run the following, replacing `lang` with the target language:
 
 ```bash
 pip install -e .
-cimgen --outdir=output/cpp/CGMES_2.4.15_27JAN2020 --schemadir=cgmes_schema/CGMES_2.4.15_27JAN2020 --langdir=cpp --cgmes_version=cgmes_v2_4_15
+cimgen --outdir=output/<lang>/CGMES_2.4.15_27JAN2020 --schemadir=cgmes_schema/CGMES_2.4.15_27JAN2020 --langdir=<lang> --cgmes_version=cgmes_v2_4_15
 ```
 
-This will build version `CGMES_2.4.15_27JAN2020` in the subfolder `output/cpp/CGMES_2.4.15_27JAN2020`.
+This will build version `CGMES_2.4.15_27JAN2020` in the subfolder `output/[lang]/CGMES_2.4.15_27JAN2020`.
+
+Options:
+- cpp
+- python
+- modernpython, i.e. PyDantic based dataclasses
 
 > [!NOTE]
 > If you wish to build an alternative version, you can see available options in the subfolder called `cgmes_schema`.
 > For the schema `CGMES_3.0.0` you have to use the option
 > `--cgmes_version=cgmes_v3_0_0`. `outdir` can be set to whichever absolute path you wish to create the files in.
 
-Alternatively, you can leverage `Makefile`:
-
-```bash
-pip install -e .
-#unset BUILD_IN_DOCKER # if you previously set to use docker
-#export SCHEMA=CGMES_3.0.0 # to use CGMES 3.0.0
-make cpp
-```
-
-#### Generating C++ files in a Docker container
-
-```bash
-docker build --tag cimgen --file Dockerfile .
-docker run --volume "$(pwd)/output:/output" cimgen --outdir=/output/cpp/CGMES_2.4.15_27JAN2020 --schemadir=/cimgen/cgmes_schema/CGMES_2.4.15_27JAN2020 --langdir=cpp --cgmes_version=cgmes_v2_4_15
-```
-
-alternatively, you can leverage `Makefile`:
-
-```bash
-export BUILD_IN_DOCKER=true
-#export SCHEMA=CGMES_3.0.0 to use CGMES 3.0.0
-make cpp
-```
-
-### Generating Python files
-
-#### Generating Python files on Linux
-
-```bash
-pip install -e .
-cimgen --outdir=output/python/CGMES_2.4.15_27JAN2020 --schemadir=cgmes_schema/CGMES_2.4.15_27JAN2020 --langdir=python --cgmes_version=cgmes_v2_4_15
-```
-
-alternatively, you can leverage `Makefile`:
-
-```bash
-pip install -e .
-#unset BUILD_IN_DOCKER # if you previously set to use docker
-#export SCHEMA=CGMES_3.0.0 # to use CGMES 3.0.0
-make python
-```
-
-#### Generating Python files in a Docker container
-
-```bash
-docker build --tag cimgen --file Dockerfile .
-docker run --volume "$(pwd)/output:/output" cimgen --outdir=/output/python/CGMES_2.4.15_27JAN2020 --schemadir=/cimgen/cgmes_schema/CGMES_2.4.15_27JAN2020 --langdir=python --cgmes_version=cgmes_v2_4_15
-```
-
-alternatively, you can leverage `Makefile`:
-
-```bash
-export BUILD_IN_DOCKER=true
-#export SCHEMA=CGMES_3.0.0 to use CGMES 3.0.0
-make python
-```
-
-### Generating Modern Python (i.e. PyDantic based dataclasses) files
-
-#### Generating Modern Python files on Linux
-
-```bash
-pip install -e .
-cimgen --outdir=output/modernpython/CGMES_2.4.15_27JAN2020 --schemadir=cgmes_schema/CGMES_2.4.15_27JAN2020 --langdir=modernpython --cgmes_version=cgmes_v2_4_15
-```
-
-`outdir` can be set to whichever absolute path you wish to create the files in.
-
-alternatively, you can leverage `Makefile`:
-
-```bash
-pip install -e .
-#unset BUILD_IN_DOCKER # if you previously set to use docker
-#export SCHEMA=CGMES_3.0.0 # to use CGMES 3.0.0
-make modernpython
-```
-
-#### Generating Modern Python files in a Docker container
-
-```bash
-docker build --tag cimgen --file Dockerfile .
-docker run --volume "$(pwd)/output:/output" cimgen --outdir=/output/modernpython/CGMES_2.4.15_27JAN2020 --schemadir=/cimgen/cgmes_schema/CGMES_2.4.15_27JAN2020 --langdir=modernpython --cgmes_version=cgmes_v2_4_15
-```
-
-alternatively, you can leverage `Makefile`:
-
-```bash
-export BUILD_IN_DOCKER=true
-#export SCHEMA=CGMES_3.0.0 to use CGMES 3.0.0
-make modernpython
-```
-
-## Custom Profiles
+### Custom Profiles
 
 To generate files for custom profiles,
 you have to copy the profile files to a subdirectory of the schema directory.
@@ -200,14 +109,7 @@ cp <custom_profile>.rdf ... cgmes_schema/<schemadir>/<customdir>/
 cimgen --outdir=output/ --schemadir=cgmes_schema/<schemadir> --langdir=<lang> --cgmes_version=<version>
 ```
 
-## Development
-
-### Developer Installation
-
-```bash
-git clone https://github.com/sogno-platform/cimgen.git
-cd cimgen
-```
+### Development
 
 For the python toolchain, install the package in dev mode:
 
