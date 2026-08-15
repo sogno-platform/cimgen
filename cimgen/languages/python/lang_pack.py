@@ -109,7 +109,7 @@ def _default_value(attribute: dict) -> str:
     if attribute["is_class_attribute"]:
         return "None"
     if attribute["is_list_attribute"]:
-        return '"list"'
+        return "None"
     # primitive attribute
     if attribute["attribute_class"] == "Integer":
         return "0"
