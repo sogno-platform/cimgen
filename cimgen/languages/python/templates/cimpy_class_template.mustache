@@ -32,7 +32,7 @@ class {{class_name}}({{subclass_of}}):
 {{/super_init}}
 
 {{#attributes}}
-        self.{{label}} = {{label}}
+        self.{{label}} = {{label}}{{#is_list_attribute}} or []{{/is_list_attribute}}
 {{/attributes}}
 {{^attributes}}
         pass
