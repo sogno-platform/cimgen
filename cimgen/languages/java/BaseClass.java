@@ -89,7 +89,7 @@ public abstract class BaseClass {
      */
     @Override
     public final String toString() {
-       return cimType + " with rdfid " + rdfid;
+        return cimType + " with rdfid " + rdfid;
     }
 
     /**
@@ -221,11 +221,14 @@ public abstract class BaseClass {
 
     protected static Double getDoubleFromString(String stringValue) {
         try {
-            return Double.valueOf(stringValue);
+            Double value = Double.valueOf(stringValue);
+            if (Double.isFinite(value)) {
+                return value;
+            }
         } catch (NumberFormatException ex) {
             LOG.error("Error getting Double from String", ex);
-            return null;
         }
+        return null;
     }
 
     protected static Integer getIntegerFromString(String stringValue) {
