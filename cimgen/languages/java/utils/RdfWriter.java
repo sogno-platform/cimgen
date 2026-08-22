@@ -237,7 +237,8 @@ public class RdfWriter {
                             if (attr != null) {
                                 var namespaceUrl = cimObj.getAttributeNamespaceUrl(attrName);
                                 String attrFullName = cimObj.getAttributeFullName(attrName);
-                                if (cimObj.isPrimitiveAttribute(attrName)) {
+                                if (cimObj.isPrimitiveAttribute(attrName) &&
+                                        !(attr instanceof Double && !Double.isFinite((Double) attr))) {
                                     writer.writeCharacters("\n    ");
                                     writer.writeStartElement(namespaceUrl, attrFullName);
                                     writer.writeCharacters(attr.toString());
