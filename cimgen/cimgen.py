@@ -161,10 +161,11 @@ class RDFSEntry:
     def _extract_text(object_dic) -> str:
         if isinstance(object_dic, list):
             return object_dic[0]["_"]
-        elif "_" in object_dic.keys():
-            return object_dic["_"]
-        elif "$rdfs:Literal" in object_dic.keys():
-            return object_dic["$rdfs:Literal"]
+        if isinstance(object_dic, dict):
+            if "_" in object_dic.keys():
+                return object_dic["_"]
+            if "$rdfs:Literal" in object_dic.keys():
+                return object_dic["$rdfs:Literal"]
         return ""
 
     # Extract String out of list or dictionary
@@ -397,6 +398,9 @@ def _parse_rdf(input_dic: dict, version: str) -> dict[str, dict[str, CIMComponen
         if "profile_iri_v3" in rdfs_entry_types:
             profile_uri_list.append(rdfs_entry.version_iri())
 
+    if not short_profile_name or short_profile_name == "FH":
+        return {}
+
     _add_profile_to_packages(profile_name, short_profile_name, profile_uri_list)
 
     # Add attributes to corresponding class
@@ -618,7 +622,9 @@ def _add_subclasses_of_subclasses(class_dict: dict[str, CIMComponentDefinition])
         class_dict[class_name].set_subclasses(sorted(subclasses_map.get(class_name, set())))
 
 
-def cim_generate(directory: Path, output_path: str, version: str, lang_pack: ModuleType) -> None:
+def cim_generate(
+    directory: Path, output_path: str, version: str, lang_pack: ModuleType, recursive: bool = False
+) -> None:
     """Generates cgmes classes from cgmes ontology
 
     This function uses package xmltodict to parse the RDF files. The _parse_rdf function sorts the classes to
@@ -636,13 +642,18 @@ def cim_generate(directory: Path, output_path: str, version: str, lang_pack: Mod
     :param output_path: The output directory
     :param version:     CGMES version, e.g. version = "cgmes_v2_4_15"
     :param lang_pack:   python module containing language specific functions
+    :param recursive:   Search the schema directory recursively for RDF files
     """
     profiles_array: list[dict[str, dict[str, CIMComponentDefinition]]] = []
 
     t0 = time()
 
-    # Iterate over RDF files: first in the main directory, than in subdirectories
-    for file in sorted(directory.glob("*.rdf")) + sorted(directory.glob("*/**/*.rdf")):
+    # Iterate over RDF files: first in the main directory, than (optionally) in subdirectories
+    rdf_files = sorted(directory.glob("*.rdf"))
+    if recursive:
+        rdf_files.extend(sorted(directory.glob("*/**/*.rdf")))
+
+    for file in rdf_files:
         logger.info(f"Start of parsing file '{file}'.")
 
         xmlstring = file.read_text(encoding="utf-8")

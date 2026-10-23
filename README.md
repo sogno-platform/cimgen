@@ -102,11 +102,12 @@ To generate files for custom profiles,
 you have to copy the profile files to a subdirectory of the schema directory.
 All profiles in the schema directory and its subdirectories are read,
 but the profiles in the main directory are read first.
+You have to use the option --recursive in that case.
 
 ```bash
 mkdir cgmes_schema/<schemadir>/<customdir>/
 cp <custom_profile>.rdf ... cgmes_schema/<schemadir>/<customdir>/
-cimgen --outdir=output/ --schemadir=cgmes_schema/<schemadir> --langdir=<lang> --cgmes_version=<version>
+cimgen --outdir=output/ --schemadir=cgmes_schema/<schemadir> --langdir=<lang> --cgmes_version=<version> --recursive
 ```
 
 ### Development
