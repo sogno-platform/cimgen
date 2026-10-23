@@ -93,16 +93,29 @@ cimgen --outdir=output/<lang>/CGMES_2.4.15_27JAN2020 --schemadir=cgmes_schema/CG
 
 This will build version `CGMES_2.4.15_27JAN2020` in the subfolder `output/[lang]/CGMES_2.4.15_27JAN2020`.
 
-Options:
+Options for `langdir`:
 
 - cpp
 - python
 - modernpython, i.e. PyDantic based dataclasses
+- javascript
+- java
 
 > [!NOTE]
 > If you wish to build an alternative version, you can see available options in the subfolder called `cgmes_schema`.
 > For the schema `CGMES_3.0.0` you have to use the option
 > `--cgmes_version=cgmes_v3_0_0`. `outdir` can be set to whichever absolute path you wish to create the files in.
+
+Options for `schemadir` and `cgmes_version`:
+
+schemadir                                                                | cgmes_version | Notes
+------------------------------------------------------------------------ | ------------- | -----
+cgmes_schema/CGMES_2.4.13_18DEC2013                                      | cgmes_v2_4_13 |
+cgmes_schema/CGMES_2.4.15_27JAN2020                                      | cgmes_v2_4_15 |
+cgmes_schema/CGMES_3.0.0                                                 | cgmes_v3_0_0  |
+cgmes-application-profiles-library/CGMES/PastReleases/v2-4/Original/RDFS | cgmes_v2_4_15 | same results as `cgmes_schema/CGMES_2.4.15_27JAN2020`
+cgmes-application-profiles-library/CGMES/CurrentRelease/RDFS             | cgmes_v3_0_0  | same results as `cgmes_schema/CGMES_3.0.0`
+cgmes_schema/CGMES_2.4.15_16FEB2016                                      | cgmes_v2_4_15 | wrong namespace for EquipmentVersion and OperationalLimitType.limitType
 
 ### Custom Profiles
 
