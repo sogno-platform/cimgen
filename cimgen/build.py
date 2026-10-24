@@ -18,11 +18,20 @@ def build() -> None:
         default="cgmes_v2_4_15",
         help="CGMES Version",
     )
-    args = parser.parse_args()
+    parser.add_argument(
+        "--recursive",
+        action="store_true",
+        help="Search the schema directory recursively",
+    )
+    args: argparse.Namespace = parser.parse_args()
 
     lang_pack: ModuleType = importlib.import_module(f"cimgen.languages.{args.langdir}.lang_pack")
-    schema_path = Path.cwd() / args.schemadir
-    cimgen.cim_generate(schema_path, args.outdir, args.cgmes_version, lang_pack)
+
+    schema_path: Path = Path(args.schemadir).resolve()
+    if not schema_path.is_dir():
+        parser.error(f"Schema directory '{schema_path}' does not exist or is not a directory.")
+
+    cimgen.cim_generate(schema_path, args.outdir, args.cgmes_version, lang_pack, recursive=args.recursive)
 
 
 if __name__ == "__main__":
