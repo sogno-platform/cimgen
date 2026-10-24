@@ -51,8 +51,13 @@ profile_template_files = [
     {"filename": "cpp_profile_header_template.mustache", "ext": ".hpp"},
     {"filename": "cpp_profile_object_template.mustache", "ext": ".cpp"},
 ]
-classlist_template = {"filename": "cpp_classlist_template.mustache", "ext": ".hpp"}
-iec61970_template = {"filename": "cpp_iec61970_template.mustache", "ext": ".hpp"}
+classlist_template_files = [
+    {"filename": "cpp_classlist_header_template.mustache", "ext": ".hpp"},
+    {"filename": "cpp_classlist_object_template.mustache", "ext": ".cpp"},
+]
+iec61970_template_files = [
+    {"filename": "cpp_iec61970_template.mustache", "ext": ".hpp"},
+]
 
 partials = {}
 
@@ -245,27 +250,28 @@ def _is_primitive_or_enum_class(file: Path) -> bool:
 
 
 def _create_header_include_file(
-    directory: Path, header_include_filename: str, template_info: dict[str, str], blacklist: list[str]
+    directory: Path, filename: str, template_infos: list[dict[str, str]], blacklist: list[str]
 ) -> None:
     classes = []
     for file in sorted(directory.glob("*.hpp"), key=lambda f: f.stem):
         class_name = file.stem
         if not _is_primitive_or_enum_class(file) and class_name not in blacklist:
             classes.append(class_name)
-    path = directory / (header_include_filename + template_info["ext"])
-    _write_templated_file(path, {"classes": classes}, template_info["filename"])
+    for template_info in template_infos:
+        path = directory / (filename + template_info["ext"])
+        _write_templated_file(path, {"classes": classes}, template_info["filename"])
 
 
 def resolve_headers(path: str, version: str) -> None:  # NOSONAR
     _create_header_include_file(
         Path(path),
         "CIMClassList",
-        classlist_template,
+        classlist_template_files,
         class_blacklist,
     )
     _create_header_include_file(
         Path(path),
         "IEC61970",
-        iec61970_template,
+        iec61970_template_files,
         iec61970_blacklist,
     )
