@@ -16,7 +16,7 @@ def setup(output_path: str, version: str, cgmes_profile_details: list[dict], nam
         file.unlink()
     # Add all hardcoded utils and create parent dir
     for file in source_dir.glob("static/*.[ch]*"):
-        dest_file = dest_dir / file.relative_to(source_dir)
+        dest_file = dest_dir / file.name
         dest_file.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy(file, dest_file)
     _create_constants(dest_dir, version, namespaces)
