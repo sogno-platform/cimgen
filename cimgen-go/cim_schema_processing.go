@@ -474,9 +474,6 @@ func (cimSpec *CIMSpecification) renameConflictingAttributes() {
 			if attr.Label == "switch" {
 				attr.Label = "switch_"
 				//log.Println("Renamed switch attribute to", attr.Label, "in type", t.Id)
-			} else if attr.Label == "IdentifiedObject" {
-				attr.Label = "IdentifiedObject_"
-				//log.Println("Renamed IdentifiedObject attribute to", attr.Label, "in type", t.Id)
 			}
 		}
 	}

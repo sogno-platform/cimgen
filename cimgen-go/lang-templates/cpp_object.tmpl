@@ -7,7 +7,6 @@ Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cim
 #include <ios>
 #include <iterator>
 #include <sstream>
-
 {{range (collectAttributeTypes .Attributes)}}
 #include "{{.}}.hpp"
 {{- end}}
@@ -77,8 +76,7 @@ const std::list<CGMESProfile>& {{.Id}}::getPossibleProfilesIncludingAttributes()
 {
 	return getCimClassDetails().PossibleProfilesIncludingAttributes;
 }
-
-{{- range .Attributes}}
+{{range .Attributes}}
 {{- if or .IsPrimitive .IsCIMDatatype .IsEnumValue}}
 bool assign_{{.RDFDomain}}_{{.Label}}(std::stringstream& buffer, BaseClass* BaseClass_ptr1)
 {
@@ -98,7 +96,6 @@ bool assign_{{.RDFDomain}}_{{.Label}}(std::stringstream& buffer, BaseClass* Base
 	return false;
 }
 {{- end}}
-
 {{- if .IsClass}}
 {{- if .HasInverseRole}}
 bool assign_{{.DataType}}_{{.InverseRoleAttribute}}(BaseClass*, BaseClass*);
@@ -133,7 +130,6 @@ bool assign_{{.RDFDomain}}_{{.Label}}(BaseClass* BaseClass_ptr1, BaseClass* Base
 }
 {{- end}} {{- /* HasInverseRole */}}
 {{- end}} {{- /* IsClass */}}
-
 {{- if .IsList}}
 {{- if .HasInverseRole}}
 bool assign_{{.DataType}}_{{.InverseRoleAttribute}}(BaseClass*, BaseClass*);
@@ -168,8 +164,7 @@ bool assign_{{.RDFDomain}}_{{.Label}}(BaseClass* BaseClass_ptr1, BaseClass* Base
 }
 {{- end}} {{- /* end if HasInverseRole */}}
 {{- end}} {{- /* end if IsList */}}
-{{- end}} {{- /* range Attributes */}}
-
+{{end}} {{- /* range Attributes */}}
 {{- range .Attributes}}
 {{- if .IsAssociationUsed}}
 {{- if or .IsPrimitive .IsCIMDatatype .IsEnumValue}}
@@ -188,7 +183,6 @@ bool get_{{.RDFDomain}}_{{.Label}}(const BaseClass* BaseClass_ptr1, std::strings
 	return false;
 }
 {{- end}} {{- /* if IsPrimitive IsCIMDatatype IsEnumValue */}}
-
 {{- if .IsClass}}
 bool get_{{.RDFDomain}}_{{.Label}}(const BaseClass* BaseClass_ptr1, std::list<const BaseClass*>& BaseClass_list)
 {
@@ -204,7 +198,6 @@ bool get_{{.RDFDomain}}_{{.Label}}(const BaseClass* BaseClass_ptr1, std::list<co
 	return false;
 }
 {{- end}} {{- /* if IsClass */}}
-
 {{- if .IsList}}
 bool get_{{.RDFDomain}}_{{.Label}}(const BaseClass* BaseClass_ptr1, std::list<const BaseClass*>& BaseClass_list)
 {
@@ -218,8 +211,7 @@ bool get_{{.RDFDomain}}_{{.Label}}(const BaseClass* BaseClass_ptr1, std::list<co
 }
 {{- end}} {{- /* if IsList */}}
 {{- end}} {{- /* if IsAssociationUsed */}}
-{{- end}} {{- /* range Attributes */}}
-
+{{end}} {{- /* range Attributes */}}
 const char {{.Id}}::debugName[] = "{{.Id}}";
 const char* {{.Id}}::debugString() const
 {
@@ -233,7 +225,7 @@ void {{.Id}}::addConstructToMap(std::unordered_map<std::string, BaseClass* (*)()
 
 void {{.Id}}::addPrimitiveAssignFnsToMap(std::unordered_map<std::string, assign_function>& assign_map)
 {
-{{range .Attributes}}
+{{- range .Attributes}}
 {{- if or .IsPrimitive .IsCIMDatatype .IsEnumValue}}
 	assign_map.emplace("{{.RDFDomain}}.{{.Label}}", &assign_{{.RDFDomain}}_{{.Label}});
 {{- end}}
@@ -242,7 +234,7 @@ void {{.Id}}::addPrimitiveAssignFnsToMap(std::unordered_map<std::string, assign_
 
 void {{.Id}}::addClassAssignFnsToMap(std::unordered_map<std::string, class_assign_function>& assign_map)
 {
-{{range .Attributes}}
+{{- range .Attributes}}
 {{- if or .IsClass .IsList}}
 	assign_map.emplace("{{.RDFDomain}}.{{.Label}}", &assign_{{.RDFDomain}}_{{.Label}});
 {{- end}}
@@ -252,7 +244,7 @@ void {{.Id}}::addClassAssignFnsToMap(std::unordered_map<std::string, class_assig
 void {{.Id}}::addPrimitiveGetFnsToMap(std::map<std::string, get_function>& get_map) const
 {
 	{{if .SuperType}}{{.SuperType}}{{else}}BaseClass{{end}}::addPrimitiveGetFnsToMap(get_map);
-{{range .Attributes}}
+{{- range .Attributes}}
 {{- if or .IsPrimitive .IsCIMDatatype}}
 	get_map.emplace("{{.RDFDomain}}.{{.Label}}", &get_{{.RDFDomain}}_{{.Label}});
 {{- end}}
@@ -262,7 +254,7 @@ void {{.Id}}::addPrimitiveGetFnsToMap(std::map<std::string, get_function>& get_m
 void {{.Id}}::addClassGetFnsToMap(std::map<std::string, class_get_function>& get_map) const
 {
 	{{if .SuperType}}{{.SuperType}}{{else}}BaseClass{{end}}::addClassGetFnsToMap(get_map);
-{{range .Attributes}}
+{{- range .Attributes}}
 {{- if .IsAssociationUsed}}
 {{- if or .IsClass .IsList}}
 	get_map.emplace("{{.RDFDomain}}.{{.Label}}", &get_{{.RDFDomain}}_{{.Label}});
@@ -274,7 +266,7 @@ void {{.Id}}::addClassGetFnsToMap(std::map<std::string, class_get_function>& get
 void {{.Id}}::addEnumGetFnsToMap(std::map<std::string, get_function>& get_map) const
 {
 	{{if .SuperType}}{{.SuperType}}{{else}}BaseClass{{end}}::addEnumGetFnsToMap(get_map);
-{{range .Attributes}}
+{{- range .Attributes}}
 {{- if .IsEnumValue}}
 	get_map.emplace("{{.RDFDomain}}.{{.Label}}", &get_{{.RDFDomain}}_{{.Label}});
 {{- end}}

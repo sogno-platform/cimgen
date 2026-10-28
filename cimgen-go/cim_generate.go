@@ -128,6 +128,20 @@ func generateFiles[T any](tmplFile string, fileExt string, outputDir string, inp
 			sort.Strings(result)
 			return result
 		},
+		"getCppImports": func(cimType CIMType) []string {
+			result := make([]string, 0)
+			for _, t := range cimType.PrimitiveTypes {
+				result = append(result, t)
+			}
+			for _, t := range cimType.CIMDatatypes {
+				result = append(result, t)
+			}
+			for _, t := range cimType.EnumTypes {
+				result = append(result, t)
+			}
+			sort.Strings(result)
+			return result
+		},
 		"collectAttributeTypes": collectAttributeTypes,
 	}
 

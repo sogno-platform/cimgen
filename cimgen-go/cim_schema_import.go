@@ -14,8 +14,8 @@ import (
 )
 
 const (
-	CGMESVersion_3_0_0  = "3.0.0"
-	CGMESVersion_2_4_15 = "2.4.15"
+	CGMESVersion_3_0_0  = "cgmes_v3_0_0"
+	CGMESVersion_2_4_15 = "cgmes_v2_4_15"
 )
 
 // enum to determine primitve types
@@ -207,6 +207,9 @@ func (cimSpec *CIMSpecification) ImportCIMSchemaFiles(schemaFiles string) error 
 // addRDFMap adds the CIM types, enums, and ontology from the input map to the CIMSpecification.
 func (cimSpec *CIMSpecification) addRDFMap(inputMap map[string]interface{}) {
 	cimTypes, cimEnums, cimOntology, namespaces, cimDatatypes, cimPrimitives := processRDFMap(inputMap)
+	if cimOntology.Keyword == "FH" {
+		return
+	}
 	cimSpec.Types = mergeCimTypes(cimSpec.Types, cimTypes)
 	cimSpec.Enums = mergeCimEnums(cimSpec.Enums, cimEnums)
 	cimSpec.CIMDatatypes = mergeCIMDatatypes(cimSpec.CIMDatatypes, cimDatatypes)
@@ -502,8 +505,8 @@ func processOntology(classMap map[string]interface{}) CIMOntology {
 		OWLVersionIRI:  extractResource(classMap, "owl:versionIRI"),
 		OWLVersionInfo: extractText(classMap, "owl:versionInfo"),
 		Keyword:        extractValue(classMap, "dcat:keyword"),
-		// remove suffix " Vocabulary" from name if present
-		Name: strings.TrimSuffix(extractText(classMap, "dcterms:title"), " Vocabulary"),
+		// remove suffix " Vocabulary" from name if present and remove all spaces
+		Name: strings.ReplaceAll(strings.TrimSuffix(extractText(classMap, "dcterms:title"), " Vocabulary"), " ", ""),
 	}
 }
 
