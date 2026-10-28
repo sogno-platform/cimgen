@@ -21,8 +21,7 @@ public final class CimConstants {
     public static final Map<String, String> NAMESPACES_MAP;
     static {
         var map = new HashMap<String, String>();
-
-{{- range $key, $value := .ProfileNamespaces}}
+{{range $key, $value := .ProfileNamespaces}}
         map.put("{{$key}}", "{{$value}}");
 {{- end}}
 

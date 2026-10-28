@@ -52,8 +52,7 @@ public final class CimClassMap {
     private static final Map<String, Function<String, BaseClass>> CREATE_MAP;
     static {
         var map = new LinkedHashMap<String, Function<String, BaseClass>>();
-
-{{- range .Types}}
+{{range .Types}}
         map.put("{{.Id}}", rdfid -> new {{.Id}}(rdfid));
 {{- end }}
 
