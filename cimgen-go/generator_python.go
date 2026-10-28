@@ -98,11 +98,11 @@ func (cimSpec *CIMSpecification) setDefaultValuesPython() {
 	for _, t := range cimSpec.Types {
 		for _, attr := range t.Attributes {
 			if attr.IsList {
-				attr.DefaultValue = "list" // Set default value for list attributes
+				attr.DefaultValue = "None"
 			} else if attr.IsClass {
 				attr.DefaultValue = "None"
 			} else if attr.IsEnumValue {
-				attr.DefaultValue = "\"\""
+				attr.DefaultValue = "None"
 			} else {
 				attr.DefaultValue = MapDefaultValuePython(attr.DataType)
 			}
