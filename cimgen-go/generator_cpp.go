@@ -27,7 +27,10 @@ func (spec *CIMSpecification) GenerateCpp(outputDir string) error {
 	if err := generateFile("cpp_constants_object", "CimConstants.cpp", outputDir, spec); err != nil {
 		return err
 	}
-	if err := generateFile("cpp_classlist", "CIMClassList.hpp", outputDir, spec); err != nil {
+	if err := generateFile("cpp_classlist_header", "CIMClassList.hpp", outputDir, spec); err != nil {
+		return err
+	}
+	if err := generateFile("cpp_classlist_object", "CIMClassList.cpp", outputDir, spec); err != nil {
 		return err
 	}
 	if err := generateFile("cpp_profile_header", "CGMESProfile.hpp", outputDir, spec); err != nil {

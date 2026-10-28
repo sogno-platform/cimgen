@@ -1,0 +1,20 @@
+/*
+Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cimgen
+*/
+#include "CIMClassList.hpp"
+
+#include "IEC61970.hpp"
+
+using namespace CIMPP;
+
+const std::list<BaseClassDefiner>& getCIMClassList()
+{
+	static const std::list<BaseClassDefiner> classList =
+	{
+{{#classes}}
+		{{.}}::declare(),
+{{/classes}}
+		UnknownType::declare(),
+	};
+	return classList;
+}
