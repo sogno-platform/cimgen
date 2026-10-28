@@ -78,6 +78,7 @@ func generateFile[T any](tmplFile string, outputFile string, outputDir string, i
 		"wrapAndIndent":      wrapAndIndent,
 		"capitalFirstLetter": capitalFirstLetter,
 		"lower":              Lower,
+		"add":                func(a, b int) int { return a + b },
 	}
 
 	// Since ParseFile does not work well with files in subdirectories, we read the file manually

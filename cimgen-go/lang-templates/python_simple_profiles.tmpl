@@ -28,7 +28,7 @@ profile_uris = {  # Those are strings, not real addresses, hence the NOSONAR.
 class Profile(Enum):
     """Enum containing all CGMES profiles and their export priority."""
 {{range .OntologyList}}
-    {{.Keyword}} = {{.Priority}}
+    {{.Keyword}} = {{ add .Priority -1 }}
 {{- end}}
 
     def long_name(self):
