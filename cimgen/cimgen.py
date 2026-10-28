@@ -1,4 +1,6 @@
+import html
 import logging
+import re
 import textwrap
 import warnings
 from pathlib import Path
@@ -71,16 +73,11 @@ class RDFSEntry:
 
     def comment(self) -> str:
         if "rdfs:comment" in self.json_definition:
-            return (
-                RDFSEntry._extract_text(self.json_definition["rdfs:comment"])
-                .replace("–", "-")
-                .replace("“", '"')
-                .replace("”", '"')
-                .replace("’", "'")
-                .replace("°", "[SYMBOL REMOVED]")
-                .replace("º", "[SYMBOL REMOVED]")
-                .replace("\n", " ")
-            )
+            comment = RDFSEntry._extract_text(self.json_definition["rdfs:comment"])
+            decoded = html.unescape(html.unescape(comment))
+            plain_text = re.sub(r"<[^ =>][^>]*>", "", decoded)
+            one_line = re.sub(r"\s+", " ", plain_text).strip()
+            return one_line.replace('"', "'").replace("–", "-")
         else:
             return ""
 
@@ -464,8 +461,6 @@ def _write_all_files(
 
         for attribute in class_details["attributes"]:
             if "comment" in attribute:
-                attribute["comment"] = attribute["comment"].replace('"', "`")
-                attribute["comment"] = attribute["comment"].replace("'", "`")
                 attribute["wrapped_comment"] = _wrap_and_clean(
                     attribute["comment"],
                     width=114 - len(attribute["label"]),
