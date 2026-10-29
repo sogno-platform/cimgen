@@ -1,13 +1,17 @@
 import templates from "../../templates/index.js"
+{{- if .SuperType}}
 import {{.SuperType}} from "./{{.SuperType}}.js"
+{{- else}}
+import BaseClass from "./BaseClass.js"
+{{- end}}
 import common from "../../src/common.js"
 import CGMESProfile from "./CGMESProfile.js"
 
 
-class {{.Id}} extends {{.SuperType}} {
+class {{.Id}} extends {{if .SuperType}}{{.SuperType}}{{else}}BaseClass{{end}} {
 
     static attributeHTML(object, cimmenu, classType="{{.Id}}") {
-        let attributeEntries = {{.SuperType}}.attributeHTML(object, cimmenu, classType);
+        let attributeEntries = {{if .SuperType}}{{.SuperType}}{{else}}BaseClass{{end}}.attributeHTML(object, cimmenu, classType);
 {{- range .Attributes}}
 {{- if .IsAssociationUsed}}
         if ('cim:{{.Id}}' in object) {
@@ -53,7 +57,7 @@ class {{.Id}} extends {{.SuperType}} {
         if ( attributes.indexOf(attribute) >= 0 ) {
             return true;
         }
-        else if ( {{.SuperType}}.isMemberAttribute(attribute) ) {
+        else if ( {{if .SuperType}}{{.SuperType}}{{else}}BaseClass{{end}}.isMemberAttribute(attribute) ) {
             return true;
         }
         else {
