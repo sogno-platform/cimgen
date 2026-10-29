@@ -70,6 +70,7 @@ type CIMAttribute struct {
 	Origin                     string   // derived
 	Origins                    []string // from RDF schema
 	CIMCategories              []string // from RDF schema
+	VariableName               string   // derived
 }
 
 // CIMType represents a CIM class/type with its properties and attributes.

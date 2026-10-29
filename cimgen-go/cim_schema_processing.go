@@ -23,7 +23,7 @@ func (cimSpec *CIMSpecification) postprocess() {
 	cimSpec.setMissingNamespaces()
 	cimSpec.sortAttributes()
 	cimSpec.setIsInverseRoleAttributeList()
-	cimSpec.renameConflictingAttributes()
+	cimSpec.setVariableName()
 	cimSpec.removeCircularDependencies()
 
 }
@@ -467,13 +467,16 @@ func (cimSpec *CIMSpecification) isAttributeWithInverseList(a *CIMAttribute) boo
 	return false
 }
 
-// renameConflictingAttributes renames attributes that may cause conflicts.
-func (cimSpec *CIMSpecification) renameConflictingAttributes() {
+// setVariableName sets the name of the label used as variable name.
+// Some label names are not allowed as name of a variable.
+// Prevent collision of attribute and class name (e.g. AvailabilitySchedule in profile AvailabilitySchedule).
+func (cimSpec *CIMSpecification) setVariableName() {
 	for _, t := range cimSpec.Types {
 		for _, attr := range t.Attributes {
-			if attr.Label == "switch" {
-				attr.Label = "switch_"
-				//log.Println("Renamed switch attribute to", attr.Label, "in type", t.Id)
+			if attr.Label == "switch" || attr.Label == t.Id {
+				attr.VariableName = attr.Label + "_"
+			} else {
+				attr.VariableName = attr.Label
 			}
 		}
 	}

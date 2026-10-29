@@ -84,9 +84,9 @@ bool assign_{{.RDFDomain}}_{{.Label}}(std::stringstream& buffer, BaseClass* Base
 	if (element != nullptr)
 	{
 {{- if and .IsPrimitive (eq .LangType "std::string")}}
-		element->{{.Label}} = buffer.str();
+		element->{{.VariableName}} = buffer.str();
 {{- else}}
-		buffer >> element->{{.Label}};
+		buffer >> element->{{.VariableName}};
 {{- end}}
 		if (!buffer.fail())
 		{
@@ -105,9 +105,9 @@ bool assign_{{.RDFDomain}}_{{.Label}}(BaseClass* BaseClass_ptr1, BaseClass* Base
 	{{.DataType}}* element2 = dynamic_cast<{{.DataType}}*>(BaseClass_ptr2);
 	if (element != nullptr && element2 != nullptr)
 	{
-		if (element->{{.Label}} != element2)
+		if (element->{{.VariableName}} != element2)
 		{
-			element->{{.Label}} = element2;
+			element->{{.VariableName}} = element2;
 			return assign_{{.DataType}}_{{.InverseRoleAttribute}}(BaseClass_ptr2, BaseClass_ptr1);
 		}
 		return true;
@@ -120,8 +120,8 @@ bool assign_{{.RDFDomain}}_{{.Label}}(BaseClass* BaseClass_ptr1, BaseClass* Base
 	{{.RDFDomain}}* element = dynamic_cast<{{.RDFDomain}}*>(BaseClass_ptr1);
 	if (element != nullptr)
 	{
-		element->{{.Label}} = dynamic_cast<{{.DataType}}*>(BaseClass_ptr2);
-		if (element->{{.Label}} != nullptr)
+		element->{{.VariableName}} = dynamic_cast<{{.DataType}}*>(BaseClass_ptr2);
+		if (element->{{.VariableName}} != nullptr)
 		{
 			return true;
 		}
@@ -139,9 +139,9 @@ bool assign_{{.RDFDomain}}_{{.Label}}(BaseClass* BaseClass_ptr1, BaseClass* Base
 	{{.DataType}}* element2 = dynamic_cast<{{.DataType}}*>(BaseClass_ptr2);
 	if (element != nullptr && element2 != nullptr)
 	{
-		if (std::find(element->{{.Label}}.begin(), element->{{.Label}}.end(), element2) == element->{{.Label}}.end())
+		if (std::find(element->{{.VariableName}}.begin(), element->{{.VariableName}}.end(), element2) == element->{{.VariableName}}.end())
 		{
-			element->{{.Label}}.push_back(element2);
+			element->{{.VariableName}}.push_back(element2);
 			return assign_{{.DataType}}_{{.InverseRoleAttribute}}(BaseClass_ptr2, BaseClass_ptr1);
 		}
 		return true;
@@ -156,7 +156,7 @@ bool assign_{{.RDFDomain}}_{{.Label}}(BaseClass* BaseClass_ptr1, BaseClass* Base
 	{
 		if (dynamic_cast<{{.DataType}}*>(BaseClass_ptr2) != nullptr)
 		{
-			element->{{.DataType}}.push_back(dynamic_cast<{{.DataType}}*>(BaseClass_ptr2));
+			element->{{.VariableName}}.push_back(dynamic_cast<{{.DataType}}*>(BaseClass_ptr2));
 			return true;
 		}
 	}
@@ -173,7 +173,7 @@ bool get_{{.RDFDomain}}_{{.Label}}(const BaseClass* BaseClass_ptr1, std::strings
 	const {{.RDFDomain}}* element = dynamic_cast<const {{.RDFDomain}}*>(BaseClass_ptr1);
 	if (element != nullptr)
 	{
-		buffer << element->{{.Label}};
+		buffer << element->{{.VariableName}};
 		if (!buffer.str().empty())
 		{
 			return true;
@@ -189,9 +189,9 @@ bool get_{{.RDFDomain}}_{{.Label}}(const BaseClass* BaseClass_ptr1, std::list<co
 	const {{.RDFDomain}}* element = dynamic_cast<const {{.RDFDomain}}*>(BaseClass_ptr1);
 	if (element != nullptr)
 	{
-		if (element->{{.Label}} != 0)
+		if (element->{{.VariableName}} != 0)
 		{
-			BaseClass_list.push_back(element->{{.Label}});
+			BaseClass_list.push_back(element->{{.VariableName}});
 			return true;
 		}
 	}
@@ -204,7 +204,7 @@ bool get_{{.RDFDomain}}_{{.Label}}(const BaseClass* BaseClass_ptr1, std::list<co
 	const {{.RDFDomain}}* element = dynamic_cast<const {{.RDFDomain}}*>(BaseClass_ptr1);
 	if (element != nullptr)
 	{
-		std::copy(element->{{.Label}}.begin(), element->{{.Label}}.end(), std::back_inserter(BaseClass_list));
+		std::copy(element->{{.VariableName}}.begin(), element->{{.VariableName}}.end(), std::back_inserter(BaseClass_list));
 		return !BaseClass_list.empty();
 	}
 	return false;
