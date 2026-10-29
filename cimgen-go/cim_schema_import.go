@@ -690,7 +690,7 @@ func extractStringOrResource(obj interface{}) string {
 func extractText(obj map[string]interface{}, key string) string {
 	if v, ok := obj[key]; ok {
 		if m, ok := v.(map[string]interface{}); ok {
-			return m["_"].(string)
+			return extractValue(m, "_")
 		}
 	}
 	return ""
