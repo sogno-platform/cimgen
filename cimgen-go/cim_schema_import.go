@@ -82,8 +82,8 @@ type CIMType struct {
 	CIMStereotype      string          // from RDF schema
 	RDFType            string          // from RDF schema
 	SuperType          string          // from RDF schema
-	SuperTypes         []string        // TODO derived
-	SubTypes           []string        // TODO derived
+	SuperTypes         []string        // derived
+	SubTypes           []string        // derived
 	HasClassAttributes bool            // derived
 	PrimitiveTypes     []string        // derived
 	CIMDatatypes       []string        // derived

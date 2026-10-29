@@ -25,7 +25,8 @@ func (cimSpec *CIMSpecification) postprocess() {
 	cimSpec.setIsInverseRoleAttributeList()
 	cimSpec.setVariableName()
 	cimSpec.removeCircularDependencies()
-
+	cimSpec.setSuperTypesOfSuperTypes()
+	cimSpec.setSubTypesOfSubTypes()
 }
 
 // removeCircularDependencies removes circular dependencies in the CIM specification
@@ -478,6 +479,48 @@ func (cimSpec *CIMSpecification) setVariableName() {
 			} else {
 				attr.VariableName = attr.Label
 			}
+		}
+	}
+}
+
+// setSuperTypesOfSuperTypes sets the list of supertypes for each type.
+// The algorithm searches supertypes of supertypes recursively. The resulting lists are set as
+// attribute SuperTypes in the type definition. They are sorted upwards according to the hierarchy.
+func (cimSpec *CIMSpecification) setSuperTypesOfSuperTypes() {
+	for _, t := range cimSpec.Types {
+		superTypes := make([]string, 0)
+		visited := make(map[string]bool)
+		current := t.SuperType
+		for current != "" && !visited[current] {
+			visited[current] = true
+			superTypes = append(superTypes, current)
+			if parent, ok := cimSpec.Types[current]; ok {
+				current = parent.SuperType
+			} else {
+				break
+			}
+		}
+		t.SuperTypes = superTypes
+	}
+}
+
+// setSubTypesOfSubTypes sets the list of subtypes for each type.
+// The algorithm searches subtypes of subtypes using the attribute SuperTypes of all types. The
+// supertypes lists must therefore have been filled beforehand. The resulting lists are set as
+// attribute SubTypes in the type definition. They are sorted alphabetically.
+func (cimSpec *CIMSpecification) setSubTypesOfSubTypes() {
+	subTypesMap := make(map[string][]string)
+	for _, t := range cimSpec.Types {
+		for _, superType := range t.SuperTypes {
+			subTypesMap[superType] = append(subTypesMap[superType], t.Id)
+		}
+	}
+	for _, t := range cimSpec.Types {
+		if subs, ok := subTypesMap[t.Id]; ok {
+			sort.Strings(subs)
+			t.SubTypes = subs
+		} else {
+			t.SubTypes = make([]string, 0)
 		}
 	}
 }
