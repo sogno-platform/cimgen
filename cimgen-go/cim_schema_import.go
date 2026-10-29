@@ -76,7 +76,7 @@ type CIMAttribute struct {
 // CIMType represents a CIM class/type with its properties and attributes.
 type CIMType struct {
 	Id                 string          // from RDF schema
-	Label              string          // from RDF schema
+	// Label           string          // from RDF schema - same as Id
 	Namespace          string          // from RDF schema
 	Comment            string          // from RDF schema
 	CIMStereotype      string          // from RDF schema
@@ -354,7 +354,7 @@ func processNamespaces(rdfMap map[string]interface{}) map[string]string {
 func processClass(classMap map[string]interface{}) CIMType {
 	return CIMType{
 		Id:            extractURIEnd(extractValue(classMap, "@rdf:about")),
-		Label:         extractText(classMap, "rdfs:label"),
+		// Label:      extractText(classMap, "rdfs:label"), // same as Id
 		SuperType:     extractURIEnd(extractResource(classMap, "rdfs:subClassOf")),
 		Comment:       cleanText(extractText(classMap, "rdfs:comment")),
 		Namespace:     extractURIPath(extractValue(classMap, "@rdf:about")),
