@@ -60,7 +60,7 @@ func MapDatatypeJava(t string) string {
 		return "Integer"
 	case DataTypeBoolean:
 		return "Boolean"
-	case DataTypeFloat:
+	case DataTypeFloat, DateTypeDecimal:
 		return "Double"
 	case DataTypeObject:
 		return "Class"

@@ -55,7 +55,7 @@ func MapDataTypeGo(s string) string {
 		return "bool"
 	case DataTypeInteger:
 		return "int"
-	case DataTypeFloat:
+	case DataTypeFloat, DateTypeDecimal:
 		return "float64"
 	case DataTypeDateTime:
 		return "string"

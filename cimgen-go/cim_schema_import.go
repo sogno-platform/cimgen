@@ -28,6 +28,7 @@ const (
 	DataTypeDateTime = "DateTime"
 	DateTypeDecimal  = "Decimal"
 	DataTypeMonthDay = "MonthDay"
+	DataTypeDuration = "Duration"
 )
 
 // enum for general data types

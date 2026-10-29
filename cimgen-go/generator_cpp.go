@@ -93,13 +93,13 @@ func (cimSpec *CIMSpecification) setLangTypesCpp() {
 
 func MapDatatypeCpp(t string) string {
 	switch t {
-	case DataTypeString, DataTypeDateTime, DataTypeDate, DataTypeMonthDay:
+	case DataTypeString, DataTypeDateTime, DataTypeDate, DataTypeMonthDay, DataTypeDuration:
 		return "std::string"
 	case DataTypeInteger:
 		return "int"
 	case DataTypeBoolean:
 		return "bool"
-	case DataTypeFloat:
+	case DataTypeFloat, DateTypeDecimal:
 		return "double"
 	case DataTypeObject:
 		return "Class*"
@@ -125,13 +125,13 @@ func (cimSpec *CIMSpecification) setDefaultValuesCpp() {
 
 func MapDefaultValueCpp(t string) string {
 	switch t {
-	case DataTypeString, DataTypeDateTime, DataTypeDate, DataTypeMonthDay:
+	case DataTypeString, DataTypeDateTime, DataTypeDate, DataTypeMonthDay, DataTypeDuration:
 		return "\"\""
 	case DataTypeInteger:
 		return "0"
 	case DataTypeBoolean:
 		return "false"
-	case DataTypeFloat:
+	case DataTypeFloat, DateTypeDecimal:
 		return "0.0"
 	case DataTypeObject:
 		return "nullptr"

@@ -148,8 +148,8 @@ func (cimSpec *CIMSpecification) determineDataTypes() {
 func isPrimitiveType(typeStr string) bool {
 	switch typeStr {
 	case DataTypeString, DataTypeInteger, DataTypeBoolean,
-		DataTypeFloat, DataTypeDate,
-		DataTypeDateTime, DataTypeMonthDay:
+		DataTypeFloat, DateTypeDecimal, DataTypeDate,
+		DataTypeDateTime, DataTypeMonthDay, DataTypeDuration:
 		return true
 	default:
 		return false

@@ -112,7 +112,7 @@ func (cimSpec *CIMSpecification) setDefaultValuesPython() {
 
 func MapDefaultValuePython(t string) string {
 	switch t {
-	case DataTypeString, DataTypeDateTime, DataTypeDate, DataTypeMonthDay:
+	case DataTypeString, DataTypeDateTime, DataTypeDate, DataTypeMonthDay, DataTypeDuration:
 		return "\"\""
 	case DataTypeInteger:
 		return "0"
