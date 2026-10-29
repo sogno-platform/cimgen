@@ -3,20 +3,20 @@ import {{.SuperType}} from "./{{.SuperType}}.js"
 import common from "../../src/common.js"
 import CGMESProfile from "./CGMESProfile.js"
 
+
 class {{.Id}} extends {{.SuperType}} {
 
-    // Generate HTML for all attributes of this class
-    // Including inherited attributes
     static attributeHTML(object, cimmenu, classType="{{.Id}}") {
         let attributeEntries = {{.SuperType}}.attributeHTML(object, cimmenu, classType);
-        {{range .Attributes}}
+{{- range .Attributes}}
+{{- if .IsAssociationUsed}}
         if ('cim:{{.Id}}' in object) {
             attributeEntries['filledEntries']['cim:{{.Id}}'] =
                 cimmenu.getAggregateComponentMenu(
                                                    'cim:'+classType,
                                                    object['pintura:rdfid'],
                                                    object['{{.Id}}'],
-                                                   'cim:{{.DataType}}',
+                                                   {{if or .IsPrimitive .IsCIMDatatype}}'cim:{{.CIMDataType}}' {{- else}}'cim:{{.DataType}}' {{- end}},
                                                    'cim:{{.Id}}'
                                                  );
         }
@@ -26,24 +26,26 @@ class {{.Id}} extends {{.SuperType}} {
                                                    'cim:'+classType,
                                                    object['pintura:rdfid'],
                                                    object['{{.Id}}'],
-                                                   'cim:{{.DataType}}',
+                                                   {{if or .IsPrimitive .IsCIMDatatype}}'cim:{{.CIMDataType}}' {{- else}}'cim:{{.DataType}}' {{- end}},
                                                    'cim:{{.Id}}'
                                                  );
         }
-        {{end}}
+{{- end}}
+{{- end}}
         return attributeEntries;
     }
 
-    static possibleProfileList = {
-        'class': [{{range .Origins}}CGMESProfile.shortNames.{{.}}, {{end}}],
-		{{range .Attributes}}'{{.Label}}': [CGMESProfile.shortNames.{{.Origin}},],
-		{{end}} }
+    static possibleProfileList = {'class': [{{range .Origins}}CGMESProfile.shortNames.{{.}}, {{end}}],
+						{{range .Attributes}}{{if .IsAssociationUsed}}'{{.Label}}': [{{range .Origins}}CGMESProfile.shortNames.{{.}}, {{end}}],
+						{{end}}{{end}} }
 
     static isMemberAttribute(attribute) {
         let attributes = [
-            {{range .Attributes}}
+{{- range .Attributes}}
+{{- if .IsAssociationUsed}}
             "cim:{{.Id}}",
-            {{end}}
+{{- end}}
+{{- end}}
         ];
         if ( attribute.substr(0,8) == "pintura:") {
             return true;
@@ -79,9 +81,9 @@ class {{.Id}} extends {{.SuperType}} {
     }
     static subClassList() {
         let subClasses = [
-        {{range .SubTypes}}
+{{- range .SubTypes}}
         "{{.}}",
-        {{end}}
+{{- end}}
         ];
         return subClasses;
     }

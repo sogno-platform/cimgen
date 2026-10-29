@@ -4,15 +4,15 @@ Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cim
 
 class CGMESProfile {
     static profileUrls = {  // Those are strings, not real addresses, hence the NOSONAR.
-{{- range .Ontologies}}
-    "{{.Keyword}}": [
-        "{{.OWLVersionIRI}}",  // NOSONAR
-    ],
+{{- range .OntologyList}}
+        "{{.Keyword}}": [
+            "{{.OWLVersionIRI}}",  // NOSONAR
+        ],
 {{- end}}
     };
     static shortNames = {
-{{- range .Ontologies}}
-        "{{.Keyword}}": {{.Priority}},
+{{- range .OntologyList}}
+        "{{.Keyword}}": {{ add .Priority -1 }},
 {{- end}}
     };
 }
