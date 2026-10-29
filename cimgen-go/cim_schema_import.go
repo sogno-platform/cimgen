@@ -208,7 +208,7 @@ func (cimSpec *CIMSpecification) ImportCIMSchemaFiles(schemaFiles string) error 
 // addRDFMap adds the CIM types, enums, and ontology from the input map to the CIMSpecification.
 func (cimSpec *CIMSpecification) addRDFMap(inputMap map[string]interface{}) {
 	cimTypes, cimEnums, cimOntology, namespaces, cimDatatypes, cimPrimitives := processRDFMap(inputMap)
-	if cimOntology.Keyword == "FH" {
+	if cimOntology.Keyword == "" || cimOntology.Keyword == "FH" || cimOntology.Keyword == "DH" {
 		return
 	}
 	cimSpec.Types = mergeCimTypes(cimSpec.Types, cimTypes)

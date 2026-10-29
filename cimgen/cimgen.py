@@ -395,7 +395,7 @@ def _parse_rdf(input_dic: dict, version: str) -> dict[str, dict[str, CIMComponen
         if "profile_iri_v3" in rdfs_entry_types:
             profile_uri_list.append(rdfs_entry.version_iri())
 
-    if not short_profile_name or short_profile_name == "FH":
+    if not short_profile_name or short_profile_name == "FH" or short_profile_name == "DH":
         return {}
 
     _add_profile_to_packages(profile_name, short_profile_name, profile_uri_list)
