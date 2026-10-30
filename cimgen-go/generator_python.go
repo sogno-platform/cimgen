@@ -1,40 +1,51 @@
 package cimgen
 
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"regexp"
+	"strings"
+)
+
 // GeneratePython generates Python source files from the CIM specification.
 func (spec *CIMSpecification) GeneratePython(outputDir string) error {
 	if err := createOutputDir(outputDir); err != nil {
 		return err
 	}
 
-	resourcesOuputDir := outputDir + "/resources"
-	if err := createOutputDir(resourcesOuputDir); err != nil {
+	resourcesOutputDir := filepath.Join(outputDir, "resources")
+	if err := createOutputDir(resourcesOutputDir); err != nil {
 		return err
 	}
 
-	utilsOuputDir := outputDir + "/utils"
-	if err := createOutputDir(utilsOuputDir); err != nil {
+	utilsOutputDir := filepath.Join(outputDir, "utils")
+	if err := createOutputDir(utilsOutputDir); err != nil {
 		return err
 	}
 
 	spec.setLangTypesPython()
 	spec.setDefaultValuesPython()
 
-	if err := generateFiles("python_class", ".py", resourcesOuputDir, spec.Types); err != nil {
+	if err := generateFiles("python_class", ".py", resourcesOutputDir, spec.Types); err != nil {
 		return err
 	}
-	if err := generateFile("python_constants", "constants.py", utilsOuputDir, spec); err != nil {
+	if err := generateFile("python_constants", "constants.py", utilsOutputDir, spec); err != nil {
 		return err
 	}
-	if err := generateFile("python_profile", "profile.py", utilsOuputDir, spec); err != nil {
+	if err := generateFile("python_profile", "profile.py", utilsOutputDir, spec); err != nil {
 		return err
 	}
-	if err := generateFiles("python_datatype", ".py", resourcesOuputDir, spec.CIMDatatypes); err != nil {
+	if err := generateFiles("python_datatype", ".py", resourcesOutputDir, spec.CIMDatatypes); err != nil {
 		return err
 	}
-	if err := generateFiles("python_enum", ".py", resourcesOuputDir, spec.Enums); err != nil {
+	if err := generateFiles("python_enum", ".py", resourcesOutputDir, spec.Enums); err != nil {
 		return err
 	}
-	if err := generateFiles("python_primitive", ".py", resourcesOuputDir, spec.PrimitiveTypes); err != nil {
+	if err := generateFiles("python_primitive", ".py", resourcesOutputDir, spec.PrimitiveTypes); err != nil {
+		return err
+	}
+	if err := writeInitPy(outputDir, spec.CGMESVersion); err != nil {
 		return err
 	}
 	return nil
@@ -61,7 +72,7 @@ func (spec *CIMSpecification) GeneratePythonSimple(outputDir string) error {
 	return nil
 }
 
-// setLangTypesPython sets default values for attributes based on their data types for Go code generation.
+// setLangTypesPython sets types for attributes based on their data types for Python code generation.
 func (cimSpec *CIMSpecification) setLangTypesPython() {
 	for _, t := range cimSpec.Types {
 		for _, attr := range t.Attributes {
@@ -135,4 +146,32 @@ func MapDefaultValuePython(t string) string {
 	default:
 		return "None"
 	}
+}
+
+var versionNumberRegex = regexp.MustCompile(`\d+_\d+_\d+`)
+
+// writeInitPy writes the package docstring and CGMES_VERSION into resources/__init__.py.
+func writeInitPy(outputDir, version string) error {
+	match := versionNumberRegex.FindString(version)
+	if match == "" {
+		return fmt.Errorf("cannot parse %s to extract a number", version)
+	}
+	versionNumber := strings.ReplaceAll(match, "_", ".")
+
+	dest := filepath.Join(outputDir, "resources", "__init__.py")
+	f, err := os.OpenFile(dest, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	content := fmt.Sprintf(`"""
+Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cimgen
+"""
+
+CGMES_VERSION = "%s"
+`, versionNumber)
+
+	_, err = f.WriteString(content)
+	return err
 }
