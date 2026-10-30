@@ -6,25 +6,35 @@ func (spec *CIMSpecification) GeneratePython(outputDir string) error {
 		return err
 	}
 
+	resourcesOuputDir := outputDir + "/resources"
+	if err := createOutputDir(resourcesOuputDir); err != nil {
+		return err
+	}
+
+	utilsOuputDir := outputDir + "/utils"
+	if err := createOutputDir(utilsOuputDir); err != nil {
+		return err
+	}
+
 	spec.setLangTypesPython()
 	spec.setDefaultValuesPython()
 
-	if err := generateFiles("python_class", ".py", outputDir, spec.Types); err != nil {
+	if err := generateFiles("python_class", ".py", resourcesOuputDir, spec.Types); err != nil {
 		return err
 	}
-	if err := generateFile("python_constants", "cim_constants.py", outputDir, spec); err != nil {
+	if err := generateFile("python_constants", "constants.py", utilsOuputDir, spec); err != nil {
 		return err
 	}
-	if err := generateFile("python_profile", "cim_profiles.py", outputDir, spec); err != nil {
+	if err := generateFile("python_profile", "profile.py", utilsOuputDir, spec); err != nil {
 		return err
 	}
-	if err := generateFiles("python_datatype", ".py", outputDir, spec.CIMDatatypes); err != nil {
+	if err := generateFiles("python_datatype", ".py", resourcesOuputDir, spec.CIMDatatypes); err != nil {
 		return err
 	}
-	if err := generateFiles("python_enum", ".py", outputDir, spec.Enums); err != nil {
+	if err := generateFiles("python_enum", ".py", resourcesOuputDir, spec.Enums); err != nil {
 		return err
 	}
-	if err := generateFiles("python_primitive", ".py", outputDir, spec.PrimitiveTypes); err != nil {
+	if err := generateFiles("python_primitive", ".py", resourcesOuputDir, spec.PrimitiveTypes); err != nil {
 		return err
 	}
 	return nil
