@@ -81,6 +81,25 @@ func generateFile[T any](tmplFile string, outputFile string, outputDir string, i
 		"capitalFirstLetter": capitalFirstLetter,
 		"lower":              Lower,
 		"add":                func(a, b int) int { return a + b },
+		"getPythonTypes": func(cimSpec CIMSpecification) []string {
+			allTypes := []string{"Base"}
+			for _, t := range cimSpec.Types {
+				allTypes = append(allTypes, t.Id)
+			}
+			for _, t := range cimSpec.Enums {
+				allTypes = append(allTypes, t.Id)
+			}
+			for _, t := range cimSpec.CIMDatatypes {
+				allTypes = append(allTypes, t.Id)
+			}
+			for _, t := range cimSpec.PrimitiveTypes {
+				if t.Id != "String" {
+					allTypes = append(allTypes, t.Id)
+				}
+			}
+			sort.Strings(allTypes)
+			return allTypes
+		},
 	}
 
 	// Since ParseFile does not work well with files in subdirectories, we read the file manually

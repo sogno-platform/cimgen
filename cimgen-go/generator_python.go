@@ -87,6 +87,9 @@ func (spec *CIMSpecification) GeneratePythonSimple(outputDir string) error {
 	if err := generateFile("python_simple_profiles", "CGMESProfile.py", outputDir, spec); err != nil {
 		return err
 	}
+	if err := generateFile("python_simple_init", "__init__.py", outputDir, spec); err != nil {
+		return err
+	}
 	if err := writeBasePy(outputDir); err != nil {
 		return err
 	}
