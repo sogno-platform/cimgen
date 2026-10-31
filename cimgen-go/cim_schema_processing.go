@@ -201,27 +201,38 @@ func (cimSpec *CIMSpecification) addOriginsOfAttributes() {
 	}
 }
 
-// reorderOrigins reorders the Origins field of each CIMType based on the priority of the ontologies.
-// And also reorders the Origins field of each attribute based on the priority of the ontologies.
+// sortOrigins sorts a slice of ontology keywords based on ontology priority.
+func (cimSpec *CIMSpecification) sortOrigins(origins []string) {
+	sort.Slice(origins, func(i, j int) bool {
+		var priorityI, priorityJ int
+		if ont, ok := cimSpec.Ontologies[origins[i]]; ok && ont != nil {
+			priorityI = ont.Priority
+		}
+		if ont, ok := cimSpec.Ontologies[origins[j]]; ok && ont != nil {
+			priorityJ = ont.Priority
+		}
+		return priorityI < priorityJ
+	})
+}
+
+// reorderOrigins reorders the Origins field of CIMTypes, CIMDatatypes, and CIMPrimitives
+// based on the priority of the ontologies, as well as the Origins field of their attributes.
 func (cimSpec *CIMSpecification) reorderOrigins() {
 	for _, t := range cimSpec.Types {
-		sort.Slice(t.Origins, func(i, j int) bool {
-			originI := t.Origins[i]
-			originJ := t.Origins[j]
-			priorityI := cimSpec.Ontologies[originI].Priority
-			priorityJ := cimSpec.Ontologies[originJ].Priority
-			return priorityI < priorityJ
-		})
+		cimSpec.sortOrigins(t.Origins)
 		// reorder the Origins field of each attribute
 		for _, attr := range t.Attributes {
-			sort.Slice(attr.Origins, func(i, j int) bool {
-				originI := attr.Origins[i]
-				originJ := attr.Origins[j]
-				priorityI := cimSpec.Ontologies[originI].Priority
-				priorityJ := cimSpec.Ontologies[originJ].Priority
-				return priorityI < priorityJ
-			})
+			cimSpec.sortOrigins(attr.Origins)
 		}
+	}
+	for _, dt := range cimSpec.CIMDatatypes {
+		cimSpec.sortOrigins(dt.Origins)
+		for _, attr := range dt.Attributes {
+			cimSpec.sortOrigins(attr.Origins)
+		}
+	}
+	for _, pt := range cimSpec.PrimitiveTypes {
+		cimSpec.sortOrigins(pt.Origins)
 	}
 }
 

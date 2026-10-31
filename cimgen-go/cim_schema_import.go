@@ -103,19 +103,23 @@ type CIMDatatype struct {
 	RDFType       string          // from RDF schema
 	LangType      string          // derived
 	PrimitiveType string          // derived
+	Origin        string          // derived
+	Origins       []string        // from RDF schema
 	CIMCategory   string          // from RDF schema
 	Attributes    []*CIMAttribute // from RDF schema
 }
 
 type CIMPrimitive struct {
-	Id            string // from RDF schema
-	Label         string // from RDF schema
-	Namespace     string // from RDF schema
-	Comment       string // from RDF schema
-	CIMStereotype string // from RDF schema
-	RDFType       string // from RDF schema
-	DataType      string // derived
-	LangType      string // derived
+	Id            string   // from RDF schema
+	Label         string   // from RDF schema
+	Namespace     string   // from RDF schema
+	Comment       string   // from RDF schema
+	CIMStereotype string   // from RDF schema
+	RDFType       string   // from RDF schema
+	DataType      string   // derived
+	LangType      string   // derived
+	Origin        string   // derived
+	Origins       []string // from RDF schema
 }
 
 // CIMEnum represents a CIM enumeration with its values.
@@ -293,9 +297,13 @@ func processRDFMap(inputMap map[string]interface{}) (map[string]*CIMType, map[st
 			} else if extractStringOrResource(v["cims:stereotype"]) == "CIMDatatype" {
 				//TODO || extractStringOrResource(v["cims:stereotype"]) == "Compound" {
 				e := processCIMDatatypes(v)
+				e.Origin = cimOntology.Keyword
+				e.Origins = []string{cimOntology.Keyword}
 				cimDatatypes[e.Id] = &e
 			} else if extractStringOrResource(v["cims:stereotype"]) == "Primitive" {
 				e := processPrimitives(v)
+				e.Origin = cimOntology.Keyword
+				e.Origins = []string{cimOntology.Keyword}
 				cimPrimitives[e.Id] = &e
 			} else {
 				e := processClass(v)
@@ -636,6 +644,9 @@ func mergeCIMDatatypes(typesMerged map[string]*CIMDatatype, types map[string]*CI
 			if types[k].CIMStereotype != "" {
 				v.CIMStereotype = types[k].CIMStereotype
 			}
+			if types[k].Origin != "" {
+				v.Origins = append(v.Origins, types[k].Origin)
+			}
 		} else {
 			typesMerged[k] = types[k]
 		}
@@ -648,6 +659,9 @@ func mergePrimitives(typesMerged map[string]*CIMPrimitive, types map[string]*CIM
 		if v, ok := typesMerged[k]; ok {
 			if types[k].CIMStereotype != "" {
 				v.CIMStereotype = types[k].CIMStereotype
+			}
+			if types[k].Origin != "" {
+				v.Origins = append(v.Origins, types[k].Origin)
 			}
 		} else {
 			typesMerged[k] = types[k]

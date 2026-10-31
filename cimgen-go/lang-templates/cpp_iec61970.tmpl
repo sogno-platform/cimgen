@@ -3,9 +3,10 @@
 /*
 Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cimgen
 */
-{{range .Types}}
+
+{{range .Types -}}
 #include "{{.Id}}.hpp"
-{{- end }}
+{{end -}}
 #include "UnknownType.hpp"
 
 #endif

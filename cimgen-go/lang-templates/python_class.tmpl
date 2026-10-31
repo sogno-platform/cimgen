@@ -9,7 +9,7 @@ from pydantic import Field
 from pydantic.dataclasses import dataclass
 
 from ..utils.profile import BaseProfile, Profile
-{{if .SuperType}}
+{{- if .SuperType}}
 from .{{.SuperType}} import {{.SuperType}}
 {{- else}}
 from ..utils.base import Base
@@ -21,16 +21,14 @@ class {{.Id}}{{if .SuperType}}({{.SuperType}}){{else}}(Base){{end}}:
     """
 {{- if .Comment}}
 {{ .Comment | wrapAndIndent 4 }}
-{{end}}
-
-{{- range .Attributes}}
+{{- end}}
+{{range .Attributes}}
     {{.Label}}: {{ .Comment }}
 {{- end}}
     """
-
-    {{- range .Attributes}}
+{{range .Attributes}}
     {{.Label}}: {{.LangType}} = Field(
-    {{- if eq .DefaultValue "list"}}
+    {{- if .IsList}}
         default_factory=list,
     {{- else}}
         default={{.DefaultValue}},
@@ -51,11 +49,10 @@ class {{.Id}}{{if .SuperType}}({{.SuperType}}){{else}}(Base){{end}}:
         {{- end}}
         },
     )
-    {{- end}}
-    {{- if not .Attributes}}
+{{end}}
+{{- if not .Attributes}}
     # No attributes defined for this class.
-    {{- end}}
-
+{{end}}
     @cached_property
     def possible_profiles(self) -> set[BaseProfile]:
         """

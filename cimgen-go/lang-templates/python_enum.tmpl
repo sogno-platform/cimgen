@@ -9,9 +9,8 @@ class {{.Id}}(str, Enum):
     """
 {{- if .Comment}}
 {{ .Comment | wrapAndIndent 4 }}
-{{end}}
+{{- end}}
     """
-
-    {{- range $index, $element := .Values}}
-    {{.Label}} = "http://iec.ch/TC57/CIM100#{{.Id}}" # {{.Comment}} # noqa: E501
-    {{- end}}
+{{range .Values}}
+    {{.Label}} = "{{.Label}}"{{if .Comment}}  # {{.Comment}}  # noqa: E501{{end}}
+{{- end}}
