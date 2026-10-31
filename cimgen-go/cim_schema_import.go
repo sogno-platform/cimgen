@@ -67,7 +67,6 @@ type CIMAttribute struct {
 	IsCIMDatatype              bool     // derived
 	IsClass                    bool     // derived
 	UseIDReference             bool     // derived
-	Origin                     string   // derived
 	Origins                    []string // from RDF schema
 	CIMCategories              []string // from RDF schema
 	VariableName               string   // derived
@@ -75,8 +74,7 @@ type CIMAttribute struct {
 
 // CIMType represents a CIM class/type with its properties and attributes.
 type CIMType struct {
-	Id                 string          // from RDF schema
-	// Label           string          // from RDF schema - same as Id
+	Id                 string          // from RDF schema - same as Label
 	Namespace          string          // from RDF schema
 	Comment            string          // from RDF schema
 	CIMStereotype      string          // from RDF schema
@@ -88,7 +86,7 @@ type CIMType struct {
 	PrimitiveTypes     []string        // derived
 	CIMDatatypes       []string        // derived
 	EnumTypes          []string        // derived
-	Origin             string          // derived
+	MainOrigin         string          // derived
 	Origins            []string        // from RDF schema
 	CIMCategories      []string        // from RDF schema
 	Attributes         []*CIMAttribute // from RDF schema
@@ -103,7 +101,6 @@ type CIMDatatype struct {
 	RDFType       string          // from RDF schema
 	LangType      string          // derived
 	PrimitiveType string          // derived
-	Origin        string          // derived
 	Origins       []string        // from RDF schema
 	CIMCategory   string          // from RDF schema
 	Attributes    []*CIMAttribute // from RDF schema
@@ -118,7 +115,6 @@ type CIMPrimitive struct {
 	RDFType       string   // from RDF schema
 	DataType      string   // derived
 	LangType      string   // derived
-	Origin        string   // derived
 	Origins       []string // from RDF schema
 }
 
@@ -130,7 +126,6 @@ type CIMEnum struct {
 	Comment       string          // from RDF schema
 	CIMStereotype string          // from RDF schema
 	RDFType       string          // from RDF schema
-	Origin        string          // derived
 	Origins       []string        // from RDF schema
 	Values        []*CIMEnumValue // from RDF schema
 }
@@ -291,29 +286,24 @@ func processRDFMap(inputMap map[string]interface{}) (map[string]*CIMType, map[st
 		if strings.Contains(objType, "http://www.w3.org/2000/01/rdf-schema#Class") {
 			if extractStringOrResource(v["cims:stereotype"]) == "http://iec.ch/TC57/NonStandard/UML#enumeration" {
 				e := processEnum(v)
-				e.Origin = cimOntology.Keyword
 				e.Origins = []string{cimOntology.Keyword}
 				cimEnums[e.Id] = &e
 			} else if extractStringOrResource(v["cims:stereotype"]) == "CIMDatatype" {
 				//TODO || extractStringOrResource(v["cims:stereotype"]) == "Compound" {
 				e := processCIMDatatypes(v)
-				e.Origin = cimOntology.Keyword
 				e.Origins = []string{cimOntology.Keyword}
 				cimDatatypes[e.Id] = &e
 			} else if extractStringOrResource(v["cims:stereotype"]) == "Primitive" {
 				e := processPrimitives(v)
-				e.Origin = cimOntology.Keyword
 				e.Origins = []string{cimOntology.Keyword}
 				cimPrimitives[e.Id] = &e
 			} else {
 				e := processClass(v)
-				e.Origin = cimOntology.Keyword
 				e.Origins = []string{cimOntology.Keyword}
 				cimTypes[e.Id] = &e
 			}
 		} else if strings.Contains(objType, "http://www.w3.org/1999/02/22-rdf-syntax-ns#Property") {
 			cimAttribute := processProperty(v)
-			cimAttribute.Origin = cimOntology.Keyword
 			cimAttribute.Origins = []string{cimOntology.Keyword}
 			cimAttributes = append(cimAttributes, &cimAttribute)
 		} else if strings.Contains(objType, "http://iec.ch/TC57/1999/rdf-schema-extensions-19990926#ClassCategory") {
@@ -361,8 +351,7 @@ func processNamespaces(rdfMap map[string]interface{}) map[string]string {
 // processClass processes a map representing a CIM class and returns a CIMType struct.
 func processClass(classMap map[string]interface{}) CIMType {
 	return CIMType{
-		Id:            extractURIEnd(extractValue(classMap, "@rdf:about")),
-		// Label:      extractText(classMap, "rdfs:label"), // same as Id
+		Id:            extractURIEnd(extractValue(classMap, "@rdf:about")), // same as Label
 		SuperType:     extractURIEnd(extractResource(classMap, "rdfs:subClassOf")),
 		Comment:       cleanText(extractText(classMap, "rdfs:comment")),
 		Namespace:     extractURIPath(extractValue(classMap, "@rdf:about")),
@@ -573,15 +562,15 @@ func mergeCimTypes(typesMerged map[string]*CIMType, types map[string]*CIMType) m
 				v.CIMCategories = append(v.CIMCategories, types[k].CIMCategories...)
 			}
 
-			if types[k].Origin != "" {
-				v.Origins = append(v.Origins, types[k].Origin)
+			if types[k].Origins[0] != "" {
+				v.Origins = append(v.Origins, types[k].Origins[0])
 			}
 
 			for _, attr := range types[k].Attributes {
 				if existingAttrIndex := FindCIMAttributeById(v.Attributes, attr.Id); existingAttrIndex != -1 {
 					// If the attribute already exists, we can merge the attributes
 					existingAttr := v.Attributes[existingAttrIndex]
-					existingAttr.Origins = append(existingAttr.Origins, attr.Origin)
+					existingAttr.Origins = append(existingAttr.Origins, attr.Origins[0])
 					existingAttr.CIMCategories = append(existingAttr.CIMCategories, attr.CIMCategories...)
 				} else {
 					v.Attributes = append(v.Attributes, attr)
@@ -612,8 +601,8 @@ func mergeCimEnums(enumsMerged map[string]*CIMEnum, enums map[string]*CIMEnum) m
 				v.CIMStereotype = enums[k].CIMStereotype
 			}
 
-			if enums[k].Origin != "" {
-				v.Origins = append(v.Origins, enums[k].Origin)
+			if enums[k].Origins[0] != "" {
+				v.Origins = append(v.Origins, enums[k].Origins[0])
 			}
 
 			for _, val := range enums[k].Values {
@@ -644,8 +633,18 @@ func mergeCIMDatatypes(typesMerged map[string]*CIMDatatype, types map[string]*CI
 			if types[k].CIMStereotype != "" {
 				v.CIMStereotype = types[k].CIMStereotype
 			}
-			if types[k].Origin != "" {
-				v.Origins = append(v.Origins, types[k].Origin)
+			if types[k].Origins[0] != "" {
+				v.Origins = append(v.Origins, types[k].Origins[0])
+			}
+
+			for _, attr := range types[k].Attributes {
+				if existingAttrIndex := FindCIMAttributeById(v.Attributes, attr.Id); existingAttrIndex != -1 {
+					// If the attribute already exists, we can merge the attributes
+					existingAttr := v.Attributes[existingAttrIndex]
+					existingAttr.Origins = append(existingAttr.Origins, attr.Origins[0])
+				} else {
+					v.Attributes = append(v.Attributes, attr)
+				}
 			}
 		} else {
 			typesMerged[k] = types[k]
@@ -660,8 +659,8 @@ func mergePrimitives(typesMerged map[string]*CIMPrimitive, types map[string]*CIM
 			if types[k].CIMStereotype != "" {
 				v.CIMStereotype = types[k].CIMStereotype
 			}
-			if types[k].Origin != "" {
-				v.Origins = append(v.Origins, types[k].Origin)
+			if types[k].Origins[0] != "" {
+				v.Origins = append(v.Origins, types[k].Origins[0])
 			}
 		} else {
 			typesMerged[k] = types[k]

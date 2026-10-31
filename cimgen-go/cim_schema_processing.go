@@ -190,14 +190,9 @@ func (cimSpec *CIMSpecification) addOriginsOfAttributes() {
 		}
 		// convert set to slice
 		t.Origins = make([]string, 0, len(originSet))
-		tmpOrigins := make([]string, 0, len(originSet))
 		for origin := range originSet {
-			tmpOrigins = append(tmpOrigins, origin)
+			t.Origins = append(t.Origins, origin)
 		}
-		// sort origins
-		sort.Strings(tmpOrigins)
-		// assign to CIMType
-		t.Origins = append(t.Origins, tmpOrigins...)
 	}
 }
 
@@ -242,7 +237,7 @@ func (cimSpec *CIMSpecification) reorderOrigins() {
 // Only the attributes are considered that have more than one entry in the Origins field.
 // If "EQ" is among the most frequent origins, it is selected as the main origin.
 // Otherwise, the first origin in alphabetical order is selected.
-// This function updates the Origin field of each CIMType accordingly.
+// This function updates the MainOrigin field of each CIMType accordingly.
 func (cimSpec *CIMSpecification) setMainOrigin() {
 	for _, t := range cimSpec.Types {
 
@@ -292,10 +287,10 @@ func (cimSpec *CIMSpecification) setMainOrigin() {
 		}
 
 		if contains(filteredOrigins, "EQ") {
-			t.Origin = "EQ"
+			t.MainOrigin = "EQ"
 		} else {
 			sort.Strings(filteredOrigins)
-			t.Origin = filteredOrigins[0]
+			t.MainOrigin = filteredOrigins[0]
 		}
 	}
 }

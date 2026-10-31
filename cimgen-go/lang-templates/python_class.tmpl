@@ -71,4 +71,4 @@ class {{.Id}}{{if .SuperType}}({{.SuperType}}){{else}}(Base){{end}}:
         This is the profile with most of the attributes.
         It should be used to write the data to as few as possible files.
         """
-        return Profile.{{.Origin}}
+        return Profile.{{.MainOrigin}}

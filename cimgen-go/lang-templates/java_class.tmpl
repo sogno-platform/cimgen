@@ -371,7 +371,7 @@ public class {{.Id}} extends {{if .SuperType}}{{.SuperType}}{{else}}BaseClass{{e
         POSSIBLE_PROFILES = Collections.unmodifiableSet(profiles);
     }
 
-    private static final CGMESProfile RECOMMENDED_PROFILE = CGMESProfile.{{.Origin}};
+    private static final CGMESProfile RECOMMENDED_PROFILE = CGMESProfile.{{.MainOrigin}};
 
     private static final Set<CGMESProfile> POSSIBLE_PROFILES_INCLUDING_ATTRIBUTES;
     static {

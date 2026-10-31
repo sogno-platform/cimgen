@@ -32,7 +32,7 @@ var info{{.Id}} = cimgobase.CIMTypeInfo{
     Namespace: "{{.Namespace}}",
     Comment: "{{.Comment}}",
     SuperType: "{{.SuperType}}",
-    Origin: "{{.Origin}}",
+    Origin: "{{.MainOrigin}}",
     Origins: []string{ {{- range .Origins}}
         "{{.}}",{{- end}} },
     Attributes: map[string]cimgobase.CIMAttributeInfo{
