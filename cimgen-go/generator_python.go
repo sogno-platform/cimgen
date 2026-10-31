@@ -87,6 +87,9 @@ func (spec *CIMSpecification) GeneratePythonSimple(outputDir string) error {
 	if err := generateFile("python_simple_profiles", "CGMESProfile.py", outputDir, spec); err != nil {
 		return err
 	}
+	if err := writeBasePy(outputDir); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -192,4 +195,18 @@ CGMES_VERSION = "%s"
 
 	_, err = f.WriteString(content)
 	return err
+}
+
+// writeBasePy writes the base class file Base.py for python-simple.
+func writeBasePy(outputDir string) error {
+	dest := filepath.Join(outputDir, "Base.py")
+	content := `class Base:
+    """
+    Base Class for CIM
+    """
+
+    def printxml(self, dict={}):
+        return dict
+`
+	return os.WriteFile(dest, []byte(content), 0644)
 }
