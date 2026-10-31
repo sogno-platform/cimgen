@@ -10,6 +10,10 @@ import (
 
 // GeneratePython generates Python source files from the CIM specification.
 func (spec *CIMSpecification) GeneratePython(outputDir string) error {
+	if err := cleanAllRecursively(outputDir); err != nil {
+		return err
+	}
+
 	if err := createOutputDir(outputDir); err != nil {
 		return err
 	}
@@ -53,6 +57,10 @@ func (spec *CIMSpecification) GeneratePython(outputDir string) error {
 
 // GeneratePythonSimple generates simple Python source files from the CIM specification.
 func (spec *CIMSpecification) GeneratePythonSimple(outputDir string) error {
+	if err := cleanAllRecursively(outputDir); err != nil {
+		return err
+	}
+
 	if err := createOutputDir(outputDir); err != nil {
 		return err
 	}

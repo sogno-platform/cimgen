@@ -197,3 +197,20 @@ func collectAttributeTypes(attributes []*CIMAttribute) []string {
 	sort.Strings(types)
 	return types
 }
+
+// cleanAllRecursively removes all files and subdirectories within dir recursively.
+func cleanAllRecursively(dir string) error {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+	for _, entry := range entries {
+		if err := os.RemoveAll(filepath.Join(dir, entry.Name())); err != nil {
+			return err
+		}
+	}
+	return nil
+}

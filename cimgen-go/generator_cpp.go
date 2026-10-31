@@ -2,6 +2,10 @@ package cimgen
 
 // GenerateCpp generates C++ source files from the CIM specification.
 func (spec *CIMSpecification) GenerateCpp(outputDir string) error {
+	if err := cleanAllRecursively(outputDir); err != nil {
+		return err
+	}
+
 	if err := createOutputDir(outputDir); err != nil {
 		return err
 	}
@@ -70,7 +74,7 @@ func (spec *CIMSpecification) GenerateCpp(outputDir string) error {
 	return nil
 }
 
-// setLangTypesCpp sets default values for attributes based on their data types for C++ code generation.
+// setLangTypesCpp sets types for attributes based on their data types for C++ code generation.
 func (cimSpec *CIMSpecification) setLangTypesCpp() {
 	for _, t := range cimSpec.Types {
 		for _, attr := range t.Attributes {

@@ -2,6 +2,10 @@ package cimgen
 
 // GenerateJavaScript generates JavaScript source files from the CIM specification.
 func (spec *CIMSpecification) GenerateJavaScript(outputDir string) error {
+	if err := cleanAllRecursively(outputDir); err != nil {
+		return err
+	}
+
 	if err := createOutputDir(outputDir); err != nil {
 		return err
 	}
