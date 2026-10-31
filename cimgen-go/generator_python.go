@@ -28,6 +28,16 @@ func (spec *CIMSpecification) GeneratePython(outputDir string) error {
 		return err
 	}
 
+	// Copy all hardcoded files
+	languagesDir, err := findLanguagesDir()
+	if err != nil {
+		return err
+	}
+	sourceDir := filepath.Join(languagesDir, "modernpython", "utils")
+	if err := copyFilesWithPattern(sourceDir, utilsOutputDir, "*.[mp]*"); err != nil {
+		return err
+	}
+
 	spec.setLangTypesPython()
 	spec.setDefaultValuesPython()
 

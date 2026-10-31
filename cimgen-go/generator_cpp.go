@@ -1,5 +1,7 @@
 package cimgen
 
+import "path/filepath"
+
 // GenerateCpp generates C++ source files from the CIM specification.
 func (spec *CIMSpecification) GenerateCpp(outputDir string) error {
 	if err := cleanAllRecursively(outputDir); err != nil {
@@ -7,6 +9,16 @@ func (spec *CIMSpecification) GenerateCpp(outputDir string) error {
 	}
 
 	if err := createOutputDir(outputDir); err != nil {
+		return err
+	}
+
+	// Copy all hardcoded files
+	languagesDir, err := findLanguagesDir()
+	if err != nil {
+		return err
+	}
+	sourceDir := filepath.Join(languagesDir, "cpp", "static")
+	if err := copyFilesWithPattern(sourceDir, outputDir, "*.[ch]*"); err != nil {
 		return err
 	}
 

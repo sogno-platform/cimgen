@@ -3,8 +3,10 @@ package cimgen
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strings"
 	"text/template"
@@ -213,4 +215,99 @@ func cleanAllRecursively(dir string) error {
 		}
 	}
 	return nil
+}
+
+// findLanguagesDir locates the languages directory independently of the working directory.
+func findLanguagesDir() (string, error) {
+	targetRelPath := filepath.Join("cimgen", "languages")
+
+	// Try relative to this source file
+	if _, currentFile, _, ok := runtime.Caller(0); ok {
+		candidate := filepath.Clean(filepath.Join(filepath.Dir(currentFile), "..", targetRelPath))
+		if info, err := os.Stat(candidate); err == nil && info.IsDir() {
+			return candidate, nil
+		}
+	}
+
+	searchUpwards := func(startDir string) string {
+		for dir := startDir; ; {
+			candidate := filepath.Join(dir, targetRelPath)
+			if info, err := os.Stat(candidate); err == nil && info.IsDir() {
+				return candidate
+			}
+			parent := filepath.Dir(dir)
+			if parent == dir {
+				break
+			}
+			dir = parent
+		}
+		return ""
+	}
+
+	// Search upwards from current working directory
+	if wd, err := os.Getwd(); err == nil {
+		if candidate := searchUpwards(wd); candidate != "" {
+			return candidate, nil
+		}
+	}
+
+	// Search upwards from executable location
+	if execPath, err := os.Executable(); err == nil {
+		if candidate := searchUpwards(filepath.Dir(execPath)); candidate != "" {
+			return candidate, nil
+		}
+	}
+
+	return "", fmt.Errorf("could not find directory %s", targetRelPath)
+}
+
+// copyFilesWithPattern copies all files matching pattern from srcDir to dstDir.
+func copyFilesWithPattern(srcDir, dstDir, pattern string) error {
+	matches, err := filepath.Glob(filepath.Join(srcDir, pattern))
+	if err != nil {
+		return err
+	}
+	for _, file := range matches {
+		info, err := os.Stat(file)
+		if err != nil {
+			return err
+		}
+		if info.IsDir() {
+			continue
+		}
+		destFile := filepath.Join(dstDir, filepath.Base(file))
+		if err := copyFile(file, destFile); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func copyFile(src, dst string) (err error) {
+	in, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer in.Close()
+
+	out, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		cerr := out.Close()
+		if err == nil {
+			err = cerr
+		}
+	}()
+
+	if _, err = io.Copy(out, in); err != nil {
+		return err
+	}
+
+	info, err := in.Stat()
+	if err != nil {
+		return err
+	}
+	return os.Chmod(dst, info.Mode())
 }

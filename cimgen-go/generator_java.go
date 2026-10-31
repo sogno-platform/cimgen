@@ -1,5 +1,7 @@
 package cimgen
 
+import "path/filepath"
+
 // GenerateJava generates Java source files from the CIM specification.
 func (spec *CIMSpecification) GenerateJava(outputDir string) error {
 	if err := cleanAllRecursively(outputDir); err != nil {
@@ -10,8 +12,36 @@ func (spec *CIMSpecification) GenerateJava(outputDir string) error {
 		return err
 	}
 
-	enumOutputDir := outputDir + "/types"
+	mainOutputDir := filepath.Join(outputDir, "main")
+	if err := createOutputDir(mainOutputDir); err != nil {
+		return err
+	}
+
+	enumOutputDir := filepath.Join(outputDir, "types")
 	if err := createOutputDir(enumOutputDir); err != nil {
+		return err
+	}
+
+	utilsOutputDir := filepath.Join(outputDir, "utils")
+	if err := createOutputDir(utilsOutputDir); err != nil {
+		return err
+	}
+
+	// Copy all hardcoded files
+	languagesDir, err := findLanguagesDir()
+	if err != nil {
+		return err
+	}
+	sourceDir := filepath.Join(languagesDir, "java")
+	if err := copyFilesWithPattern(sourceDir, outputDir, "*.java"); err != nil {
+		return err
+	}
+	sourceDir = filepath.Join(languagesDir, "java", "main")
+	if err := copyFilesWithPattern(sourceDir, mainOutputDir, "*.java"); err != nil {
+		return err
+	}
+	sourceDir = filepath.Join(languagesDir, "java", "utils")
+	if err := copyFilesWithPattern(sourceDir, utilsOutputDir, "*.java"); err != nil {
 		return err
 	}
 
