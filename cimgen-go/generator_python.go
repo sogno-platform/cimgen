@@ -81,6 +81,21 @@ func (spec *CIMSpecification) GeneratePythonSimple(outputDir string) error {
 	if err := generateFiles("python_simple_class", ".py", outputDir, spec.Types); err != nil {
 		return err
 	}
+	if err := generateFiles("python_simple_datatype", ".py", outputDir, spec.CIMDatatypes); err != nil {
+		return err
+	}
+	if err := generateFiles("python_simple_enum", ".py", outputDir, spec.Enums); err != nil {
+		return err
+	}
+	primitiveTypes := make(map[string]*CIMPrimitive, len(spec.PrimitiveTypes))
+	for k, t := range spec.PrimitiveTypes {
+		if t.Id != "String" {
+			primitiveTypes[k] = t
+		}
+	}
+	if err := generateFiles("python_simple_primitive", ".py", outputDir, primitiveTypes); err != nil {
+		return err
+	}
 	if err := generateFile("python_constants", "CimConstants.py", outputDir, spec); err != nil {
 		return err
 	}
@@ -142,16 +157,21 @@ func MapDatatypePython(t string) string {
 func (cimSpec *CIMSpecification) setDefaultValuesPython() {
 	for _, t := range cimSpec.Types {
 		for _, attr := range t.Attributes {
-			if attr.IsList {
-				attr.DefaultValue = "None"
-			} else if attr.IsClass {
-				attr.DefaultValue = "None"
-			} else if attr.IsEnumValue {
-				attr.DefaultValue = "None"
-			} else {
-				attr.DefaultValue = MapDefaultValuePython(attr.DataType)
-			}
+			setDefaultValuePython(attr)
 		}
+	}
+	for _, t := range cimSpec.CIMDatatypes {
+		for _, attr := range t.Attributes {
+			setDefaultValuePython(attr)
+		}
+	}
+}
+
+func setDefaultValuePython(attr *CIMAttribute) {
+	if attr.IsList || attr.IsClass || attr.IsEnumValue {
+		attr.DefaultValue = "None"
+	} else {
+		attr.DefaultValue = MapDefaultValuePython(attr.DataType)
 	}
 }
 
