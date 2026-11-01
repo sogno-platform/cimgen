@@ -17,7 +17,7 @@ namespace CIMPP
 	public:
 		enum {{.Id}}_ENUM
 		{
-{{- range $index, $element := .Values}}
+{{- range .Values}}
 			{{if .Comment -}}
 			/** {{.Comment}} */
 			{{- end}}

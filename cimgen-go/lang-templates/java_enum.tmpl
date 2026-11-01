@@ -14,7 +14,7 @@ import java.util.Map;
  */
 {{- end}}
 public enum {{.Id}} {
-{{- range $index, $element := .Values}}
+{{- range .Values}}
 {{- if .Comment}}
     /**
      * {{.Comment}}

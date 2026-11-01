@@ -1,0 +1,63 @@
+import templates from "../../templates/index.js"
+import BaseClass from "./BaseClass.js"
+import common from "../../src/common.js"
+import CGMESProfile from "./CGMESProfile.js"
+
+
+class {{.Id}} extends BaseClass {
+
+    static attributeHTML(object, cimmenu, classType="{{.Id}}") {
+        let attributeEntries = BaseClass.attributeHTML(object, cimmenu, classType);
+        return attributeEntries;
+    }
+
+    static possibleProfileList = {'class': [{{range .Origins}}CGMESProfile.shortNames.{{.}}, {{end}}],
+						 }
+
+    static isMemberAttribute(attribute) {
+        let attributes = [
+        ];
+        if ( attribute.substr(0,8) == "pintura:") {
+            return true;
+        }
+        if ( attributes.indexOf(attribute) >= 0 ) {
+            return true;
+        }
+        else if ( BaseClass.isMemberAttribute(attribute) ) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
+    static read(object) {
+        Object.keys(object).forEach((attribute) => {
+            if (!{{.Id}}.isMemberAttribute(attribute) && !(attribute == "about")) {
+                console.error("Unexpected attribute for class {{.Id}}: ", attribute, " with value: ", object[attribute])
+            }
+        });
+    }
+    static renderAsClass(object, cimmenu) {
+        let separateEntries = {{.Id}}.attributeHTML(object, cimmenu);
+        let filledEntries = separateEntries['filledEntries'];
+        let emptyEntries = separateEntries['emptyEntries'];
+        let attributeEntries = { ...filledEntries, ...emptyEntries };
+        return templates.handlebars_cim_class_render({ 'attributes': attributeEntries});
+    }
+    static renderAsAttribute(data) {
+{{- if eq .DataType "Boolean"}}
+        return templates.handlebars_cim_render_boolean(data)
+{{- else if eq .DataType "Float"}}
+        return templates.handlebars_cim_render_float(data)
+{{- else}}
+        return templates.handlebars_cim_render_string(data)
+{{- end}}
+    }
+    static subClassList() {
+        let subClasses = [
+        ];
+        return subClasses;
+    }
+};
+export default {{.Id}}

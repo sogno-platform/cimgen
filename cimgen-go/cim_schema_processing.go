@@ -60,6 +60,9 @@ func (cimSpec *CIMSpecification) determineDataTypes() {
 				} else {
 					t.PrimitiveType = attr.CIMDataType
 				}
+				attr.DataType = attr.CIMDataType
+			} else {
+				attr.DataType = attr.RDFRange
 			}
 		}
 	}
@@ -219,6 +222,9 @@ func (cimSpec *CIMSpecification) reorderOrigins() {
 		for _, attr := range t.Attributes {
 			cimSpec.sortOrigins(attr.Origins)
 		}
+	}
+	for _, et := range cimSpec.Enums {
+		cimSpec.sortOrigins(et.Origins)
 	}
 	for _, dt := range cimSpec.CIMDatatypes {
 		cimSpec.sortOrigins(dt.Origins)
