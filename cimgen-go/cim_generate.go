@@ -179,6 +179,20 @@ func generateFiles[T any](tmplFile string, fileExt string, outputDir string, inp
 			sort.Strings(result)
 			return result
 		},
+		"getFixedImports": func(cimType CIMDatatype) []string {
+			imports := make(map[string]bool)
+			for _, attr := range cimType.Attributes {
+				if attr.IsFixed {
+					imports[attr.RDFRange] = true
+				}
+			}
+			result := make([]string, 0, len(imports))
+			for k := range imports {
+				result = append(result, k)
+			}
+			sort.Strings(result)
+			return result
+		},
 		"collectAttributeTypes": collectAttributeTypes,
 	}
 
