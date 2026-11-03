@@ -31,7 +31,7 @@ func TestSchemaImport(t *testing.T) {
 	f.Sync()
 	data, err := os.ReadFile(output)
 	if err != nil {
-		t.Error("Cannot read output file for hashing:", err)
+		t.Fatalf("Cannot read output file for hashing: %v", err)
 	}
 	hash := sha256.Sum256(data)
 	t.Logf("SHA256 hash of output file: %x", hash)
@@ -39,6 +39,6 @@ func TestSchemaImport(t *testing.T) {
 	// Test output file against expected hash
 	expectedHash := "243295371e73bb7489d4f7b18967a1ba27a437d3332865d3901b7340ad590366"
 	if fmt.Sprintf("%x", hash) != expectedHash {
-		t.Error("decoder tests failed, output file hash does not match expected hash")
+		t.Error("CIM schema import test failed, output file hash does not match expected hash")
 	}
 }

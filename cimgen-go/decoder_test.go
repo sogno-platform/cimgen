@@ -29,7 +29,7 @@ func TestDecode(t *testing.T) {
 	t.Log("Write map to file:", output)
 	f, err := os.Create(output)
 	if err != nil {
-		t.Error("failed to open file:", err)
+		t.Error("Cannot create output file:", err)
 	}
 	defer f.Close()
 
@@ -72,7 +72,7 @@ func TestDecode(t *testing.T) {
 	f.Sync()
 	data, err := os.ReadFile(output)
 	if err != nil {
-		t.Error("Cannot read output file for hashing:", err)
+		t.Fatalf("Cannot read output file for hashing: %v", err)
 	}
 	hash := sha256.Sum256(data)
 	t.Logf("SHA256 hash of output file: %x", hash)
@@ -80,6 +80,6 @@ func TestDecode(t *testing.T) {
 	// Test output file against expected hash
 	expectedHash := "eafd799a571073de74f88521341a03bd32b56a753c118356c02ea5411d8d97e2"
 	if fmt.Sprintf("%x", hash) != expectedHash {
-		t.Error("decoder tests failed, output file hash does not match expected hash")
+		t.Error("XML decoder test failed, output file hash does not match expected hash")
 	}
 }
