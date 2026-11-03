@@ -20,9 +20,9 @@ from .UnitSymbol import UnitSymbol
         Profile.{{.}},{{end}}
     ],
 )
+{{- if .Comment}}
 
 """
-{{- if .Comment}}
-{{.Comment}}
-{{- end}}
+{{ .Comment | wrapAndIndent 120 0 }}
 """
+{{- end}}

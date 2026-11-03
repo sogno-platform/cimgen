@@ -38,30 +38,45 @@ func createOutputDir(outputDir string) error {
 	return nil
 }
 
-// wrapAndIndent is a custom template function that indents a multi-line string.
-// It also wraps lines to a maximum of 120 characters.
-func wrapAndIndent(spaces int, input string) string {
-	// Limit line length to 120 characters
-	var resultLines []string
-	for len(input) > 120 {
-		splitIndex := strings.LastIndex(input[:120], " ")
-		if splitIndex == -1 {
-			splitIndex = 120
-		}
-		resultLines = append(resultLines, input[:splitIndex])
-		input = input[splitIndex+1:]
+// wrapAndIndent is a custom template function that wraps a string to lines with a maximum of characters.
+// It is used for comments: make them fit within <width> characters, including indentation.
+// The input contains no line breaks and no extra spaces.
+func wrapAndIndent(width, indent int, input string) string {
+	// Limit line length to width characters
+	if indent < 0 {
+		indent = 0
 	}
-	resultLines = append(resultLines, input)
-	input = strings.Join(resultLines, "\n")
+	maxLen := width - indent
+	if maxLen < 1 {
+		maxLen = 1
+	}
+
+	runes := []rune(input)
+	var resultLines []string
+	for len(runes) > maxLen {
+		splitIndex := -1
+		for i := maxLen; i >= 0; i-- {
+			if runes[i] == ' ' {
+				splitIndex = i
+				break
+			}
+		}
+		if splitIndex == -1 {
+			resultLines = append(resultLines, string(runes[:maxLen]))
+			runes = runes[maxLen:]
+		} else {
+			resultLines = append(resultLines, string(runes[:splitIndex]))
+			runes = runes[splitIndex+1:]
+		}
+	}
+	resultLines = append(resultLines, string(runes))
 
 	// Create the indentation string (e.g., "  " for 2 spaces)
-	pad := strings.Repeat(" ", spaces)
-	// Split the input into lines
-	lines := strings.Split(input, "\n")
+	pad := strings.Repeat(" ", indent)
+
 	// Buffer to build the output string
 	var buf bytes.Buffer
-
-	for i, line := range lines {
+	for i, line := range resultLines {
 		if i > 0 {
 			// Add newline before every line except the first
 			buf.WriteRune('\n')

@@ -18,14 +18,11 @@ from ..utils.base import Base
 
 @dataclass
 class {{.Id}}{{if .SuperType}}({{.SuperType}}){{else}}(Base){{end}}:
-    """
 {{- if .Comment}}
-{{ .Comment | wrapAndIndent 4 }}
-{{- end}}
-{{range .Attributes}}
-    {{.Label}}: {{ .Comment }}
-{{- end}}
     """
+{{ .Comment | wrapAndIndent 120 4 }}
+    """
+{{- end}}
 {{range .Attributes}}
     {{.Label}}: {{.LangType}} = Field(
     {{- if .IsList}}
@@ -49,6 +46,11 @@ class {{.Id}}{{if .SuperType}}({{.SuperType}}){{else}}(Base){{end}}:
         {{- end}}
         },
     )
+{{- if .Comment}}
+    """
+{{ .Comment | wrapAndIndent 120 4 }}
+    """
+{{- end}}
 {{end}}
 {{- if not .Attributes}}
     # No attributes defined for this class.
