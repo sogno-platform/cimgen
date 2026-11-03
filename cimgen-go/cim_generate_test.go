@@ -16,7 +16,7 @@ func TestGenerate(t *testing.T) {
 		t.Fatalf("ImportCIMSchemaFiles failed: %v", err)
 	}
 
-	outputDir := "output/go-test"
+	outputDir := "output/_go_test"
 	err = cimSpec.GenerateGo(outputDir)
 	if err != nil {
 		t.Fatalf("GenerateGo failed: %v", err)
