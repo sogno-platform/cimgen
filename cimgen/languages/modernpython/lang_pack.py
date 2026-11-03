@@ -44,15 +44,7 @@ def _get_python_type(datatype: str) -> str:
         return "int"
     if datatype.lower() == "boolean":
         return "bool"
-    if datatype.lower() == "datetime":
-        return "datetime"
-    if datatype.lower() == "date":
-        return "date"
-    if datatype.lower() == "time":
-        return "time"
-    if datatype.lower() == "monthday":
-        return "str"  # TO BE FIXED? I could not find a datatype in python that holds only month and day.
-    if datatype.lower() == "string":
+    if datatype.lower() in ("string", "date", "datetime", "time", "monthday"):
         return "str"
     else:
         # everything else should be a float
@@ -157,7 +149,7 @@ def _python_type_and_default_value(attribute: dict) -> tuple[str, str]:
     if attribute["is_datatype_attribute"]:
         return ("float", "default=0.0")
     if attribute["is_enum_attribute"]:
-        return ("str", 'default=""')
+        return ("str", "default=None")
     if attribute["is_class_attribute"]:
         return ("Optional[str]", "default=None")
     if attribute["is_list_attribute"]:
