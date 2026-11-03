@@ -40,6 +40,7 @@ func (spec *CIMSpecification) GeneratePython(outputDir string) error {
 
 	spec.setLangTypesPython()
 	spec.setDefaultValuesPython()
+	spec.addNoqaToEnumValueComments()
 
 	if err := generateFiles("python_class", ".py", resourcesOutputDir, spec.Types); err != nil {
 		return err
@@ -189,6 +190,25 @@ func MapDefaultValuePython(t string) string {
 		return "None"
 	default:
 		return "None"
+	}
+}
+
+func (cimSpec *CIMSpecification) addNoqaToEnumValueComments() {
+	for _, t := range cimSpec.Enums {
+		for _, val := range t.Values {
+			if val.Comment != "" {
+				switch val.Label {
+				case "cosPhi", "lPerl", "gPerg", "sPers", "HzPerHz", "VPerV", "APerA", "WPerW":
+					val.Comment += "  # noqa: E501, RUF003"
+				case "l", "I":
+					val.Comment += "  # noqa: E501, E741"
+				case "count":
+					val.Comment += "  # noqa: E501  # type: ignore"
+				default:
+					val.Comment += "  # noqa: E501"
+				}
+			}
+		}
 	}
 }
 

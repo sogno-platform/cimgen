@@ -12,5 +12,5 @@ class {{.Id}}(str, Enum):
     """
 {{- end}}
 {{range .Values}}
-    {{.Label}} = "{{.Label}}"{{if .Comment}}  # {{.Comment}}  # noqa: E501{{end}}
+    {{.Label}} = "{{.Label}}"{{if .Comment}}  # {{.Comment}}{{end}}
 {{- end}}
