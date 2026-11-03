@@ -6,9 +6,11 @@ from enum import Enum
 
 
 class {{class_name}}(str, Enum):
+{{#wrapped_class_comment}}
     """
-    {{{wrapped_class_comment}}}
+{{{wrapped_class_comment}}}
     """
+{{/wrapped_class_comment}}
 
     {{#enum_instances}}
     {{label}} = "{{label}}"{{#comment}}  # {{{comment}}}{{/comment}}

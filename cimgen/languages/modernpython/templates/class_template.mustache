@@ -14,13 +14,11 @@ from {{class_location}} import {{subclass_of}}
 
 @dataclass
 class {{class_name}}({{subclass_of}}):
+{{#wrapped_class_comment}}
     """
-    {{{wrapped_class_comment}}}
-
-    {{#attributes}}
-    {{label}}: {{{wrapped_comment}}}
-    {{/attributes}}
+{{{wrapped_class_comment}}}
     """
+{{/wrapped_class_comment}}
 
     {{#attributes}}
     {{label}}: {{python_type}} = Field(
@@ -46,6 +44,11 @@ class {{class_name}}({{subclass_of}}):
 {{/is_primitive_attribute}}
         },
     )
+{{#wrapped_comment}}
+    """
+{{{wrapped_comment}}}
+    """
+{{/wrapped_comment}}
 
     {{/attributes}}
     {{^attributes}}
