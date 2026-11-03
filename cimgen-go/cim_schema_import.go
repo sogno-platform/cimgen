@@ -93,8 +93,7 @@ type CIMType struct {
 }
 
 type CIMDatatype struct {
-	Id            string          // from RDF schema
-	Label         string          // from RDF schema
+	Id            string          // from RDF schema - same as Label
 	Namespace     string          // from RDF schema
 	Comment       string          // from RDF schema
 	CIMStereotype string          // from RDF schema
@@ -107,8 +106,7 @@ type CIMDatatype struct {
 }
 
 type CIMPrimitive struct {
-	Id            string   // from RDF schema
-	Label         string   // from RDF schema
+	Id            string   // from RDF schema - same as Label
 	Namespace     string   // from RDF schema
 	Comment       string   // from RDF schema
 	CIMStereotype string   // from RDF schema
@@ -120,8 +118,7 @@ type CIMPrimitive struct {
 
 // CIMEnum represents a CIM enumeration with its values.
 type CIMEnum struct {
-	Id            string          // from RDF schema
-	Label         string          // from RDF schema
+	Id            string          // from RDF schema - same as Label
 	Namespace     string          // from RDF schema
 	Comment       string          // from RDF schema
 	CIMStereotype string          // from RDF schema
@@ -350,8 +347,13 @@ func processNamespaces(rdfMap map[string]interface{}) map[string]string {
 
 // processClass processes a map representing a CIM class and returns a CIMType struct.
 func processClass(classMap map[string]interface{}) CIMType {
+	id := extractURIEnd(extractValue(classMap, "@rdf:about"))
+	label := extractText(classMap, "rdfs:label")
+	if id != label {
+		fmt.Printf("Warning: CIMType Id '%s' and Label '%s' do not match\n", id, label)
+	}
 	return CIMType{
-		Id:            extractURIEnd(extractValue(classMap, "@rdf:about")), // same as Label
+		Id:            id, // same as Label
 		SuperType:     extractURIEnd(extractResource(classMap, "rdfs:subClassOf")),
 		Comment:       cleanText(extractText(classMap, "rdfs:comment")),
 		Namespace:     extractURIPath(extractValue(classMap, "@rdf:about")),
@@ -364,9 +366,13 @@ func processClass(classMap map[string]interface{}) CIMType {
 
 // processPrimitives processes a map representing a CIM class and returns a CIMPrimitive struct.
 func processPrimitives(classMap map[string]interface{}) CIMPrimitive {
+	id := extractURIEnd(extractValue(classMap, "@rdf:about"))
+	label := extractText(classMap, "rdfs:label")
+	if id != label {
+		fmt.Printf("Warning: CIMPrimitive Id '%s' and Label '%s' do not match\n", id, label)
+	}
 	return CIMPrimitive{
-		Id:            extractURIEnd(extractValue(classMap, "@rdf:about")),
-		Label:         extractText(classMap, "rdfs:label"),
+		Id:            id, // same as Label
 		Comment:       cleanText(extractText(classMap, "rdfs:comment")),
 		Namespace:     extractURIPath(extractValue(classMap, "@rdf:about")),
 		CIMStereotype: extractURIEnd(extractStringOrResource(classMap["cims:stereotype"])),
@@ -376,9 +382,13 @@ func processPrimitives(classMap map[string]interface{}) CIMPrimitive {
 
 // processCIMDatatypes processes a map representing a CIM class and returns a CIMDatatypes struct.
 func processCIMDatatypes(classMap map[string]interface{}) CIMDatatype {
+	id := extractURIEnd(extractValue(classMap, "@rdf:about"))
+	label := extractText(classMap, "rdfs:label")
+	if id != label {
+		fmt.Printf("Warning: CIMDatatype Id '%s' and Label '%s' do not match\n", id, label)
+	}
 	return CIMDatatype{
-		Id:            extractURIEnd(extractValue(classMap, "@rdf:about")),
-		Label:         extractText(classMap, "rdfs:label"),
+		Id:            id, // same as Label
 		Comment:       cleanText(extractText(classMap, "rdfs:comment")),
 		Namespace:     extractURIPath(extractValue(classMap, "@rdf:about")),
 		CIMStereotype: extractURIEnd(extractStringOrResource(classMap["cims:stereotype"])),
@@ -474,9 +484,13 @@ func traverseAndExtractText(n *html.Node, builder *strings.Builder) {
 
 // processEnum processes a map representing a CIM enumeration and returns a CIMEnum struct.
 func processEnum(classMap map[string]interface{}) CIMEnum {
+	id := extractURIEnd(extractValue(classMap, "@rdf:about"))
+	label := extractText(classMap, "rdfs:label")
+	if id != label {
+		fmt.Printf("Warning: CIMEnum Id '%s' and Label '%s' do not match\n", id, label)
+	}
 	return CIMEnum{
-		Id:            extractURIEnd(extractValue(classMap, "@rdf:about")),
-		Label:         extractText(classMap, "rdfs:label"),
+		Id:            id,
 		Comment:       cleanText(extractText(classMap, "rdfs:comment")),
 		Namespace:     extractURIPath(extractValue(classMap, "@rdf:about")),
 		CIMStereotype: extractURIEnd(extractStringOrResource(classMap["cims:stereotype"])),
