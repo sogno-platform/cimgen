@@ -1,30 +1,66 @@
 package cimgen
 
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"regexp"
+	"strings"
+)
+
 // GeneratePython generates Python source files from the CIM specification.
 func (spec *CIMSpecification) GeneratePython(outputDir string) error {
+	if err := cleanAllRecursively(outputDir); err != nil {
+		return err
+	}
+
 	if err := createOutputDir(outputDir); err != nil {
+		return err
+	}
+
+	resourcesOutputDir := filepath.Join(outputDir, "resources")
+	if err := createOutputDir(resourcesOutputDir); err != nil {
+		return err
+	}
+
+	utilsOutputDir := filepath.Join(outputDir, "utils")
+	if err := createOutputDir(utilsOutputDir); err != nil {
+		return err
+	}
+
+	// Copy all hardcoded files
+	languagesDir, err := findLanguagesDir()
+	if err != nil {
+		return err
+	}
+	sourceDir := filepath.Join(languagesDir, "modernpython", "utils")
+	if err := copyFilesWithPattern(sourceDir, utilsOutputDir, "*.[mp]*"); err != nil {
 		return err
 	}
 
 	spec.setLangTypesPython()
 	spec.setDefaultValuesPython()
+	spec.addNoqaToEnumValueComments()
 
-	if err := generateFiles("python_class", ".py", outputDir, spec.Types); err != nil {
+	if err := generateFiles("python_class", ".py", resourcesOutputDir, spec.Types); err != nil {
 		return err
 	}
-	if err := generateFile("python_constants", "cim_constants.py", outputDir, spec); err != nil {
+	if err := generateFile("python_constants", "constants.py", utilsOutputDir, spec); err != nil {
 		return err
 	}
-	if err := generateFile("python_profile", "cim_profiles.py", outputDir, spec); err != nil {
+	if err := generateFile("python_profile", "profile.py", utilsOutputDir, spec); err != nil {
 		return err
 	}
-	if err := generateFiles("python_datatype", ".py", outputDir, spec.CIMDatatypes); err != nil {
+	if err := generateFiles("python_datatype", ".py", resourcesOutputDir, spec.CIMDatatypes); err != nil {
 		return err
 	}
-	if err := generateFiles("python_enum", ".py", outputDir, spec.Enums); err != nil {
+	if err := generateFiles("python_enum", ".py", resourcesOutputDir, spec.Enums); err != nil {
 		return err
 	}
-	if err := generateFiles("python_primitive", ".py", outputDir, spec.PrimitiveTypes); err != nil {
+	if err := generateFiles("python_primitive", ".py", resourcesOutputDir, spec.PrimitiveTypes); err != nil {
+		return err
+	}
+	if err := writeInitPy(outputDir, spec.CGMESVersion); err != nil {
 		return err
 	}
 	return nil
@@ -32,6 +68,10 @@ func (spec *CIMSpecification) GeneratePython(outputDir string) error {
 
 // GeneratePythonSimple generates simple Python source files from the CIM specification.
 func (spec *CIMSpecification) GeneratePythonSimple(outputDir string) error {
+	if err := cleanAllRecursively(outputDir); err != nil {
+		return err
+	}
+
 	if err := createOutputDir(outputDir); err != nil {
 		return err
 	}
@@ -42,16 +82,37 @@ func (spec *CIMSpecification) GeneratePythonSimple(outputDir string) error {
 	if err := generateFiles("python_simple_class", ".py", outputDir, spec.Types); err != nil {
 		return err
 	}
+	if err := generateFiles("python_simple_datatype", ".py", outputDir, spec.CIMDatatypes); err != nil {
+		return err
+	}
+	if err := generateFiles("python_simple_enum", ".py", outputDir, spec.Enums); err != nil {
+		return err
+	}
+	primitiveTypes := make(map[string]*CIMPrimitive, len(spec.PrimitiveTypes))
+	for k, t := range spec.PrimitiveTypes {
+		if t.Id != "String" {
+			primitiveTypes[k] = t
+		}
+	}
+	if err := generateFiles("python_simple_primitive", ".py", outputDir, primitiveTypes); err != nil {
+		return err
+	}
 	if err := generateFile("python_constants", "CimConstants.py", outputDir, spec); err != nil {
 		return err
 	}
 	if err := generateFile("python_simple_profiles", "CGMESProfile.py", outputDir, spec); err != nil {
 		return err
 	}
+	if err := generateFile("python_simple_init", "__init__.py", outputDir, spec); err != nil {
+		return err
+	}
+	if err := writeBasePy(outputDir); err != nil {
+		return err
+	}
 	return nil
 }
 
-// setLangTypesPython sets default values for attributes based on their data types for Go code generation.
+// setLangTypesPython sets types for attributes based on their data types for Python code generation.
 func (cimSpec *CIMSpecification) setLangTypesPython() {
 	for _, t := range cimSpec.Types {
 		for _, attr := range t.Attributes {
@@ -97,22 +158,27 @@ func MapDatatypePython(t string) string {
 func (cimSpec *CIMSpecification) setDefaultValuesPython() {
 	for _, t := range cimSpec.Types {
 		for _, attr := range t.Attributes {
-			if attr.IsList {
-				attr.DefaultValue = "list" // Set default value for list attributes
-			} else if attr.IsClass {
-				attr.DefaultValue = "None"
-			} else if attr.IsEnumValue {
-				attr.DefaultValue = "\"\""
-			} else {
-				attr.DefaultValue = MapDefaultValuePython(attr.DataType)
-			}
+			setDefaultValuePython(attr)
 		}
+	}
+	for _, t := range cimSpec.CIMDatatypes {
+		for _, attr := range t.Attributes {
+			setDefaultValuePython(attr)
+		}
+	}
+}
+
+func setDefaultValuePython(attr *CIMAttribute) {
+	if attr.IsList || attr.IsClass || attr.IsEnumValue {
+		attr.DefaultValue = "None"
+	} else {
+		attr.DefaultValue = MapDefaultValuePython(attr.DataType)
 	}
 }
 
 func MapDefaultValuePython(t string) string {
 	switch t {
-	case DataTypeString, DataTypeDateTime, DataTypeDate, DataTypeMonthDay:
+	case DataTypeString, DataTypeDateTime, DataTypeDate, DataTypeMonthDay, DataTypeDuration:
 		return "\"\""
 	case DataTypeInteger:
 		return "0"
@@ -125,4 +191,65 @@ func MapDefaultValuePython(t string) string {
 	default:
 		return "None"
 	}
+}
+
+func (cimSpec *CIMSpecification) addNoqaToEnumValueComments() {
+	for _, t := range cimSpec.Enums {
+		for _, val := range t.Values {
+			if val.Comment != "" {
+				switch val.Label {
+				case "cosPhi", "lPerl", "gPerg", "sPers", "HzPerHz", "VPerV", "APerA", "WPerW":
+					val.Comment += "  # noqa: E501, RUF003"
+				case "l", "I":
+					val.Comment += "  # noqa: E501, E741"
+				case "count":
+					val.Comment += "  # noqa: E501  # type: ignore"
+				default:
+					val.Comment += "  # noqa: E501"
+				}
+			}
+		}
+	}
+}
+
+var versionNumberRegex = regexp.MustCompile(`\d+_\d+_\d+`)
+
+// writeInitPy writes the package docstring and CGMES_VERSION into resources/__init__.py.
+func writeInitPy(outputDir, version string) error {
+	match := versionNumberRegex.FindString(version)
+	if match == "" {
+		return fmt.Errorf("cannot parse %s to extract a number", version)
+	}
+	versionNumber := strings.ReplaceAll(match, "_", ".")
+
+	dest := filepath.Join(outputDir, "resources", "__init__.py")
+	f, err := os.OpenFile(dest, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	content := fmt.Sprintf(`"""
+Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cimgen
+"""
+
+CGMES_VERSION = "%s"
+`, versionNumber)
+
+	_, err = f.WriteString(content)
+	return err
+}
+
+// writeBasePy writes the base class file Base.py for python-simple.
+func writeBasePy(outputDir string) error {
+	dest := filepath.Join(outputDir, "Base.py")
+	content := `class Base:
+    """
+    Base Class for CIM
+    """
+
+    def printxml(self, dict={}):
+        return dict
+`
+	return os.WriteFile(dest, []byte(content), 0644)
 }

@@ -2,6 +2,10 @@ package cimgen
 
 // GenerateGo generates Go source files from the CIM specification.
 func (spec *CIMSpecification) GenerateGo(outputDir string) error {
+	if err := cleanAllRecursively(outputDir); err != nil {
+		return err
+	}
+
 	if err := createOutputDir(outputDir); err != nil {
 		return err
 	}
@@ -26,7 +30,7 @@ func (spec *CIMSpecification) GenerateGo(outputDir string) error {
 	return nil
 }
 
-// setLangTypesGo sets default values for attributes based on their data types for Go code generation.
+// setLangTypesGo sets types for attributes based on their data types for Go code generation.
 func (cimSpec *CIMSpecification) setLangTypesGo() {
 	for _, t := range cimSpec.Types {
 		for _, attr := range t.Attributes {
@@ -55,7 +59,7 @@ func MapDataTypeGo(s string) string {
 		return "bool"
 	case DataTypeInteger:
 		return "int"
-	case DataTypeFloat:
+	case DataTypeFloat, DateTypeDecimal:
 		return "float64"
 	case DataTypeDateTime:
 		return "string"

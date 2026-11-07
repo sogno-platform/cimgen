@@ -4,6 +4,10 @@ import "strings"
 
 // GenerateProto generates Protocol Buffer source files from the CIM specification.
 func (spec *CIMSpecification) GenerateProto(outputDir string) error {
+	if err := cleanAllRecursively(outputDir); err != nil {
+		return err
+	}
+
 	if err := createOutputDir(outputDir); err != nil {
 		return err
 	}
@@ -38,7 +42,7 @@ func (spec *CIMSpecification) GenerateProto(outputDir string) error {
 	return nil
 }
 
-// setLangTypesProto sets default values for attributes based on their data types for Go code generation.
+// setLangTypesProto sets types for attributes based on their data types for Protocol Buffer code generation.
 func (cimSpec *CIMSpecification) setLangTypesProto() {
 	for _, t := range cimSpec.Types {
 		for _, attr := range t.Attributes {
@@ -61,7 +65,7 @@ func (cimSpec *CIMSpecification) setLangTypesProto() {
 
 func MapDataTypeProto(s string, cimSpec *CIMSpecification) string {
 	switch s {
-	case DataTypeString, DataTypeDateTime, DataTypeDate, DataTypeMonthDay:
+	case DataTypeString, DataTypeDateTime, DataTypeDate, DataTypeMonthDay, DataTypeDuration:
 		return "string"
 	case DataTypeBoolean:
 		return "bool"

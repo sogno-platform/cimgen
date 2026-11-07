@@ -1,8 +1,24 @@
 package cimgen
 
+import "path/filepath"
+
 // GenerateCpp generates C++ source files from the CIM specification.
 func (spec *CIMSpecification) GenerateCpp(outputDir string) error {
+	if err := cleanAllRecursively(outputDir); err != nil {
+		return err
+	}
+
 	if err := createOutputDir(outputDir); err != nil {
+		return err
+	}
+
+	// Copy all hardcoded files
+	languagesDir, err := findLanguagesDir()
+	if err != nil {
+		return err
+	}
+	sourceDir := filepath.Join(languagesDir, "cpp", "static")
+	if err := copyFilesWithPattern(sourceDir, outputDir, "*.[ch]*"); err != nil {
 		return err
 	}
 
@@ -70,7 +86,7 @@ func (spec *CIMSpecification) GenerateCpp(outputDir string) error {
 	return nil
 }
 
-// setLangTypesCpp sets default values for attributes based on their data types for C++ code generation.
+// setLangTypesCpp sets types for attributes based on their data types for C++ code generation.
 func (cimSpec *CIMSpecification) setLangTypesCpp() {
 	for _, t := range cimSpec.Types {
 		for _, attr := range t.Attributes {
@@ -93,13 +109,13 @@ func (cimSpec *CIMSpecification) setLangTypesCpp() {
 
 func MapDatatypeCpp(t string) string {
 	switch t {
-	case DataTypeString, DataTypeDateTime, DataTypeDate, DataTypeMonthDay:
+	case DataTypeString, DataTypeDateTime, DataTypeDate, DataTypeMonthDay, DataTypeDuration:
 		return "std::string"
 	case DataTypeInteger:
 		return "int"
 	case DataTypeBoolean:
 		return "bool"
-	case DataTypeFloat:
+	case DataTypeFloat, DateTypeDecimal:
 		return "double"
 	case DataTypeObject:
 		return "Class*"
@@ -125,13 +141,13 @@ func (cimSpec *CIMSpecification) setDefaultValuesCpp() {
 
 func MapDefaultValueCpp(t string) string {
 	switch t {
-	case DataTypeString, DataTypeDateTime, DataTypeDate, DataTypeMonthDay:
+	case DataTypeString, DataTypeDateTime, DataTypeDate, DataTypeMonthDay, DataTypeDuration:
 		return "\"\""
 	case DataTypeInteger:
 		return "0"
 	case DataTypeBoolean:
 		return "false"
-	case DataTypeFloat:
+	case DataTypeFloat, DateTypeDecimal:
 		return "0.0"
 	case DataTypeObject:
 		return "nullptr"

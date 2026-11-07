@@ -51,10 +51,9 @@ class Profile(BaseProfile):
     """
     Enum containing all CGMES profiles and their export priority.
     """
-
-    {{- range .OntologyList}}
+{{range .OntologyList}}
     {{.Keyword}} = "{{.Name}}"
-    {{- end}}
+{{- end}}
 
     @cached_property
     def uris(self) -> list[str]:
@@ -63,9 +62,9 @@ class Profile(BaseProfile):
 
 
 profile_uris: dict[str, list[str]] = {  # Those are strings, not real addresses, hence the NOSONAR.
-    {{- range .OntologyList}}
+{{- range .OntologyList}}
     "{{.Keyword}}": [
         "{{.OWLVersionIRI}}",  # NOSONAR
     ],
-    {{- end}}
+{{- end}}
 }

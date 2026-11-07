@@ -1,0 +1,39 @@
+from .Base import Base
+from .CGMESProfile import Profile
+
+
+class {{.Id}}(Base):
+    """
+{{- if .Comment}}
+    {{.Comment}}
+{{end}}
+{{- range .Attributes}}
+    :{{.Label}}: {{.Comment}} Default: {{.DefaultValue}}
+{{- end}}
+    """
+
+    possibleProfileList = {
+        "class": [{{range .Origins}}Profile.{{.}}.value, {{end}}],
+{{- range .Attributes}}
+        "{{.Label}}": [{{range .Origins}}Profile.{{.}}.value, {{end}}],
+{{- end}}
+    }
+
+    serializationProfile = {}
+
+    recommendedClassProfile = Profile.{{index .Origins 0}}.value
+
+
+    def __init__(self{{range .Attributes}}, {{.Label}} = {{.DefaultValue}}{{end}}):
+{{range .Attributes}}
+        self.{{.Label}} = {{.Label}}{{if .IsList}} or []{{end}}
+{{- else}}
+        pass
+{{- end}}
+
+    def __str__(self):
+        str = "class={{.Id}}\n"
+        attributes = self.__dict__
+        for key in attributes.keys():
+            str = str + key + "={}\n".format(repr(attributes[key]))
+        return str

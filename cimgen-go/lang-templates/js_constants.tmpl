@@ -10,7 +10,7 @@ class CimConstants {
     // Default namespaces used by CGMES. Map of namespace key to URL.
     static namespaces = {  // Those are strings, not real addresses, hence the NOSONAR.
 {{- range $key, $value := .ProfileNamespaces}}
-    "{{$key}}": {{$value}},  // NOSONAR
+        "{{$key}}": {{$value}},  // NOSONAR
 {{- end}}
     };
 }

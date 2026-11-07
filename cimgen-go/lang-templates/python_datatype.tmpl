@@ -4,8 +4,10 @@ Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cim
 
 from ..utils.datatypes import CIMDatatype
 from ..utils.profile import Profile
-from .UnitMultiplier import UnitMultiplier
-from .UnitSymbol import UnitSymbol
+{{- range $type := (getFixedImports .)}}
+from .{{$type}} import {{$type}}
+{{- end }}
+
 
 {{.Id}} = CIMDatatype(
     name="{{.Id}}",
@@ -15,10 +17,13 @@ from .UnitSymbol import UnitSymbol
     {{.Label}}={{.RDFRange}}.{{.CIMIsFixed}},
     {{- end}}
     {{- end}}
+    profiles=[{{range .Origins}}
+        Profile.{{.}},{{end}}
+    ],
 )
+{{- if .Comment}}
 
 """
-{{- if .Comment}}
-{{.Comment}}
-{{- end}}
+{{ .Comment | wrapAndIndent 120 0 }}
 """
+{{- end}}

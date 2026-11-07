@@ -23,9 +23,10 @@ func (cimSpec *CIMSpecification) postprocess() {
 	cimSpec.setMissingNamespaces()
 	cimSpec.sortAttributes()
 	cimSpec.setIsInverseRoleAttributeList()
-	cimSpec.renameConflictingAttributes()
+	cimSpec.setVariableName()
 	cimSpec.removeCircularDependencies()
-
+	cimSpec.setSuperTypesOfSuperTypes()
+	cimSpec.setSubTypesOfSubTypes()
 }
 
 // removeCircularDependencies removes circular dependencies in the CIM specification
@@ -59,6 +60,9 @@ func (cimSpec *CIMSpecification) determineDataTypes() {
 				} else {
 					t.PrimitiveType = attr.CIMDataType
 				}
+				attr.DataType = attr.CIMDataType
+			} else {
+				attr.DataType = attr.RDFRange
 			}
 		}
 	}
@@ -148,8 +152,8 @@ func (cimSpec *CIMSpecification) determineDataTypes() {
 func isPrimitiveType(typeStr string) bool {
 	switch typeStr {
 	case DataTypeString, DataTypeInteger, DataTypeBoolean,
-		DataTypeFloat, DataTypeDate,
-		DataTypeDateTime, DataTypeMonthDay:
+		DataTypeFloat, DateTypeDecimal, DataTypeDate,
+		DataTypeDateTime, DataTypeMonthDay, DataTypeDuration:
 		return true
 	default:
 		return false
@@ -189,38 +193,47 @@ func (cimSpec *CIMSpecification) addOriginsOfAttributes() {
 		}
 		// convert set to slice
 		t.Origins = make([]string, 0, len(originSet))
-		tmpOrigins := make([]string, 0, len(originSet))
 		for origin := range originSet {
-			tmpOrigins = append(tmpOrigins, origin)
+			t.Origins = append(t.Origins, origin)
 		}
-		// sort origins
-		sort.Strings(tmpOrigins)
-		// assign to CIMType
-		t.Origins = append(t.Origins, tmpOrigins...)
 	}
 }
 
-// reorderOrigins reorders the Origins field of each CIMType based on the priority of the ontologies.
-// And also reorders the Origins field of each attribute based on the priority of the ontologies.
+// sortOrigins sorts a slice of ontology keywords based on ontology priority.
+func (cimSpec *CIMSpecification) sortOrigins(origins []string) {
+	sort.Slice(origins, func(i, j int) bool {
+		var priorityI, priorityJ int
+		if ont, ok := cimSpec.Ontologies[origins[i]]; ok && ont != nil {
+			priorityI = ont.Priority
+		}
+		if ont, ok := cimSpec.Ontologies[origins[j]]; ok && ont != nil {
+			priorityJ = ont.Priority
+		}
+		return priorityI < priorityJ
+	})
+}
+
+// reorderOrigins reorders the Origins field of CIMTypes, CIMDatatypes, and CIMPrimitives
+// based on the priority of the ontologies, as well as the Origins field of their attributes.
 func (cimSpec *CIMSpecification) reorderOrigins() {
 	for _, t := range cimSpec.Types {
-		sort.Slice(t.Origins, func(i, j int) bool {
-			originI := t.Origins[i]
-			originJ := t.Origins[j]
-			priorityI := cimSpec.Ontologies[originI].Priority
-			priorityJ := cimSpec.Ontologies[originJ].Priority
-			return priorityI < priorityJ
-		})
+		cimSpec.sortOrigins(t.Origins)
 		// reorder the Origins field of each attribute
 		for _, attr := range t.Attributes {
-			sort.Slice(attr.Origins, func(i, j int) bool {
-				originI := attr.Origins[i]
-				originJ := attr.Origins[j]
-				priorityI := cimSpec.Ontologies[originI].Priority
-				priorityJ := cimSpec.Ontologies[originJ].Priority
-				return priorityI < priorityJ
-			})
+			cimSpec.sortOrigins(attr.Origins)
 		}
+	}
+	for _, et := range cimSpec.Enums {
+		cimSpec.sortOrigins(et.Origins)
+	}
+	for _, dt := range cimSpec.CIMDatatypes {
+		cimSpec.sortOrigins(dt.Origins)
+		for _, attr := range dt.Attributes {
+			cimSpec.sortOrigins(attr.Origins)
+		}
+	}
+	for _, pt := range cimSpec.PrimitiveTypes {
+		cimSpec.sortOrigins(pt.Origins)
 	}
 }
 
@@ -230,7 +243,7 @@ func (cimSpec *CIMSpecification) reorderOrigins() {
 // Only the attributes are considered that have more than one entry in the Origins field.
 // If "EQ" is among the most frequent origins, it is selected as the main origin.
 // Otherwise, the first origin in alphabetical order is selected.
-// This function updates the Origin field of each CIMType accordingly.
+// This function updates the MainOrigin field of each CIMType accordingly.
 func (cimSpec *CIMSpecification) setMainOrigin() {
 	for _, t := range cimSpec.Types {
 
@@ -280,10 +293,10 @@ func (cimSpec *CIMSpecification) setMainOrigin() {
 		}
 
 		if contains(filteredOrigins, "EQ") {
-			t.Origin = "EQ"
+			t.MainOrigin = "EQ"
 		} else {
 			sort.Strings(filteredOrigins)
-			t.Origin = filteredOrigins[0]
+			t.MainOrigin = filteredOrigins[0]
 		}
 	}
 }
@@ -467,17 +480,59 @@ func (cimSpec *CIMSpecification) isAttributeWithInverseList(a *CIMAttribute) boo
 	return false
 }
 
-// renameConflictingAttributes renames attributes that may cause conflicts.
-func (cimSpec *CIMSpecification) renameConflictingAttributes() {
+// setVariableName sets the name of the label used as variable name.
+// Some label names are not allowed as name of a variable.
+// Prevent collision of attribute and class name (e.g. AvailabilitySchedule in profile AvailabilitySchedule).
+func (cimSpec *CIMSpecification) setVariableName() {
 	for _, t := range cimSpec.Types {
 		for _, attr := range t.Attributes {
-			if attr.Label == "switch" {
-				attr.Label = "switch_"
-				//log.Println("Renamed switch attribute to", attr.Label, "in type", t.Id)
-			} else if attr.Label == "IdentifiedObject" {
-				attr.Label = "IdentifiedObject_"
-				//log.Println("Renamed IdentifiedObject attribute to", attr.Label, "in type", t.Id)
+			if attr.Label == "switch" || attr.Label == t.Id {
+				attr.VariableName = attr.Label + "_"
+			} else {
+				attr.VariableName = attr.Label
 			}
+		}
+	}
+}
+
+// setSuperTypesOfSuperTypes sets the list of supertypes for each type.
+// The algorithm searches supertypes of supertypes recursively. The resulting lists are set as
+// attribute SuperTypes in the type definition. They are sorted upwards according to the hierarchy.
+func (cimSpec *CIMSpecification) setSuperTypesOfSuperTypes() {
+	for _, t := range cimSpec.Types {
+		superTypes := make([]string, 0)
+		visited := make(map[string]bool)
+		current := t.SuperType
+		for current != "" && !visited[current] {
+			visited[current] = true
+			superTypes = append(superTypes, current)
+			if parent, ok := cimSpec.Types[current]; ok {
+				current = parent.SuperType
+			} else {
+				break
+			}
+		}
+		t.SuperTypes = superTypes
+	}
+}
+
+// setSubTypesOfSubTypes sets the list of subtypes for each type.
+// The algorithm searches subtypes of subtypes using the attribute SuperTypes of all types. The
+// supertypes lists must therefore have been filled beforehand. The resulting lists are set as
+// attribute SubTypes in the type definition. They are sorted alphabetically.
+func (cimSpec *CIMSpecification) setSubTypesOfSubTypes() {
+	subTypesMap := make(map[string][]string)
+	for _, t := range cimSpec.Types {
+		for _, superType := range t.SuperTypes {
+			subTypesMap[superType] = append(subTypesMap[superType], t.Id)
+		}
+	}
+	for _, t := range cimSpec.Types {
+		if subs, ok := subTypesMap[t.Id]; ok {
+			sort.Strings(subs)
+			t.SubTypes = subs
+		} else {
+			t.SubTypes = make([]string, 0)
 		}
 	}
 }

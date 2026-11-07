@@ -9,7 +9,7 @@ from pydantic import Field
 from pydantic.dataclasses import dataclass
 
 from ..utils.profile import BaseProfile, Profile
-{{if .SuperType}}
+{{- if .SuperType}}
 from .{{.SuperType}} import {{.SuperType}}
 {{- else}}
 from ..utils.base import Base
@@ -18,19 +18,14 @@ from ..utils.base import Base
 
 @dataclass
 class {{.Id}}{{if .SuperType}}({{.SuperType}}){{else}}(Base){{end}}:
-    """
 {{- if .Comment}}
-{{ .Comment | wrapAndIndent 4 }}
-{{end}}
-
-{{- range .Attributes}}
-    {{.Label}}: {{ .Comment }}
-{{- end}}
     """
-
-    {{- range .Attributes}}
+{{ .Comment | wrapAndIndent 120 4 }}
+    """
+{{- end}}
+{{range .Attributes}}
     {{.Label}}: {{.LangType}} = Field(
-    {{- if eq .DefaultValue "list"}}
+    {{- if .IsList}}
         default_factory=list,
     {{- else}}
         default={{.DefaultValue}},
@@ -51,11 +46,15 @@ class {{.Id}}{{if .SuperType}}({{.SuperType}}){{else}}(Base){{end}}:
         {{- end}}
         },
     )
-    {{- end}}
-    {{- if not .Attributes}}
+{{- if .Comment}}
+    """
+{{ .Comment | wrapAndIndent 120 4 }}
+    """
+{{- end}}
+{{end}}
+{{- if not .Attributes}}
     # No attributes defined for this class.
-    {{- end}}
-
+{{end}}
     @cached_property
     def possible_profiles(self) -> set[BaseProfile]:
         """
@@ -74,4 +73,4 @@ class {{.Id}}{{if .SuperType}}({{.SuperType}}){{else}}(Base){{end}}:
         This is the profile with most of the attributes.
         It should be used to write the data to as few as possible files.
         """
-        return Profile.{{.Origin}}
+        return Profile.{{.MainOrigin}}

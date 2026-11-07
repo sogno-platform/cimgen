@@ -8,7 +8,7 @@ class {{.Id}}({{if .SuperType}}{{.SuperType}}{{else}}Base{{end}}):
     {{.Comment}}
 {{end}}
 {{- range .Attributes}}
-    :{{.Label}}: {{.Comment}} Default: {{if .IsList}}"{{.DefaultValue}}"{{else}}{{.DefaultValue}}{{end}}
+    :{{.Label}}: {{.Comment}} Default: {{.DefaultValue}}
 {{- end}}
     """
 
@@ -21,16 +21,17 @@ class {{.Id}}({{if .SuperType}}{{.SuperType}}{{else}}Base{{end}}):
 
     serializationProfile = {}
 
-    recommendedClassProfile = Profile.{{.Origin}}.value
+    recommendedClassProfile = Profile.{{.MainOrigin}}.value
 {{if .SuperType}}
     __doc__ += "\nDocumentation of parent class {{.SuperType}}:\n" + {{.SuperType}}.__doc__
-{{end}}
-    def __init__(self{{range .Attributes}}, {{.Label}} = {{if .IsList}}"{{.DefaultValue}}"{{else}}{{.DefaultValue}}{{end}}{{end}}{{if .SuperType}}, *args, **kw_args{{end}}):
+{{- end}}
+
+    def __init__(self{{range .Attributes}}, {{.Label}} = {{.DefaultValue}}{{end}}{{if .SuperType}}, *args, **kw_args{{end}}):
 {{- if .SuperType}}
         super().__init__(*args, **kw_args)
-{{end}}
-{{- range .Attributes}}
-        self.{{.Label}} = {{.Label}}
+{{- end}}
+{{range .Attributes}}
+        self.{{.Label}} = {{.Label}}{{if .IsList}} or []{{end}}
 {{- else}}
         pass
 {{- end}}

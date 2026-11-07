@@ -9,10 +9,13 @@ from ..utils.profile import Profile
 {{.Id}} = Primitive(
     name="{{.Id}}",
     type={{.LangType}},
+    profiles=[{{range .Origins}}
+        Profile.{{.}},{{end}}
+    ],
 )
+{{- if .Comment}}
 
 """
-{{- if .Comment}}
-{{.Comment}}
-{{- end}}
+{{ .Comment | wrapAndIndent 120 0 }}
 """
+{{- end}}

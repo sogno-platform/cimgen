@@ -1,12 +1,10 @@
 module github.com/sogno-platform/cimgen
 
-go 1.24.0
+go 1.25.0
 
-toolchain go1.24.4
-
-require golang.org/x/text v0.31.0
+require golang.org/x/text v0.37.0
 
 require (
-	golang.org/x/mod v0.29.0
-	golang.org/x/net v0.47.0
+	golang.org/x/mod v0.35.0
+	golang.org/x/net v0.55.0
 )

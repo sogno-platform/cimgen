@@ -1,12 +1,11 @@
+import html
 import logging
-import textwrap
-import warnings
+import re
 from pathlib import Path
 from time import time
 from types import ModuleType
 
 import xmltodict
-from bs4 import BeautifulSoup
 
 logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(__name__)
@@ -71,16 +70,11 @@ class RDFSEntry:
 
     def comment(self) -> str:
         if "rdfs:comment" in self.json_definition:
-            return (
-                RDFSEntry._extract_text(self.json_definition["rdfs:comment"])
-                .replace("–", "-")
-                .replace("“", '"')
-                .replace("”", '"')
-                .replace("’", "'")
-                .replace("°", "[SYMBOL REMOVED]")
-                .replace("º", "[SYMBOL REMOVED]")
-                .replace("\n", " ")
-            )
+            comment = RDFSEntry._extract_text(self.json_definition["rdfs:comment"])
+            decoded = html.unescape(html.unescape(comment))
+            plain_text = re.sub(r"<[^ =>][^>]*>", "", decoded)
+            one_line = re.sub(r"\s+", " ", plain_text).strip()
+            return one_line.replace('"', "'").replace("–", "-")
         else:
             return ""
 
@@ -255,25 +249,29 @@ class CIMComponentDefinition:
         return self.stereotype == "CIMDatatype"
 
 
-def _wrap_and_clean(txt: str, width: int = 120, initial_indent="", subsequent_indent="    ") -> str:
+def wrap_and_indent(input: str, width: int, indent: int) -> str:
     """
-    Used for comments: make them fit within <width> character, including indentation.
+    Wrap a string to lines with a maximum of characters.
+    It is used for comments: make them fit within <width> characters, including indentation.
+    The input contains no line breaks and no extra spaces.
     """
-
-    # Ignore MarkupResemblesLocatorWarning
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-
-        soup = BeautifulSoup(txt, "html.parser")
-
-    return "\n".join(
-        textwrap.wrap(
-            soup.text,
-            width=width,
-            initial_indent=initial_indent,
-            subsequent_indent=subsequent_indent,
-        )
-    )
+    if indent < 0:
+        indent = 0
+    max_len = width - indent
+    if max_len < 1:
+        max_len = 1
+    pad = " " * indent
+    result_lines: list[str] = []
+    while len(input) > max_len:
+        split_index = input.rfind(" ", 0, max_len + 1)
+        if split_index == -1:
+            result_lines.append(pad + input[:max_len])
+            input = input[max_len:]
+        else:
+            result_lines.append(pad + input[:split_index])
+            input = input[split_index + 1 :]
+    result_lines.append(pad + input)
+    return "\n".join(result_lines)
 
 
 long_profile_names: dict[str, str] = {}
@@ -398,7 +396,7 @@ def _parse_rdf(input_dic: dict, version: str) -> dict[str, dict[str, CIMComponen
         if "profile_iri_v3" in rdfs_entry_types:
             profile_uri_list.append(rdfs_entry.version_iri())
 
-    if not short_profile_name or short_profile_name == "FH":
+    if not short_profile_name or short_profile_name == "FH" or short_profile_name == "DH":
         return {}
 
     _add_profile_to_packages(profile_name, short_profile_name, profile_uri_list)
@@ -455,22 +453,18 @@ def _write_all_files(
         # extract comments
         if elem_dict[class_name].comment:
             class_details["class_comment"] = elem_dict[class_name].comment
-            class_details["wrapped_class_comment"] = _wrap_and_clean(
+            class_details["wrapped_class_comment"] = wrap_and_indent(
                 elem_dict[class_name].comment,
-                width=116,
-                initial_indent="",
-                subsequent_indent=" " * 6,
+                width=120,
+                indent=4,
             )
 
         for attribute in class_details["attributes"]:
             if "comment" in attribute:
-                attribute["comment"] = attribute["comment"].replace('"', "`")
-                attribute["comment"] = attribute["comment"].replace("'", "`")
-                attribute["wrapped_comment"] = _wrap_and_clean(
+                attribute["wrapped_comment"] = wrap_and_indent(
                     attribute["comment"],
-                    width=114 - len(attribute["label"]),
-                    initial_indent="",
-                    subsequent_indent=" " * 6,
+                    width=120,
+                    indent=4,
                 )
             attribute_class = _get_attribute_class(attribute)
             attribute_type = _get_attribute_type(attribute, elem_dict[attribute_class])

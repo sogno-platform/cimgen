@@ -16,19 +16,13 @@ Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cim
 #include "BaseClassDefiner.hpp"
 #include "CGMESProfile.hpp"
 #include "CimClassDetails.hpp"
-{{range .PrimitiveTypes}}
-#include "{{.}}.hpp"
-{{- end}}
-{{- range .CIMDatatypes}}
-#include "{{.}}.hpp"
-{{- end}}
-{{- range .EnumTypes}}
-#include "{{.}}.hpp"
-{{- end}}
+{{range $customType := (getCppImports .)}}
+#include "{{ $customType }}.hpp"
+{{- end }}
 
 namespace CIMPP
 {
-{{range (collectAttributeTypes .Attributes)}}
+{{- range (collectAttributeTypes .Attributes)}}
 	class {{.}};
 {{- end}}
 {{if .Comment}}
@@ -44,16 +38,16 @@ namespace CIMPP
 
 		/** \brief {{.Comment}} Default: {{.DefaultValue}} */
 {{- if or .IsPrimitive .IsCIMDatatype}}
-		CIMPP::{{.CIMDataType}} {{.Label}};
+		CIMPP::{{.CIMDataType}} {{.VariableName}};
 {{- end}}
 {{- if .IsEnumValue}}
-		CIMPP::{{.DataType}} {{.Label}};
+		CIMPP::{{.DataType}} {{.VariableName}};
 {{- end}}
 {{- if .IsClass}}
-		CIMPP::{{.DataType}}* {{.Label}};
+		CIMPP::{{.DataType}}* {{.VariableName}};
 {{- end}}
 {{- if .IsList}}
-		std::list<CIMPP::{{.DataType}}*> {{.Label}};
+		std::list<CIMPP::{{.DataType}}*> {{.VariableName}};
 {{- end}}
 {{- end}}
 

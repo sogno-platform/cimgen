@@ -1,0 +1,3 @@
+{{range (getPythonTypes .) -}}
+from .{{.}} import {{.}} as {{.}}
+{{end -}}

@@ -1,13 +1,47 @@
 package cimgen
 
+import "path/filepath"
+
 // GenerateJava generates Java source files from the CIM specification.
 func (spec *CIMSpecification) GenerateJava(outputDir string) error {
+	if err := cleanAllRecursively(outputDir); err != nil {
+		return err
+	}
+
 	if err := createOutputDir(outputDir); err != nil {
 		return err
 	}
 
-	enumOuputDir := outputDir + "/types"
-	if err := createOutputDir(enumOuputDir); err != nil {
+	mainOutputDir := filepath.Join(outputDir, "main")
+	if err := createOutputDir(mainOutputDir); err != nil {
+		return err
+	}
+
+	enumOutputDir := filepath.Join(outputDir, "types")
+	if err := createOutputDir(enumOutputDir); err != nil {
+		return err
+	}
+
+	utilsOutputDir := filepath.Join(outputDir, "utils")
+	if err := createOutputDir(utilsOutputDir); err != nil {
+		return err
+	}
+
+	// Copy all hardcoded files
+	languagesDir, err := findLanguagesDir()
+	if err != nil {
+		return err
+	}
+	sourceDir := filepath.Join(languagesDir, "java")
+	if err := copyFilesWithPattern(sourceDir, outputDir, "*.java"); err != nil {
+		return err
+	}
+	sourceDir = filepath.Join(languagesDir, "java", "main")
+	if err := copyFilesWithPattern(sourceDir, mainOutputDir, "*.java"); err != nil {
+		return err
+	}
+	sourceDir = filepath.Join(languagesDir, "java", "utils")
+	if err := copyFilesWithPattern(sourceDir, utilsOutputDir, "*.java"); err != nil {
 		return err
 	}
 
@@ -16,7 +50,7 @@ func (spec *CIMSpecification) GenerateJava(outputDir string) error {
 	if err := generateFiles("java_class", ".java", outputDir, spec.Types); err != nil {
 		return err
 	}
-	if err := generateFiles("java_enum", ".java", enumOuputDir, spec.Enums); err != nil {
+	if err := generateFiles("java_enum", ".java", enumOutputDir, spec.Enums); err != nil {
 		return err
 	}
 	if err := generateFile("java_constants", "CimConstants.java", outputDir, spec); err != nil {
@@ -31,7 +65,7 @@ func (spec *CIMSpecification) GenerateJava(outputDir string) error {
 	return nil
 }
 
-// setLangTypesJava sets default values for attributes based on their data types for Java code generation.
+// setLangTypesJava sets types for attributes based on their data types for Java code generation.
 func (cimSpec *CIMSpecification) setLangTypesJava() {
 	for _, t := range cimSpec.Types {
 		for _, attr := range t.Attributes {
@@ -60,7 +94,7 @@ func MapDatatypeJava(t string) string {
 		return "Integer"
 	case DataTypeBoolean:
 		return "Boolean"
-	case DataTypeFloat:
+	case DataTypeFloat, DateTypeDecimal:
 		return "Double"
 	case DataTypeObject:
 		return "Class"

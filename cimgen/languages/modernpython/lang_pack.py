@@ -6,6 +6,8 @@ from pathlib import Path
 
 import chevron
 
+from cimgen.cimgen import wrap_and_indent
+
 logger = logging.getLogger(__name__)
 
 
@@ -44,15 +46,7 @@ def _get_python_type(datatype: str) -> str:
         return "int"
     if datatype.lower() == "boolean":
         return "bool"
-    if datatype.lower() == "datetime":
-        return "datetime"
-    if datatype.lower() == "date":
-        return "date"
-    if datatype.lower() == "time":
-        return "time"
-    if datatype.lower() == "monthday":
-        return "str"  # TO BE FIXED? I could not find a datatype in python that holds only month and day.
-    if datatype.lower() == "string":
+    if datatype.lower() in ("string", "date", "datetime", "time", "monthday"):
         return "str"
     else:
         # everything else should be a float
@@ -93,11 +87,23 @@ def run_template(output_path: str, class_details: dict) -> None:
         # the schema
         template = primitive_template_file
         class_details["python_type"] = _get_python_type(class_details["class_name"])
+        if "class_comment" in class_details:
+            class_details["wrapped_class_comment"] = wrap_and_indent(
+                class_details["class_comment"],
+                width=120,
+                indent=0,
+            )
     elif class_details["is_a_datatype_class"]:
         # Datatypes based on primitives are never used in the in memory
         # representation but only for the schema
         template = datatype_template_file
         class_details.update(_set_datatype_attributes(class_details["attributes"]))
+        if "class_comment" in class_details:
+            class_details["wrapped_class_comment"] = wrap_and_indent(
+                class_details["class_comment"],
+                width=120,
+                indent=0,
+            )
     elif class_details["is_an_enum_class"]:
         template = enum_template_file
         for instance in class_details["enum_instances"]:
@@ -157,7 +163,7 @@ def _python_type_and_default_value(attribute: dict) -> tuple[str, str]:
     if attribute["is_datatype_attribute"]:
         return ("float", "default=0.0")
     if attribute["is_enum_attribute"]:
-        return ("str", 'default=""')
+        return ("str", "default=None")
     if attribute["is_class_attribute"]:
         return ("Optional[str]", "default=None")
     if attribute["is_list_attribute"]:

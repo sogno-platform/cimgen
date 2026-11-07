@@ -16,7 +16,7 @@ func TestGenerate(t *testing.T) {
 		t.Fatalf("ImportCIMSchemaFiles failed: %v", err)
 	}
 
-	outputDir := "output/go-test"
+	outputDir := "output/_go_test"
 	err = cimSpec.GenerateGo(outputDir)
 	if err != nil {
 		t.Fatalf("GenerateGo failed: %v", err)
@@ -26,11 +26,11 @@ func TestGenerate(t *testing.T) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	t.Logf("Directory Hash: %s\n", hash)
+	t.Logf("Directory Hash: %s", hash)
 
 	// Test directory hash
-	expectedHash := "h1:YI+evC10rsg4HesbMMkPtTW6gV5HydTax1XJ1vTdyCI="
+	expectedHash := "h1:f2m5jThLMaZc88FgUZbRkN6EP9w/h/qVKfEtLpxMFgA="
 	if hash != expectedHash {
-		t.Error("decoder tests failed, output file hash does not match expected hash")
+		t.Error("CIM code generation test failed, output file hash does not match expected hash")
 	}
 }
