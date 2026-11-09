@@ -5,39 +5,51 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
+	"sort"
+	"strings"
 	"testing"
 )
 
 const (
-	CGMES3        = "3.0.0"
+	CGMES2        = "cgmes_v2_4_15"
+	CGMES3        = "cgmes_v3_0_0"
+	CGMES2_SCHEMA = "../cgmes-application-profiles-library/CGMES/PastReleases/v2-4/Original/RDFS/*-v2_4_15-4Sep2020.rdf"
 	CGMES3_SCHEMA = "../cgmes-application-profiles-library/CGMES/CurrentRelease/RDFS/61970-600-2_*-AP-Voc-RDFS2020.rdf"
 )
 
-func TestDecode(t *testing.T) {
-	t.Log("Start XML decoder test")
+func TestDecodeCGMES2(t *testing.T) {
+	testDecode(t, CGMES2, CGMES2_SCHEMA, "decoder_test.v2.json", "e749906ce374e14189c9fbf6f4f882adeda6514fc93c95c74be7773340e4b38c")
+}
 
-	entries, err := filepath.Glob(CGMES3_SCHEMA)
+func TestDecodeCGMES3(t *testing.T) {
+	testDecode(t, CGMES3, CGMES3_SCHEMA, "decoder_test.v3.json", "eafd799a571073de74f88521341a03bd32b56a753c118356c02ea5411d8d97e2")
+}
+
+func testDecode(t *testing.T, cgmesVersion, schemaPattern, output, expectedHash string) {
+	t.Helper()
+	t.Logf("Start XML decoder test for %s", cgmesVersion)
+
+	entries, err := filepath.Glob(schemaPattern)
 	if err != nil {
-		log.Fatal(err)
+		t.Fatalf("Glob failed for pattern %s: %v", schemaPattern, err)
 	}
-	t.Log("Read schema files:", entries)
+	sort.Strings(entries)
+	t.Log("Read schema files:\n" + strings.Join(entries, "\n"))
 
-	output := "decoder_test.json"
 	t.Log("Write map to file:", output)
 	f, err := os.Create(output)
 	if err != nil {
-		t.Error("Cannot create output file:", err)
+		t.Fatalf("Cannot create output file: %v", err)
 	}
 	defer f.Close()
 
 	if _, err := f.Write([]byte("[\n")); err != nil {
-		t.Error("failed to write to file:", err)
+		t.Fatalf("failed to write to file: %v", err)
 	}
 
-	for _, entry := range entries {
+	for i, entry := range entries {
 
 		b, err := os.ReadFile(entry)
 		if err != nil {
@@ -49,23 +61,24 @@ func TestDecode(t *testing.T) {
 			t.Fatalf("DecodeToMap failed for %s: %v", entry, err)
 		}
 
-		jsonb, err := json.MarshalIndent(newMap, "", "  ")
+		data, err := json.MarshalIndent(newMap, "", "  ")
 		if err != nil {
 			t.Fatalf("MarshalIndent failed for %s: %v", entry, err)
 		}
 
 		// add comma and newline for array formatting except for the last entry
-		data := append(jsonb, []byte(",\n")...)
-		if entry == entries[len(entries)-1] {
-			data = append(jsonb, []byte("\n")...)
+		if i < len(entries)-1 {
+			data = append(data, ',')
 		}
-		if _, err := f.Write([]byte(data)); err != nil {
-			t.Error("failed to write to file:", err)
+		data = append(data, '\n')
+
+		if _, err := f.Write(data); err != nil {
+			t.Fatalf("failed to write to file: %v", err)
 		}
 	}
 
 	if _, err := f.Write([]byte("]\n")); err != nil {
-		t.Error("failed to write to file:", err)
+		t.Fatalf("failed to write to file: %v", err)
 	}
 
 	// Compute hash of the output file for verification
@@ -78,8 +91,7 @@ func TestDecode(t *testing.T) {
 	t.Logf("SHA256 hash of output file: %x", hash)
 
 	// Test output file against expected hash
-	expectedHash := "eafd799a571073de74f88521341a03bd32b56a753c118356c02ea5411d8d97e2"
 	if fmt.Sprintf("%x", hash) != expectedHash {
-		t.Error("XML decoder test failed, output file hash does not match expected hash")
+		t.Errorf("XML decoder test failed for %s, output file hash does not match expected hash", cgmesVersion)
 	}
 }

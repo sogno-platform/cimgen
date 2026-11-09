@@ -632,7 +632,7 @@ def cim_generate(
     created classes are stored. This folder should not exist and is created in the class generation procedure.
 
     :param directory: path to RDF files containing cgmes ontology,
-                      e.g. directory = "./examples/cgmes_schema/cgmes_v2_4_15_schema"
+                      e.g. directory = "./examples/cgmes_v2_4_15_schema"
     :param output_path: The output directory
     :param version:     CGMES version, e.g. version = "cgmes_v2_4_15"
     :param lang_pack:   python module containing language specific functions
