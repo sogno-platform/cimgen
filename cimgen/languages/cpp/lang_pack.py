@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2015 SOGNO
+#
+# SPDX-License-Identifier: Apache-2.0
+
 import shutil
 from importlib.resources import files
 from pathlib import Path

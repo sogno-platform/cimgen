@@ -1,3 +1,8 @@
+# SPDX-FileCopyrightText: 2023 Alliander
+# SPDX-FileCopyrightText: 2024 SOGNO
+#
+# SPDX-License-Identifier: Apache-2.0
+
 import logging
 import re
 import shutil

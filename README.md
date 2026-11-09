@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: 2019 SOGNO
+
+SPDX-License-Identifier: Apache-2.0
+-->
+
 # CIMgen
 
 CIMgen is a command-line tool that generates language-specific data models (classes, structs) from Common Information Model (CIM) RDF schemas. It is designed to parse complex CIM RDF files and produce idiomatic code in various programming languages like Go, C++, Java, and Python.

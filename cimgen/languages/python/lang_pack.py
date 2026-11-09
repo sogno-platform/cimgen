@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2019 SOGNO
+#
+# SPDX-License-Identifier: Apache-2.0
+
 import glob
 import logging
 import os

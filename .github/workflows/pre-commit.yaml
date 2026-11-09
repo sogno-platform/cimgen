@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2024 SOGNO
+#
+# SPDX-License-Identifier: Apache-2.0
+
 name: pre-commit
 
 on: [push, pull_request]

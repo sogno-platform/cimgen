@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2021 SOGNO
+#
+# SPDX-License-Identifier: Apache-2.0
+
 import logging
 import shutil
 from importlib.resources import files

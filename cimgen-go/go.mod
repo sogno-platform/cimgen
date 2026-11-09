@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2025 SOGNO
+//
+// SPDX-License-Identifier: Apache-2.0
+
 module github.com/sogno-platform/cimgen
 
 go 1.25.0

@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2023 SOGNO
+#
+# SPDX-License-Identifier: Apache-2.0
+
 [project]
 name = "cimgen"
 version = "0.1.0"

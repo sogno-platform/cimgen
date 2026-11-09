@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: 2025 SOGNO
+
+SPDX-License-Identifier: Apache-2.0
+-->
+
 # Overview of projects based on CIMgen
 
 | Project                 | cpp      | java     | javascript | modernpython | python    |
