@@ -84,16 +84,16 @@ Python tool for code generation from CIM data model for several programming lang
 
 ### Usage
 
-Run the following, replacing `lang` with the target language:
+Run the following, replacing `langdir` with the target language:
 
 ```bash
 pip install -e .
-cimgen --outdir=output/<lang>/CGMES_2.4.15_27JAN2020 --schemadir=cgmes_schema/CGMES_2.4.15_27JAN2020 --langdir=<lang> --cgmes_version=cgmes_v2_4_15
+cimgen --langdir=<langdir>
 ```
 
-This will build version `CGMES_2.4.15_27JAN2020` in the subfolder `output/[lang]/CGMES_2.4.15_27JAN2020`.
+This will build version `cgmes_v3_0_0` in the subfolder `output/[langdir]/v3`.
 
-Options for `langdir`:
+Options for `langdir` (required):
 
 - cpp
 - python
@@ -101,21 +101,25 @@ Options for `langdir`:
 - javascript
 - java
 
-> [!NOTE]
-> If you wish to build an alternative version, you can see available options in the subfolder called `cgmes_schema`.
-> For the schema `CGMES_3.0.0` you have to use the option
-> `--cgmes_version=cgmes_v3_0_0`. `outdir` can be set to whichever absolute path you wish to create the files in.
+Options for `cgmes_version`:
 
-Options for `schemadir` and `cgmes_version`:
+- cgmes_v2_4_15
+- cgmes_v3_0_0 (default)
 
-schemadir                                                                | cgmes_version | Notes
------------------------------------------------------------------------- | ------------- | -----
-cgmes_schema/CGMES_2.4.13_18DEC2013                                      | cgmes_v2_4_13 |
-cgmes_schema/CGMES_2.4.15_27JAN2020                                      | cgmes_v2_4_15 |
-cgmes_schema/CGMES_3.0.0                                                 | cgmes_v3_0_0  |
-cgmes-application-profiles-library/CGMES/PastReleases/v2-4/Original/RDFS | cgmes_v2_4_15 | same results as `cgmes_schema/CGMES_2.4.15_27JAN2020`
-cgmes-application-profiles-library/CGMES/CurrentRelease/RDFS             | cgmes_v3_0_0  | same results as `cgmes_schema/CGMES_3.0.0`
-cgmes_schema/CGMES_2.4.15_16FEB2016                                      | cgmes_v2_4_15 | wrong namespace for EquipmentVersion and OperationalLimitType.limitType
+Other options:
+
+- schemadir
+- outputdir
+- recursive (default: False)
+- verbose (default: False)
+
+If options `schemadir` or `outputdir` are not specified,
+they are set automatically:
+
+cgmes_version | schemadir                                                                | outputdir
+:------------ | :----------------------------------------------------------------------- | :--------
+cgmes_v2_4_15 | cgmes-application-profiles-library/CGMES/PastReleases/v2-4/Original/RDFS | output/[langdir]/v2
+cgmes_v3_0_0  | cgmes-application-profiles-library/CGMES/CurrentRelease/RDFS             | output/[langdir]/v3
 
 ### Custom Profiles
 
@@ -126,9 +130,9 @@ but the profiles in the main directory are read first.
 You have to use the option --recursive in that case.
 
 ```bash
-mkdir cgmes_schema/<schemadir>/<customdir>/
-cp <custom_profile>.rdf ... cgmes_schema/<schemadir>/<customdir>/
-cimgen --outdir=output/ --schemadir=cgmes_schema/<schemadir> --langdir=<lang> --cgmes_version=<version> --recursive
+mkdir examples/<schemadir>/<customdir>/
+cp <custom_profile>.rdf ... examples//<schemadir>/<customdir>/
+cimgen --langdir=<langdir> --cgmes_version=<version> --schemadir=examples/<schemadir> --recursive
 ```
 
 ### Development
