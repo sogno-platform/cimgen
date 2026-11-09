@@ -20,13 +20,15 @@ jobs:
         - modernpython
         - cpp
 
-        schema:
-        - CGMES_2.4.15_27JAN2020
-        - CGMES_3.0.0
+        version:
+        - cgmes_v2_4_15
+        - cgmes_v3_0_0
 
     steps:
       - name: Checkout repo
         uses: actions/checkout@v7
+        with:
+          submodules: true
 
       - name: Setup Python
         uses: actions/setup-python@v7
@@ -40,18 +42,14 @@ jobs:
 
           pip install .
 
-          # Extract version (2.4.15 => 2_4_15), ignore the date part
-          SCHEMA_VERSION=$(echo "${{matrix.schema}}" | cut -d'_' -f2 | cut -d'.' -f1-3 | tr '.' '_')
-
           # Run cimgen with the valid version
           cimgen \
-            --outdir=output/${{matrix.language}}/${{matrix.schema}} \
-            --schemadir=cgmes_schema/${{matrix.schema}} \
             --langdir=${{matrix.language}} \
-            --cgmes_version=cgmes_v${SCHEMA_VERSION}
+            --cgmes_version=${{matrix.version}} \
+            --outdir=output/${{matrix.language}}/${{matrix.version}}
 
       - name: Create artifact
         uses: actions/upload-artifact@v7
         with:
-          name: ${{matrix.schema}}-${{matrix.language}}
+          name: ${{matrix.version}}-${{matrix.language}}
           path: output/${{matrix.language}}
