@@ -34,6 +34,7 @@ classifiers = [
 [project.optional-dependencies]
 dev = [
   "pre_commit",
+  "reuse",
   "ruff",
 ]
 
