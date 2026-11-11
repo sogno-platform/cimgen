@@ -17,6 +17,6 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v7
         with:
-          python-version: '3.11'
+          python-version: '3.12'
 
       - uses: pre-commit/action@v3.0.1
