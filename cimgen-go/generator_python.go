@@ -6,11 +6,12 @@ package cimgen
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
 )
+
+var versionNumberRegex = regexp.MustCompile(`\d+[._]\d+[._]\d+`)
 
 // GeneratePython generates Python source files from the CIM specification.
 func (spec *CIMSpecification) GeneratePython(outputDir string) error {
@@ -64,7 +65,12 @@ func (spec *CIMSpecification) GeneratePython(outputDir string) error {
 	if err := generateFiles("python_primitive", ".py", resourcesOutputDir, spec.PrimitiveTypes); err != nil {
 		return err
 	}
-	if err := writeInitPy(outputDir, spec.CGMESVersion); err != nil {
+	match := versionNumberRegex.FindString(spec.CGMESVersion)
+	if match == "" {
+		return fmt.Errorf("cannot parse %s to extract a number", spec.CGMESVersion)
+	}
+	versionNumber := strings.ReplaceAll(match, "_", ".")
+	if err := generateFile("python_init", "__init__.py", resourcesOutputDir, versionNumber); err != nil {
 		return err
 	}
 	return nil
@@ -101,16 +107,16 @@ func (spec *CIMSpecification) GeneratePythonSimple(outputDir string) error {
 	if err := generateFiles("python_simple_primitive", ".py", outputDir, primitiveTypes); err != nil {
 		return err
 	}
-	if err := generateFile("python_constants", "CimConstants.py", outputDir, spec); err != nil {
+	if err := generateFile("python_simple_constants", "CimConstants.py", outputDir, spec); err != nil {
+		return err
+	}
+	if err := generateFile("python_simple_baseclass", "Base.py", outputDir, spec); err != nil {
 		return err
 	}
 	if err := generateFile("python_simple_profiles", "CGMESProfile.py", outputDir, spec); err != nil {
 		return err
 	}
 	if err := generateFile("python_simple_init", "__init__.py", outputDir, spec); err != nil {
-		return err
-	}
-	if err := writeBasePy(outputDir); err != nil {
 		return err
 	}
 	return nil
@@ -214,46 +220,4 @@ func (cimSpec *CIMSpecification) addNoqaToEnumValueComments() {
 			}
 		}
 	}
-}
-
-var versionNumberRegex = regexp.MustCompile(`\d+_\d+_\d+`)
-
-// writeInitPy writes the package docstring and CGMES_VERSION into resources/__init__.py.
-func writeInitPy(outputDir, version string) error {
-	match := versionNumberRegex.FindString(version)
-	if match == "" {
-		return fmt.Errorf("cannot parse %s to extract a number", version)
-	}
-	versionNumber := strings.ReplaceAll(match, "_", ".")
-
-	dest := filepath.Join(outputDir, "resources", "__init__.py")
-	f, err := os.OpenFile(dest, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	content := fmt.Sprintf(`"""
-Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cimgen
-"""
-
-CGMES_VERSION = "%s"
-`, versionNumber)
-
-	_, err = f.WriteString(content)
-	return err
-}
-
-// writeBasePy writes the base class file Base.py for python-simple.
-func writeBasePy(outputDir string) error {
-	dest := filepath.Join(outputDir, "Base.py")
-	content := `class Base:
-    """
-    Base Class for CIM
-    """
-
-    def printxml(self, dict={}):
-        return dict
-`
-	return os.WriteFile(dest, []byte(content), 0644)
 }
