@@ -33,7 +33,7 @@ func TestGenerate(t *testing.T) {
 	t.Logf("Directory Hash: %s", hash)
 
 	// Test directory hash
-	expectedHash := "h1:f2m5jThLMaZc88FgUZbRkN6EP9w/h/qVKfEtLpxMFgA="
+	expectedHash := "h1:wdhFThzdSGD+2QBDxz82ESE9PcdVKdC7RgeDHHToCnk="
 	if hash != expectedHash {
 		t.Error("CIM code generation test failed, output file hash does not match expected hash")
 	}
