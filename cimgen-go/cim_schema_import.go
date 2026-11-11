@@ -284,8 +284,8 @@ func processRDFMap(inputMap map[string]interface{}) (map[string]*CIMType, map[st
 	for _, v := range descriptions {
 		objType := extractResource(v, "rdf:type")
 
-		if strings.Contains(objType, "http://www.w3.org/2000/01/rdf-schema#Class") {
-			if extractStringOrResource(v["cims:stereotype"]) == "http://iec.ch/TC57/NonStandard/UML#enumeration" {
+		if strings.Contains(objType, "http://www.w3.org/2000/01/rdf-schema#Class") { // NOSONAR
+			if extractStringOrResource(v["cims:stereotype"]) == "http://iec.ch/TC57/NonStandard/UML#enumeration" { // NOSONAR
 				e := processEnum(v)
 				e.Origins = []string{cimOntology.Keyword}
 				cimEnums[e.Id] = &e
@@ -303,13 +303,13 @@ func processRDFMap(inputMap map[string]interface{}) (map[string]*CIMType, map[st
 				e.Origins = []string{cimOntology.Keyword}
 				cimTypes[e.Id] = &e
 			}
-		} else if strings.Contains(objType, "http://www.w3.org/1999/02/22-rdf-syntax-ns#Property") {
+		} else if strings.Contains(objType, "http://www.w3.org/1999/02/22-rdf-syntax-ns#Property") { // NOSONAR
 			cimAttribute := processProperty(v)
 			cimAttribute.Origins = []string{cimOntology.Keyword}
 			cimAttributes = append(cimAttributes, &cimAttribute)
-		} else if strings.Contains(objType, "http://iec.ch/TC57/1999/rdf-schema-extensions-19990926#ClassCategory") {
+		} else if strings.Contains(objType, "http://iec.ch/TC57/1999/rdf-schema-extensions-19990926#ClassCategory") { // NOSONAR
 
-		} else if strings.Contains(objType, "http://www.w3.org/2002/07/owl#Ontology") {
+		} else if strings.Contains(objType, "http://www.w3.org/2002/07/owl#Ontology") { // NOSONAR
 			cimOntology = processOntology(v)
 		} else {
 			cimEnumValue := processEnumValue(v)
@@ -424,10 +424,10 @@ func processProperty(classMap map[string]interface{}) CIMAttribute {
 }
 
 func isListAttribute(multiplicity string) bool {
-	return multiplicity == "http://iec.ch/TC57/1999/rdf-schema-extensions-19990926#M:0..n" ||
-		multiplicity == "http://iec.ch/TC57/1999/rdf-schema-extensions-19990926#M:1..n" ||
-		multiplicity == "http://iec.ch/TC57/1999/rdf-schema-extensions-19990926#M:2..n" ||
-		multiplicity == "http://iec.ch/TC57/1999/rdf-schema-extensions-19990926#M:0..2"
+	return multiplicity == "http://iec.ch/TC57/1999/rdf-schema-extensions-19990926#M:0..n" || // NOSONAR
+		multiplicity == "http://iec.ch/TC57/1999/rdf-schema-extensions-19990926#M:1..n" || // NOSONAR
+		multiplicity == "http://iec.ch/TC57/1999/rdf-schema-extensions-19990926#M:2..n" || // NOSONAR
+		multiplicity == "http://iec.ch/TC57/1999/rdf-schema-extensions-19990926#M:0..2" // NOSONAR
 }
 
 func isAssociationUsed(associationUsed string) bool {

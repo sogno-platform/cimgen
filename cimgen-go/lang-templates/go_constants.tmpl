@@ -12,6 +12,6 @@ const CIM_VERSION = "{{.CGMESVersion}}";
 // Default namespaces used by CGMES. Map of namespace key to URL.
 var CIMNamespaces = map[string]string{
 {{- range $key, $value := .ProfileNamespaces}}
-    "{{$key}}": "{{$value}}",
+    "{{$key}}": "{{$value}}", // NOSONAR
 {{- end}}
 }
