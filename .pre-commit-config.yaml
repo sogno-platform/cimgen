@@ -6,7 +6,7 @@ exclude: ^cgmes_schema
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: check-yaml
       - id: end-of-file-fixer
@@ -14,13 +14,21 @@ repos:
       - id: mixed-line-ending
       - id: check-executables-have-shebangs
 
+  - repo: https://github.com/pypa/pip-tools
+    rev: v7.6.2
+    hooks:
+      - id: pip-compile
+        name: pip-compile requirements.txt
+        files: ^pyproject\.toml$
+        args: [pyproject.toml, -o, requirements.txt]
+
   - repo: https://github.com/fsfe/reuse-tool
     rev: v6.3.0
     hooks:
       - id: reuse
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.9.9
+    rev: v0.17.4
     hooks:
       - id: ruff
         args: [ --fix ]

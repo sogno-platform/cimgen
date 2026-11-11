@@ -7,6 +7,8 @@ name = "cimgen"
 version = "0.1.0"
 description = "Code generation from CIM data model for several programming languages"
 readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE", "LICENSES/*"]
 keywords = ["cim", "cgmes", "code-generation"]
 
 dependencies = [
@@ -23,16 +25,17 @@ classifiers = [
   "Development Status :: 5 - Production/Stable",
   "Environment :: Console",
 
-  "License :: OSI Approved :: Apache Software License",
-
+  "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
 
   "Topic :: Software Development :: Code Generators",
 ]
 
 [project.optional-dependencies]
 dev = [
+  "pip-tools >= 7.6.1",
   "pre_commit",
   "reuse",
   "ruff",
@@ -62,6 +65,7 @@ include = ["cimgen*"]
 
 [tool.ruff]
 line-length = 120
+extend-exclude = ["cimgen/languages/modernpython/README.md"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I"]

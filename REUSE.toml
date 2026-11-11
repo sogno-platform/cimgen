@@ -35,7 +35,7 @@ SPDX-FileCopyrightText = [
 SPDX-License-Identifier = "Apache-2.0"
 
 [[annotations]]
-path = [".gitmodules", "cimgen-go/go.sum", "test/*.xml"]
+path = [".gitmodules", "requirements.txt", "cimgen-go/go.sum", "test/*.xml"]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2025 SOGNO"
 SPDX-License-Identifier = "Apache-2.0"
