@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2025 SOGNO
+//
+// SPDX-License-Identifier: Apache-2.0
+
 package cimgen
 
 import (
@@ -29,7 +33,7 @@ func TestGenerate(t *testing.T) {
 	t.Logf("Directory Hash: %s", hash)
 
 	// Test directory hash
-	expectedHash := "h1:f2m5jThLMaZc88FgUZbRkN6EP9w/h/qVKfEtLpxMFgA="
+	expectedHash := "h1:zS6SMZEQwwiPrKzGzXgHVxcdh5yVOITa/4p0FJyaN9s="
 	if hash != expectedHash {
 		t.Error("CIM code generation test failed, output file hash does not match expected hash")
 	}

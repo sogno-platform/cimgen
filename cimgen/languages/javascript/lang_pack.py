@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2020 SOGNO
+#
+# SPDX-License-Identifier: Apache-2.0
+
 import os
 import sys
 from importlib.resources import files
@@ -28,7 +32,7 @@ profile_template_file = {"filename": "handlebars_profile_template.mustache", "ex
 
 partials = {}
 
-aggregateRenderer: dict[str, str] = {
+aggregate_renderer: dict[str, str] = {
     "renderFloat": "static renderAsAttribute(data) {\n\
         return templates.handlebars_cim_render_float(data)\n\
     }",
@@ -69,25 +73,25 @@ def _select_primitive_render_function(class_details: dict) -> str:
     class_name = class_details["class_name"]
     render = ""
     if class_details["is_a_datatype_class"]:
-        render = aggregateRenderer["renderFloat"]
+        render = aggregate_renderer["renderFloat"]
     elif class_name in ("Float", "Decimal"):
-        render = aggregateRenderer["renderFloat"]
+        render = aggregate_renderer["renderFloat"]
     elif class_name == "String":
-        render = aggregateRenderer["renderString"]
+        render = aggregate_renderer["renderString"]
     elif class_name == "Boolean":
-        render = aggregateRenderer["renderBoolean"]
+        render = aggregate_renderer["renderBoolean"]
     elif class_name == "Date":
         # TODO: Implementation Required!
-        render = aggregateRenderer["renderString"]
+        render = aggregate_renderer["renderString"]
     elif class_name == "DateTime":
         # TODO: Implementation Required!
-        render = aggregateRenderer["renderString"]
+        render = aggregate_renderer["renderString"]
     elif class_name == "Integer":
         # TODO: Implementation Required!
-        render = aggregateRenderer["renderString"]
+        render = aggregate_renderer["renderString"]
     elif class_name == "MonthDay":
         # TODO: Implementation Required!
-        render = aggregateRenderer["renderString"]
+        render = aggregate_renderer["renderString"]
     return render
 
 
@@ -106,18 +110,18 @@ def run_template(output_path: str, class_details: dict) -> None:
 
     class_details["attributes"] = list(filter(lambda attr: attr["is_used"], class_details["attributes"]))
 
-    renderAttribute = ""
+    render_attribute = ""
     class_type = _get_class_type(class_details)
     if class_type == "enum":
-        renderAttribute = aggregateRenderer["renderInstance"]
+        render_attribute = aggregate_renderer["renderInstance"]
     elif class_type == "primitive":
-        renderAttribute = _select_primitive_render_function(class_details)
+        render_attribute = _select_primitive_render_function(class_details)
     else:
-        renderAttribute = aggregateRenderer["renderClass"]
-    if renderAttribute == "":
+        render_attribute = aggregate_renderer["renderClass"]
+    if render_attribute == "":
         print("Could not work out render function for: ", class_details["class_name"])
         sys.exit(1)
-    class_details["renderAttribute"] = renderAttribute
+    class_details["render_attribute"] = render_attribute
 
     class_file = os.path.join(output_path, class_details["class_name"] + template_file["ext"])
     _write_templated_file(class_file, class_details, template_file["filename"])

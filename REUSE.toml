@@ -1,0 +1,41 @@
+# SPDX-FileCopyrightText: 2026 SOGNO
+#
+# SPDX-License-Identifier: Apache-2.0
+
+version = 1
+SPDX-PackageName = "cimgen"
+SPDX-PackageSupplier = "sogno-tsc@lists.lfenergy.org"
+SPDX-PackageDownloadLocation = "https://github.com/sogno-platform/cimgen"
+
+[[annotations]]
+path = "cgmes_schema/**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "ENTSO-E <cgmes.conformity@entsoe.eu>"
+SPDX-License-Identifier = "Apache-2.0"
+
+[[annotations]]
+path = "docs/images/*.svg"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2019 SOGNO"
+SPDX-License-Identifier = "Apache-2.0"
+
+[[annotations]]
+path = "docs/past-commits.txt"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2021 SOGNO"
+SPDX-License-Identifier = "Apache-2.0"
+
+[[annotations]]
+path = "cimgen/languages/modernpython/utils/export_template.mustache"
+precedence = "aggregate"
+SPDX-FileCopyrightText = [
+    "2023 Alliander",
+    "2024 SOGNO"
+]
+SPDX-License-Identifier = "Apache-2.0"
+
+[[annotations]]
+path = [".gitmodules", "requirements.txt", "cimgen-go/go.sum", "test/*.xml"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2025 SOGNO"
+SPDX-License-Identifier = "Apache-2.0"

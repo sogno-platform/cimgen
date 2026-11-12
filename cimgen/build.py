@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2019 SOGNO
+#
+# SPDX-License-Identifier: Apache-2.0
+
 import argparse
 import importlib
 from pathlib import Path

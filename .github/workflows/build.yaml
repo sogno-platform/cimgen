@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2024 SOGNO
+#
+# SPDX-License-Identifier: Apache-2.0
+
 name: Build
 
 on:
@@ -13,6 +17,10 @@ jobs:
 
     strategy:
       matrix:
+        python-version:
+        - '3.11'
+        - '3.13'
+
         language:
         - java
         - javascript
@@ -31,14 +39,15 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v7
         with:
-          python-version: '3.11'
+          python-version: ${{ matrix.python-version }}
 
       - name: Generate code
         run: |
           python -m venv venv
           . venv/bin/activate
 
-          pip install .
+          pip install --require-hashes --only-binary=:all: -r requirements.txt
+          pip install --no-deps .
 
           # Extract version (2.4.15 => 2_4_15), ignore the date part
           SCHEMA_VERSION=$(echo "${{matrix.schema}}" | cut -d'_' -f2 | cut -d'.' -f1-3 | tr '.' '_')
@@ -51,6 +60,7 @@ jobs:
             --cgmes_version=cgmes_v${SCHEMA_VERSION}
 
       - name: Create artifact
+        if: matrix.python-version == '3.11'
         uses: actions/upload-artifact@v7
         with:
           name: ${{matrix.schema}}-${{matrix.language}}

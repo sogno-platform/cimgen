@@ -1,6 +1,13 @@
-# Generates modern Python (3.9+)
+<!--
+SPDX-FileCopyrightText: 2023 Alliander
+SPDX-FileCopyrightText: 2024 SOGNO
 
-- [Generates modern Python (3.9+)](#generates-modern-python-39)
+SPDX-License-Identifier: Apache-2.0
+-->
+
+# Generates modern Python (3.11+)
+
+- [Generates modern Python (3.11+)](#generates-modern-python-311)
   - [Description](#description)
   - [Warning](#warning)
   - [Examples](#examples)
@@ -31,12 +38,12 @@ from .CGMESProfile import Profile
 
 class ACLineSegment(Conductor):
     """
-    A wire or combination of wires, with consistent electrical characteristics, building a single electrical system, used to carry alternating current between points in the power system. For symmetrical, transposed three phase lines, it is sufficient to use attributes of the line segment, which describe impedances and admittances for the entire length of the segment.  Additionally impedances can be computed by using length and associated per length impedances. The BaseVoltage at the two ends of ACLineSegments in a Line shall have the same BaseVoltage.nominalVoltage. However, boundary lines may have slightly different BaseVoltage.nominalVoltages and variation is allowed. Larger voltage difference in general requires use of an equivalent branch.
+    A wire or combination of wires, with consistent electrical characteristics, building a single electrical system, used to carry alternating current between points in the power system. For symmetrical, transposed three phase lines, it is sufficient to use attributes of the line segment, which describe impedances and admittances for the entire length of the segment. Additionally impedances can be computed by using length and associated per length impedances. The BaseVoltage at the two ends of ACLineSegments in a Line shall have the same BaseVoltage.nominalVoltage. However, boundary lines may have slightly different BaseVoltage.nominalVoltages and variation is allowed. Larger voltage difference in general requires use of an equivalent branch.
 
-    :Clamp: The clamps connected to the line segment. Default: "list"
-    :Cut: Cuts applied to the line segment. Default: "list"
+    :Clamp: The clamps connected to the line segment. Default: None
+    :Cut: Cuts applied to the line segment. Default: None
     :b0ch: Zero sequence shunt (charging) susceptance, uniformly distributed, of the entire line section. Default: 0.0
-    :bch: Positive sequence shunt (charging) susceptance, uniformly distributed, of the entire line section.  This value represents the full charging over the full length of the line. Default: 0.0
+    :bch: Positive sequence shunt (charging) susceptance, uniformly distributed, of the entire line section. This value represents the full charging over the full length of the line. Default: 0.0
     :g0ch: Zero sequence shunt (charging) conductance, uniformly distributed, of the entire line section. Default: 0.0
     :gch: Positive sequence shunt (charging) conductance, uniformly distributed, of the entire line section. Default: 0.0
     :r: Positive sequence series resistance of the entire line section. Default: 0.0
@@ -67,11 +74,11 @@ class ACLineSegment(Conductor):
 
     __doc__ += "\nDocumentation of parent class Conductor:\n" + Conductor.__doc__
 
-    def __init__(self, Clamp = "list", Cut = "list", b0ch = 0.0, bch = 0.0, g0ch = 0.0, gch = 0.0, r = 0.0, r0 = 0.0, shortCircuitEndTemperature = 0.0, x = 0.0, x0 = 0.0, *args, **kw_args):
+    def __init__(self, Clamp = None, Cut = None, b0ch = 0.0, bch = 0.0, g0ch = 0.0, gch = 0.0, r = 0.0, r0 = 0.0, shortCircuitEndTemperature = 0.0, x = 0.0, x0 = 0.0, *args, **kw_args):
         super().__init__(*args, **kw_args)
 
-        self.Clamp = Clamp
-        self.Cut = Cut
+        self.Clamp = Clamp or []
+        self.Cut = Cut or []
         self.b0ch = b0ch
         self.bch = bch
         self.g0ch = g0ch
@@ -93,10 +100,6 @@ class ACLineSegment(Conductor):
 ### Modern Python
 
 ```python
-"""
-Generated from the CGMES files via cimgen: https://github.com/sogno-platform/cimgen
-"""
-
 from functools import cached_property
 from typing import Optional
 
@@ -111,26 +114,12 @@ from .Conductor import Conductor
 class ACLineSegment(Conductor):
     """
     A wire or combination of wires, with consistent electrical characteristics, building a single electrical system,
-      used to carry alternating current between points in the power system. For symmetrical, transposed three phase
-      lines, it is sufficient to use attributes of the line segment, which describe impedances and admittances for
-      the entire length of the segment.  Additionally impedances can be computed by using length and associated per
-      length impedances. The BaseVoltage at the two ends of ACLineSegments in a Line shall have the same
-      BaseVoltage.nominalVoltage. However, boundary lines may have slightly different BaseVoltage.nominalVoltages
-      and variation is allowed. Larger voltage difference in general requires use of an equivalent branch.
-
-    Clamp: The clamps connected to the line segment.
-    Cut: Cuts applied to the line segment.
-    b0ch: Zero sequence shunt (charging) susceptance, uniformly distributed, of the entire line section.
-    bch: Positive sequence shunt (charging) susceptance, uniformly distributed, of the entire line section.  This value
-      represents the full charging over the full length of the line.
-    g0ch: Zero sequence shunt (charging) conductance, uniformly distributed, of the entire line section.
-    gch: Positive sequence shunt (charging) conductance, uniformly distributed, of the entire line section.
-    r: Positive sequence series resistance of the entire line section.
-    r0: Zero sequence series resistance of the entire line section.
-    shortCircuitEndTemperature: Maximum permitted temperature at the end of SC for the calculation of minimum short-
-      circuit currents. Used for short circuit data exchange according to IEC 60909.
-    x: Positive sequence series reactance of the entire line section.
-    x0: Zero sequence series reactance of the entire line section.
+    used to carry alternating current between points in the power system. For symmetrical, transposed three phase lines,
+    it is sufficient to use attributes of the line segment, which describe impedances and admittances for the entire
+    length of the segment. Additionally impedances can be computed by using length and associated per length impedances.
+    The BaseVoltage at the two ends of ACLineSegments in a Line shall have the same BaseVoltage.nominalVoltage. However,
+    boundary lines may have slightly different BaseVoltage.nominalVoltages and variation is allowed. Larger voltage
+    difference in general requires use of an equivalent branch.
     """
 
     Clamp: list = Field(
@@ -148,6 +137,9 @@ class ACLineSegment(Conductor):
             "is_primitive_attribute": False,
         },
     )
+    """
+    The clamps connected to the line segment.
+    """
 
     Cut: list = Field(
         default_factory=list,
@@ -164,6 +156,9 @@ class ACLineSegment(Conductor):
             "is_primitive_attribute": False,
         },
     )
+    """
+    Cuts applied to the line segment.
+    """
 
     b0ch: float = Field(
         default=0.0,
@@ -181,6 +176,9 @@ class ACLineSegment(Conductor):
             "attribute_class": "Susceptance",
         },
     )
+    """
+    Zero sequence shunt (charging) susceptance, uniformly distributed, of the entire line section.
+    """
 
     bch: float = Field(
         default=0.0,
@@ -198,6 +196,10 @@ class ACLineSegment(Conductor):
             "attribute_class": "Susceptance",
         },
     )
+    """
+    Positive sequence shunt (charging) susceptance, uniformly distributed, of the entire line section. This value
+    represents the full charging over the full length of the line.
+    """
 
     g0ch: float = Field(
         default=0.0,
@@ -215,6 +217,9 @@ class ACLineSegment(Conductor):
             "attribute_class": "Conductance",
         },
     )
+    """
+    Zero sequence shunt (charging) conductance, uniformly distributed, of the entire line section.
+    """
 
     gch: float = Field(
         default=0.0,
@@ -232,6 +237,9 @@ class ACLineSegment(Conductor):
             "attribute_class": "Conductance",
         },
     )
+    """
+    Positive sequence shunt (charging) conductance, uniformly distributed, of the entire line section.
+    """
 
     r: float = Field(
         default=0.0,
@@ -249,6 +257,9 @@ class ACLineSegment(Conductor):
             "attribute_class": "Resistance",
         },
     )
+    """
+    Positive sequence series resistance of the entire line section.
+    """
 
     r0: float = Field(
         default=0.0,
@@ -266,6 +277,9 @@ class ACLineSegment(Conductor):
             "attribute_class": "Resistance",
         },
     )
+    """
+    Zero sequence series resistance of the entire line section.
+    """
 
     shortCircuitEndTemperature: float = Field(
         default=0.0,
@@ -283,6 +297,10 @@ class ACLineSegment(Conductor):
             "attribute_class": "Temperature",
         },
     )
+    """
+    Maximum permitted temperature at the end of SC for the calculation of minimum short-circuit currents. Used for short
+    circuit data exchange according to IEC 60909.
+    """
 
     x: float = Field(
         default=0.0,
@@ -300,6 +318,9 @@ class ACLineSegment(Conductor):
             "attribute_class": "Reactance",
         },
     )
+    """
+    Positive sequence series reactance of the entire line section.
+    """
 
     x0: float = Field(
         default=0.0,
@@ -317,6 +338,9 @@ class ACLineSegment(Conductor):
             "attribute_class": "Reactance",
         },
     )
+    """
+    Zero sequence series reactance of the entire line section.
+    """
 
     @cached_property
     def possible_profiles(self) -> set[BaseProfile]:

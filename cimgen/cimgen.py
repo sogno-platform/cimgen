@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2019 SOGNO
+#
+# SPDX-License-Identifier: Apache-2.0
+
 import html
 import logging
 import re
@@ -14,7 +18,6 @@ logger = logging.getLogger(__name__)
 class RDFSEntry:
     def __init__(self, json_object: dict):
         self.json_definition = json_object
-        return
 
     def as_json(self) -> dict[str, str]:
         json_object = {}
@@ -165,11 +168,10 @@ class RDFSEntry:
     # Extract String out of list or dictionary
     @staticmethod
     def _extract_string(object_dic) -> str:
-        if isinstance(object_dic, list):
-            if len(object_dic) > 0:
-                if isinstance(object_dic[0], str):
-                    return object_dic[0]
-                return RDFSEntry._get_about_or_resource(object_dic[0])
+        if isinstance(object_dic, list) and len(object_dic) > 0:
+            if isinstance(object_dic[0], str):
+                return object_dic[0]
+            return RDFSEntry._get_about_or_resource(object_dic[0])
         return RDFSEntry._get_about_or_resource(object_dic)
 
     # The definitions are often contained within a string with a name
@@ -249,11 +251,11 @@ class CIMComponentDefinition:
         return self.stereotype == "CIMDatatype"
 
 
-def wrap_and_indent(input: str, width: int, indent: int) -> str:
+def wrap_and_indent(text: str, width: int, indent: int) -> str:
     """
     Wrap a string to lines with a maximum of characters.
     It is used for comments: make them fit within <width> characters, including indentation.
-    The input contains no line breaks and no extra spaces.
+    The string contains no line breaks and no extra spaces.
     """
     if indent < 0:
         indent = 0
@@ -262,15 +264,15 @@ def wrap_and_indent(input: str, width: int, indent: int) -> str:
         max_len = 1
     pad = " " * indent
     result_lines: list[str] = []
-    while len(input) > max_len:
-        split_index = input.rfind(" ", 0, max_len + 1)
+    while len(text) > max_len:
+        split_index = text.rfind(" ", 0, max_len + 1)
         if split_index == -1:
-            result_lines.append(pad + input[:max_len])
-            input = input[max_len:]
+            result_lines.append(pad + text[:max_len])
+            text = text[max_len:]
         else:
-            result_lines.append(pad + input[:split_index])
-            input = input[split_index + 1 :]
-    result_lines.append(pad + input)
+            result_lines.append(pad + text[:split_index])
+            text = text[split_index + 1 :]
+    result_lines.append(pad + text)
     return "\n".join(result_lines)
 
 
@@ -301,7 +303,9 @@ def _rdfs_entry_types(rdfs_entry: RDFSEntry, version: str) -> list[str]:
     elif version == "cgmes_v3_0_0":
         entry_types.extend(_entry_types_version_3(rdfs_entry))
     else:
-        raise Exception(f"Got version '{version}', but only 'cgmes_v2_4_15' and 'cgmes_v3_0_0' are supported.")
+        raise ValueError(
+            f"Got version '{version}', but only 'cgmes_v2_4_13', 'cgmes_v2_4_15' and 'cgmes_v3_0_0' are supported."
+        )
 
     return entry_types
 
@@ -309,7 +313,7 @@ def _rdfs_entry_types(rdfs_entry: RDFSEntry, version: str) -> list[str]:
 def _entry_types_version_2(rdfs_entry: RDFSEntry) -> list[str]:
     entry_types: list[str] = []
     if rdfs_entry.stereotype():
-        if rdfs_entry.stereotype() == "Entsoe" and rdfs_entry.about()[-7:] == "Version":
+        if rdfs_entry.stereotype() == "Entsoe" and rdfs_entry.about().endswith("Version"):
             entry_types.append("profile_name_v2_4")
         if (
             rdfs_entry.stereotype() == "http://iec.ch/TC57/NonStandard/UML#attribute"  # NOSONAR

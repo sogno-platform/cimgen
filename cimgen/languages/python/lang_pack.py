@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2019 SOGNO
+#
+# SPDX-License-Identifier: Apache-2.0
+
 import glob
 import logging
 import os
@@ -26,8 +30,10 @@ def setup(output_path: str, version: str, cgmes_profile_details: list[dict], nam
 
 # These are the files that are used to generate the python files.
 class_template_file = {"filename": "cimpy_class_template.mustache", "ext": ".py"}
+base_template_file = {"filename": "cimpy_baseclass_template.mustache", "ext": ".py"}
 constants_template_file = {"filename": "cimpy_constants_template.mustache", "ext": ".py"}
 profile_template_file = {"filename": "cimpy_profile_template.mustache", "ext": ".py"}
+init_template_file = {"filename": "cimpy_init_template.mustache", "ext": ".py"}
 
 partials = {}
 
@@ -68,19 +74,9 @@ def _write_templated_file(class_file: str, class_details: dict, template_filenam
 
 
 # creates the Base class file, all classes inherit from this class
-def _create_base(path: str) -> None:
-    base_path = path + "/Base.py"
-    base = [
-        "class Base:\n",
-        '    """\n',
-        "    Base Class for CIM\n",
-        '    """\n\n',
-        "    def printxml(self, dict={}):\n",
-        "        return dict\n",
-    ]
-    with open(base_path, "w", encoding="utf-8") as f:
-        for line in base:
-            f.write(line)
+def _create_base(output_path: str) -> None:
+    class_file = os.path.join(output_path, "Base" + base_template_file["ext"])
+    _write_templated_file(class_file, {}, base_template_file["filename"])
 
 
 def _create_constants(output_path: str, version: str, namespaces: dict[str, str]) -> None:
@@ -121,19 +117,17 @@ def _default_value(attribute: dict) -> str:
     return '""'
 
 
+# The code below this line is used after the main cim_generate phase to generate CimClassMap.java.
+
 class_blacklist = ["CGMESProfile", "CimConstants"]
 
 
 def resolve_headers(path: str, version: str) -> None:  # NOSONAR
     """Add all classes in __init__.py"""
-    filenames = glob.glob(path + "/*.py")
-    include_names = []
-    for filename in sorted(filenames):
-        include_names.append(os.path.splitext(os.path.basename(filename))[0])
-    with open(path + "/__init__.py", "w", encoding="utf-8") as header_file:
-        for include_name in include_names:
-            if include_name not in class_blacklist:
-                header_file.write(
-                    "from " + "." + include_name + " import " + include_name + " as " + include_name + "\n"
-                )
-        header_file.close()
+    init_file = path + "/__init__" + init_template_file["ext"]
+    classes = []
+    for file in sorted(glob.glob(path + "/*.py")):
+        class_name = os.path.splitext(os.path.basename(file))[0]
+        if class_name not in class_blacklist:
+            classes.append(class_name)
+    _write_templated_file(init_file, {"classes": classes}, init_template_file["filename"])

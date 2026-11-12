@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2025 SOGNO
+//
+// SPDX-License-Identifier: Apache-2.0
+
 package cimgen
 
 import (
@@ -417,14 +421,14 @@ func (cimSpec *CIMSpecification) setMissingNamespaces() {
 
 	// add md namespace if not present
 	if _, ok := cimSpec.ProfileNamespaces["md"]; !ok {
-		cimSpec.SpecificationNamespaces["md"] = "http://iec.ch/TC57/61970-552/ModelDescription/1#"
-		cimSpec.ProfileNamespaces["md"] = "http://iec.ch/TC57/61970-552/ModelDescription/1#"
+		cimSpec.SpecificationNamespaces["md"] = "http://iec.ch/TC57/61970-552/ModelDescription/1#" // NOSONAR
+		cimSpec.ProfileNamespaces["md"] = "http://iec.ch/TC57/61970-552/ModelDescription/1#"       // NOSONAR
 	}
 
 	// add rdf namespace if not present
 	if _, ok := cimSpec.ProfileNamespaces["rdf"]; !ok {
-		cimSpec.SpecificationNamespaces["rdf"] = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-		cimSpec.ProfileNamespaces["rdf"] = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+		cimSpec.SpecificationNamespaces["rdf"] = "http://www.w3.org/1999/02/22-rdf-syntax-ns#" // NOSONAR
+		cimSpec.ProfileNamespaces["rdf"] = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"       // NOSONAR
 	}
 }
 

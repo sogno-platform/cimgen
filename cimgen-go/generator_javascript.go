@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2025 SOGNO
+//
+// SPDX-License-Identifier: Apache-2.0
+
 package cimgen
 
 // GenerateJavaScript generates JavaScript source files from the CIM specification.
