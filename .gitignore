@@ -10,10 +10,8 @@ output/
 *.egg-info/
 *.py[cod]
 __pycache__/
-.vscode/*
-*/.DS_Store
+.vscode/
 .DS_Store
-tests/
 *.log
 *.json
 dist/

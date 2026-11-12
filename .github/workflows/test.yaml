@@ -1,0 +1,36 @@
+# SPDX-FileCopyrightText: 2026 SOGNO
+#
+# SPDX-License-Identifier: Apache-2.0
+
+name: Python Build and Test on Linux and Windows
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    name: Python Build and Test on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v7
+        with:
+          submodules: recursive
+
+      - name: Setup Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install
+        run: |
+          pip install --require-hashes --only-binary=:all: -r requirements.txt
+          pip install --no-deps .
+          pip install pytest
+
+      - name: Test
+        run: pytest
