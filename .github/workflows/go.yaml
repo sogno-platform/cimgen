@@ -2,22 +2,24 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-name: Go Build and Test
+name: Go Build and Test on Linux and Windows
 
-on:
-  push:
-    branches: [ "master" ]
-  pull_request:
-    branches: [ "master" ]
+on: [push, pull_request]
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    name: Go Build and Test on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
     steps:
     # Checkout the repository recursively to include submodules
     - uses: actions/checkout@v7
       with:
         submodules: recursive
+
     - name: Set up Go
       uses: actions/setup-go@v7
       with:
