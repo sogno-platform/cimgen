@@ -46,9 +46,8 @@ jobs:
           python -m venv venv
           . venv/bin/activate
 
-          pip install --only-binary :all: -r requirements.txt
-          pip wheel --no-deps -w dist .
-          pip install --no-deps --only-binary :all: dist/cimgen-*.whl
+          pip install --require-hashes --only-binary=:all: -r requirements.txt
+          pip install --no-deps .
 
           # Extract version (2.4.15 => 2_4_15), ignore the date part
           SCHEMA_VERSION=$(echo "${{matrix.schema}}" | cut -d'_' -f2 | cut -d'.' -f1-3 | tr '.' '_')
