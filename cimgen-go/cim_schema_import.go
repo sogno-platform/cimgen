@@ -308,7 +308,7 @@ func processRDFMap(inputMap map[string]interface{}) (map[string]*CIMType, map[st
 			cimAttribute.Origins = []string{cimOntology.Keyword}
 			cimAttributes = append(cimAttributes, &cimAttribute)
 		} else if strings.Contains(objType, "http://iec.ch/TC57/1999/rdf-schema-extensions-19990926#ClassCategory") { // NOSONAR
-
+			// ClassCategory entries are intentionally skipped to avoid treating them as enum values
 		} else if strings.Contains(objType, "http://www.w3.org/2002/07/owl#Ontology") { // NOSONAR
 			cimOntology = processOntology(v)
 		} else {
@@ -555,7 +555,7 @@ func assignEnumValuesToEnums(cimEnums map[string]*CIMEnum, cimEnumValues []*CIME
 }
 
 // mergeNamepaces merges two maps of namespaces.
-func mergeNamespaces(namespacesMerged map[string]string, namespaces map[string]string) map[string]string {
+func mergeNamespaces(namespacesMerged, namespaces map[string]string) map[string]string {
 	for k, v := range namespaces {
 		if _, ok := namespacesMerged[k]; !ok {
 			namespacesMerged[k] = v
@@ -565,7 +565,7 @@ func mergeNamespaces(namespacesMerged map[string]string, namespaces map[string]s
 }
 
 // mergeCimTypes merges two maps of CIM types, combining attributes and origins for types with the same Id.
-func mergeCimTypes(typesMerged map[string]*CIMType, types map[string]*CIMType) map[string]*CIMType {
+func mergeCimTypes(typesMerged, types map[string]*CIMType) map[string]*CIMType {
 	for k := range types {
 		if v, ok := typesMerged[k]; ok {
 			if types[k].SuperType != "" {
@@ -612,7 +612,7 @@ func FindCIMAttributeById(attrs []*CIMAttribute, id string) int {
 }
 
 // mergeCimEnums merges two maps of CIM enums, combining values and origins for enums with the same Id.
-func mergeCimEnums(enumsMerged map[string]*CIMEnum, enums map[string]*CIMEnum) map[string]*CIMEnum {
+func mergeCimEnums(enumsMerged, enums map[string]*CIMEnum) map[string]*CIMEnum {
 	for k := range enums {
 		if v, ok := enumsMerged[k]; ok {
 			if enums[k].CIMStereotype != "" {
@@ -624,7 +624,7 @@ func mergeCimEnums(enumsMerged map[string]*CIMEnum, enums map[string]*CIMEnum) m
 			}
 
 			for _, val := range enums[k].Values {
-				if existingValIndex := FindCIMEnumValueById(v.Values, val.Id); existingValIndex == -1 {
+				if FindCIMEnumValueById(v.Values, val.Id) == -1 {
 					v.Values = append(v.Values, val)
 				}
 			}
@@ -645,7 +645,7 @@ func FindCIMEnumValueById(vals []*CIMEnumValue, id string) int {
 	return -1
 }
 
-func mergeCIMDatatypes(typesMerged map[string]*CIMDatatype, types map[string]*CIMDatatype) map[string]*CIMDatatype {
+func mergeCIMDatatypes(typesMerged, types map[string]*CIMDatatype) map[string]*CIMDatatype {
 	for k := range types {
 		if v, ok := typesMerged[k]; ok {
 			if types[k].CIMStereotype != "" {
@@ -671,7 +671,7 @@ func mergeCIMDatatypes(typesMerged map[string]*CIMDatatype, types map[string]*CI
 	return typesMerged
 }
 
-func mergePrimitives(typesMerged map[string]*CIMPrimitive, types map[string]*CIMPrimitive) map[string]*CIMPrimitive {
+func mergePrimitives(typesMerged, types map[string]*CIMPrimitive) map[string]*CIMPrimitive {
 	for k := range types {
 		if v, ok := typesMerged[k]; ok {
 			if types[k].CIMStereotype != "" {

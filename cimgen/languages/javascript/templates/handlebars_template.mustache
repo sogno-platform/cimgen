@@ -90,7 +90,7 @@ class {{class_name}} extends {{subclass_of}} {
         let attributeEntries = { ...filledEntries, ...emptyEntries };
         return templates.handlebars_cim_class_render({ 'attributes': attributeEntries});
     }
-    {{{renderAttribute}}}
+    {{{render_attribute}}}
     static subClassList() {
         let subClasses = [
         {{#subclasses}}

@@ -152,7 +152,6 @@ def _variable_name(label: str, class_name: str) -> str:
 
 
 def _get_nullptr_assigns(attributes: list[dict]) -> str:
-    # nullptr_list = [attr["label"] + "(nullptr)" for attr in attributes if attr["is_class_attribute"]]
     nullptr_list = []
     for attribute in attributes:
         if attribute["is_class_attribute"]:

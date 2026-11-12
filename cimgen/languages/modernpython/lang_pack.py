@@ -199,25 +199,3 @@ def resolve_headers(path: str, version: str) -> None:
     with open(dest / "__init__.py", "a", encoding="utf-8") as header_file:
         header_file.write(template_text)
         header_file.write(f'\nCGMES_VERSION = "{version_number}"\n')
-
-        # # Under this, add all imports in init. Disabled becasue loading 600 unneeded classes is slow.
-        # _all = ["CGMES_VERSION"]
-
-        # for include_name in sorted(dest.glob("*.py")):
-        #     stem = include_name.stem
-        #     if stem in[ "__init__", "Base"]:
-        #         continue
-        #     _all.append(stem)
-        #     header_file.write(f"from .{stem} import {stem}\n")
-
-        # header_file.write(
-        #     "\n".join(
-        #         [
-        #             "# This is not needed per se, but by referencing all imports",
-        #             "# this prevents a potential autoflake from cleaning up the whole file.",
-        #             "# FYA, if __all__ is present, only what's in there will be import with a import *",
-        #             "",
-        #         ]
-        #     )
-        # )
-        # header_file.write(f"__all__={_all}")
