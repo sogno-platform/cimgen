@@ -276,10 +276,18 @@ def wrap_and_indent(text: str, width: int, indent: int) -> str:
     return "\n".join(result_lines)
 
 
-long_profile_names: dict[str, str] = {}
-package_listed_by_short_name: dict[str, list[str]] = {}
-all_namespaces: dict[str, str] = {"md": "http://iec.ch/TC57/61970-552/ModelDescription/1#"}  # NOSONAR
-used_namespaces: list[str] = []
+long_profile_names: dict[str, str]
+package_listed_by_short_name: dict[str, list[str]]
+all_namespaces: dict[str, str]
+used_namespaces: list[str]
+
+
+def init_globals() -> None:
+    global long_profile_names, package_listed_by_short_name, all_namespaces, used_namespaces
+    long_profile_names = {}
+    package_listed_by_short_name = {}
+    all_namespaces = {"md": "http://iec.ch/TC57/61970-552/ModelDescription/1#"}  # NOSONAR
+    used_namespaces = []
 
 
 def _rdfs_entry_types(rdfs_entry: RDFSEntry, version: str) -> list[str]:
@@ -642,6 +650,7 @@ def cim_generate(
     :param lang_pack:   python module containing language specific functions
     :param recursive:   Search the schema directory recursively for RDF files
     """
+    init_globals()
     profiles_array: list[dict[str, dict[str, CIMComponentDefinition]]] = []
 
     t0 = time()
