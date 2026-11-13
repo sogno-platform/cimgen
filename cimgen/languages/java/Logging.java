@@ -7,20 +7,20 @@
 
 package cim4j;
 
-import java.time.LocalDateTime;
+import java.lang.System.Logger;
 
-// import org.apache.logging.log4j.LogManager;
-// import org.apache.logging.log4j.Logger;
+import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.LogManager;
+import java.util.logging.SimpleFormatter;
 
 /**
- * Wrapper to log with real logger and/or by System.out.println.
- *
- * To switch from System.out.println to real logger uncomment the commented
- * lines and set printlnEnabled = false.
+ * Log with System.Logger, which is a facade, that logs with System.out.println.
+ * If this is embedded into a framework that uses SLF4J (e.g. Spring Boot), it
+ * logs with SLF4J.
  */
 public class Logging {
-    public enum Level {
-        fatal,
+    public enum LogLevel {
         error,
         warn,
         info,
@@ -28,23 +28,39 @@ public class Logging {
         trace
     }
 
-    private static Level defaultLevel = Level.error;
-    private Level level;
-    private String className;
-    // private Logger log4jLogger;
-    // private static boolean log4jEnabled = true;
-    private static boolean log4jEnabled = false;
-    private static boolean printlnEnabled = true;
-
-    private Logging(final Class<?> clazz, Level logLevel) {
-        level = logLevel;
-        className = clazz.getName();
-        // log4jLogger = LogManager.getLogger(clazz);
+    static {
+        if (System.getProperty("java.util.logging.SimpleFormatter.format") == null) {
+            System.setProperty("java.util.logging.SimpleFormatter.format",
+                    "%1$tF %1$tT %4$s [%3$s] %5$s%6$s%n");
+        }
+        var env = getEnvironment();
+        String level = env.getProperty("logging.level.cim4j", env.getProperty("logging.level.root", "error"));
+        LogLevel logLevel;
+        try {
+            logLevel = LogLevel.valueOf(level.trim().toLowerCase());
+        } catch (IllegalArgumentException ignored) {
+            logLevel = Logging.LogLevel.error;
+        }
+        setDefaultLogLevel(logLevel);
     }
 
-    private void log(Level logLevel, String message) {
-        if (printlnEnabled && logLevel.compareTo(level) <= 0) {
-            System.out.println(LocalDateTime.now() + " " + className + " " + logLevel + ": " + message);
+    private static LogLevel defaultLevel;
+    private final Logger logger;
+    private static boolean logEnabled = true;
+
+    private Logging(final Class<?> clazz) {
+        logger = System.getLogger(clazz.getName());
+    }
+
+    private void log(LogLevel logLevel, String message, Throwable throwable) {
+        if (logEnabled) {
+            var sysLevel = getSysLevel(logLevel);
+            if (throwable == null) {
+                logger.log(sysLevel, message);
+            } else {
+                logger.log(sysLevel, message + ": " + throwable.getMessage());
+                logger.log(Logger.Level.DEBUG, "Stacktrace:", throwable);
+            }
         }
     }
 
@@ -55,18 +71,7 @@ public class Logging {
      * @param clazz The Class whose name should be used as the Logger name.
      */
     public static Logging getLogger(final Class<?> clazz) {
-        return new Logging(clazz, defaultLevel);
-    }
-
-    /**
-     * Returns a Logger using the fully qualified name of the Class as the Logger
-     * name.
-     *
-     * @param clazz The Class whose name should be used as the Logger name.
-     * @param level Log level.
-     */
-    public static Logging getLogger(final Class<?> clazz, Level level) {
-        return new Logging(clazz, level);
+        return new Logging(clazz);
     }
 
     /**
@@ -75,8 +80,7 @@ public class Logging {
      * @return logging enabled?
      */
     public static boolean isEnabled() {
-        // return log4jEnabled;
-        return printlnEnabled;
+        return logEnabled;
     }
 
     /**
@@ -85,8 +89,7 @@ public class Logging {
      * @param enabled logging enabled
      */
     public static void setEnabled(boolean enabled) {
-        // log4jEnabled = enabled;
-        printlnEnabled = enabled;
+        logEnabled = enabled;
     }
 
     /**
@@ -94,7 +97,7 @@ public class Logging {
      *
      * @return default log level
      */
-    public static Level getDefaultLogLevel() {
+    public static LogLevel getDefaultLogLevel() {
         return defaultLevel;
     }
 
@@ -103,20 +106,9 @@ public class Logging {
      *
      * @param level Log level.
      */
-    public static void setDefaultLogLevel(Level level) {
+    public static void setDefaultLogLevel(LogLevel level) {
         defaultLevel = level;
-    }
-
-    /**
-     * Logs a message object with the FATAL level.
-     *
-     * @param message the message string to log.
-     */
-    public void fatal(String message) {
-        if (log4jEnabled) {
-            // log4jLogger.fatal(message);
-        }
-        log(Level.fatal, message);
+        setLogLevel(level);
     }
 
     /**
@@ -125,10 +117,7 @@ public class Logging {
      * @param message the message string to log.
      */
     public void error(String message) {
-        if (log4jEnabled) {
-            // log4jLogger.error(message);
-        }
-        log(Level.error, message);
+        log(LogLevel.error, message, null);
     }
 
     /**
@@ -137,10 +126,7 @@ public class Logging {
      * @param message the message string to log.
      */
     public void warn(String message) {
-        if (log4jEnabled) {
-            // log4jLogger.warn(message);
-        }
-        log(Level.warn, message);
+        log(LogLevel.warn, message, null);
     }
 
     /**
@@ -149,10 +135,7 @@ public class Logging {
      * @param message the message string to log.
      */
     public void info(String message) {
-        if (log4jEnabled) {
-            // log4jLogger.info(message);
-        }
-        log(Level.info, message);
+        log(LogLevel.info, message, null);
     }
 
     /**
@@ -161,10 +144,7 @@ public class Logging {
      * @param message the message string to log.
      */
     public void debug(String message) {
-        if (log4jEnabled) {
-            // log4jLogger.debug(message);
-        }
-        log(Level.debug, message);
+        log(LogLevel.debug, message, null);
     }
 
     /**
@@ -173,51 +153,99 @@ public class Logging {
      * @param message the message string to log.
      */
     public void trace(String message) {
-        if (log4jEnabled) {
-            // log4jLogger.trace(message);
-        }
-        log(Level.trace, message);
-    }
-
-    /**
-     * Logs a message object with the FATAL level including the stack trace of the
-     * {@link Throwable} <code>throwable</code> passed as parameter.
-     *
-     * @param message   the message CharSequence to log.
-     * @param throwable the {@code Throwable} to log, including its stack trace.
-     */
-    public void fatal(String message, Throwable throwable) {
-        if (log4jEnabled) {
-            // log4jLogger.fatal(message, throwable);
-        }
-        log(Level.fatal, message + " Exception:" + throwable.getMessage());
+        log(LogLevel.trace, message, null);
     }
 
     /**
      * Logs a message object with the ERROR level including the stack trace of the
-     * {@link Throwable} <code>throwable</code> passed as parameter.
+     * {@link Throwable} <code>throwable</code> passed as parameter if DEBUG
+     * enabled.
      *
-     * @param message   the message CharSequence to log.
+     * @param message   the message string to log.
      * @param throwable the {@code Throwable} to log, including its stack trace.
      */
     public void error(String message, Throwable throwable) {
-        if (log4jEnabled) {
-            // log4jLogger.error(message, throwable);
-        }
-        log(Level.error, message + " Exception:" + throwable.getMessage());
+        log(LogLevel.error, message, throwable);
     }
 
     /**
      * Logs a message object with the WARN level including the stack trace of the
-     * {@link Throwable} <code>throwable</code> passed as parameter.
+     * {@link Throwable} <code>throwable</code> passed as parameter if DEBUG
+     * enabled.
      *
-     * @param message   the message CharSequence to log.
+     * @param message   the message string to log.
      * @param throwable the {@code Throwable} to log, including its stack trace.
      */
     public void warn(String message, Throwable throwable) {
-        if (log4jEnabled) {
-            // log4jLogger.warn(message, throwable);
+        log(LogLevel.warn, message, throwable);
+    }
+
+    private static void setLogLevel(LogLevel logLevel) {
+        var julLevel = getJulLevel(logLevel);
+        var rootLogger = LogManager.getLogManager().getLogger("");
+        if (rootLogger != null) {
+            rootLogger.setLevel(julLevel);
+            for (var handler : rootLogger.getHandlers()) {
+                handler.setFormatter(new SimpleFormatter());
+                handler.setLevel(julLevel);
+            }
         }
-        log(Level.warn, message + " Exception:" + throwable.getMessage());
+    }
+
+    private static Level getJulLevel(LogLevel logLevel) {
+        Level julLevel;
+        switch (logLevel) {
+            case error:
+                julLevel = Level.SEVERE;
+                break;
+            case warn:
+                julLevel = Level.WARNING;
+                break;
+            case info:
+                julLevel = Level.INFO;
+                break;
+            case debug:
+                julLevel = Level.FINE;
+                break;
+            default:
+                julLevel = Level.FINEST;
+                break;
+        }
+        return julLevel;
+    }
+
+    private static Logger.Level getSysLevel(LogLevel logLevel) {
+        Logger.Level sysLevel;
+        switch (logLevel) {
+            case error:
+                sysLevel = Logger.Level.ERROR;
+                break;
+            case warn:
+                sysLevel = Logger.Level.WARNING;
+                break;
+            case info:
+                sysLevel = Logger.Level.INFO;
+                break;
+            case debug:
+                sysLevel = Logger.Level.DEBUG;
+                break;
+            default:
+                sysLevel = Logger.Level.TRACE;
+                break;
+        }
+        return sysLevel;
+    }
+
+    private static Properties getEnvironment() {
+        var fileProps = new Properties();
+        try (var stream = Logging.class.getClassLoader().getResourceAsStream("application.properties")) {
+            if (stream != null) {
+                fileProps.load(stream);
+            }
+        } catch (Exception ignored) {
+        }
+        var env = new Properties(fileProps);
+        env.putAll(System.getProperties());
+        return env;
     }
 }
