@@ -21,7 +21,7 @@ import cim4j.utils.RdfWriter;
  */
 public final class Main {
 
-    private static Logging LOG = Logging.getLogger(Main.class);
+    private static final Logging LOG = Logging.getLogger(Main.class);
 
     // Private dummy constructor - prevent to instantiate the class at all
     private Main() {
@@ -34,7 +34,7 @@ public final class Main {
         System.out.println("\nRead RDF files and write the data to RDF files separated by profiles.\n");
         System.out.println("Usage: java -jar cim4j.jar [--log-level <level>] <rdf_file> [<rdf_file> ...]" +
                 " <output_path_stem>");
-        System.out.println("       --log-level <level>  Log level (fatal, error, warn, info, debug, trace)");
+        System.out.println("       --log-level <level>  Log level (error, warn, info, debug, trace)");
         System.out.println("                            Default log level: error");
         System.out.println("       <rdf_file> ...       Input files with CIM/CGMES data");
         System.out.println("       <output_path_stem>   Stem of the output files" +
@@ -48,15 +48,11 @@ public final class Main {
     public static void main(String[] args) {
         int offset = 0;
         if (args.length >= 2 && args[0].equals("--log-level")) {
-            Logging.Level level = Logging.getDefaultLogLevel();
             try {
-                level = Logging.Level.valueOf(args[1]);
+                var logLevel = Logging.LogLevel.valueOf(args[1]);
+                Logging.setDefaultLogLevel(logLevel);
             } catch (IllegalArgumentException ex) {
                 printUsageAndExit("unknown log level: " + args[1]);
-            }
-            if (!level.equals(Logging.getDefaultLogLevel())) {
-                Logging.setDefaultLogLevel(level);
-                LOG = Logging.getLogger(Main.class);
             }
             offset += 2;
         }
