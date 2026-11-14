@@ -16,11 +16,11 @@ CGMES3_SCHEMA = "cgmes-application-profiles-library/CGMES/CurrentRelease/RDFS"
 
 
 def test_cim_generate_java_cgmes2(tmp_path: Path) -> None:
-    cim_generate_java(tmp_path, CGMES2, CGMES2_SCHEMA, "h1:mv//7v6ZNmLO2QJ/SypnHjuEm5tcKHquke/ypeCo9mc=")
+    cim_generate_java(tmp_path, CGMES2, CGMES2_SCHEMA, "h1:y1Xr7GjIV3Xd2aVLTV1SaG3a2pD/f3CFn0c2eHHn6H4=")
 
 
 def test_cim_generate_java_cgmes3(tmp_path: Path) -> None:
-    cim_generate_java(tmp_path, CGMES3, CGMES3_SCHEMA, "h1:/w6CnsI8u0woxYRtDd45nOxIfK7dU5j1H1PYsISjDFQ=")
+    cim_generate_java(tmp_path, CGMES3, CGMES3_SCHEMA, "h1:pMLFZV8r+ArEzTKyzqc5JXks1omTLj4FIRYDgPJSUnA=")
 
 
 def cim_generate_java(tmp_path: Path, version: str, schema: str, expected_hash: str) -> None:
