@@ -4,7 +4,10 @@
 
 name: Python Build and Test on Linux and Windows
 
-on: [push, pull_request]
+on:
+  pull_request:
+  push:
+    branches: [master]
 
 jobs:
   build:
