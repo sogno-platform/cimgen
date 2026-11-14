@@ -29,11 +29,14 @@ jobs:
           python-version: '3.11'
           cache: 'pip'
 
-      - name: Install
-        run: |
-          pip install --require-hashes --only-binary=:all: -r requirements.txt
-          pip install --no-deps .
-          pip install pytest
+      - name: Install dependencies
+        run: python -m pip install --require-hashes "--only-binary=:all:" -r requirements.txt
+
+      - name: Install package
+        run: python -m pip install --no-deps .
+
+      - name: Install pytest
+        run: python -m pip install "--only-binary=:all:" pytest
 
       - name: Test
-        run: pytest
+        run: python -m pytest
