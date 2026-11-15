@@ -11,6 +11,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 
@@ -624,20 +625,30 @@ func mergeCimTypes(typesMerged, types map[string]*CIMType) map[string]*CIMType {
 				v.CIMStereotype = types[k].CIMStereotype
 			}
 
-			if len(types[k].CIMCategories) > 0 {
-				v.CIMCategories = append(v.CIMCategories, types[k].CIMCategories...)
+			for _, cat := range types[k].CIMCategories {
+				if !slices.Contains(v.CIMCategories, cat) {
+					v.CIMCategories = append(v.CIMCategories, cat)
+				}
 			}
 
-			if types[k].Origins[0] != "" {
-				v.Origins = append(v.Origins, types[k].Origins[0])
+			origin := types[k].Origins[0]
+			if origin != "" && !slices.Contains(v.Origins, origin) {
+				v.Origins = append(v.Origins, origin)
 			}
 
 			for _, attr := range types[k].Attributes {
 				if existingAttrIndex := FindCIMAttributeById(v.Attributes, attr.Id); existingAttrIndex != -1 {
 					// If the attribute already exists, we can merge the attributes
 					existingAttr := v.Attributes[existingAttrIndex]
-					existingAttr.Origins = append(existingAttr.Origins, attr.Origins[0])
-					existingAttr.CIMCategories = append(existingAttr.CIMCategories, attr.CIMCategories...)
+					origin = attr.Origins[0]
+					if origin != "" && !slices.Contains(existingAttr.Origins, origin) {
+						existingAttr.Origins = append(existingAttr.Origins, origin)
+					}
+					for _, cat := range attr.CIMCategories {
+						if !slices.Contains(existingAttr.CIMCategories, cat) {
+							existingAttr.CIMCategories = append(existingAttr.CIMCategories, cat)
+						}
+					}
 				} else {
 					v.Attributes = append(v.Attributes, attr)
 				}
@@ -667,8 +678,9 @@ func mergeCimEnums(enumsMerged, enums map[string]*CIMEnum) map[string]*CIMEnum {
 				v.CIMStereotype = enums[k].CIMStereotype
 			}
 
-			if enums[k].Origins[0] != "" {
-				v.Origins = append(v.Origins, enums[k].Origins[0])
+			origin := enums[k].Origins[0]
+			if origin != "" && !slices.Contains(v.Origins, origin) {
+				v.Origins = append(v.Origins, origin)
 			}
 
 			for _, val := range enums[k].Values {
@@ -699,15 +711,20 @@ func mergeCIMDatatypes(typesMerged, types map[string]*CIMDatatype) map[string]*C
 			if types[k].CIMStereotype != "" {
 				v.CIMStereotype = types[k].CIMStereotype
 			}
-			if types[k].Origins[0] != "" {
-				v.Origins = append(v.Origins, types[k].Origins[0])
+
+			origin := types[k].Origins[0]
+			if origin != "" && !slices.Contains(v.Origins, origin) {
+				v.Origins = append(v.Origins, origin)
 			}
 
 			for _, attr := range types[k].Attributes {
 				if existingAttrIndex := FindCIMAttributeById(v.Attributes, attr.Id); existingAttrIndex != -1 {
 					// If the attribute already exists, we can merge the attributes
 					existingAttr := v.Attributes[existingAttrIndex]
-					existingAttr.Origins = append(existingAttr.Origins, attr.Origins[0])
+					origin = attr.Origins[0]
+					if origin != "" && !slices.Contains(existingAttr.Origins, origin) {
+						existingAttr.Origins = append(existingAttr.Origins, origin)
+					}
 				} else {
 					v.Attributes = append(v.Attributes, attr)
 				}
@@ -725,8 +742,10 @@ func mergePrimitives(typesMerged, types map[string]*CIMPrimitive) map[string]*CI
 			if types[k].CIMStereotype != "" {
 				v.CIMStereotype = types[k].CIMStereotype
 			}
-			if types[k].Origins[0] != "" {
-				v.Origins = append(v.Origins, types[k].Origins[0])
+
+			origin := types[k].Origins[0]
+			if origin != "" && !slices.Contains(v.Origins, origin) {
+				v.Origins = append(v.Origins, origin)
 			}
 		} else {
 			typesMerged[k] = types[k]
