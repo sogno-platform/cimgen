@@ -84,8 +84,7 @@ func run(logger *log.Logger, schemaPattern, language, cgmesVersion string, outpu
 	logger.Println("Generate code for", language, "from schema files matching", schemaPattern)
 
 	// create and populate specification
-	cimSpec := cimgen.NewCIMSpecification()
-	cimSpec.CGMESVersion = cgmesVersion
+	cimSpec := cimgen.NewCIMSpecification(cgmesVersion)
 	if err := cimSpec.ImportCIMSchemaFiles(schemaPattern); err != nil {
 		return fmt.Errorf("failed to import CIM schema files: %w", err)
 	}

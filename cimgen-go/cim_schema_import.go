@@ -168,7 +168,7 @@ type CIMSpecification struct {
 }
 
 // NewCIMSpecification creates and returns a new CIMSpecification instance.
-func NewCIMSpecification() *CIMSpecification {
+func NewCIMSpecification(cgmesVersion string) *CIMSpecification {
 	return &CIMSpecification{
 		Types:                   make(map[string]*CIMType, 0),
 		Enums:                   make(map[string]*CIMEnum, 0),
@@ -178,7 +178,7 @@ func NewCIMSpecification() *CIMSpecification {
 		ProfileNamespaces:       make(map[string]string),
 		PrimitiveTypes:          make(map[string]*CIMPrimitive, 0),
 		CIMDatatypes:            make(map[string]*CIMDatatype, 0),
-		CGMESVersion:            CGMESVersion_3_0_0,
+		CGMESVersion:            cgmesVersion,
 	}
 }
 

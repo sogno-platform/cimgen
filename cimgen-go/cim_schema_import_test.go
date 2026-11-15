@@ -12,7 +12,7 @@ import (
 )
 
 func TestSchemaImportCGMES2(t *testing.T) {
-	testSchemaImport(t, CGMES2, CGMES2_SCHEMA, "cim_schema_import_test.v2.json", "8d84c28662d46b4159d8c0e08e5e99cce3bc1562237093a4bdb2acd9c678d0a9")
+	testSchemaImport(t, CGMES2, CGMES2_SCHEMA, "cim_schema_import_test.v2.json", "6b58bc77a7474795184f85391fcaa012606192455db87144c84dcda490d16b67")
 }
 
 func TestSchemaImportCGMES3(t *testing.T) {
@@ -30,7 +30,7 @@ func testSchemaImport(t *testing.T, cgmesVersion, schemaPattern, output, expecte
 	}
 	defer f.Close()
 
-	cimSpec := NewCIMSpecification()
+	cimSpec := NewCIMSpecification(cgmesVersion)
 	if err := cimSpec.ImportCIMSchemaFiles(schemaPattern); err != nil {
 		t.Fatalf("ImportCIMSchemaFiles failed: %v", err)
 	}
