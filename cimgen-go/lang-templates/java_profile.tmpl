@@ -69,7 +69,9 @@ public enum CGMESProfile {
         List<String> uris;
 {{range .OntologyList}}
         uris = new ArrayList<>();
-        uris.add("{{.OWLVersionIRI}}");
+{{- range .Uris}}
+        uris.add("{{.}}");
+{{- end}}
         map.put("{{.Keyword}}", uris);
 {{end}}
         URI_MAP = Collections.unmodifiableMap(map);

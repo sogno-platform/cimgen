@@ -8,7 +8,9 @@ class CGMESProfile {
     static profileUrls = {  // Those are strings, not real addresses, hence the NOSONAR.
 {{- range .OntologyList}}
         "{{.Keyword}}": [
-            "{{.OWLVersionIRI}}",  // NOSONAR
+{{- range .Uris}}
+            "{{.}}",  // NOSONAR
+{{- end}}
         ],
 {{- end}}
     };
