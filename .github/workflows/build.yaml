@@ -23,6 +23,7 @@ jobs:
 
         language:
         - java
+        - javadb
         - javascript
         - python
         - modernpython
