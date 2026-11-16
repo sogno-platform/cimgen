@@ -67,7 +67,9 @@ class Profile(BaseProfile):
 profile_uris: dict[str, list[str]] = {  # Those are strings, not real addresses, hence the NOSONAR.
 {{- range .OntologyList}}
     "{{.Keyword}}": [
-        "{{.OWLVersionIRI}}",  # NOSONAR
+{{- range .Uris}}
+        "{{.}}",  # NOSONAR
+{{- end}}
     ],
 {{- end}}
 }

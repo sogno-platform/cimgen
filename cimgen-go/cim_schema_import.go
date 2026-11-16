@@ -11,6 +11,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 
@@ -142,14 +143,15 @@ type CIMEnumValue struct {
 
 // CIMOntology represents a CIM ontology with its properties.
 type CIMOntology struct {
-	Id             string // from RDF schema
-	Namespace      string // from RDF schema
-	OWLVersionIRI  string // from RDF schema
-	OWLVersionInfo string // from RDF schema
-	Keyword        string // from RDF schema
-	RDFType        string // from RDF schema
-	Name           string // from RDF schema
-	Priority       int    // derived
+	Id             string   // from RDF schema
+	Namespace      string   // from RDF schema
+	OWLVersionIRI  string   // from RDF schema
+	OWLVersionInfo string   // from RDF schema
+	Keyword        string   // from RDF schema
+	RDFType        string   // from RDF schema
+	Name           string   // from RDF schema
+	Priority       int      // derived
+	Uris           []string // derived
 }
 
 // CIMSpecification represents the entire CIM specification with types, enums, and ontologies.
@@ -166,7 +168,7 @@ type CIMSpecification struct {
 }
 
 // NewCIMSpecification creates and returns a new CIMSpecification instance.
-func NewCIMSpecification() *CIMSpecification {
+func NewCIMSpecification(cgmesVersion string) *CIMSpecification {
 	return &CIMSpecification{
 		Types:                   make(map[string]*CIMType, 0),
 		Enums:                   make(map[string]*CIMEnum, 0),
@@ -176,7 +178,7 @@ func NewCIMSpecification() *CIMSpecification {
 		ProfileNamespaces:       make(map[string]string),
 		PrimitiveTypes:          make(map[string]*CIMPrimitive, 0),
 		CIMDatatypes:            make(map[string]*CIMDatatype, 0),
-		CGMESVersion:            CGMESVersion_3_0_0,
+		CGMESVersion:            cgmesVersion,
 	}
 }
 
@@ -280,6 +282,7 @@ func processRDFMap(inputMap map[string]interface{}) (map[string]*CIMType, map[st
 	cimEnumValues := make([]*CIMEnumValue, 0)
 	cimAttributes := make([]*CIMAttribute, 0)
 	var cimOntology CIMOntology
+	cimOntology = processOntologyV2V3(descriptions)
 
 	for _, v := range descriptions {
 		objType := extractResource(v, "rdf:type")
@@ -308,9 +311,9 @@ func processRDFMap(inputMap map[string]interface{}) (map[string]*CIMType, map[st
 			cimAttribute.Origins = []string{cimOntology.Keyword}
 			cimAttributes = append(cimAttributes, &cimAttribute)
 		} else if strings.Contains(objType, "http://iec.ch/TC57/1999/rdf-schema-extensions-19990926#ClassCategory") { // NOSONAR
-			// ClassCategory entries are intentionally skipped to avoid treating them as enum values
+			// already processed
 		} else if strings.Contains(objType, "http://www.w3.org/2002/07/owl#Ontology") { // NOSONAR
-			cimOntology = processOntology(v)
+			// already processed
 		} else {
 			cimEnumValue := processEnumValue(v)
 			cimEnumValues = append(cimEnumValues, &cimEnumValue)
@@ -347,6 +350,50 @@ func processNamespaces(rdfMap map[string]interface{}) map[string]string {
 		}
 	}
 	return namespaces
+}
+
+// processOntologyV2V3 processes infos for different cgmes versions and returns a CIMOntology struct.
+func processOntologyV2V3(descriptions []map[string]interface{}) CIMOntology {
+	profile := ""
+	for _, v := range descriptions {
+		objType := extractResource(v, "rdf:type")
+		if strings.Contains(objType, "http://www.w3.org/2002/07/owl#Ontology") { // NOSONAR
+			// cgmes_3.0.0 has a real ontology
+			return processOntology(v)
+		} else if strings.Contains(objType, "http://iec.ch/TC57/1999/rdf-schema-extensions-19990926#ClassCategory") { // NOSONAR
+			// cgmes_2.4.15 has profile infos spread over several description entries
+			pack := extractURIEnd(extractValue(v, "@rdf:about"))
+			if strings.HasPrefix(pack, "Package_") && strings.HasSuffix(pack, "Profile") {
+				profile = strings.TrimSuffix(strings.TrimPrefix(pack, "Package_"), "Profile")
+			}
+		}
+	}
+
+	// Search profile infos for cgmes_2.4.15
+	uris := make([]string, 0)
+	shortName := ""
+	for _, v := range descriptions {
+		objType := extractResource(v, "rdf:type")
+		if strings.Contains(objType, "http://www.w3.org/1999/02/22-rdf-syntax-ns#Property") && // NOSONAR
+			extractStringOrResource(v["cims:stereotype"]) == "http://iec.ch/TC57/NonStandard/UML#attribute" { // NOSONAR
+			about := extractValue(v, "@rdf:about")
+			uriPath := extractURIPath(about)
+			if (uriPath == "" || uriPath == "http://entsoe.eu/CIM/SchemaExtension/3/1") && // NOSONAR
+				strings.HasPrefix(extractURIEnd(about), profile) {
+				suffix := strings.TrimPrefix(extractURIEnd(about), profile)
+				if suffix == "Version.shortName" {
+					shortName = extractText(v, "cims:isFixed")
+				} else if strings.HasPrefix(suffix, "Version.entsoeURI") {
+					uris = append(uris, extractText(v, "cims:isFixed"))
+				}
+			}
+		}
+	}
+	return CIMOntology{
+		Name:    profile,
+		Keyword: shortName,
+		Uris:    uris,
+	}
 }
 
 // processClass processes a map representing a CIM class and returns a CIMType struct.
@@ -515,15 +562,17 @@ func processEnumValue(classMap map[string]interface{}) CIMEnumValue {
 
 // processOntology processes a map representing a CIM ontology and returns a CIMOntology struct.
 func processOntology(classMap map[string]interface{}) CIMOntology {
+	owlVersionIRI := extractResource(classMap, "owl:versionIRI")
 	return CIMOntology{
 		Id:             extractURIEnd(extractValue(classMap, "@rdf:about")),
 		Namespace:      extractURIPath(extractValue(classMap, "@rdf:about")),
 		RDFType:        extractURIEnd(extractResource(classMap, "rdf:type")),
-		OWLVersionIRI:  extractResource(classMap, "owl:versionIRI"),
+		OWLVersionIRI:  owlVersionIRI,
 		OWLVersionInfo: extractText(classMap, "owl:versionInfo"),
 		Keyword:        extractValue(classMap, "dcat:keyword"),
 		// remove suffix " Vocabulary" from name if present and remove all spaces
 		Name: strings.ReplaceAll(strings.TrimSuffix(extractText(classMap, "dcterms:title"), " Vocabulary"), " ", ""),
+		Uris: []string{owlVersionIRI},
 	}
 }
 
@@ -576,20 +625,30 @@ func mergeCimTypes(typesMerged, types map[string]*CIMType) map[string]*CIMType {
 				v.CIMStereotype = types[k].CIMStereotype
 			}
 
-			if len(types[k].CIMCategories) > 0 {
-				v.CIMCategories = append(v.CIMCategories, types[k].CIMCategories...)
+			for _, cat := range types[k].CIMCategories {
+				if !slices.Contains(v.CIMCategories, cat) {
+					v.CIMCategories = append(v.CIMCategories, cat)
+				}
 			}
 
-			if types[k].Origins[0] != "" {
-				v.Origins = append(v.Origins, types[k].Origins[0])
+			origin := types[k].Origins[0]
+			if origin != "" && !slices.Contains(v.Origins, origin) {
+				v.Origins = append(v.Origins, origin)
 			}
 
 			for _, attr := range types[k].Attributes {
 				if existingAttrIndex := FindCIMAttributeById(v.Attributes, attr.Id); existingAttrIndex != -1 {
 					// If the attribute already exists, we can merge the attributes
 					existingAttr := v.Attributes[existingAttrIndex]
-					existingAttr.Origins = append(existingAttr.Origins, attr.Origins[0])
-					existingAttr.CIMCategories = append(existingAttr.CIMCategories, attr.CIMCategories...)
+					origin = attr.Origins[0]
+					if origin != "" && !slices.Contains(existingAttr.Origins, origin) {
+						existingAttr.Origins = append(existingAttr.Origins, origin)
+					}
+					for _, cat := range attr.CIMCategories {
+						if !slices.Contains(existingAttr.CIMCategories, cat) {
+							existingAttr.CIMCategories = append(existingAttr.CIMCategories, cat)
+						}
+					}
 				} else {
 					v.Attributes = append(v.Attributes, attr)
 				}
@@ -619,8 +678,9 @@ func mergeCimEnums(enumsMerged, enums map[string]*CIMEnum) map[string]*CIMEnum {
 				v.CIMStereotype = enums[k].CIMStereotype
 			}
 
-			if enums[k].Origins[0] != "" {
-				v.Origins = append(v.Origins, enums[k].Origins[0])
+			origin := enums[k].Origins[0]
+			if origin != "" && !slices.Contains(v.Origins, origin) {
+				v.Origins = append(v.Origins, origin)
 			}
 
 			for _, val := range enums[k].Values {
@@ -651,15 +711,20 @@ func mergeCIMDatatypes(typesMerged, types map[string]*CIMDatatype) map[string]*C
 			if types[k].CIMStereotype != "" {
 				v.CIMStereotype = types[k].CIMStereotype
 			}
-			if types[k].Origins[0] != "" {
-				v.Origins = append(v.Origins, types[k].Origins[0])
+
+			origin := types[k].Origins[0]
+			if origin != "" && !slices.Contains(v.Origins, origin) {
+				v.Origins = append(v.Origins, origin)
 			}
 
 			for _, attr := range types[k].Attributes {
 				if existingAttrIndex := FindCIMAttributeById(v.Attributes, attr.Id); existingAttrIndex != -1 {
 					// If the attribute already exists, we can merge the attributes
 					existingAttr := v.Attributes[existingAttrIndex]
-					existingAttr.Origins = append(existingAttr.Origins, attr.Origins[0])
+					origin = attr.Origins[0]
+					if origin != "" && !slices.Contains(existingAttr.Origins, origin) {
+						existingAttr.Origins = append(existingAttr.Origins, origin)
+					}
 				} else {
 					v.Attributes = append(v.Attributes, attr)
 				}
@@ -677,8 +742,10 @@ func mergePrimitives(typesMerged, types map[string]*CIMPrimitive) map[string]*CI
 			if types[k].CIMStereotype != "" {
 				v.CIMStereotype = types[k].CIMStereotype
 			}
-			if types[k].Origins[0] != "" {
-				v.Origins = append(v.Origins, types[k].Origins[0])
+
+			origin := types[k].Origins[0]
+			if origin != "" && !slices.Contains(v.Origins, origin) {
+				v.Origins = append(v.Origins, origin)
 			}
 		} else {
 			typesMerged[k] = types[k]
@@ -718,11 +785,19 @@ func extractStringOrResource(obj interface{}) string {
 }
 
 // extractText extracts the text value from a map object using the specified key.
-// It returns an empty string if the key does not exist or the value is not a map.
+// It handles lists of map entries like "_", and map entries like "_", and "@rdfs:Literal".
 func extractText(obj map[string]interface{}, key string) string {
 	if v, ok := obj[key]; ok {
+		if l, ok := v.([]map[string]interface{}); ok && len(l) > 0 {
+			v = l[0]
+		}
 		if m, ok := v.(map[string]interface{}); ok {
-			return extractValue(m, "_")
+			if t := extractValue(m, "_"); t != "" {
+				return t
+			}
+			if t := extractValue(m, "@rdfs:Literal"); t != "" {
+				return t
+			}
 		}
 	}
 	return ""

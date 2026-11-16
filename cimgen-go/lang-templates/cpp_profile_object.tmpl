@@ -34,7 +34,7 @@ static const std::map<CGMESProfile, std::string> ProfileLongNames =
 static const std::map<CGMESProfile, std::list<std::string>> ProfileURIs =
 {
 {{- range .OntologyList}}
-	{ CGMESProfile::{{.Keyword}}, { "{{.OWLVersionIRI}}", } },
+	{ CGMESProfile::{{.Keyword}}, { {{range .Uris}}"{{.}}", {{end}}} },
 {{- end}}
 };
 
