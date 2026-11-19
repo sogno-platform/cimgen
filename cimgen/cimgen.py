@@ -663,7 +663,7 @@ def cim_generate(
     for file in rdf_files:
         logger.info(f"Start of parsing file '{file}'.")
 
-        xmlstring = file.read_text(encoding="utf-8")
+        xmlstring = _clean_comments(file.read_text(encoding="utf-8"))
 
         # parse RDF files and create a dictionary from the RDF file
         parse_result = xmltodict.parse(xmlstring, attr_prefix="$", cdata_key="_", dict_constructor=dict)
@@ -1002,3 +1002,19 @@ def _check_merge_enum(class_name: str, enum: dict, new_enum: dict) -> None:
         v_new = new_enum.get(k)
         if v != v_new:
             logger.warning(f"Different {k} for enum '{name}' of class '{class_name}': '{v}' != '{v_new}'.")
+
+
+_RDFS_COMMENT_REGEX = re.compile(r"(<rdfs:comment[^>]*>)(.*?)(</rdfs:comment>)", flags=re.DOTALL)
+_HTML_TAG_REGEX = re.compile(r"<[^>]+>")
+
+
+def _clean_comments(xml_text: str) -> str:
+    """Remove HTML/XML formatting tags from rdfs:comment elements to prevent mixed-content issues.
+
+    :param xml_text: String in XML syntax.
+    :return:         String with cleaned comments.
+    """
+    return _RDFS_COMMENT_REGEX.sub(
+        lambda m: m.group(1) + _HTML_TAG_REGEX.sub("", m.group(2)) + m.group(3),
+        xml_text,
+    )
