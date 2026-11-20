@@ -196,7 +196,8 @@ func (cimSpec *CIMSpecification) ImportCIMSchemaFiles(schemaFiles string) error 
 			return fmt.Errorf("failed to read schema file %s: %w", entry, err)
 		}
 
-		resultMap, err := DecodeToMap(bytes.NewReader(b))
+		reader := bytes.NewReader(cleanComments(b))
+		resultMap, err := DecodeToMap(reader)
 		if err != nil {
 			return fmt.Errorf("failed to decode schema file %s: %w", entry, err)
 		}

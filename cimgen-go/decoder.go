@@ -8,6 +8,7 @@ import (
 	"encoding/xml"
 	"errors"
 	"io"
+	"regexp"
 	"strings"
 )
 
@@ -228,4 +229,27 @@ func setAttributes(n *node, tok *xml.StartElement, attrPrefix string) {
 		}
 		n.Value[n.Label] = m
 	}
+}
+
+var (
+	rdfsCommentRegex = regexp.MustCompile(`(?s)(<rdfs:comment[^>]*>)(.*?)(</rdfs:comment>)`)
+	htmlTagRegex     = regexp.MustCompile(`<[^>]+>`)
+)
+
+// cleanComments removes HTML/XML formatting tags from rdfs:comment elements
+// to prevent mixed-content issues during XML decoding.
+func cleanComments(xmlBytes []byte) []byte {
+	return rdfsCommentRegex.ReplaceAllFunc(xmlBytes, func(match []byte) []byte {
+		submatches := rdfsCommentRegex.FindSubmatch(match)
+		if len(submatches) < 4 {
+			return match
+		}
+		// Strip all embedded HTML tags (e.g. <i>, <sub>) from the comment body
+		cleanInner := htmlTagRegex.ReplaceAll(submatches[2], nil)
+		res := make([]byte, 0, len(submatches[1])+len(cleanInner)+len(submatches[3]))
+		res = append(res, submatches[1]...)
+		res = append(res, cleanInner...)
+		res = append(res, submatches[3]...)
+		return res
+	})
 }
