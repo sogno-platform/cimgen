@@ -97,6 +97,7 @@ func run(logger *log.Logger, schemaPattern, language, cgmesVersion string, outpu
 		"python-simple": (*cimgen.CIMSpecification).GeneratePythonSimple,
 		"proto":         (*cimgen.CIMSpecification).GenerateProto,
 		"java":          (*cimgen.CIMSpecification).GenerateJava,
+		"javadb":        (*cimgen.CIMSpecification).GenerateJavaDB,
 		"cpp":           (*cimgen.CIMSpecification).GenerateCpp,
 		"js": func(spec *cimgen.CIMSpecification, outputDir string) error {
 			logger.Println("Javascript generation is experimental")

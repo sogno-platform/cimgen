@@ -31,6 +31,8 @@ func (cimSpec *CIMSpecification) postprocess() {
 	cimSpec.removeCircularDependencies()
 	cimSpec.setSuperTypesOfSuperTypes()
 	cimSpec.setSubTypesOfSubTypes()
+	cimSpec.setTableName()
+	cimSpec.setColumnName()
 }
 
 // removeCircularDependencies removes circular dependencies in the CIM specification
@@ -494,6 +496,32 @@ func (cimSpec *CIMSpecification) setVariableName() {
 				attr.VariableName = attr.Label + "_"
 			} else {
 				attr.VariableName = attr.Label
+			}
+		}
+	}
+}
+
+// setTableName name of the database table for a class name.
+// Some class names are not allowed as name of a database table.
+func (cimSpec *CIMSpecification) setTableName() {
+	for _, t := range cimSpec.Types {
+		if t.Id == "Limit" || t.Id == "Resource" {
+			t.TableName = t.Id + "_"
+		} else {
+			t.TableName = t.Id
+		}
+	}
+}
+
+// setColumnName sets the name of the database column for a label.
+// Some label names are not allowed as name of a database column.
+func (cimSpec *CIMSpecification) setColumnName() {
+	for _, t := range cimSpec.Types {
+		for _, attr := range t.Attributes {
+			if attr.Label == "mode" || attr.Label == "number" || attr.Label == "order" || attr.Label == "value" {
+				attr.ColumnName = attr.Label + "_"
+			} else {
+				attr.ColumnName = attr.Label
 			}
 		}
 	}
