@@ -12,18 +12,18 @@
 
 namespace CIMPP
 {
-	{{if .Comment -}}
+{{- if .Comment}}
 	/** \brief {{.Comment}} */
-	{{- end}}
+{{- end}}
 	class {{.Id}}
 	{
 	public:
 		enum {{.Id}}_ENUM
 		{
 {{- range .Values}}
-			{{if .Comment -}}
+{{- if .Comment}}
 			/** {{.Comment}} */
-			{{- end}}
+{{- end}}
 			{{.Label}},
 {{- end}}
 		};
