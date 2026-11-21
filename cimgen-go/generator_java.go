@@ -69,6 +69,69 @@ func (spec *CIMSpecification) GenerateJava(outputDir string) error {
 	return nil
 }
 
+// GenerateJavaDB generates JavaDB source files from the CIM specification.
+func (spec *CIMSpecification) GenerateJavaDB(outputDir string) error {
+	if err := cleanAllRecursively(outputDir); err != nil {
+		return err
+	}
+
+	if err := createOutputDir(outputDir); err != nil {
+		return err
+	}
+
+	mainOutputDir := filepath.Join(outputDir, "main")
+	if err := createOutputDir(mainOutputDir); err != nil {
+		return err
+	}
+
+	enumOutputDir := filepath.Join(outputDir, "types")
+	if err := createOutputDir(enumOutputDir); err != nil {
+		return err
+	}
+
+	utilsOutputDir := filepath.Join(outputDir, "utils")
+	if err := createOutputDir(utilsOutputDir); err != nil {
+		return err
+	}
+
+	// Copy all hardcoded files
+	languagesDir, err := findLanguagesDir()
+	if err != nil {
+		return err
+	}
+	sourceDir := filepath.Join(languagesDir, "javadb")
+	if err := copyFilesWithPattern(sourceDir, outputDir, "*.java"); err != nil {
+		return err
+	}
+	sourceDir = filepath.Join(languagesDir, "javadb", "main")
+	if err := copyFilesWithPattern(sourceDir, mainOutputDir, "*.java"); err != nil {
+		return err
+	}
+	sourceDir = filepath.Join(languagesDir, "javadb", "utils")
+	if err := copyFilesWithPattern(sourceDir, utilsOutputDir, "*.java"); err != nil {
+		return err
+	}
+
+	spec.setLangTypesJava()
+
+	if err := generateFiles("javadb_class", ".java", outputDir, spec.Types); err != nil {
+		return err
+	}
+	if err := generateFiles("javadb_enum", ".java", enumOutputDir, spec.Enums); err != nil {
+		return err
+	}
+	if err := generateFile("javadb_constants", "CimConstants.java", outputDir, spec); err != nil {
+		return err
+	}
+	if err := generateFile("javadb_classlist", "CimClassMap.java", outputDir, spec); err != nil {
+		return err
+	}
+	if err := generateFile("javadb_profile", "CGMESProfile.java", outputDir, spec); err != nil {
+		return err
+	}
+	return nil
+}
+
 // setLangTypesJava sets types for attributes based on their data types for Java code generation.
 func (cimSpec *CIMSpecification) setLangTypesJava() {
 	for _, t := range cimSpec.Types {

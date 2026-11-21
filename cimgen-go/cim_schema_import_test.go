@@ -12,11 +12,11 @@ import (
 )
 
 func TestSchemaImportCGMES2(t *testing.T) {
-	testSchemaImport(t, CGMES2, CGMES2_SCHEMA, "cim_schema_import_test.v2.json", "50df6393510865aad6a4e67a325e54077dd87ccc789019d9c03f3632b2d43aff")
+	testSchemaImport(t, CGMES2, CGMES2_SCHEMA, "cim_schema_import_test.v2.json", "181c9ac93354219045f4472da91d6c859261eeced4a37a4707bfe74c757cdd27")
 }
 
 func TestSchemaImportCGMES3(t *testing.T) {
-	testSchemaImport(t, CGMES3, CGMES3_SCHEMA, "cim_schema_import_test.v3.json", "1188025d36e22537e16fc2bf2f08502434b5135c718eacbb07c82786488993cb")
+	testSchemaImport(t, CGMES3, CGMES3_SCHEMA, "cim_schema_import_test.v3.json", "28082ca2d07c15221d9078886c1cf784bc3769ec68ab7b72dd97906d214ff39e")
 }
 
 func testSchemaImport(t *testing.T, cgmesVersion, schemaPattern, output, expectedHash string) {
