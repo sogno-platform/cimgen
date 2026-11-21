@@ -196,7 +196,8 @@ func (cimSpec *CIMSpecification) ImportCIMSchemaFiles(schemaFiles string) error 
 			return fmt.Errorf("failed to read schema file %s: %w", entry, err)
 		}
 
-		resultMap, err := DecodeToMap(bytes.NewReader(b))
+		reader := bytes.NewReader(cleanComments(b))
+		resultMap, err := DecodeToMap(reader)
 		if err != nil {
 			return fmt.Errorf("failed to decode schema file %s: %w", entry, err)
 		}
@@ -617,11 +618,11 @@ func mergeNamespaces(namespacesMerged, namespaces map[string]string) map[string]
 func mergeCimTypes(typesMerged, types map[string]*CIMType) map[string]*CIMType {
 	for k := range types {
 		if v, ok := typesMerged[k]; ok {
-			if types[k].SuperType != "" {
+			if typesMerged[k].SuperType == "" {
 				v.SuperType = types[k].SuperType
 			}
 
-			if types[k].CIMStereotype != "" {
+			if typesMerged[k].CIMStereotype == "" {
 				v.CIMStereotype = types[k].CIMStereotype
 			}
 
@@ -674,7 +675,7 @@ func FindCIMAttributeById(attrs []*CIMAttribute, id string) int {
 func mergeCimEnums(enumsMerged, enums map[string]*CIMEnum) map[string]*CIMEnum {
 	for k := range enums {
 		if v, ok := enumsMerged[k]; ok {
-			if enums[k].CIMStereotype != "" {
+			if enumsMerged[k].CIMStereotype == "" {
 				v.CIMStereotype = enums[k].CIMStereotype
 			}
 
@@ -708,7 +709,7 @@ func FindCIMEnumValueById(vals []*CIMEnumValue, id string) int {
 func mergeCIMDatatypes(typesMerged, types map[string]*CIMDatatype) map[string]*CIMDatatype {
 	for k := range types {
 		if v, ok := typesMerged[k]; ok {
-			if types[k].CIMStereotype != "" {
+			if typesMerged[k].CIMStereotype == "" {
 				v.CIMStereotype = types[k].CIMStereotype
 			}
 
@@ -739,7 +740,7 @@ func mergeCIMDatatypes(typesMerged, types map[string]*CIMDatatype) map[string]*C
 func mergePrimitives(typesMerged, types map[string]*CIMPrimitive) map[string]*CIMPrimitive {
 	for k := range types {
 		if v, ok := typesMerged[k]; ok {
-			if types[k].CIMStereotype != "" {
+			if typesMerged[k].CIMStereotype == "" {
 				v.CIMStereotype = types[k].CIMStereotype
 			}
 

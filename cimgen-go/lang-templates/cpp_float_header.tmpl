@@ -12,9 +12,9 @@
 
 namespace CIMPP
 {
-	{{if .Comment -}}
+{{- if .Comment}}
 	/** \brief {{.Comment}} */
-	{{- end}}
+{{- end}}
 	class {{.Id}}
 	{
 	public:

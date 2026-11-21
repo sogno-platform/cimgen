@@ -12,7 +12,7 @@ import (
 )
 
 func TestSchemaImportCGMES2(t *testing.T) {
-	testSchemaImport(t, CGMES2, CGMES2_SCHEMA, "cim_schema_import_test.v2.json", "6b58bc77a7474795184f85391fcaa012606192455db87144c84dcda490d16b67")
+	testSchemaImport(t, CGMES2, CGMES2_SCHEMA, "cim_schema_import_test.v2.json", "50df6393510865aad6a4e67a325e54077dd87ccc789019d9c03f3632b2d43aff")
 }
 
 func TestSchemaImportCGMES3(t *testing.T) {

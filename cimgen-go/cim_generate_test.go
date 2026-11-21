@@ -12,7 +12,7 @@ import (
 )
 
 func TestGenerateCGMES2(t *testing.T) {
-	testGenerate(t, CGMES2, CGMES2_SCHEMA, "output/_go_test.v2", "h1:/etA1UZYr6yj4Dep0haZVQNPlrgQc8Te/pMPn6cC3OM=")
+	testGenerate(t, CGMES2, CGMES2_SCHEMA, "output/_go_test.v2", "h1:DDrENKVS6Olmr418i62EpCGIJTvUmpXF9VxglBRSR4o=")
 }
 
 func TestGenerateCGMES3(t *testing.T) {

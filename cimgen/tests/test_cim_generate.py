@@ -16,7 +16,7 @@ CGMES3_SCHEMA = "cgmes-application-profiles-library/CGMES/CurrentRelease/RDFS"
 
 
 def test_cim_generate_java_cgmes2(tmp_path: Path) -> None:
-    cim_generate_java(tmp_path, CGMES2, CGMES2_SCHEMA, "h1:y1Xr7GjIV3Xd2aVLTV1SaG3a2pD/f3CFn0c2eHHn6H4=")
+    cim_generate_java(tmp_path, CGMES2, CGMES2_SCHEMA, "h1:i/63MhDAWvuMKnZQS02gVGPcXn7cbj7SgPzHSFtUuAY=")
 
 
 def test_cim_generate_java_cgmes3(tmp_path: Path) -> None:
@@ -29,9 +29,8 @@ def cim_generate_java(tmp_path: Path, version: str, schema: str, expected_hash: 
     """
     root = Path(__file__).parent.parent.parent
     schema_path = (root / schema).resolve()
+    output_path = tmp_path
     print(f"Schema directory: {schema_path}")
-
-    output_path = tmp_path / "output_java"
     print(f"Generated source files in: {output_path}")
 
     cim_generate(schema_path, str(output_path), version, lang_pack)

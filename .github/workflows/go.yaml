@@ -28,6 +28,7 @@ jobs:
       with:
         go-version: '1.25' # Specify the version of Go you want to use
         cache: true # Caches Go modules for faster subsequent runs
+        cache-dependency-path: cimgen-go/go.sum
 
     - name: Install dependencies
       run: go -C cimgen-go mod tidy # Ensures all dependencies are installed and the go.mod file is clean

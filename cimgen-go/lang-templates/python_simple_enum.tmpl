@@ -9,12 +9,11 @@ from .CGMESProfile import Profile
 
 
 class {{.Id}}(Base):
+    """
 {{- if .Comment}}
-    """
     {{.Comment}}
-
+{{end}}
     """
-{{- end}}
 
     possibleProfileList = {
         "class": [{{range .Origins}}Profile.{{.}}.value, {{end}}],

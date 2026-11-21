@@ -24,7 +24,7 @@ const (
 )
 
 func TestDecodeCGMES2(t *testing.T) {
-	testDecode(t, CGMES2, CGMES2_SCHEMA, "decoder_test.v2.json", "e749906ce374e14189c9fbf6f4f882adeda6514fc93c95c74be7773340e4b38c")
+	testDecode(t, CGMES2, CGMES2_SCHEMA, "decoder_test.v2.json", "7d2d2f7cf1586b30040b56b1e37665e9e297604ee233cadd95b49c5beedcdcd7")
 }
 
 func TestDecodeCGMES3(t *testing.T) {
@@ -60,12 +60,13 @@ func testDecode(t *testing.T, cgmesVersion, schemaPattern, output, expectedHash 
 			t.Fatalf("ReadFile failed for %s: %v", entry, err)
 		}
 
-		newMap, err := DecodeToMap(bytes.NewReader(b))
+		reader := bytes.NewReader(cleanComments(b))
+		resultMap, err := DecodeToMap(reader)
 		if err != nil {
 			t.Fatalf("DecodeToMap failed for %s: %v", entry, err)
 		}
 
-		data, err := json.MarshalIndent(newMap, "", "  ")
+		data, err := json.MarshalIndent(resultMap, "", "  ")
 		if err != nil {
 			t.Fatalf("MarshalIndent failed for %s: %v", entry, err)
 		}

@@ -21,7 +21,7 @@ repos:
       - id: pip-compile
         name: pip-compile requirements.txt
         files: ^pyproject\.toml$
-        args: [pyproject.toml, --generate-hashes, -o, requirements.txt]
+        args: [pyproject.toml, --allow-unsafe, --generate-hashes, -o, requirements.txt]
 
   - repo: https://github.com/fsfe/reuse-tool
     rev: v6.3.0
