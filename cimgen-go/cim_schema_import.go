@@ -565,17 +565,21 @@ func processEnumValue(classMap map[string]interface{}) CIMEnumValue {
 
 // processOntology processes a map representing a CIM ontology and returns a CIMOntology struct.
 func processOntology(classMap map[string]interface{}) CIMOntology {
+	namespace := extractURIPath(extractValue(classMap, "@rdf:about"))
+	name := strings.TrimSuffix(namespace, "-EU")
+	if idx := strings.LastIndex(name, "/"); idx != -1 {
+		name = name[idx+1:]
+	}
 	owlVersionIRI := extractResource(classMap, "owl:versionIRI")
 	return CIMOntology{
 		Id:             extractURIEnd(extractValue(classMap, "@rdf:about")),
-		Namespace:      extractURIPath(extractValue(classMap, "@rdf:about")),
+		Namespace:      namespace,
 		RDFType:        extractURIEnd(extractResource(classMap, "rdf:type")),
 		OWLVersionIRI:  owlVersionIRI,
 		OWLVersionInfo: extractText(classMap, "owl:versionInfo"),
 		Keyword:        extractValue(classMap, "dcat:keyword"),
-		// remove suffix " Vocabulary" from name if present and remove all spaces
-		Name: strings.ReplaceAll(strings.TrimSuffix(extractText(classMap, "dcterms:title"), " Vocabulary"), " ", ""),
-		Uris: []string{owlVersionIRI},
+		Name:           name,
+		Uris:           []string{owlVersionIRI},
 	}
 }
 
