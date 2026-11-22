@@ -54,9 +54,9 @@ jobs:
 
           # Run cimgen with the valid version
           cimgen \
-            --langdir=${{matrix.language}} \
-            --cgmes_version=${{matrix.version}} \
-            --outdir=output/${{matrix.language}}/${{matrix.version}}
+            --lang=${{matrix.language}} \
+            --version=${{matrix.version}} \
+            --output=output/${{matrix.language}}/${{matrix.version}}
 
       - name: Create artifact
         if: matrix.python-version == '3.11'
