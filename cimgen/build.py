@@ -19,7 +19,7 @@ def build() -> None:
     parser.add_argument(
         "--lang",
         type=str,
-        help="The output language (cpp, java, javascript, modernpython, python)",
+        help="The output language (cpp, java, javascript, modernpython, python-simple)",
         required=True,
     )
     parser.add_argument(
@@ -60,10 +60,11 @@ def build() -> None:
                 print(f"{arg:15}: {value}")
 
     lang_pack: ModuleType
+    lang = args.lang.replace("-", "_")  # "-" not allowed in python identifiers
     try:
-        lang_pack = importlib.import_module(f"cimgen.languages.{args.lang}.lang_pack")
+        lang_pack = importlib.import_module(f"cimgen.languages.{lang}.lang_pack")
     except ModuleNotFoundError:
-        parser.error(f"Unsupported language: {args.langdir}")
+        parser.error(f"Unsupported language: {args.lang}")
 
     cimgen.cim_generate(args.schema, args.output, args.version, lang_pack)
 

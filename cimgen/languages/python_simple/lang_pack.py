@@ -62,7 +62,7 @@ def run_template(output_path: str, class_details: dict) -> None:
 
 def _write_templated_file(class_file: str, class_details: dict, template_filename: str) -> None:
     with open(class_file, "w", newline="", encoding="utf-8") as file:
-        templates = files("cimgen.languages.python.templates")
+        templates = files("cimgen.languages.python_simple.templates")
         with templates.joinpath(template_filename).open(encoding="utf-8") as f:
             args = {
                 "data": class_details,
