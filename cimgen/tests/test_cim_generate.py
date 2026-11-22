@@ -11,8 +11,8 @@ from cimgen.languages.java import lang_pack
 
 CGMES2 = "cgmes_v2_4_15"
 CGMES3 = "cgmes_v3_0_0"
-CGMES2_SCHEMA = "cgmes-application-profiles-library/CGMES/PastReleases/v2-4/Original/RDFS"
-CGMES3_SCHEMA = "cgmes-application-profiles-library/CGMES/CurrentRelease/RDFS"
+CGMES2_SCHEMA = "cgmes-application-profiles-library/CGMES/PastReleases/v2-4/Original/RDFS/*.rdf"
+CGMES3_SCHEMA = "cgmes-application-profiles-library/CGMES/CurrentRelease/RDFS/*.rdf"
 
 
 def test_cim_generate_java_cgmes2(tmp_path: Path) -> None:
@@ -27,13 +27,11 @@ def cim_generate_java(tmp_path: Path, version: str, schema: str, expected_hash: 
     """
     CIM code generation test for language java
     """
-    root = Path(__file__).parent.parent.parent
-    schema_path = (root / schema).resolve()
     output_path = tmp_path
-    print(f"Schema directory: {schema_path}")
+    print(f"Schema: {schema}")
     print(f"Generated source files in: {output_path}")
 
-    cim_generate(schema_path, str(output_path), version, lang_pack)
+    cim_generate(schema, str(output_path), version, lang_pack)
 
     # Test directory hash
     dir_hash = compute_dirhash_h1(output_path)

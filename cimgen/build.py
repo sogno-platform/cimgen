@@ -11,8 +11,8 @@ from cimgen import cimgen
 
 CGMES2 = "cgmes_v2_4_15"
 CGMES3 = "cgmes_v3_0_0"
-CGMES2_SCHEMA = "cgmes-application-profiles-library/CGMES/PastReleases/v2-4/Original/RDFS"
-CGMES3_SCHEMA = "cgmes-application-profiles-library/CGMES/CurrentRelease/RDFS"  # only without --recursive
+CGMES2_SCHEMA = "cgmes-application-profiles-library/CGMES/PastReleases/v2-4/Original/RDFS/*.rdf"
+CGMES3_SCHEMA = "cgmes-application-profiles-library/CGMES/CurrentRelease/RDFS/*.rdf"
 
 
 def build() -> None:
@@ -32,11 +32,6 @@ def build() -> None:
     )
     parser.add_argument("--schemadir", type=str, help="The schema directory")
     parser.add_argument("--outdir", type=str, help="The output directory")
-    parser.add_argument(
-        "--recursive",
-        action="store_true",
-        help="Search the schema directory recursively",
-    )
     parser.add_argument("-v", "--verbose", action="store_true", help="Verbose logging")
 
     args: argparse.Namespace = parser.parse_args()
@@ -68,11 +63,7 @@ def build() -> None:
     except ModuleNotFoundError:
         parser.error(f"Unsupported language: {args.langdir}")
 
-    schema_path: Path = Path(args.schemadir).resolve()
-    if not schema_path.is_dir():
-        parser.error(f"Schema directory '{schema_path}' does not exist or is not a directory.")
-
-    cimgen.cim_generate(schema_path, args.outdir, args.cgmes_version, lang_pack, recursive=args.recursive)
+    cimgen.cim_generate(args.schemadir, args.outdir, args.cgmes_version, lang_pack)
 
 
 if __name__ == "__main__":
