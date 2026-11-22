@@ -42,6 +42,7 @@ profile_template_file = {"filename": "profile_template.mustache", "ext": ".py"}
 enum_template_file = {"filename": "enum_template.mustache", "ext": ".py"}
 primitive_template_file = {"filename": "primitive_template.mustache", "ext": ".py"}
 datatype_template_file = {"filename": "datatype_template.mustache", "ext": ".py"}
+init_template_file = {"filename": "init_template.mustache", "ext": ".py"}
 
 partials = {}
 
@@ -185,17 +186,10 @@ def _python_type_and_default_value(attribute: dict) -> tuple[str, str]:
 
 
 def resolve_headers(path: str, version: str) -> None:
-    """Add all classes in __init__.py"""
-
     if match := re.search(r"(?P<num>\d+_\d+_\d+)", version):  # NOSONAR
         version_number = match.group("num").replace("_", ".")
     else:
         raise ValueError(f"Cannot parse {version} to extract a number.")
 
-    src = Path(__file__).parent / "templates"
-    dest = Path(path) / "resources"
-    with open(src / "__init__.py", "r", encoding="utf-8") as template_file:
-        template_text = template_file.read()
-    with open(dest / "__init__.py", "w", newline="", encoding="utf-8") as header_file:
-        header_file.write(template_text)
-        header_file.write(f'\nCGMES_VERSION = "{version_number}"\n')
+    init_file = Path(path) / "resources" / ("__init__" + init_template_file["ext"])
+    _write_templated_file(init_file, {"version": version_number}, init_template_file["filename"])
