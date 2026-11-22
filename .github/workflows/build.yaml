@@ -22,12 +22,12 @@ jobs:
         - '3.13'
 
         language:
+        - cpp
         - java
         - javadb
-        - javascript
+        - js
         - python
-        - modernpython
-        - cpp
+        - python-simple
 
         version:
         - cgmes_v2_4_15
