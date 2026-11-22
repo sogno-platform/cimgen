@@ -27,7 +27,7 @@ func main() {
 	var verbose bool
 	var outputDir string
 
-	flag.StringVar(&language, "lang", "", "output language (required: cpp, go, java, javadb, js, proto, python, python-simple)")
+	flag.StringVar(&language, "lang", "", "target language (required: cpp, go, java, javadb, js, proto, python, python-simple)")
 	flag.StringVar(&cgmesVersion, "version", CGMES3, "CGMES version ("+CGMES2+", "+CGMES3+")")
 	flag.StringVar(&schemaPattern, "schema", "", "glob pattern for CIM schema files (or several patterns, separated by commas)")
 	flag.StringVar(&outputDir, "output", "", "output directory")

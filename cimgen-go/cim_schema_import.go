@@ -18,11 +18,6 @@ import (
 	"golang.org/x/net/html"
 )
 
-const (
-	CGMESVersion_3_0_0  = "cgmes_v3_0_0"
-	CGMESVersion_2_4_15 = "cgmes_v2_4_15"
-)
-
 // enum to determine primitve types
 const (
 	DataTypeString   = "String"

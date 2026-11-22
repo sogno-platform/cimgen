@@ -5,14 +5,14 @@ SPDX-FileCopyrightText: 2024 SOGNO
 SPDX-License-Identifier: Apache-2.0
 -->
 
-# Generates modern Python (3.11+)
+# Generates (modern) Python (3.11+)
 
-- [Generates modern Python (3.11+)](#generates-modern-python-311)
+- [Generates (modern) Python (3.11+)](#generates-modern-python-311)
   - [Description](#description)
   - [Warning](#warning)
   - [Examples](#examples)
-    - [Python](#python)
-    - [Modern Python](#modern-python)
+    - [Python (simple)](#python-simple)
+    - [Python (modern)](#python-modern)
 
 ## Description
 
@@ -21,15 +21,15 @@ directly into the class. See for instance `cgmes_attributes_in_profile` in [base
 
 ## Warning
 
-This is a major change compared to `python`, and makes it not compatible with cimexport. But by adding
+This is a major change compared to `python-simple`, and makes it not compatible with cimexport. But by adding
 the attribute walk and adding the profiles as metadata from the attributes, it would make cimexport (or any
 other code using these classes) much simpler.
 
 ## Examples
 
-Example of ACLineSegment (generated with --cgmes_version cgmes_v3_0_0).
+Example of ACLineSegment (generated with --version cgmes_v3_0_0).
 
-### Python
+### Python (simple)
 
 ```python
 from .Conductor import Conductor
@@ -97,7 +97,7 @@ class ACLineSegment(Conductor):
         return str
 ```
 
-### Modern Python
+### Python (modern)
 
 ```python
 from functools import cached_property

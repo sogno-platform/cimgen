@@ -32,17 +32,17 @@ git submodule update --init --recursive
 
 Ensure that GOPATH is set and included in your PATH.
 
-Change into the cimgen-go folder:
+Change to the `cimgen-go` directory:
 
 ```bash
 cd cimgen-go
 ```
 
-Use the `go run` command, specifying the target language with the `-lang` flag.
+Use the `go run` command, specifying the target language with the `--lang` option.
 
 ```bash
 # Example for generating C++ code
-go run cmd/cimgen/main.go -lang cpp
+go run cmd/cimgen/main.go --lang cpp
 ```
 
 Alternatively, you can install cimgen.
@@ -90,56 +90,51 @@ Python tool for code generation from CIM data model for several programming lang
 
 ### Usage
 
-Run the following, replacing `langdir` with the target language:
+Run the following, replacing `<lang>` with the target language:
 
 ```bash
 pip install -e .
-cimgen --langdir=<langdir>
+cimgen --lang <lang>
 ```
 
-This will build version `cgmes_v3_0_0` in the subfolder `output/[langdir]/v3`.
+This will build version `cgmes_v3_0_0` in the directory `output/<lang>/v3`.
 
-Options for `langdir` (required):
+Supported values for `--lang` (required):
 
-- cpp
-- python
-- modernpython, i.e. PyDantic based dataclasses
-- javascript
-- java
-- javadb
+- `cpp`
+- `python-simple`
+- `python`, i.e. PyDantic based dataclasses
+- `js`
+- `java`
+- `javadb`
 
-Options for `cgmes_version`:
+Additional options:
 
-- cgmes_v2_4_15
-- cgmes_v3_0_0 (default)
+- `--version`: CGMES Version
+  - `cgmes_v2_4_15`
+  - `cgmes_v3_0_0` (default)
+- `--schema`: Pattern for CIM schema files (or several patterns, separated by commas)
+- `--output`: Output directory
+- `--verbose` (flag, default: False)
 
-Other options:
-
-- schemadir
-- outputdir
-- recursive (default: False)
-- verbose (default: False)
-
-If options `schemadir` or `outputdir` are not specified,
+If options `--schema` or `--output` are not specified,
 they are set automatically:
 
-cgmes_version | schemadir                                                                | outputdir
-:------------ | :----------------------------------------------------------------------- | :--------
-cgmes_v2_4_15 | cgmes-application-profiles-library/CGMES/PastReleases/v2-4/Original/RDFS | output/[langdir]/v2
-cgmes_v3_0_0  | cgmes-application-profiles-library/CGMES/CurrentRelease/RDFS             | output/[langdir]/v3
+version       | schema                                                                         | output
+:------------ | :----------------------------------------------------------------------------- | :-----
+cgmes_v2_4_15 | cgmes-application-profiles-library/CGMES/PastReleases/v2-4/Original/RDFS/*.rdf | output/\<lang\>/v2
+cgmes_v3_0_0  | cgmes-application-profiles-library/CGMES/CurrentRelease/RDFS/*.rdf             | output/\<lang\>/v3
 
 ### Custom Profiles
 
-To generate files for custom profiles,
-you have to copy the profile files to a subdirectory of the schema directory.
-All profiles in the schema directory and its subdirectories are read,
-but the profiles in the main directory are read first.
-You have to use the option --recursive in that case.
+To generate code for custom profiles, specify one or more file patterns using the `--schema` option. Multiple patterns can be passed as a comma-separated list:
 
 ```bash
-mkdir examples/<schemadir>/<customdir>/
-cp <custom_profile>.rdf ... examples//<schemadir>/<customdir>/
-cimgen --langdir=<langdir> --cgmes_version=<version> --schemadir=examples/<schemadir> --recursive
+# Generate code for custom profiles
+cimgen --lang <lang> --schema "path/to/custom/*.rdf"
+
+# Combine standard profiles with custom profiles
+cimgen --lang <lang> --schema "cgmes-application-profiles-library/CGMES/CurrentRelease/RDFS/*.rdf,path/to/custom/*.rdf"
 ```
 
 ### Development
