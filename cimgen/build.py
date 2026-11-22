@@ -19,7 +19,7 @@ def build() -> None:
     parser.add_argument(
         "--lang",
         type=str,
-        help="The output language (cpp, java, javascript, modernpython, python-simple)",
+        help="The output language (cpp, java, javascript, python, python-simple)",
         required=True,
     )
     parser.add_argument(

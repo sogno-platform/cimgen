@@ -63,7 +63,7 @@ include = ["cimgen*"]
 
 [tool.ruff]
 line-length = 120
-extend-exclude = ["cimgen/languages/modernpython/README.md"]
+extend-exclude = ["cimgen/languages/python/README.md"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I"]

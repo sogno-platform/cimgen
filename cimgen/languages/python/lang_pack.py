@@ -135,7 +135,7 @@ def _create_file(output_path: str, class_details: dict, template: dict[str, str]
 
 def _write_templated_file(class_file: Path, class_details: dict, template_filename: str) -> None:
     with class_file.open("w", newline="", encoding="utf-8") as file:
-        templates = files("cimgen.languages.modernpython.templates")
+        templates = files("cimgen.languages.python.templates")
         with templates.joinpath(template_filename).open(encoding="utf-8") as f:
             args = {
                 "data": class_details,
