@@ -185,14 +185,19 @@ func NewCIMSpecification(cgmesVersion string) *CIMSpecification {
 }
 
 // ImportCIMSchemaFiles imports CIM schema files matching the given glob pattern into the CIMSpecification.
+// Or several patterns, separated by commas. The files within a pattern are processed in alphabetical order.
 func (cimSpec *CIMSpecification) ImportCIMSchemaFiles(schemaFiles string) error {
-	entries, err := filepath.Glob(schemaFiles)
-	if err != nil {
-		return fmt.Errorf("failed to find schema files with glob pattern %s: %w", schemaFiles, err)
+	var allEntries []string
+	for _, pattern := range strings.Split(schemaFiles, ",") {
+		entries, err := filepath.Glob(pattern)
+		if err != nil {
+			return fmt.Errorf("failed to find schema files with glob pattern %s: %w", pattern, err)
+		}
+		sort.Strings(entries)
+		allEntries = append(allEntries, entries...)
 	}
-	sort.Strings(entries)
 
-	for _, entry := range entries {
+	for _, entry := range allEntries {
 		b, err := os.ReadFile(entry)
 		if err != nil {
 			return fmt.Errorf("failed to read schema file %s: %w", entry, err)

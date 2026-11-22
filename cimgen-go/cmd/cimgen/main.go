@@ -16,8 +16,8 @@ import (
 const (
 	CGMES2        = "cgmes_v2_4_15"
 	CGMES3        = "cgmes_v3_0_0"
-	CGMES2_SCHEMA = "../cgmes-application-profiles-library/CGMES/PastReleases/v2-4/Original/RDFS/*-v2_4_15-4Sep2020.rdf"
-	CGMES3_SCHEMA = "../cgmes-application-profiles-library/CGMES/CurrentRelease/RDFS/61970-600-2_*-AP-Voc-RDFS2020.rdf"
+	CGMES2_SCHEMA = "../cgmes-application-profiles-library/CGMES/PastReleases/v2-4/Original/RDFS/*.rdf"
+	CGMES3_SCHEMA = "../cgmes-application-profiles-library/CGMES/CurrentRelease/RDFS/*.rdf"
 )
 
 func main() {
@@ -29,7 +29,7 @@ func main() {
 
 	flag.StringVar(&language, "lang", "", "output language (required: go, python, python-simple, java, proto, cpp, js)")
 	flag.StringVar(&cgmesVersion, "version", CGMES3, "CGMES version ("+CGMES2+", "+CGMES3+")")
-	flag.StringVar(&schemaPattern, "schema", "", "glob pattern for CIM schema files")
+	flag.StringVar(&schemaPattern, "schema", "", "glob pattern for CIM schema files (or several patterns, separated by commas)")
 	flag.StringVar(&outputDir, "output", "", "output directory")
 	flag.BoolVar(&verbose, "v", false, "verbose logging")
 	flag.BoolVar(&verbose, "verbose", false, "verbose logging")
