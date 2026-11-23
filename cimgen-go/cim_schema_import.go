@@ -18,11 +18,6 @@ import (
 	"golang.org/x/net/html"
 )
 
-const (
-	CGMESVersion_3_0_0  = "cgmes_v3_0_0"
-	CGMESVersion_2_4_15 = "cgmes_v2_4_15"
-)
-
 // enum to determine primitve types
 const (
 	DataTypeString   = "String"
@@ -185,14 +180,19 @@ func NewCIMSpecification(cgmesVersion string) *CIMSpecification {
 }
 
 // ImportCIMSchemaFiles imports CIM schema files matching the given glob pattern into the CIMSpecification.
+// Or several patterns, separated by commas. The files within a pattern are processed in alphabetical order.
 func (cimSpec *CIMSpecification) ImportCIMSchemaFiles(schemaFiles string) error {
-	entries, err := filepath.Glob(schemaFiles)
-	if err != nil {
-		return fmt.Errorf("failed to find schema files with glob pattern %s: %w", schemaFiles, err)
+	var allEntries []string
+	for _, pattern := range strings.Split(schemaFiles, ",") {
+		entries, err := filepath.Glob(pattern)
+		if err != nil {
+			return fmt.Errorf("failed to find schema files with glob pattern %s: %w", pattern, err)
+		}
+		sort.Strings(entries)
+		allEntries = append(allEntries, entries...)
 	}
-	sort.Strings(entries)
 
-	for _, entry := range entries {
+	for _, entry := range allEntries {
 		b, err := os.ReadFile(entry)
 		if err != nil {
 			return fmt.Errorf("failed to read schema file %s: %w", entry, err)
@@ -565,17 +565,21 @@ func processEnumValue(classMap map[string]interface{}) CIMEnumValue {
 
 // processOntology processes a map representing a CIM ontology and returns a CIMOntology struct.
 func processOntology(classMap map[string]interface{}) CIMOntology {
+	namespace := extractURIPath(extractValue(classMap, "@rdf:about"))
+	name := strings.TrimSuffix(namespace, "-EU")
+	if idx := strings.LastIndex(name, "/"); idx != -1 {
+		name = name[idx+1:]
+	}
 	owlVersionIRI := extractResource(classMap, "owl:versionIRI")
 	return CIMOntology{
 		Id:             extractURIEnd(extractValue(classMap, "@rdf:about")),
-		Namespace:      extractURIPath(extractValue(classMap, "@rdf:about")),
+		Namespace:      namespace,
 		RDFType:        extractURIEnd(extractResource(classMap, "rdf:type")),
 		OWLVersionIRI:  owlVersionIRI,
 		OWLVersionInfo: extractText(classMap, "owl:versionInfo"),
 		Keyword:        extractValue(classMap, "dcat:keyword"),
-		// remove suffix " Vocabulary" from name if present and remove all spaces
-		Name: strings.ReplaceAll(strings.TrimSuffix(extractText(classMap, "dcterms:title"), " Vocabulary"), " ", ""),
-		Uris: []string{owlVersionIRI},
+		Name:           name,
+		Uris:           []string{owlVersionIRI},
 	}
 }
 

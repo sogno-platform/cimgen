@@ -628,9 +628,7 @@ def _add_subclasses_of_subclasses(class_dict: dict[str, CIMComponentDefinition])
         class_dict[class_name].set_subclasses(sorted(subclasses_map.get(class_name, set())))
 
 
-def cim_generate(
-    directory: Path, output_path: str, version: str, lang_pack: ModuleType, recursive: bool = False
-) -> None:
+def cim_generate(schema_patterns: str, output_path: str, version: str, lang_pack: ModuleType) -> None:
     """Generates cgmes classes from cgmes ontology
 
     This function uses package xmltodict to parse the RDF files. The _parse_rdf function sorts the classes to
@@ -643,22 +641,23 @@ def cim_generate(
     with the template engine chevron. The attribute version of this function defines the name of the folder where the
     created classes are stored. This folder should not exist and is created in the class generation procedure.
 
-    :param directory: path to RDF files containing cgmes ontology,
-                      e.g. directory = "./examples/cgmes_v2_4_15_schema"
-    :param output_path: The output directory
-    :param version:     CGMES version, e.g. version = "cgmes_v2_4_15"
-    :param lang_pack:   python module containing language specific functions
-    :param recursive:   Search the schema directory recursively for RDF files
+    :param schema_patterns: file pattern of RDF files containing cgmes ontology,
+                            e.g. schema_patterns = "./examples/cgmes_v2_4_15_schema/*.rdf",
+                            or several patterns, separated by commas.
+                            The files within a pattern are processed in alphabetical order.
+    :param output_path:     The output directory
+    :param version:         CGMES version, e.g. version = "cgmes_v2_4_15"
+    :param lang_pack:       python module containing language specific functions
     """
     init_globals()
     profiles_array: list[dict[str, dict[str, CIMComponentDefinition]]] = []
 
     t0 = time()
 
-    # Iterate over RDF files: first in the main directory, than (optionally) in subdirectories
-    rdf_files = sorted(directory.glob("*.rdf"))
-    if recursive:
-        rdf_files.extend(sorted(directory.glob("*/**/*.rdf")))
+    # Iterate over the pattern list to read RDF files
+    rdf_files: list[Path] = []
+    for pattern in schema_patterns.split(","):
+        rdf_files.extend(sorted(Path().glob(pattern)))
 
     for file in rdf_files:
         logger.info(f"Start of parsing file '{file}'.")

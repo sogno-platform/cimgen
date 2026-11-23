@@ -19,16 +19,16 @@ import (
 const (
 	CGMES2        = "cgmes_v2_4_15"
 	CGMES3        = "cgmes_v3_0_0"
-	CGMES2_SCHEMA = "../cgmes-application-profiles-library/CGMES/PastReleases/v2-4/Original/RDFS/*-v2_4_15-4Sep2020.rdf"
-	CGMES3_SCHEMA = "../cgmes-application-profiles-library/CGMES/CurrentRelease/RDFS/61970-600-2_*-AP-Voc-RDFS2020.rdf"
+	CGMES2_SCHEMA = "../cgmes-application-profiles-library/CGMES/PastReleases/v2-4/Original/RDFS/*.rdf"
+	CGMES3_SCHEMA = "../cgmes-application-profiles-library/CGMES/CurrentRelease/RDFS/*.rdf"
 )
 
 func TestDecodeCGMES2(t *testing.T) {
-	testDecode(t, CGMES2, CGMES2_SCHEMA, "decoder_test.v2.json", "7d2d2f7cf1586b30040b56b1e37665e9e297604ee233cadd95b49c5beedcdcd7")
+	testDecode(t, CGMES2, CGMES2_SCHEMA, "decoder_test.v2.json", "603dc0d16c18cc02766483b2ff03adcab1b7a1474817ebf1c8611adc03b127c3")
 }
 
 func TestDecodeCGMES3(t *testing.T) {
-	testDecode(t, CGMES3, CGMES3_SCHEMA, "decoder_test.v3.json", "eafd799a571073de74f88521341a03bd32b56a753c118356c02ea5411d8d97e2")
+	testDecode(t, CGMES3, CGMES3_SCHEMA, "decoder_test.v3.json", "c734b501e58c89f25816e10666e11edae066c2beb21895ac1c3a3f04078939ff")
 }
 
 func testDecode(t *testing.T, cgmesVersion, schemaPattern, output, expectedHash string) {

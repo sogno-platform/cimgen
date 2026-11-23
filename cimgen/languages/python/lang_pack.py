@@ -1,13 +1,17 @@
-# SPDX-FileCopyrightText: 2019 SOGNO
+# SPDX-FileCopyrightText: 2023 Alliander
+# SPDX-FileCopyrightText: 2024 SOGNO
 #
 # SPDX-License-Identifier: Apache-2.0
 
-import glob
 import logging
-import os
+import re
+import shutil
 from importlib.resources import files
+from pathlib import Path
 
 import chevron
+
+from cimgen.cimgen import wrap_and_indent
 
 logger = logging.getLogger(__name__)
 
@@ -18,50 +22,120 @@ logger = logging.getLogger(__name__)
 # cgmes_profile_details contains index, names and uris for each profile.
 # We use that to create the header data for the profiles.
 def setup(output_path: str, version: str, cgmes_profile_details: list[dict], namespaces: dict[str, str]) -> None:
-    if not os.path.exists(output_path):
-        os.makedirs(output_path)
-    else:
-        for filename in os.listdir(output_path):
-            os.remove(os.path.join(output_path, filename))
-    _create_base(output_path)
-    _create_constants(output_path, version, namespaces)
-    _create_cgmes_profile(output_path, cgmes_profile_details)
+    source_dir = Path(__file__).parent
+    dest_dir = Path(output_path)
+    for file in dest_dir.glob("**/*.[mp]*"):
+        file.unlink()
+    # Add all hardcoded utils and create parent dir
+    for file in source_dir.glob("utils/*.[mp]*"):
+        dest_file = dest_dir / file.relative_to(source_dir)
+        dest_file.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy(file, dest_file)
+    _create_constants(dest_dir, version, namespaces)
+    _create_cgmes_profile(dest_dir, cgmes_profile_details)
 
 
 # These are the files that are used to generate the python files.
-class_template_file = {"filename": "cimpy_class_template.mustache", "ext": ".py"}
-base_template_file = {"filename": "cimpy_baseclass_template.mustache", "ext": ".py"}
-constants_template_file = {"filename": "cimpy_constants_template.mustache", "ext": ".py"}
-profile_template_file = {"filename": "cimpy_profile_template.mustache", "ext": ".py"}
-init_template_file = {"filename": "cimpy_init_template.mustache", "ext": ".py"}
+class_template_file = {"filename": "class_template.mustache", "ext": ".py"}
+constants_template_file = {"filename": "constants_template.mustache", "ext": ".py"}
+profile_template_file = {"filename": "profile_template.mustache", "ext": ".py"}
+enum_template_file = {"filename": "enum_template.mustache", "ext": ".py"}
+primitive_template_file = {"filename": "primitive_template.mustache", "ext": ".py"}
+datatype_template_file = {"filename": "datatype_template.mustache", "ext": ".py"}
+init_template_file = {"filename": "init_template.mustache", "ext": ".py"}
 
 partials = {}
+
+
+def _get_python_type(datatype: str) -> str:
+    if datatype.lower() == "integer":
+        return "int"
+    if datatype.lower() == "boolean":
+        return "bool"
+    if datatype.lower() in ("string", "date", "datetime", "time", "monthday"):
+        return "str"
+    else:
+        # everything else should be a float
+        return "float"
+
+
+def _set_datatype_attributes(attributes: list[dict]) -> dict:
+    datatype_attributes = {}
+    datatype_attributes["python_type"] = "None"
+    import_set = set()
+    for attribute in attributes:
+        if "value" in attribute.get("about", "") and "attribute_class" in attribute:
+            datatype_attributes["python_type"] = _get_python_type(attribute["attribute_class"])
+        if "is_fixed" in attribute:
+            import_set.add(attribute["attribute_class"])
+    datatype_attributes["is_fixed_imports"] = sorted(import_set)
+    return datatype_attributes
 
 
 def get_base_class() -> str:
     return "Base"
 
 
-def get_class_location(class_name: str, class_map: dict, version: str) -> str:
+def get_class_location(class_name: str, class_map: dict, version: str) -> str:  # NOSONAR
     # Check if the current class has a parent class
     if class_map[class_name].subclass_of() and class_map[class_name].subclass_of() in class_map:
-        return "cimpy." + version + "." + class_map[class_name].subclass_of()
-    return "cimpy." + version + ".Base"
+        return f".{class_map[class_name].subclass_of()}"
+    return "..utils.base"
 
 
 def run_template(output_path: str, class_details: dict) -> None:
     # Add some attribute infos
     for attribute in class_details["attributes"]:
-        attribute["default_value"] = _default_value(attribute)
+        attribute["python_type"], attribute["default_value"] = _python_type_and_default_value(attribute)
 
-    if class_details["class_name"] == "String":
-        return
-    class_file = os.path.join(output_path, class_details["class_name"] + class_template_file["ext"])
-    _write_templated_file(class_file, class_details, class_template_file["filename"])
+    if class_details["is_a_primitive_class"]:
+        # Primitives are never used in the in memory representation but only for
+        # the schema
+        template = primitive_template_file
+        class_details["python_type"] = _get_python_type(class_details["class_name"])
+        if "class_comment" in class_details:
+            class_details["wrapped_class_comment"] = wrap_and_indent(
+                class_details["class_comment"],
+                width=120,
+                indent=0,
+            )
+    elif class_details["is_a_datatype_class"]:
+        # Datatypes based on primitives are never used in the in memory
+        # representation but only for the schema
+        template = datatype_template_file
+        class_details.update(_set_datatype_attributes(class_details["attributes"]))
+        if "class_comment" in class_details:
+            class_details["wrapped_class_comment"] = wrap_and_indent(
+                class_details["class_comment"],
+                width=120,
+                indent=0,
+            )
+    elif class_details["is_an_enum_class"]:
+        template = enum_template_file
+        for instance in class_details["enum_instances"]:
+            if "comment" in instance:
+                if instance["label"] in ("cosPhi", "lPerl", "gPerg", "sPers", "HzPerHz", "VPerV", "APerA", "WPerW"):
+                    instance["comment"] += "  # noqa: E501, RUF003"
+                elif instance["label"] in ("l", "I"):
+                    instance["comment"] += "  # noqa: E501, E741"
+                elif instance["label"] == "count":
+                    instance["comment"] += "  # noqa: E501  # type: ignore"
+                else:
+                    instance["comment"] += "  # noqa: E501"
+    else:
+        template = class_template_file
+    resource_file = _create_file(output_path, class_details, template)
+    _write_templated_file(resource_file, class_details, template["filename"])
 
 
-def _write_templated_file(class_file: str, class_details: dict, template_filename: str) -> None:
-    with open(class_file, "w", newline="", encoding="utf-8") as file:
+def _create_file(output_path: str, class_details: dict, template: dict[str, str]) -> Path:
+    resource_file = Path(output_path) / "resources" / (class_details["class_name"] + template["ext"])
+    resource_file.parent.mkdir(exist_ok=True)
+    return resource_file
+
+
+def _write_templated_file(class_file: Path, class_details: dict, template_filename: str) -> None:
+    with class_file.open("w", newline="", encoding="utf-8") as file:
         templates = files("cimgen.languages.python.templates")
         with templates.joinpath(template_filename).open(encoding="utf-8") as f:
             args = {
@@ -73,61 +147,49 @@ def _write_templated_file(class_file: str, class_details: dict, template_filenam
         file.write(output)
 
 
-# creates the Base class file, all classes inherit from this class
-def _create_base(output_path: str) -> None:
-    class_file = os.path.join(output_path, "Base" + base_template_file["ext"])
-    _write_templated_file(class_file, {}, base_template_file["filename"])
-
-
-def _create_constants(output_path: str, version: str, namespaces: dict[str, str]) -> None:
-    class_file = os.path.join(output_path, "CimConstants" + constants_template_file["ext"])
+def _create_constants(output_path: Path, version: str, namespaces: dict[str, str]) -> None:
+    class_file = output_path / "utils" / ("constants" + constants_template_file["ext"])
     namespaces_list = [{"ns": ns, "uri": uri} for ns, uri in sorted(namespaces.items())]
     class_details = {"version": version, "namespaces": namespaces_list}
     _write_templated_file(class_file, class_details, constants_template_file["filename"])
 
 
-def _create_cgmes_profile(output_path: str, profile_details: list[dict]) -> None:
-    class_file = os.path.join(output_path, "CGMESProfile" + profile_template_file["ext"])
+def _create_cgmes_profile(output_path: Path, profile_details: list[dict]) -> None:
+    class_file = output_path / "utils" / ("profile" + profile_template_file["ext"])
     class_details = {"profiles": profile_details}
     _write_templated_file(class_file, class_details, profile_template_file["filename"])
 
 
-def _default_value(attribute: dict) -> str:
-    """Get the default value of the attribute.
+def _python_type_and_default_value(attribute: dict) -> tuple[str, str]:
+    """Get the python type and the default value of the attribute.
 
     :param attribute:  Dictionary with information about an attribute of a class.
-    :return:           Default value
+    :return:           Tuple containing python type and default value
     """
     if attribute["is_datatype_attribute"]:
-        return "0.0"
+        return ("float", "default=0.0")
     if attribute["is_enum_attribute"]:
-        return "None"
+        return ("str", "default=None")
     if attribute["is_class_attribute"]:
-        return "None"
+        return ("Optional[str]", "default=None")
     if attribute["is_list_attribute"]:
-        return "None"
+        return ("list", "default_factory=list")
     # primitive attribute
     if attribute["attribute_class"] == "Integer":
-        return "0"
+        return ("int", "default=0")
     if attribute["attribute_class"] == "Boolean":
-        return "False"
+        return ("bool", "default=False")
     if attribute["attribute_class"] in ("Float", "Decimal"):
-        return "0.0"
+        return ("float", "default=0.0")
     # primitive string attribute
-    return '""'
+    return ("str", 'default=""')
 
 
-# The code below this line is used after the main cim_generate phase to generate CimClassMap.java.
+def resolve_headers(path: str, version: str) -> None:
+    if match := re.search(r"(?P<num>\d+_\d+_\d+)", version):  # NOSONAR
+        version_number = match.group("num").replace("_", ".")
+    else:
+        raise ValueError(f"Cannot parse {version} to extract a number.")
 
-class_blacklist = ["CGMESProfile", "CimConstants"]
-
-
-def resolve_headers(path: str, version: str) -> None:  # NOSONAR
-    """Add all classes in __init__.py"""
-    init_file = path + "/__init__" + init_template_file["ext"]
-    classes = []
-    for file in sorted(glob.glob(path + "/*.py")):
-        class_name = os.path.splitext(os.path.basename(file))[0]
-        if class_name not in class_blacklist:
-            classes.append(class_name)
-    _write_templated_file(init_file, {"classes": classes}, init_template_file["filename"])
+    init_file = Path(path) / "resources" / ("__init__" + init_template_file["ext"])
+    _write_templated_file(init_file, {"version": version_number}, init_template_file["filename"])

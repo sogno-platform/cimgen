@@ -38,7 +38,7 @@ func (spec *CIMSpecification) GeneratePython(outputDir string) error {
 	if err != nil {
 		return err
 	}
-	sourceDir := filepath.Join(languagesDir, "modernpython", "utils")
+	sourceDir := filepath.Join(languagesDir, "python", "utils")
 	if err := copyFilesWithPattern(sourceDir, utilsOutputDir, "*.[mp]*"); err != nil {
 		return err
 	}

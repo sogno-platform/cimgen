@@ -22,12 +22,12 @@ jobs:
         - '3.13'
 
         language:
+        - cpp
         - java
         - javadb
-        - javascript
+        - js
         - python
-        - modernpython
-        - cpp
+        - python-simple
 
         version:
         - cgmes_v2_4_15
@@ -37,7 +37,7 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v7
         with:
-          submodules: true
+          submodules: recursive
 
       - name: Setup Python
         uses: actions/setup-python@v7
@@ -54,9 +54,9 @@ jobs:
 
           # Run cimgen with the valid version
           cimgen \
-            --langdir=${{matrix.language}} \
-            --cgmes_version=${{matrix.version}} \
-            --outdir=output/${{matrix.language}}/${{matrix.version}}
+            --lang=${{matrix.language}} \
+            --version=${{matrix.version}} \
+            --output=output/${{matrix.language}}/${{matrix.version}}
 
       - name: Create artifact
         if: matrix.python-version == '3.11'
